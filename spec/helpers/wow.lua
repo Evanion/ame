@@ -91,6 +91,10 @@ local function newObject(kind)
     GetEffectiveScale = function()
       return 1
     end,
+    SetVertexOffset = function(self, corner, x, y)
+      self.offsets = rawget(self, "offsets") or {}
+      self.offsets[corner] = { x, y }
+    end,
     GetFrameLevel = function()
       return 1
     end,

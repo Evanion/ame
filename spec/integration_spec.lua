@@ -291,6 +291,13 @@ describe("addon in a stubbed client", function()
       assert.is_not_nil(ns.UI.chart.series.candles)
       assert.is_nil(ns.UI.chart.series.market)
       assert.are.equal(10, #ns.UI.candles.xs)
+      -- pooled textures that drew the market area's slanted top must come back rectangular
+      local fills = ns.UI.chart.pools.fill
+      for i = 1, fills.used do
+        for _, off in pairs(rawget(fills.items[i], "offsets") or {}) do
+          assert.are.same({ 0, 0 }, off)
+        end
+      end
       for _, b in ipairs(v.rangeButtons) do -- candle period follows the range
         b.scripts.OnClick(b)
       end

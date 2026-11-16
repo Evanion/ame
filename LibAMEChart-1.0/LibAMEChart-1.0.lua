@@ -274,6 +274,11 @@ local function pool(chart, kind)
       r = chart.canvas:CreateTexture(nil, "BACKGROUND")
     end
     p.items[p.used] = r
+  elseif r.SetVertexOffset and kind == "fill" then
+    -- area fills bend their top corners into trapezoids; a reused texture must start rectangular again
+    for corner = 1, 4 do
+      r:SetVertexOffset(corner, 0, 0)
+    end
   end
   r:Show()
   return r
