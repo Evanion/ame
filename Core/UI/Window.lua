@@ -174,7 +174,8 @@ function UI:ApplyTheme()
   if not self.frame then
     return
   end
-  W.SetTheme(self:ViewHouse())
+  local preferred = ns.Settings:Get("theme")
+  W.SetTheme(preferred ~= "auto" and preferred or self:ViewHouse())
   local a = W.COLORS.accent
   self.title:SetText(("|c%sAzeroth|r Mercantile Exchange"):format(W.Hex(a)))
   for n, b in pairs(self.tabs) do

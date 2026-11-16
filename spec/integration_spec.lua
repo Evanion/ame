@@ -467,6 +467,25 @@ describe("addon in a stubbed client", function()
       assert.are.equal("PvP · Goblin AH", ns.ShardLabel("PvP|Neutral"))
     end)
 
+    it("lets you pick a fixed window theme in Settings, saved with the settings", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      ns.UI:Toggle()
+      ns.UI:ShowTab("settings")
+      local s = ns.UI.settingsView
+      s.scripts.OnShow(s)
+      local gold = s.theme.menu.items[4]
+      gold.scripts.OnClick(gold)
+      assert.are.equal("Neutral", AME_DB.settings.theme) -- persisted in the saved variables
+      assert.are.equal("Neutral", ns.Widgets.theme) -- applied right away, though we're at the Horde AH
+      ns.UI:ViewChanged()
+      assert.are.equal("Neutral", ns.Widgets.theme) -- and it sticks when the view changes
+      local follow = s.theme.menu.items[1]
+      follow.scripts.OnClick(follow)
+      assert.are.equal("Horde", ns.Widgets.theme)
+    end)
+
     it("themes the window by auction house faction", function()
       boot()
       env.npcFaction = "Horde"

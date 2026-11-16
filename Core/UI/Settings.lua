@@ -11,6 +11,7 @@ Settings.DEFAULTS = {
   tooltipAvgDays = 7, -- average period shown in tooltips: 3 / 7 / 14 / 30
   tooltipDetail = false, -- full tooltip without holding Shift
   chartStyle = "line", -- "line" | "candles"
+  theme = "auto", -- window colours: "auto" (follow the viewed market) | "Horde" | "Alliance" | "Neutral"
   clickModifier = "alt", -- "alt" | "altshift" | "none"
   announceScans = true,
   alertSound = true,

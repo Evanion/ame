@@ -381,6 +381,23 @@ function UI:CreateSettingsView(parent, contentArea)
   end)
   v.minimap:SetPoint("TOPLEFT", 0, -150)
 
+  local themeLabel = W.Text(v, "GameFontHighlightSmall")
+  themeLabel:SetPoint("TOPLEFT", 260, -152)
+  themeLabel:SetText("Window colours")
+  local themes = {
+    { "auto", "Follow market" },
+    { "Horde", "Horde red" },
+    { "Alliance", "Alliance blue" },
+    { "Neutral", "Goblin gold" },
+  }
+  v.theme = W.Dropdown(v, 110, themes, function(value)
+    ns.Settings:Set("theme", value)
+    UI:ApplyTheme()
+  end)
+  v.theme:SetPoint("TOPLEFT", 350, -148)
+  v.theme.values = themes
+  v.theme.neutral = true
+
   heading(v, "Notifications", 0, -182)
   checks[#checks + 1] = settingCheck(v, "Announce recorded full scans in chat", "announceScans", 0, -204)
   checks[#checks + 1] = settingCheck(v, "Play a sound when a watchlist alert fires", "alertSound", 0, -226)
@@ -525,6 +542,7 @@ function UI:RefreshSettings()
   v.click:SetIndex(indexOf(v.click.values, ns.Settings:Get("clickModifier")))
   v.outliers:SetIndex(indexOf(v.outliers.values, ns.Settings:Get("outlierFactor")))
   v.avgDays:SetIndex(indexOf(v.avgDays.values, ns.Settings:Get("tooltipAvgDays")))
+  v.theme:SetIndex(indexOf(v.theme.values, ns.Settings:Get("theme")))
   v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
   v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))
   v.hours:SetIndex(indexOf(v.hours.values, ns.Settings:Get("listingHours")))
