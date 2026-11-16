@@ -182,8 +182,14 @@ function UI:CreateItemView(parent)
   v.legend = W.Text(v, "GameFontDisableSmall")
   v.legend:SetPoint("LEFT", v.rangeButtons[#RANGES], "RIGHT", 12, 0)
   v.legend:SetText(
-    "|cff33ccff— market|r   |cff66dd77— lowest|r   |cffffaa33— 7d average|r   |cff8888aa▮ supply|r"
-      .. "   ·  wheel: zoom, drag: pan, double-click: reset"
+    W.Swatch(0.2, 0.8, 1)
+      .. " market   "
+      .. W.Swatch(0.4, 0.87, 0.47)
+      .. " lowest   "
+      .. W.Swatch(1, 0.67, 0.2)
+      .. " 7d average   "
+      .. W.Swatch(0.53, 0.53, 0.67)
+      .. " supply      wheel: zoom, drag: pan, double-click: reset"
   )
 
   -- chart
@@ -253,11 +259,11 @@ function UI:ShowItem(itemID)
   W.OnItemLoaded(itemID, header)
 
   for _, c in ipairs(v.cards) do
-    c.value:SetText("…")
+    c.value:SetText("...")
   end
-  v.sub:SetText("loading history…")
+  v.sub:SetText("loading history...")
   self.chart:ClearSeries()
-  self.chart:SetMessage("Loading history…")
+  self.chart:SetMessage("Loading history...")
 
   ns.AME:WithStore("chart-" .. itemID, nil, function(store)
     return { series = store:Series(itemID), latest = store:Latest(itemID) }
@@ -455,12 +461,12 @@ function UI:RefreshMarket()
   end
   for i, h in ipairs(v.headers) do
     local col = COLUMNS[i]
-    local arrow = (self.sortKey == col.key) and (self.sortAsc and " ▲" or " ▼") or ""
+    local arrow = (self.sortKey == col.key) and (self.sortAsc and W.ARROW_UP or W.ARROW_DOWN) or ""
     h.text:SetText(col.label .. arrow)
   end
   local index = ns.AME.index
   if not index then
-    v.status:SetText(ns.AME:HistoryLoaded() and "Building market index…" or "Loading history…")
+    v.status:SetText(ns.AME:HistoryLoaded() and "Building market index..." or "Loading history...")
     for _, row in ipairs(v.rows) do
       row:Hide()
     end

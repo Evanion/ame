@@ -73,6 +73,15 @@ function W.Button(parent, label, width, height, onClick)
   return b
 end
 
+-- The default UI fonts lack glyphs like ▲ ▼ ▮, so use inline textures instead.
+W.ARROW_UP = " |TInterface\\Buttons\\Arrow-Up-Up:12:12:0:-2|t"
+W.ARROW_DOWN = " |TInterface\\Buttons\\Arrow-Down-Up:12:12:0:2|t"
+
+-- small tinted colour square for legends
+function W.Swatch(r, g, b)
+  return ("|TInterface\\Buttons\\WHITE8x8:8:8:0:0:8:8:0:8:0:8:%d:%d:%d|t"):format(r * 255, g * 255, b * 255)
+end
+
 -- compact money: "1,234g 56s" / "56s 7c" / "7c", with coloured unit letters
 local function commas(n)
   local s = tostring(n)
