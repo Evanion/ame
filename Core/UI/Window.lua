@@ -48,8 +48,8 @@ function UI:Create()
     b:SetPoint("TOPRIGHT", -(30 + x), -8)
     self.tabs[name] = b
   end
-  tab("market", "Market", 0)
-  tab("item", "Item", 76)
+  tab("market", "Market", 76)
+  tab("item", "Item", 0)
 
   self.views = {
     item = self:CreateItemView(f),
