@@ -12,6 +12,8 @@ local RANGES = { { "7D", 7 }, { "30D", 30 }, { "90D", 90 }, { "1Y", 365 }, { "Al
 ---------------------------------------------------------------------------------------------------------------------
 -- window shell
 
+local contentArea
+
 function UI:Create()
   if self.frame then
     return self.frame
@@ -49,12 +51,14 @@ function UI:Create()
     b:SetPoint("TOPRIGHT", -(34 + x), -8)
     self.tabs[name] = b
   end
-  tab("market", "Market", 76)
-  tab("item", "Item", 0)
+  tab("market", "Market", 152)
+  tab("item", "Item", 76)
+  tab("guide", "Guide", 0)
 
   self.views = {
     item = self:CreateItemView(f),
     market = self:CreateMarketView(f),
+    guide = ns.Help.CreateGuide(f, contentArea),
   }
   f:SetScript("OnShow", function()
     UI.shardText:SetText(ns.AME:CurrentShard())
@@ -119,7 +123,7 @@ function UI:Toggle(itemID)
   end
 end
 
-local function contentArea(parent)
+function contentArea(parent)
   local v = CreateFrame("Frame", nil, parent)
   v:SetPoint("TOPLEFT", 10, -36)
   v:SetPoint("BOTTOMRIGHT", -10, 10)
@@ -176,6 +180,50 @@ function UI:CreateItemView(parent)
     end
   end)
 
+  -- watch + alerts (second header row, right-aligned under the search box)
+  v.alertSignal = W.Check(v, "on buy/sell signal", function(on)
+    if UI.itemID then
+      ns.AME.watch:SetAlert(UI.itemID, { signal = on })
+      UI:UpdateWatchControls()
+    end
+  end)
+  v.alertSignal:SetPoint("TOPRIGHT", -96, -24)
+  local function goldAlert(field, hint)
+    local input = W.Input(v)
+    input:SetSize(64, 18)
+    input:SetNumeric(true)
+    input.hint = W.Text(input, "GameFontDisableSmall")
+    input.hint:SetPoint("LEFT", 6, 0)
+    input.hint:SetText(hint)
+    input:SetScript("OnTextChanged", function(self, user)
+      self.hint:SetShown(self:GetText() == "")
+      if user and UI.itemID then
+        local g = tonumber(self:GetText())
+        ns.AME.watch:SetAlert(UI.itemID, { [field] = g and g * 10000 or false })
+        UI:UpdateWatchControls(true)
+      end
+    end)
+    input:SetScript("OnEnterPressed", input.ClearFocus)
+    return input
+  end
+  v.alertAbove = goldAlert("above", "above g")
+  v.alertAbove:SetPoint("RIGHT", v.alertSignal, "LEFT", -8, 0)
+  v.alertBelow = goldAlert("below", "below g")
+  v.alertBelow:SetPoint("RIGHT", v.alertAbove, "LEFT", -4, 0)
+  v.alertLabel = W.Text(v, "GameFontDisableSmall", "RIGHT")
+  v.alertLabel:SetPoint("RIGHT", v.alertBelow, "LEFT", -6, 0)
+  v.alertLabel:SetText("Alert when")
+  v.watch = W.Button(v, "Watch", 84, 18, function(self)
+    UI:WatchMenu(self, UI.itemID)
+  end)
+  v.watch.star = v.watch:CreateTexture(nil, "OVERLAY")
+  v.watch.star:SetTexture(W.STAR)
+  v.watch.star:SetSize(14, 14)
+  v.watch.star:SetPoint("LEFT", 6, 0)
+  v.watch.label:ClearAllPoints()
+  v.watch.label:SetPoint("LEFT", 24, 0)
+  v.watch:SetPoint("RIGHT", v.alertLabel, "LEFT", -12, 0)
+
   v.icon = v:CreateTexture(nil, "ARTWORK")
   v.icon:SetSize(32, 32)
   v.icon:SetPoint("TOPLEFT", 0, 0)
@@ -187,8 +235,11 @@ function UI:CreateItemView(parent)
   -- stat cards
   v.cards = {}
   local labels = { "Market", "Lowest", "30d average", "7d change", "Volatility", "Supply", "Signal" }
+  local terms = { "market", "min", "avg30", "change7", "vol30", "qty", "signal" }
   for i, label in ipairs(labels) do
     local c = statCard(v, label)
+    c:EnableMouse(true)
+    ns.Help.Explain(c, terms[i])
     c:SetSize((980 - 20 - 6 * 6) / 7, 40)
     if i == 1 then
       c:SetPoint("TOPLEFT", v.icon, "BOTTOMLEFT", 0, -10)
@@ -393,6 +444,7 @@ function UI:ShowItem(itemID)
   end
   header()
   W.OnItemLoaded(itemID, header)
+  self:UpdateWatchControls()
 
   for _, c in ipairs(v.cards) do
     c.value:SetText("...")
@@ -453,6 +505,140 @@ function UI:FillItem(_, series, latest)
       latest and ("  ·  last seen " .. date("%b %d %H:%M", latest.t)) or ""
     )
   )
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Watchlists
+
+-- menu of lists with checkmarks for an item, plus "New list..."
+function UI:WatchMenu(anchor, itemID)
+  if not itemID then
+    return
+  end
+  local watch = ns.AME.watch
+  local entries = {}
+  for i, l in ipairs(watch:Lists()) do
+    entries[#entries + 1] = {
+      text = l.name,
+      checked = watch:Has(i, itemID),
+      func = function()
+        watch:Toggle(i, itemID)
+        UI:WatchChanged()
+      end,
+    }
+  end
+  entries[#entries + 1] = {
+    text = "|cff999999New list...|r",
+    func = function()
+      UI:PromptNewList(itemID)
+    end,
+  }
+  W.Menu(anchor, entries)
+end
+
+-- star click: with one list toggle directly, otherwise choose from the menu
+function UI:StarClicked(anchor, itemID)
+  local watch = ns.AME.watch
+  if #watch:Lists() == 1 then
+    watch:Toggle(1, itemID)
+    self:WatchChanged()
+  else
+    self:WatchMenu(anchor, itemID)
+  end
+end
+
+function UI:PromptNewList(itemID)
+  StaticPopupDialogs.AME_NEW_LIST = StaticPopupDialogs.AME_NEW_LIST
+    or {
+      text = "Name for the new watchlist:",
+      button1 = ACCEPT or "Accept",
+      button2 = CANCEL or "Cancel",
+      hasEditBox = true,
+      OnAccept = function(popup, data)
+        local box = popup.editBox or popup.EditBox
+        local i = ns.AME.watch:AddList(box and box:GetText())
+        if i and data then
+          ns.AME.watch:Toggle(i, data)
+        end
+        UI:WatchChanged()
+      end,
+      EditBoxOnEnterPressed = function(box)
+        local popup = box:GetParent()
+        StaticPopupDialogs.AME_NEW_LIST.OnAccept(popup, popup.data)
+        popup:Hide()
+      end,
+      timeout = 0,
+      whileDead = true,
+      hideOnEscape = true,
+      preferredIndex = 3,
+    }
+  StaticPopup_Show("AME_NEW_LIST", nil, nil, itemID)
+end
+
+function UI:PromptDeleteList(i)
+  local l = ns.AME.watch:Lists()[i]
+  if not l then
+    return
+  end
+  StaticPopupDialogs.AME_DELETE_LIST = StaticPopupDialogs.AME_DELETE_LIST
+    or {
+      text = 'Delete the watchlist "%s"?',
+      button1 = DELETE or "Delete",
+      button2 = CANCEL or "Cancel",
+      OnAccept = function(_, data)
+        if ns.AME.watch:RemoveList(data) then
+          local q = UI.mq
+          if q and q.list then
+            q.list, q.only = nil, nil
+          end
+          UI:WatchChanged()
+        end
+      end,
+      timeout = 0,
+      whileDead = true,
+      hideOnEscape = true,
+      preferredIndex = 3,
+    }
+  StaticPopup_Show("AME_DELETE_LIST", l.name, nil, i)
+end
+
+-- after any watchlist change: re-filter a shown watchlist, redraw stars, sidebar and item controls
+function UI:WatchChanged()
+  local q = self.mq
+  if q and q.list then
+    local l = ns.AME.watch:Lists()[q.list]
+    q.only = l and l.items or nil
+    if not l then
+      q.list = nil
+    end
+  end
+  if self.marketView then
+    self:RenderCategories()
+    self:RefreshMarket(true)
+  end
+  self:UpdateWatchControls()
+end
+
+function UI:UpdateWatchControls(keepInputs)
+  local v, id = self.itemView, self.itemID
+  if not (v and id and ns.AME.watch) then
+    return
+  end
+  local watch = ns.AME.watch
+  local inList = false
+  for i in ipairs(watch:Lists()) do
+    inList = inList or watch:Has(i, id)
+  end
+  v.watch.label:SetText(inList and "Watching" or "Watch")
+  v.watch:SetSelected(inList)
+  v.watch.star:SetDesaturated(not inList)
+  v.watch.star:SetAlpha(inList and 1 or 0.5)
+  local a = watch:Alert(id) or {}
+  if not keepInputs then
+    v.alertBelow:SetText(a.below and tostring(math.floor(a.below / 10000)) or "")
+    v.alertAbove:SetText(a.above and tostring(math.floor(a.above / 10000)) or "")
+  end
+  v.alertSignal:SetChecked(a.signal)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -526,13 +712,26 @@ function UI:CreateCategories(v)
     b.text:SetWordWrap(false)
     b.count = W.Text(b, "GameFontDisableSmall", "RIGHT")
     b.count:SetPoint("RIGHT", -4, 0)
-    b:SetScript("OnClick", function(self)
+    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    b:SetScript("OnClick", function(self, button)
       local e = self.entry
       if not e then
         return
       end
       local q = UI.mq
-      if e.all then
+      if e.newList then
+        UI:PromptNewList()
+        return
+      end
+      if e.list and button == "RightButton" then
+        UI:PromptDeleteList(e.list)
+        return
+      end
+      q.list, q.only = nil, nil
+      if e.list then
+        q.classID, q.subClassID = nil, nil
+        q.list, q.only = e.list, ns.AME.watch:Lists()[e.list].items
+      elseif e.all then
         q.classID, q.subClassID = nil, nil
       elseif e.subClassID then
         q.classID, q.subClassID = e.classID, e.subClassID
@@ -559,6 +758,13 @@ function UI:RenderCategories()
   local v = self.marketView
   local q = self.mq
   local entries = { { all = true, label = "All items", count = self.index and self.index.count or 0 } }
+  local watch = ns.AME.watch
+  if watch then
+    for i, l in ipairs(watch:Lists()) do
+      entries[#entries + 1] = { list = i, label = ("|T%s:12:12|t %s"):format(W.STAR, l.name), count = watch:Count(i) }
+    end
+    entries[#entries + 1] = { newList = true, label = "|cff999999+ New list|r", count = "" }
+  end
   for _, c in ipairs(self.categories or {}) do
     entries[#entries + 1] = { classID = c.classID, label = ns.ItemCache.ClassName(c.classID), count = c.count }
     if q.classID == c.classID then
@@ -579,7 +785,13 @@ function UI:RenderCategories()
     if e then
       b:Show()
       local selected
-      if e.all then
+      if e.newList then
+        selected = false
+      elseif e.list then
+        selected = q.list == e.list
+      elseif q.list then
+        selected = false
+      elseif e.all then
         selected = q.classID == nil
       elseif e.subClassID then
         selected = q.classID == e.classID and q.subClassID == e.subClassID
@@ -686,6 +898,7 @@ function UI:CreateMarketView(parent)
     h.text = W.Text(h, "GameFontNormalSmall", col.key == "name" and "LEFT" or "RIGHT")
     h.text:SetAllPoints()
     h.text:SetText(col.label)
+    ns.Help.Explain(h, col.key)
     h:SetScript("OnClick", function()
       local q = UI.mq
       if q.sortKey == col.key then
@@ -711,15 +924,26 @@ function UI:CreateMarketView(parent)
     row.hl = row:CreateTexture(nil, "HIGHLIGHT")
     row.hl:SetAllPoints()
     row.hl:SetColorTexture(1, 1, 1, 0.06)
+    row.star = CreateFrame("Button", nil, row)
+    row.star:SetSize(16, 16)
+    row.star:SetPoint("LEFT", 0, 0)
+    row.star.tex = row.star:CreateTexture(nil, "ARTWORK")
+    row.star.tex:SetAllPoints()
+    row.star.tex:SetTexture(W.STAR)
+    row.star:SetScript("OnClick", function(self)
+      if row.itemID then
+        UI:StarClicked(self, row.itemID)
+      end
+    end)
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetSize(18, 18)
-    row.icon:SetPoint("LEFT", 0, 0)
+    row.icon:SetPoint("LEFT", 18, 0)
     row.cells = {}
     local cx = 0
     for c, col in ipairs(COLUMNS) do
       local fs = W.Text(row, "GameFontHighlightSmall", col.key == "name" and "LEFT" or "RIGHT")
-      fs:SetSize(col.key == "name" and col.width - 22 or col.width, ROW_H)
-      fs:SetPoint("LEFT", col.key == "name" and cx + 22 or cx, 0)
+      fs:SetSize(col.key == "name" and col.width - 40 or col.width, ROW_H)
+      fs:SetPoint("LEFT", col.key == "name" and cx + 40 or cx, 0)
       fs:SetWordWrap(false)
       row.cells[c] = fs
       cx = cx + col.width + 8
@@ -893,6 +1117,15 @@ function UI:RenderMarket()
   elseif (self.unnamed or 0) > 0 then
     status = status .. ("  -  %d items not searchable yet (names loading)"):format(self.unnamed)
   end
+  if q.list and q.only then
+    local n = 0
+    for _ in pairs(q.only) do
+      n = n + 1
+    end
+    if n > total then
+      status = status .. ("  -  %d watched items have no price history here yet"):format(n - total)
+    end
+  end
   v.status:SetText(status)
 
   for r, row in ipairs(v.rows) do
@@ -909,6 +1142,9 @@ function UI:RenderMarket()
       if not name then
         self:RenderWhenLoaded(s.itemID)
       end
+      local watched = ns.AME.watch and ns.AME.watch:Watched(s.itemID)
+      row.star.tex:SetDesaturated(not watched)
+      row.star.tex:SetAlpha(watched and 1 or 0.18)
       for c, col in ipairs(COLUMNS) do
         local val
         if col.key == "name" then

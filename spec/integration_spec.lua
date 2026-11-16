@@ -273,8 +273,8 @@ describe("addon in a stubbed client", function()
       assert.are.equal(2589, v.rows[1].itemID)
       v.search:SetText("")
       v.search.scripts.OnTextChanged(v.search)
-      -- category sidebar: All items, then classes; clicking a class filters to it
-      local classLine = v.side.lines[2]
+      -- category sidebar: All items, watchlists, "+ New list", then classes; clicking a class filters to it
+      local classLine = v.side.lines[4]
       assert.are.equal(7, classLine.entry.classID)
       classLine.scripts.OnClick(classLine)
       assert.are.equal(2, #ns.UI.list)
@@ -288,6 +288,39 @@ describe("addon in a stubbed client", function()
       assert.is_nil(ns.UI.mq.minQuality)
       assert.are.equal(1, v.quality.index)
       ns.MarketFilter.Apply = apply
+    end)
+
+    it("stars items into a watchlist, shows the list and fires alerts after a scan", function()
+      seeded()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("market")
+      local v = ns.UI.marketView
+      local row = v.rows[1]
+      local id = row.itemID
+      row.star.scripts.OnClick(row.star)
+      assert.is_true(ns.AME.watch:Has(1, id))
+      -- sidebar: line 2 is the watchlist; selecting it shows only watched items
+      local listLine = v.side.lines[2]
+      assert.are.equal(1, listLine.entry.list)
+      listLine.scripts.OnClick(listLine, "LeftButton")
+      assert.are.equal(1, #ns.UI.list)
+      assert.are.equal(id, ns.UI.list[1].itemID)
+      -- alert from the item page: below a price far above the current market
+      ns.UI:ShowItem(id)
+      drainJobs()
+      local below = ns.UI.itemView.alertBelow
+      below:SetText("1000")
+      below.scripts.OnTextChanged(below, true)
+      assert.are.equal(1000 * 10000, ns.AME.watch:Alert(id).below)
+      assert.are.equal("Watching", ns.UI.itemView.watch.label.text)
+      fullScan({ { 2589, 900, 10 }, { 4306, 4000, 5 } })
+      drainJobs()
+      assert.is_true(env:chatContains("Alert:"))
+      assert.is_true(env:chatContains("dropped to"))
+      -- the Guide tab exists and hover explanations are wired
+      ns.UI:ShowTab("guide")
+      local header = v.headers[#v.headers]
+      header.scripts.OnEnter(header)
     end)
 
     it("themes the window by auction house faction", function()

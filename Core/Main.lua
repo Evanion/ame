@@ -129,6 +129,37 @@ function AME:WithStore(name, shardKey, fn, onDone)
   end)
 end
 
+-- Watchlist alerts: checked against each fresh market index (after scans, sync merges and at login).
+local ALERT_TEXT = {
+  below = "dropped to %s (alert at %s)",
+  above = "rose to %s (alert at %s)",
+  buy = "BUY signal at %s",
+  sell = "SELL signal at %s",
+}
+
+function AME:CheckAlerts(index)
+  if not self.watch then
+    return
+  end
+  local fired = self.watch:Check(index.items)
+  for _, a in ipairs(fired) do
+    local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+    local _, link = getInfo(a.itemID)
+    local what = ALERT_TEXT[a.kind]:format(money(a.market), a.threshold and money(a.threshold) or "")
+    say("|cffffcc00Alert:|r %s %s", link or ("item:" .. a.itemID), what)
+    if UIErrorsFrame then
+      UIErrorsFrame:AddMessage(("AME alert: %s %s"):format(link or a.itemID, what), 1, 0.82, 0)
+    end
+  end
+  if #fired > 0 and ns.Settings:Get("alertSound") and PlaySound and SOUNDKIT then
+    PlaySound(SOUNDKIT.RAID_WARNING or SOUNDKIT.TELL_MESSAGE or 3081)
+  end
+  self.lastAlerts = fired
+  if #fired > 0 and ns.UI and ns.UI.RefreshMarket then
+    ns.UI:RefreshMarket()
+  end
+end
+
 -- Rebuild the market index (30-day summary per item) in the background; tooltips and the screener read it.
 function AME:RebuildIndex()
   if self.indexing then
@@ -147,6 +178,9 @@ function AME:RebuildIndex()
     if ok and index then
       self.index = index
       self.indexShard = shard
+      if shard == self:CurrentShard() then
+        self:CheckAlerts(index)
+      end
       AME_DB.stats.indexBuild = { ms = math.floor(debugprofilestop() - t0), items = index.count }
       if ns.UI and ns.UI.RefreshMarket then
         ns.UI:RefreshMarket()
@@ -296,6 +330,8 @@ function handlers.ADDON_LOADED(name)
   AME_DB.backfilled = AME_DB.backfilled or {}
   AME.compressor = ns.Compress.New(LibStub("LibDeflate"))
   ns.Settings:Init()
+  AME_DB.watch = AME_DB.watch or {}
+  AME.watch = ns.Watch.New(AME_DB.watch)
 end
 
 function handlers.PLAYER_LOGIN()

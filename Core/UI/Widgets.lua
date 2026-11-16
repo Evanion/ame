@@ -367,3 +367,104 @@ function W.Input(parent)
   box:SetScript("OnEscapePressed", box.ClearFocus)
   return box
 end
+
+W.STAR = "InterfaceCommonFavoritesIcon"
+
+-- Shared popup menu: W.Menu(anchor, entries); entry = { text, checked = bool?, func = fn, disabled = bool? }.
+-- One menu frame for the whole addon; closes on a pick or a click elsewhere.
+local menu
+function W.Menu(anchor, entries)
+  if not menu then
+    menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    W.Skin(menu, W.COLORS.bg)
+    menu:SetFrameStrata("FULLSCREEN_DIALOG")
+    menu.items = {}
+    menu:SetScript("OnShow", function(self)
+      pcall(self.RegisterEvent, self, "GLOBAL_MOUSE_DOWN")
+    end)
+    menu:SetScript("OnHide", function(self)
+      pcall(self.UnregisterEvent, self, "GLOBAL_MOUSE_DOWN")
+    end)
+    menu:SetScript("OnEvent", function(self)
+      if not self:IsMouseOver() and not (self.anchor and self.anchor:IsMouseOver()) then
+        self:Hide()
+      end
+    end)
+    W.menu = menu
+  end
+  if menu:IsShown() and menu.anchor == anchor then
+    menu:Hide()
+    return menu
+  end
+  local ROW, width = 18, 140
+  for i, e in ipairs(entries) do
+    local it = menu.items[i]
+    if not it then
+      it = CreateFrame("Button", nil, menu)
+      it:SetHeight(ROW)
+      it:SetPoint("TOPLEFT", 3, -3 - (i - 1) * ROW)
+      it:SetPoint("RIGHT", -3, 0)
+      it.hl = it:CreateTexture(nil, "HIGHLIGHT")
+      it.hl:SetAllPoints()
+      it.hl:SetColorTexture(1, 1, 1, 0.08)
+      it.check = it:CreateTexture(nil, "ARTWORK")
+      it.check:SetTexture("InterfaceButtonsUI-CheckBox-Check")
+      it.check:SetSize(14, 14)
+      it.check:SetPoint("LEFT", 2, 0)
+      it.text = W.Text(it, "GameFontHighlightSmall")
+      it.text:SetPoint("LEFT", 20, 0)
+      menu.items[i] = it
+    end
+    it.text:SetText(e.text)
+    it.text:SetTextColor(e.disabled and 0.5 or 1, e.disabled and 0.5 or 1, e.disabled and 0.5 or 1)
+    it.check:SetShown(e.checked == true)
+    it:SetScript("OnClick", function()
+      menu:Hide()
+      if e.func and not e.disabled then
+        e.func()
+      end
+    end)
+    it:Show()
+    width = math.max(width, (it.text:GetStringWidth() or 0) + 34)
+  end
+  for i = #entries + 1, #menu.items do
+    menu.items[i]:Hide()
+  end
+  menu.anchor = anchor
+  menu.entries = entries
+  menu:SetSize(width, #entries * ROW + 6)
+  menu:ClearAllPoints()
+  menu:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
+  menu:Show()
+  return menu
+end
+
+-- Flat checkbox with a label; onToggle(checked)
+function W.Check(parent, label, onToggle)
+  local b = CreateFrame("Button", nil, parent)
+  b:SetSize(16, 16)
+  b.box = CreateFrame("Frame", nil, b, "BackdropTemplate")
+  b.box:SetAllPoints()
+  W.Skin(b.box, W.COLORS.panel)
+  b.mark = b:CreateTexture(nil, "OVERLAY")
+  b.mark:SetTexture("InterfaceButtonsUI-CheckBox-Check")
+  b.mark:SetPoint("CENTER")
+  b.mark:SetSize(16, 16)
+  b.label = W.Text(b, "GameFontHighlightSmall")
+  b.label:SetPoint("LEFT", b, "RIGHT", 5, 0)
+  b.label:SetText(label)
+  function b:SetChecked(on)
+    self.checked = on and true or false
+    self.mark:SetShown(self.checked)
+    local a = self.checked and W.COLORS.accent or W.COLORS.border
+    self.box:SetBackdropBorderColor(a[1], a[2], a[3], self.checked and 0.8 or a[4])
+  end
+  b:SetScript("OnClick", function(self)
+    self:SetChecked(not self.checked)
+    if onToggle then
+      onToggle(self.checked)
+    end
+  end)
+  b:SetChecked(false)
+  return b
+end

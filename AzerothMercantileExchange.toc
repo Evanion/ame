@@ -21,12 +21,14 @@ Core\Backfill.lua
 Core\Analytics.lua
 Core\MarketIndex.lua
 Core\MarketFilter.lua
+Core\Watch.lua
 Core\Sync.lua
 Core\SyncService.lua
 Core\Main.lua
 Core\SelfTest.lua
 Core\UI\Widgets.lua
 Core\UI\ItemCache.lua
+Core\UI\Help.lua
 Core\UI\Window.lua
 Core\UI\Tooltip.lua
 Core\UI\Settings.lua

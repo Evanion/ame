@@ -55,7 +55,8 @@ function MarketFilter.Categories(index, info)
   return out
 end
 
--- query: { text, classID, subClassID, minQuality, signal ("buy"/"sell"), minPrice, maxPrice (copper, on market),
+-- query: { text, classID, subClassID, only (set of itemIDs, e.g. a watchlist), minQuality, signal ("buy"/"sell"),
+--          minPrice, maxPrice (copper, on market),
 --          sortKey, ascending }
 -- Name search only matches items whose name is known (info().name); returns list, unnamed (count of items that
 -- couldn't be checked against the search text yet).
@@ -65,6 +66,9 @@ function MarketFilter.Apply(index, query, info)
   local list, unnamed = {}, 0
   for itemID, s in pairs(index.items) do
     local ok = s[key] ~= nil or key == "name"
+    if ok and query.only and not query.only[itemID] then
+      ok = false
+    end
     if ok and query.signal and s.signal ~= query.signal then
       ok = false
     end

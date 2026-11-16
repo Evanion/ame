@@ -11,6 +11,7 @@ Settings.DEFAULTS = {
   chartStyle = "line", -- "line" | "candles"
   clickModifier = "alt", -- "alt" | "altshift" | "none"
   announceScans = true,
+  alertSound = true,
   syncGuild = true,
   minimap = { hide = false },
 }
@@ -100,6 +101,14 @@ function Settings:RegisterOptions()
             order = 3,
             width = "full",
             name = "Announce recorded full scans in chat",
+            get = get,
+            set = set,
+          },
+          alertSound = {
+            type = "toggle",
+            order = 3.5,
+            width = "full",
+            name = "Play a sound when a watchlist alert fires",
             get = get,
             set = set,
           },
