@@ -97,6 +97,35 @@ describe("addon in a stubbed client", function()
     assert.are.equal(1, #ns.AME:Store():Series(2589))
   end)
 
+  -- Real data spends the frame budget, so jobs really yield in game. Force a yield at every checkpoint here:
+  -- Lua 5.1 can't yield across pcall, which the cheap test clock otherwise hides.
+  it("background jobs survive yielding at every checkpoint", function()
+    local DAY = 86400
+    boot({
+      pre = function(n)
+        n.AME.jobs.budgetMs = -1
+      end,
+      auctionator = {
+        Constants = { SCAN_DAY_0 = 20000 * DAY },
+        Database = {
+          db = {
+            ["2589"] = { l = { ["5"] = 80 }, h = { ["5"] = 120, ["6"] = 110 }, a = { ["5"] = 3 }, m = 100 },
+            ["4306"] = { h = { ["5"] = 500 }, m = 500 },
+          },
+        },
+      },
+    })
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    drainJobs()
+    assert.is_true(env:chatContains("imported 2 days of Auctionator price history"))
+    fullScan({ { 2589, 1000, 10 }, { 4306, 5000, 5 } })
+    assert.is_true(env:chatContains("recorded full scan"))
+    drainJobs()
+    assert.is_false(env:chatContains("failed"))
+    assert.is_not_nil(ns.AME.index)
+  end)
+
   it("survives a client that lacks some events", function()
     boot({ unknownEvents = { COMMODITY_SEARCH_RESULTS_UPDATED = true } })
     env:fire("AUCTION_HOUSE_SHOW")

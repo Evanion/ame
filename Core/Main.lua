@@ -91,17 +91,19 @@ function AME:WithStore(name, shardKey, fn, onDone)
   if not store then
     return
   end
+  -- No pcall in here: WoW's Lua 5.1 can't yield across pcall. coroutine.resume already catches errors, and
+  -- the yield hook is reset in the completion callback instead.
   self.jobs:Add(name, function(job)
     store.yield = function()
       job:Checkpoint()
     end
-    local ok, result = pcall(fn, store, job)
+    return fn(store, job)
+  end, function(ok, result)
     store.yield = function() end
-    if not ok then
-      error(result, 0)
+    if onDone then
+      onDone(ok, result)
     end
-    return result
-  end, onDone)
+  end)
 end
 
 -- Rebuild the market index (30-day summary per item) in the background; tooltips and the screener read it.
