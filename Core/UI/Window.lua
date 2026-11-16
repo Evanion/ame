@@ -627,14 +627,17 @@ function UI:CreateMarketView(parent)
   end)
   v.search = search
 
-  local quality = W.Button(main, QUALITIES[1][2], 92, 20, function(self)
-    self.qi = self.qi % #QUALITIES + 1
-    UI.mq.minQuality = QUALITIES[self.qi][1]
+  local qualityOptions = {}
+  for i, q in ipairs(QUALITIES) do
+    local c = q[1] and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q[1]]
+    qualityOptions[i] = { q[1], q[2], c and c.hex and c.hex:match("|c(%x+)") }
+  end
+  local quality = W.Dropdown(main, 104, qualityOptions, function(value)
+    UI.mq.minQuality = value
     UI.offset = 0
     UI:RefreshMarket(true)
   end)
   quality:SetPoint("LEFT", search, "RIGHT", 8, 0)
-  quality.qi = 1
   v.quality = quality
 
   local minBox = goldBox(main, "min g", function(g)
@@ -786,7 +789,7 @@ end
 function UI:ResetMarketFilters()
   local v = self.marketView
   self.mq = { sortKey = self.mq.sortKey, ascending = self.mq.ascending }
-  v.quality.qi = 1
+  v.quality:SetIndex(1)
   v.search:SetText("")
   v.minBox:SetText("")
   v.maxBox:SetText("")
@@ -861,9 +864,7 @@ function UI:RenderMarket()
   for _, b in ipairs(v.filterButtons) do
     b:SetSelected(b.key == (q.signal or "all"))
   end
-  local qi = v.quality.qi
-  v.quality.label:SetText(QUALITIES[qi][2])
-  v.quality:SetSelected(qi > 1)
+  v.quality:SetIndex(v.quality.index)
   for i, h in ipairs(v.headers) do
     local col = COLUMNS[i]
     local arrow = (q.sortKey == col.key) and (q.ascending and W.ARROW_UP or W.ARROW_DOWN) or ""

@@ -278,6 +278,15 @@ describe("addon in a stubbed client", function()
       assert.are.equal(7, classLine.entry.classID)
       classLine.scripts.OnClick(classLine)
       assert.are.equal(2, #ns.UI.list)
+      -- quality dropdown: pick "Rare+" from the menu
+      local rare = v.quality.menu.items[4]
+      rare.scripts.OnClick(rare)
+      assert.are.equal(3, ns.UI.mq.minQuality)
+      assert.are.equal(0, #ns.UI.list) -- stub items are common quality
+      assert.truthy(v.quality.label.text:find("Rare+", 1, true))
+      ns.UI:ResetMarketFilters()
+      assert.is_nil(ns.UI.mq.minQuality)
+      assert.are.equal(1, v.quality.index)
       ns.MarketFilter.Apply = apply
     end)
 

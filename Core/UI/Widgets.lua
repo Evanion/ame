@@ -225,3 +225,77 @@ function W.TintInnerGlow(frame, color)
   W.Gradient(e.left, "HORIZONTAL", edge, clear)
   W.Gradient(e.right, "HORIZONTAL", clear, edge)
 end
+
+-- Flat dropdown selector. options = { { value, label, colorHex? }, ... }; onSelect(value, option).
+-- The button shows the current choice and is highlighted when a non-default (index > 1) option is picked.
+function W.Dropdown(parent, width, options, onSelect)
+  local b = W.Button(parent, "", width, 20)
+  b.label:ClearAllPoints()
+  b.label:SetPoint("LEFT", 8, 0)
+  b.label:SetPoint("RIGHT", -18, 0)
+  b.label:SetJustifyH("LEFT")
+  b.arrow = b:CreateTexture(nil, "OVERLAY")
+  b.arrow:SetTexture("InterfaceButtonsArrow-Down-Up")
+  b.arrow:SetSize(12, 12)
+  b.arrow:SetPoint("RIGHT", -4, -2)
+
+  local function text(o)
+    return o[3] and ("|c%s%s|r"):format(o[3], o[2]) or o[2]
+  end
+
+  local ROW = 18
+  local menu = CreateFrame("Frame", nil, b, "BackdropTemplate")
+  W.Skin(menu, W.COLORS.bg)
+  menu:SetFrameStrata("DIALOG")
+  menu:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -2)
+  menu:SetSize(width, #options * ROW + 6)
+  menu:Hide()
+  menu.items = {}
+  for i, o in ipairs(options) do
+    local it = CreateFrame("Button", nil, menu)
+    it:SetSize(width - 6, ROW)
+    it:SetPoint("TOPLEFT", 3, -3 - (i - 1) * ROW)
+    it.hl = it:CreateTexture(nil, "HIGHLIGHT")
+    it.hl:SetAllPoints()
+    it.hl:SetColorTexture(1, 1, 1, 0.08)
+    it.sel = it:CreateTexture(nil, "BACKGROUND")
+    it.sel:SetAllPoints()
+    it.text = W.Text(it, "GameFontHighlightSmall")
+    it.text:SetPoint("LEFT", 6, 0)
+    it.text:SetText(text(o))
+    it:SetScript("OnClick", function()
+      b:SetIndex(i)
+      menu:Hide()
+      onSelect(o[1], o)
+    end)
+    menu.items[i] = it
+  end
+  -- close when clicking anywhere else
+  menu:SetScript("OnShow", function(self)
+    local a = W.COLORS.accent
+    for i, it in ipairs(self.items) do
+      it.sel:SetColorTexture(a[1], a[2], a[3], i == b.index and 0.2 or 0)
+    end
+    pcall(self.RegisterEvent, self, "GLOBAL_MOUSE_DOWN")
+  end)
+  menu:SetScript("OnHide", function(self)
+    pcall(self.UnregisterEvent, self, "GLOBAL_MOUSE_DOWN")
+  end)
+  menu:SetScript("OnEvent", function(self)
+    if not self:IsMouseOver() and not b:IsMouseOver() then
+      self:Hide()
+    end
+  end)
+  b:SetScript("OnClick", function()
+    menu:SetShown(not menu:IsShown())
+  end)
+
+  function b:SetIndex(i)
+    self.index = i
+    self.label:SetText(text(options[i]))
+    self:SetSelected(i > 1)
+  end
+  b.menu = menu
+  b:SetIndex(1)
+  return b
+end
