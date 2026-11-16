@@ -36,13 +36,13 @@ describe("Backfill.FromAuctionator", function()
 
   it("maps lowest/highest daily minimum to min and a midpoint market", function()
     local r = Backfill.FromAuctionator(db, DAY0)[1005][1]
-    -- { id, min, market, median, qty, auctions, scans }
-    assert.are.same({ 2589, 80, 100, 100, 40, 0, 1 }, r)
+    -- { id, min, market, median, qty, auctions, scans, high (Auctionator's highest minimum of the day) }
+    assert.are.same({ 2589, 80, 100, 100, 40, 0, 1, 120 }, r)
   end)
 
   it("uses the high when there is no separate low, and qty 0 when unknown", function()
     local r = Backfill.FromAuctionator(db, DAY0)[1006][1]
-    assert.are.same({ 2589, 100, 100, 100, 0, 0, 1 }, r)
+    assert.are.same({ 2589, 100, 100, 100, 0, 0, 1, 100 }, r)
   end)
 
   it("returns nothing for missing or malformed input", function()

@@ -145,18 +145,21 @@ function Codec.Encode(fieldNames, cols)
   return concat(out, "|")
 end
 
-function Codec.Decode(fieldNames, text)
+-- allowMissing: text written before trailing fields were added decodes with those columns nil
+function Codec.Decode(fieldNames, text, allowMissing)
   local fields, count = split(text, "|")
   if fields[1] ~= Codec.VERSION then
     error("Codec: unsupported version " .. tostring(fields[1]), 2)
   end
-  if count ~= #fieldNames + 2 then
+  if count ~= #fieldNames + 2 and not (allowMissing and count >= 3 and count < #fieldNames + 2) then
     error("Codec: wrong field count", 2)
   end
   local n = Codec.FromBase36(fields[2])
   local cols = {}
   for f, name in ipairs(fieldNames) do
-    cols[name] = decodeColumn(fields[f + 2], n, f == 1)
+    if fields[f + 2] ~= nil then
+      cols[name] = decodeColumn(fields[f + 2], n, f == 1)
+    end
   end
   return cols
 end

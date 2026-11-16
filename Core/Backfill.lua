@@ -34,7 +34,7 @@ function Backfill.FromAuctionator(db, scanDay0)
           local day = floor((scanDay0 + d * DAY) / DAY)
           out[day] = out[day] or {}
           local list = out[day]
-          list[#list + 1] = { id, low, mid, mid, tonumber(avail[dayKey]) or 0, 0, 1 }
+          list[#list + 1] = { id, low, mid, mid, tonumber(avail[dayKey]) or 0, 0, 1, high }
         end
       end
     end

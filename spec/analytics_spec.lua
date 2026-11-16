@@ -202,3 +202,16 @@ describe("Analytics score vs signal", function()
     assert.are.equal(20, s.avg14)
   end)
 end)
+
+describe("Analytics.Candles upper wick", function()
+  it("reaches the day's recorded high above the body", function()
+    local A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+    local c = A.Candles({
+      { day = 1, market = 100, min = 90 },
+      { day = 2, market = 150, min = 140, high = 200 },
+    }, 1)
+    assert.are.equal(150, c.close[2])
+    assert.are.equal(200, c.high[2]) -- above max(open, close): a visible upper wick
+    assert.are.equal(100, c.high[1]) -- no recorded high: the wick stays at the body
+  end)
+end)

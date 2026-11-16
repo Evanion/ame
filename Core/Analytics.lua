@@ -180,7 +180,8 @@ end
 -- Candles from the daily/weekly series, grouping periodDays days per candle. The store keeps daily aggregates, not
 -- intraday prices, so a candle is: open = previous candle's close (the first candle opens at its first price),
 -- close = last market price in the period,
--- high = highest market price (at least the open), low = cheapest listing seen (the "min" price).
+-- high = highest price seen (the recorded daily high, else the highest market price; at least the open),
+-- low = cheapest listing seen (the "min" price).
 -- Returns { xs, open, high, low, close, period } with xs at the middle of each period (seconds).
 -- unit: seconds per "day" step of the series (default a day; 3600 for hourly points built from scans)
 function Analytics.Candles(series, periodDays, unit)
@@ -199,7 +200,7 @@ function Analytics.Candles(series, periodDays, unit)
       if m then
         first = first or m
         close = m
-        hi = math.max(hi, m)
+        hi = math.max(hi, m, p.high or 0) -- the day's highest price seen, when recorded
         lo = math.min(lo, p.min or m, m)
       end
       j = j + 1

@@ -116,15 +116,44 @@ describe("Store", function()
   end)
 
   describe("daily rollup", function()
+    it("keeps the day's highest market price (the upper candle wick) next to the average", function()
+      local store = newStore()
+      local day0 = clock - clock % 86400
+      store:AddScan(snap({ [10] = { 90, 100, 100, 5, 2 } }), day0 + 3600, "a")
+      store:AddScan(snap({ [10] = { 150, 200, 200, 5, 2 } }), day0 + 3 * 3600, "b")
+      local p = store:Series(10)[1]
+      assert.are.equal(150, p.market)
+      assert.are.equal(200, p.high)
+    end)
+
+    it("reads segments written before the high column existed, and adds highs to them", function()
+      local data = {}
+      local store = newStore(data)
+      local day0 = clock - clock % 86400
+      store:AddScan(snap({ [10] = { 90, 100, 100, 5, 2 } }), day0 + 3600, "a")
+      -- rewrite the day's segment in the old 8-column format
+      local day = math.floor((day0 + 3600) / 86400)
+      for b, packed in pairs(data.days[day]) do
+        local cols = ns.Codec.Decode(Store.SEGMENT_FIELDS, ns.Codec.Unpack(packed, compressor))
+        local old = { "ids", "min", "market", "median", "qty", "auctions", "scans", "hours" }
+        data.days[day][b] = ns.Codec.Pack(ns.Codec.Encode(old, cols), compressor)
+      end
+      local fresh = newStore(data)
+      local p = fresh:Series(10)[1]
+      assert.are.equal(100, p.market)
+      assert.is_nil(p.high) -- unknown for old data
+      fresh:AddScan(snap({ [10] = { 150, 300, 300, 5, 2 } }), day0 + 5 * 3600, "b")
+      assert.are.equal(300, fresh:Series(10)[1].high)
+    end)
+
     it("writes today's daily point on every scan", function()
       local store = newStore()
       store:AddScan(snap({ [10] = { 100, 110, 120, 5, 2 } }), clock, "a")
       local s = store:Series(10)
       assert.are.equal(1, #s)
-      assert.are.same(
-        { day = 1000, res = "day", min = 100, market = 110, median = 120, qty = 5, auctions = 2, scans = 1 },
-        s[1]
-      )
+      local expected = { day = 1000, res = "day", min = 100, market = 110, high = 110, median = 120 }
+      expected.qty, expected.auctions, expected.scans = 5, 2, 1
+      assert.are.same(expected, s[1])
     end)
 
     it("aggregates several scans of the same day", function()
@@ -179,7 +208,7 @@ describe("Store", function()
       assert.is_false(store:AddScan(late, early + 2 * 3600, "guildmate")) -- re-sent: ignored
       local p = store:Series(10, 997, 997)[1]
       assert.are.same(
-        { day = 997, res = "day", min = 80, market = 150, median = 150, qty = 3, auctions = 2, scans = 2 },
+        { day = 997, res = "day", min = 80, market = 150, high = 200, median = 150, qty = 3, auctions = 2, scans = 2 },
         p
       )
     end)
@@ -354,7 +383,7 @@ describe("Store", function()
       assert.is_nil(data.days[980])
       local s = store:Series(10)
       assert.are.equal(2, #s)
-      local expected = { week = 140, day = 980, res = "week", min = 80, market = 100, median = 100 }
+      local expected = { week = 140, day = 980, res = "week", min = 80, market = 100, high = 100, median = 100 }
       expected.qty, expected.auctions, expected.scans = 10, 2, 7
       assert.are.same(expected, s[1])
       assert.are.equal("day", s[2].res)

@@ -16,7 +16,7 @@
 -- Means are computed on read.
 local _, ns = ...
 
-local floor, min = math.floor, math.min
+local floor, max, min = math.floor, math.max, math.min
 local sort = table.sort
 
 local Codec = ns.Codec
@@ -32,7 +32,9 @@ Store.DAYS_KEEP = 180
 Store.CACHE_SIZE = 96
 
 -- hours: bitmask of UTC hours already sampled for that item that day (0 in weekly segments)
-Store.SEGMENT_FIELDS = { "ids", "min", "market", "median", "qty", "auctions", "scans", "hours" }
+-- high: the highest single market price seen in the period (the upper candle wick); 0 = unknown. Added later, so
+-- older segments decode without it.
+Store.SEGMENT_FIELDS = { "ids", "min", "market", "median", "qty", "auctions", "scans", "hours", "high" }
 local SUMMED = { "market", "median", "qty", "auctions" }
 
 local function round(x)
@@ -60,7 +62,7 @@ end
 -- segment helpers
 
 local function emptySegment()
-  return { ids = {}, min = {}, market = {}, median = {}, qty = {}, auctions = {}, scans = {}, hours = {} }
+  return { ids = {}, min = {}, market = {}, median = {}, qty = {}, auctions = {}, scans = {}, hours = {}, high = {} }
 end
 
 function Store:decode(packed, fields)
@@ -68,7 +70,7 @@ function Store:decode(packed, fields)
   if hit then
     return hit
   end
-  local cols = Codec.Decode(fields, Codec.Unpack(packed, self.compressor))
+  local cols = Codec.Decode(fields, Codec.Unpack(packed, self.compressor), true)
   -- simple FIFO-bounded cache; segments are immutable values keyed by their packed string
   local order = self.cacheOrder
   order[#order + 1] = packed
@@ -105,7 +107,7 @@ local function hasSlot(mask, slot)
 end
 
 -- Merge rows into a segment (both sorted by id). rows: list of
---   { id, min, market, median, qty, auctions, scans, slot }
+--   { id, min, market, median, qty, auctions, scans, slot, high }
 -- where market..auctions are sums and slot is the sample's hour bit (2^hour) or 0 for "no slot check" (weekly
 -- folds). A row whose hour slot is already taken only lowers min: one sample per item per hour feeds the means, so
 -- repeated searches of the same item can't skew the day. Returns a new segment.
@@ -113,26 +115,31 @@ local function mergeRows(seg, rows)
   local out = emptySegment()
   local i, j, n = 1, 1, 0
   local sids = seg.ids
+  local sh = seg.high or {}
   while i <= #sids or j <= #rows do
     local a, r = sids[i], rows[j]
     n = n + 1
     if r and (not a or r[1] < a) then
       out.ids[n], out.min[n], out.market[n], out.median[n] = r[1], r[2], r[3], r[4]
       out.qty[n], out.auctions[n], out.scans[n], out.hours[n] = r[5], r[6], r[7], r[8]
+      out.high[n] = r[9] or 0
       j = j + 1
     elseif not r or a < r[1] then
       out.ids[n], out.min[n], out.market[n], out.median[n] = a, seg.min[i], seg.market[i], seg.median[i]
       out.qty[n], out.auctions[n], out.scans[n], out.hours[n] = seg.qty[i], seg.auctions[i], seg.scans[i], seg.hours[i]
+      out.high[n] = sh[i] or 0
       i = i + 1
     elseif r[8] ~= 0 and hasSlot(seg.hours[i], r[8]) then -- same id, hour already sampled: only min
       out.ids[n], out.min[n], out.market[n], out.median[n] = a, min(seg.min[i], r[2]), seg.market[i], seg.median[i]
       out.qty[n], out.auctions[n], out.scans[n], out.hours[n] = seg.qty[i], seg.auctions[i], seg.scans[i], seg.hours[i]
+      out.high[n] = max(sh[i] or 0, r[9] or 0)
       i, j = i + 1, j + 1
     else -- same id: add
       out.ids[n], out.min[n] = a, min(seg.min[i], r[2])
       out.market[n], out.median[n] = seg.market[i] + r[3], seg.median[i] + r[4]
       out.qty[n], out.auctions[n], out.scans[n] = seg.qty[i] + r[5], seg.auctions[i] + r[6], seg.scans[i] + r[7]
       out.hours[n] = seg.hours[i] + r[8]
+      out.high[n] = max(sh[i] or 0, r[9] or 0)
       i, j = i + 1, j + 1
     end
   end
@@ -186,7 +193,8 @@ function Store:AddScan(snap, t, src, kind)
       rows = {}
       byBucket[b] = rows
     end
-    rows[#rows + 1] = { id, snap.min[i], snap.market[i], snap.median[i], snap.qty[i], snap.auctions[i], 1, slot }
+    rows[#rows + 1] =
+      { id, snap.min[i], snap.market[i], snap.median[i], snap.qty[i], snap.auctions[i], 1, slot, snap.market[i] }
   end
   data.days[day] = data.days[day] or {}
   self:mergeInto(data.days[day], byBucket)
@@ -214,7 +222,7 @@ function Store:ImportDay(day, rows, key)
     if not (seg and find(seg.ids, r[1])) then
       byBucket[b] = byBucket[b] or {}
       local list = byBucket[b]
-      list[#list + 1] = { r[1], r[2], r[3], r[4], r[5], r[6], r[7], 0 }
+      list[#list + 1] = { r[1], r[2], r[3], r[4], r[5], r[6], r[7], 0, r[8] or 0 }
     end
   end
   self:mergeInto(tier, byBucket)
@@ -267,6 +275,7 @@ function Store:Rollup()
               seg.auctions[i],
               seg.scans[i],
               0,
+              seg.high and seg.high[i] or 0,
             }
           end
         end
@@ -288,8 +297,9 @@ function Store:Rollup()
           for k = 3, 7 do
             last[k] = last[k] + r[k]
           end
+          last[9] = max(last[9], r[9])
         else
-          last = { r[1], r[2], r[3], r[4], r[5], r[6], r[7], 0 }
+          last = { r[1], r[2], r[3], r[4], r[5], r[6], r[7], 0, r[9] }
           run[#run + 1] = last
         end
       end
@@ -303,9 +313,11 @@ end
 
 local function point(seg, i, res, period)
   local scans = seg.scans[i]
+  local high = seg.high and seg.high[i]
   local p = {
     res = res,
     min = seg.min[i],
+    high = high and high > 0 and high or nil,
     scans = scans,
   }
   for _, f in ipairs(SUMMED) do
