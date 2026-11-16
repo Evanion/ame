@@ -119,4 +119,38 @@ describe("LibAMEChart-1.0 Math", function()
       assert.is_true(lo < 10 and hi > 10)
     end)
   end)
+  describe("MonotoneSmooth", function()
+    local xs, ys = { 0, 10, 20, 30, 40 }, { 5, 8, 8, 2, 9 }
+
+    local function at(ox, oy, x)
+      for i, v in ipairs(ox) do
+        if v == x then
+          return oy[i]
+        end
+      end
+    end
+
+    it("passes through every original point", function()
+      local ox, oy = M.MonotoneSmooth(xs, ys, 2)
+      for i, x in ipairs(xs) do
+        assert.are.equal(ys[i], at(ox, oy, x))
+      end
+      assert.is_true(#ox > #xs)
+    end)
+
+    it("never overshoots between neighbours (no invented prices)", function()
+      local ox, oy = M.MonotoneSmooth(xs, ys, 1)
+      for k = 1, #ox do
+        local seg = math.min(#xs - 1, math.floor(ox[k] / 10) + 1)
+        local lo, hi = math.min(ys[seg], ys[seg + 1]), math.max(ys[seg], ys[seg + 1])
+        assert.is_true(oy[k] >= lo - 1e-9 and oy[k] <= hi + 1e-9, ("x=%s y=%s"):format(ox[k], oy[k]))
+      end
+    end)
+
+    it("leaves short lines alone", function()
+      local ox, oy = M.MonotoneSmooth({ 0, 1 }, { 3, 4 }, 0.1)
+      assert.are.same({ 0, 1 }, ox)
+      assert.are.same({ 3, 4 }, oy)
+    end)
+  end)
 end)

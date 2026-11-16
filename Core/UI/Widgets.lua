@@ -145,3 +145,52 @@ function W.OnItemLoaded(itemID, fn)
   end
   fn()
 end
+
+-- gradient across a texture; orientation "VERTICAL" (from = bottom) or "HORIZONTAL" (from = left)
+function W.Gradient(t, orientation, from, to)
+  t:SetColorTexture(1, 1, 1, 1)
+  if CreateColor and t.SetGradient then
+    local ok = pcall(t.SetGradient, t, orientation, CreateColor(unpack(from)), CreateColor(unpack(to)))
+    if ok then
+      return
+    end
+  end
+  if t.SetGradientAlpha then
+    t:SetGradientAlpha(orientation, from[1], from[2], from[3], from[4], to[1], to[2], to[3], to[4])
+  else
+    t:SetColorTexture(to[1], to[2], to[3], (from[4] + to[4]) / 2)
+  end
+end
+
+-- soft inner glow along a frame's edges (fades inward) plus a faint top highlight
+function W.InnerGlow(frame, color, size)
+  local c = color or W.COLORS.accent
+  size = size or 18
+  local edge, clear = { c[1], c[2], c[3], 0.09 }, { c[1], c[2], c[3], 0 }
+  local function tex()
+    local t = frame:CreateTexture(nil, "BORDER")
+    return t
+  end
+  local top, bottom, left, right = tex(), tex(), tex(), tex()
+  top:SetPoint("TOPLEFT", 1, -1)
+  top:SetPoint("TOPRIGHT", -1, -1)
+  top:SetHeight(size)
+  W.Gradient(top, "VERTICAL", clear, edge)
+  bottom:SetPoint("BOTTOMLEFT", 1, 1)
+  bottom:SetPoint("BOTTOMRIGHT", -1, 1)
+  bottom:SetHeight(size)
+  W.Gradient(bottom, "VERTICAL", edge, clear)
+  left:SetPoint("TOPLEFT", 1, -1)
+  left:SetPoint("BOTTOMLEFT", 1, 1)
+  left:SetWidth(size)
+  W.Gradient(left, "HORIZONTAL", edge, clear)
+  right:SetPoint("TOPRIGHT", -1, -1)
+  right:SetPoint("BOTTOMRIGHT", -1, 1)
+  right:SetWidth(size)
+  W.Gradient(right, "HORIZONTAL", clear, edge)
+  local hl = frame:CreateTexture(nil, "BORDER", nil, 1)
+  hl:SetPoint("TOPLEFT", 1, -1)
+  hl:SetPoint("TOPRIGHT", -1, -1)
+  hl:SetHeight(1)
+  hl:SetColorTexture(1, 1, 1, 0.08)
+end

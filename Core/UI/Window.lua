@@ -190,7 +190,8 @@ function UI:CreateItemView(parent)
 
   -- chart
   local holder = CreateFrame("Frame", nil, v, "BackdropTemplate")
-  W.Skin(holder, W.COLORS.panel)
+  W.Skin(holder, { 0.07, 0.08, 0.1, 1 }, { 0.2, 0.8, 1, 0.18 })
+  W.InnerGlow(holder)
   holder:SetPoint("TOPLEFT", v.rangeButtons[1], "BOTTOMLEFT", 0, -8)
   holder:SetPoint("BOTTOMRIGHT", 0, 0)
   local chart = LibStub("LibAMEChart-1.0"):New(holder, {
@@ -296,6 +297,8 @@ function UI:DrawItemChart()
       low = c.low,
       close = c.close,
       period = c.period,
+      marker = true,
+      color = { 0.3, 0.85, 0.45, 1 },
     })
     v.legend:SetText(
       W.Swatch(0.3, 0.85, 0.45)
@@ -309,7 +312,14 @@ function UI:DrawItemChart()
     )
   else
     self.candles = nil
-    chart:SetSeries("market", { xs = xs, ys = market, kind = "area", axis = "price", color = { 0.2, 0.8, 1, 1 } })
+    chart:SetSeries("market", {
+      xs = xs,
+      ys = market,
+      kind = "area",
+      axis = "price",
+      color = { 0.2, 0.8, 1, 1 },
+      marker = true,
+    })
     chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = { 0.4, 0.87, 0.47, 0.9 } })
     v.legend:SetText(
       W.Swatch(0.2, 0.8, 1)

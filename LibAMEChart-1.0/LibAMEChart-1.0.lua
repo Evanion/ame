@@ -21,7 +21,7 @@ Points are downsampled with LTTB to about one per 2 px, so large series stay che
 reused between redraws.
 ]]
 
-local MAJOR, MINOR = "LibAMEChart-1.0", 1
+local MAJOR, MINOR = "LibAMEChart-1.0", 2
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
 if not lib then
   return
@@ -192,6 +192,57 @@ function M.Pan(from, to, delta, limitFrom, limitTo)
   return a, a + span
 end
 
+-- Smooth a polyline (x increasing) with a monotone cubic (Fritsch-Carlson): passes through every point and never
+-- overshoots, so a smoothed price never shows a value beyond its neighbours. step = max x distance between output
+-- points. Returns new xs, ys.
+function M.MonotoneSmooth(xs, ys, step)
+  local n = #xs
+  if n < 3 then
+    return xs, ys
+  end
+  local d, m = {}, {}
+  for i = 1, n - 1 do
+    local dx = xs[i + 1] - xs[i]
+    d[i] = dx ~= 0 and (ys[i + 1] - ys[i]) / dx or 0
+  end
+  m[1], m[n] = d[1], d[n - 1]
+  for i = 2, n - 1 do
+    m[i] = d[i - 1] * d[i] <= 0 and 0 or (d[i - 1] + d[i]) / 2
+  end
+  for i = 1, n - 1 do
+    if d[i] == 0 then
+      m[i], m[i + 1] = 0, 0
+    else
+      local a, b = m[i] / d[i], m[i + 1] / d[i]
+      local h = a * a + b * b
+      if h > 9 then
+        local t = 3 / math.sqrt(h)
+        m[i], m[i + 1] = t * a * d[i], t * b * d[i]
+      end
+    end
+  end
+  local ox, oy = { xs[1] }, { ys[1] }
+  for i = 1, n - 1 do
+    local x0, x1, y0, y1 = xs[i], xs[i + 1], ys[i], ys[i + 1]
+    local h = x1 - x0
+    local k = max(1, floor(h / step))
+    for j = 1, k do
+      if j < k then
+        local t = j / k
+        local t2, t3 = t * t, t * t * t
+        ox[#ox + 1] = x0 + t * h
+        oy[#oy + 1] = (2 * t3 - 3 * t2 + 1) * y0
+          + (t3 - 2 * t2 + t) * h * m[i]
+          + (-2 * t3 + 3 * t2) * y1
+          + (t3 - t2) * h * m[i + 1]
+      else
+        ox[#ox + 1], oy[#oy + 1] = x1, y1
+      end
+    end
+  end
+  return ox, oy
+end
+
 -- y extent of points with x in [x0, x1]; pad is a fraction of the range added on both sides
 function M.Extent(xs, ys, x0, x1, pad)
   local lo, hi = huge, -huge
@@ -224,30 +275,56 @@ local Chart = {}
 Chart.__index = Chart
 lib.ChartMixin = Chart
 
--- The library ships media/Line.tga (soft alpha edges = antialiased lines). It may be embedded in any addon, so find
--- its folder from the load stack. Without it, lines fall back to solid (aliased) colour textures.
-local LINE_TEXTURE
+-- The library ships media/ textures: Line (soft alpha edges = antialiased lines), Dot and Glow (hover markers). It
+-- may be embedded in any addon, so find its folder from the load stack. Without them, lines fall back to solid
+-- (aliased) colour textures and glows are skipped.
+local MEDIA
 do
   local stack = debugstack and debugstack(1, 2, 0) or ""
   local dir = stack:match("(Interface[\\/][Aa]dd[Oo]ns[\\/].-)[\\/]LibAMEChart%-1%.0%.lua")
   if dir then
-    LINE_TEXTURE = dir:gsub("/", "\\") .. "\\media\\Line"
+    MEDIA = dir:gsub("/", "\\") .. "\\media\\"
   end
 end
-lib.LINE_TEXTURE = LINE_TEXTURE
+local LINE_TEXTURE = MEDIA and MEDIA .. "Line"
+lib.MEDIA, lib.LINE_TEXTURE = MEDIA, LINE_TEXTURE
+
+-- vertical gradient on a texture (bottom colour -> top colour), across client API generations
+local function gradient(t, bottom, top)
+  t:SetColorTexture(1, 1, 1, 1)
+  if CreateColor and t.SetGradient then
+    local ok = pcall(t.SetGradient, t, "VERTICAL", CreateColor(unpack(bottom)), CreateColor(unpack(top)))
+    if ok then
+      return
+    end
+  end
+  if t.SetGradientAlpha then
+    t:SetGradientAlpha("VERTICAL", bottom[1], bottom[2], bottom[3], bottom[4], top[1], top[2], top[3], top[4])
+    return
+  end
+  t:SetColorTexture(top[1], top[2], top[3], (bottom[4] + top[4]) / 2)
+end
 
 local DEFAULTS = {
   lineTexture = LINE_TEXTURE, -- false for solid lines
   lineSoftness = 2, -- soft lines are drawn this much thicker so the solid core keeps the requested width
+  glow = true, -- a wide faint copy under each line
+  glowWidth = 5,
+  glowAlpha = 0.16,
+  smooth = true, -- monotone curves through the points (per series: smooth = false)
+  smoothStep = 3, -- pixels between curve points
+  gradient = true, -- area/bars/candle bodies fade vertically
+  plotColor = { 0.0, 0.0, 0.0, 0.28 }, -- plot background (bottom; top is lighter)
+  markerTextColor = { 0.05, 0.06, 0.08, 1 },
   upColor = { 0.3, 0.85, 0.45, 1 },
   downColor = { 1, 0.38, 0.35, 1 },
   padding = { left = 8, right = 64, top = 8, bottom = 18 }, -- right side holds the y-axis labels
   paneGap = 6,
-  gridColor = { 1, 1, 1, 0.06 },
+  gridColor = { 1, 1, 1, 0.045 },
   axisTextColor = { 0.75, 0.75, 0.75, 1 },
-  crosshairColor = { 1, 1, 1, 0.35 },
+  crosshairColor = { 1, 1, 1, 0.3 },
   lineWidth = 2,
-  areaAlpha = 0.18,
+  areaAlpha = 0.3,
   pixelsPerPoint = 2,
   targetYTicks = 4,
   targetXTicks = 6,
@@ -265,19 +342,33 @@ local function pool(chart, kind)
   local r = p.items[p.used]
   if not r then
     if kind == "line" then
-      r = chart.canvas:CreateLine(nil, "ARTWORK")
-    elseif kind == "text" then
+      r = chart.canvas:CreateLine(nil, "ARTWORK", nil, 2)
+    elseif kind == "glow" then
+      r = chart.canvas:CreateLine(nil, "ARTWORK", nil, -2)
+    elseif kind == "text" or kind == "pilltext" then
       r = chart.canvas:CreateFontString(nil, "OVERLAY", chart.opts.font)
     elseif kind == "fill" then
       r = chart.canvas:CreateTexture(nil, "BORDER")
+    elseif kind == "pill" then
+      r = chart.canvas:CreateTexture(nil, "OVERLAY", nil, -1)
+    elseif kind == "plot" then
+      r = chart.canvas:CreateTexture(nil, "BACKGROUND", nil, -7)
     else
       r = chart.canvas:CreateTexture(nil, "BACKGROUND")
     end
     p.items[p.used] = r
-  elseif r.SetVertexOffset and kind == "fill" then
-    -- area fills bend their top corners into trapezoids; a reused texture must start rectangular again
-    for corner = 1, 4 do
-      r:SetVertexOffset(corner, 0, 0)
+  elseif kind == "fill" or kind == "pill" or kind == "plot" then
+    -- a reused texture must start rectangular (area fills bend their top corners) and without a gradient
+    if r.SetVertexOffset then
+      for corner = 1, 4 do
+        r:SetVertexOffset(corner, 0, 0)
+      end
+    end
+    if r.SetGradient and CreateColor then
+      pcall(r.SetGradient, r, "VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(1, 1, 1, 1))
+    end
+    if r.SetVertexColor then
+      r:SetVertexColor(1, 1, 1, 1)
     end
   end
   r:Show()
@@ -486,7 +577,14 @@ function Chart:Refresh()
   end
   self.view.extents = extents
 
-  -- grid + y labels
+  -- plot background (darker at the bottom) + grid + y labels
+  for _, pane in pairs(panes) do
+    local bg = pool(self, "plot")
+    local c = o.plotColor
+    gradient(bg, c, { c[1], c[2], c[3], c[4] * 0.35 })
+    bg:SetPoint("BOTTOMLEFT", self.canvas, "BOTTOMLEFT", pane.x, pane.y)
+    bg:SetSize(pane.w, pane.h)
+  end
   for axis, pane in pairs(panes) do
     local e = extents[axis]
     if e then
@@ -536,6 +634,13 @@ function Chart:Refresh()
       self:DrawSeries(s, pane, e, from, to, sx, maxPoints)
     end
   end
+  for _, id in ipairs(self.order) do
+    local s = self.series[id]
+    local pane, e = panes[s.axis], extents[s.axis]
+    if s.marker and pane and e then
+      self:DrawMarker(s, pane, e, from, to)
+    end
+  end
   self:UpdateHover()
 end
 
@@ -567,13 +672,24 @@ function Chart:DrawSeries(s, pane, e, from, to, sx, maxPoints)
   for k, i in ipairs(keep) do
     px[k], py[k] = min(max(sx(vx[i]), left), right), sy(vy[i])
   end
+  if o.smooth and s.smooth ~= false and s.kind ~= "bars" and #px > 2 then
+    px, py = M.MonotoneSmooth(px, py, o.smoothStep)
+    local bottom, top = pane.y, pane.y + pane.h
+    for k = 1, #py do
+      py[k] = min(max(py[k], bottom), top)
+    end
+  end
 
   local r, g, b, a = colorOf(s.color)
   if s.kind == "bars" then
     local bw = max(1, min(12, pane.w / max(1, #px) * 0.7))
     for k = 1, #px do
       local t = pool(self, "fill")
-      t:SetColorTexture(r, g, b, (a or 1) * 0.7)
+      if o.gradient then
+        gradient(t, { r, g, b, (a or 1) * 0.25 }, { r, g, b, (a or 1) * 0.75 })
+      else
+        t:SetColorTexture(r, g, b, (a or 1) * 0.7)
+      end
       t:SetPoint("BOTTOM", self.canvas, "BOTTOMLEFT", px[k], pane.y)
       t:SetSize(bw, max(1, py[k] - pane.y))
     end
@@ -585,8 +701,13 @@ function Chart:DrawSeries(s, pane, e, from, to, sx, maxPoints)
       local x1, x2, y1, y2 = px[k], px[k + 1], py[k], py[k + 1]
       if x2 > x1 then
         local t = pool(self, "fill")
-        t:SetColorTexture(r, g, b, o.areaAlpha)
         local top = max(y1, y2)
+        if o.gradient then
+          -- fade to transparent at the pane floor; the top alpha follows height so columns blend into one surface
+          gradient(t, { r, g, b, 0 }, { r, g, b, o.areaAlpha * min(1, (top - pane.y) / pane.h + 0.15) })
+        else
+          t:SetColorTexture(r, g, b, o.areaAlpha * 0.6)
+        end
         t:SetPoint("BOTTOMLEFT", self.canvas, "BOTTOMLEFT", x1, pane.y)
         t:SetSize(x2 - x1, max(1, top - pane.y))
         if t.SetVertexOffset then
@@ -599,6 +720,16 @@ function Chart:DrawSeries(s, pane, e, from, to, sx, maxPoints)
   end
 
   local width = s.width or o.lineWidth
+  if o.glow and o.lineTexture and s.glow ~= false then
+    for k = 1, #px - 1 do
+      local glow = pool(self, "glow")
+      glow:SetTexture(o.lineTexture)
+      glow:SetVertexColor(r, g, b, (a or 1) * o.glowAlpha)
+      glow:SetThickness(width * o.glowWidth)
+      glow:SetStartPoint("BOTTOMLEFT", self.canvas, px[k], py[k])
+      glow:SetEndPoint("BOTTOMLEFT", self.canvas, px[k + 1], py[k + 1])
+    end
+  end
   for k = 1, #px - 1 do
     local line = pool(self, "line")
     if o.lineTexture then
@@ -649,12 +780,48 @@ function Chart:DrawCandles(s, pane, from, to, sx, sy)
       wick:SetPoint("BOTTOM", self.canvas, "BOTTOMLEFT", floor(x) + 0.5, yl)
       wick:SetSize(1, max(1, yh - yl))
       local body = pool(self, "fill")
-      body:SetColorTexture(r, g, b, a or 1)
+      if o.gradient then
+        gradient(body, { r * 0.75, g * 0.75, b * 0.75, a or 1 }, { r, g, b, a or 1 })
+      else
+        body:SetColorTexture(r, g, b, a or 1)
+      end
       local y1, y2 = sy(min(op, cl)), sy(max(op, cl))
       body:SetPoint("BOTTOM", self.canvas, "BOTTOMLEFT", floor(x) + 0.5, y1)
       body:SetSize(bw, max(1, y2 - y1))
     end
   end
+end
+
+-- Last-value marker: a faint level line across the pane and a value tag in the series colour on the y-axis.
+function Chart:DrawMarker(s, pane, e, from, to)
+  local xs, ys = s.xs, s.ys
+  local v
+  for i = #xs, 1, -1 do
+    if xs[i] <= to and xs[i] >= from then
+      v = ys[i]
+      break
+    end
+  end
+  if not v then
+    return
+  end
+  local y = pane.y + (v - e[1]) / (e[2] - e[1]) * pane.h
+  if y < pane.y or y > pane.y + pane.h then
+    return
+  end
+  local r, g, b = colorOf(s.color)
+  local level = pool(self, "fill")
+  level:SetColorTexture(r, g, b, 0.35)
+  level:SetPoint("LEFT", self.canvas, "BOTTOMLEFT", pane.x, y)
+  level:SetSize(pane.w, 1)
+  local text = pool(self, "pilltext")
+  text:SetText((self.formatters[s.axis] or tostring)(v))
+  text:SetTextColor(colorOf(self.opts.markerTextColor))
+  text:SetPoint("LEFT", self.canvas, "BOTTOMLEFT", pane.x + pane.w + 6, y)
+  local pill = pool(self, "pill")
+  pill:SetColorTexture(r, g, b, 0.95)
+  pill:SetPoint("LEFT", self.canvas, "BOTTOMLEFT", pane.x + pane.w + 2, y)
+  pill:SetSize((text:GetStringWidth() or 30) + 8, 14)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -680,9 +847,17 @@ function Chart:SetupInteraction()
   f:EnableMouseWheel(true)
   f:RegisterForClicks("LeftButtonUp")
 
-  self.cross = self.canvas:CreateTexture(nil, "OVERLAY")
-  self.cross:SetColorTexture(colorOf(self.opts.crosshairColor))
+  self.cross = self.canvas:CreateTexture(nil, "OVERLAY", nil, -2)
+  local cc = self.opts.crosshairColor
+  gradient(self.cross, { cc[1], cc[2], cc[3], cc[4] * 0.2 }, cc)
   self.cross:Hide()
+  -- date tag under the crosshair
+  self.xtag = self.canvas:CreateTexture(nil, "OVERLAY", nil, 1)
+  self.xtag:SetColorTexture(0.16, 0.18, 0.22, 0.95)
+  self.xtag:Hide()
+  self.xtagText = self.canvas:CreateFontString(nil, "OVERLAY", self.opts.font)
+  self.xtagText:SetDrawLayer("OVERLAY", 2)
+  self.xtagText:Hide()
   self.dots = {}
   self.label = CreateFrame("Frame", nil, f, BackdropTemplateMixin and "BackdropTemplate" or nil)
   if self.label.SetBackdrop then
@@ -691,8 +866,8 @@ function Chart:SetupInteraction()
       edgeFile = "Interface\\Buttons\\WHITE8x8",
       edgeSize = 1,
     })
-    self.label:SetBackdropColor(0.05, 0.05, 0.07, 0.92)
-    self.label:SetBackdropBorderColor(1, 1, 1, 0.15)
+    self.label:SetBackdropColor(0.06, 0.07, 0.09, 0.94)
+    self.label:SetBackdropBorderColor(1, 1, 1, 0.12)
   end
   self.label:SetFrameLevel(f:GetFrameLevel() + 5)
   self.label.text = self.label:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -768,8 +943,12 @@ function Chart:UpdateHover()
   if not (self.hovering and v) then
     self.cross:Hide()
     self.label:Hide()
+    self.xtag:Hide()
+    self.xtagText:Hide()
     for _, d in pairs(self.dots) do
-      d:Hide()
+      d.glow:Hide()
+      d.ring:Hide()
+      d.dot:Hide()
     end
     return
   end
@@ -798,24 +977,51 @@ function Chart:UpdateHover()
   self.cross:SetPoint("BOTTOMLEFT", self.canvas, "BOTTOMLEFT", cx, bottom)
   self.cross:SetSize(1, top - bottom)
   self.cross:Show()
+  local tfmt = self.timeFormatter or function(t)
+    return date("%b %d", t)
+  end
+  self.xtagText:SetText(tfmt(snapX, "day"))
+  self.xtagText:ClearAllPoints()
+  self.xtagText:SetPoint("TOP", self.canvas, "BOTTOMLEFT", cx, bottom - 3)
+  self.xtagText:Show()
+  self.xtag:ClearAllPoints()
+  self.xtag:SetPoint("TOP", self.canvas, "BOTTOMLEFT", cx, bottom - 1)
+  self.xtag:SetSize((self.xtagText:GetStringWidth() or 30) + 10, 15)
+  self.xtag:Show()
 
   for id, row in pairs(rows) do
     local s = self.series[id]
     local pane, e = v.panes[s.axis], v.extents[s.axis]
-    local dot = self.dots[id]
-    if not dot then
-      dot = self.canvas:CreateTexture(nil, "OVERLAY")
-      dot:SetTexture("Interface\\COMMON\\Indicator-Gray")
-      self.dots[id] = dot
+    local d = self.dots[id]
+    if not d then
+      d = {
+        glow = self.canvas:CreateTexture(nil, "OVERLAY", nil, 3),
+        ring = self.canvas:CreateTexture(nil, "OVERLAY", nil, 4),
+        dot = self.canvas:CreateTexture(nil, "OVERLAY", nil, 5),
+      }
+      local media = MEDIA
+      d.glow:SetTexture(media and media .. "Glow" or "Interface\\COMMON\\Indicator-Gray")
+      d.ring:SetTexture(media and media .. "Dot" or "Interface\\COMMON\\Indicator-Gray")
+      d.dot:SetTexture(media and media .. "Dot" or "Interface\\COMMON\\Indicator-Gray")
+      self.dots[id] = d
     end
-    if pane and e and s.kind ~= "bars" and row.x == snapX then
-      dot:SetVertexColor(colorOf(s.color))
-      dot:ClearAllPoints()
-      dot:SetPoint("CENTER", self.canvas, "BOTTOMLEFT", cx, pane.y + (row.y - e[1]) / (e[2] - e[1]) * pane.h)
-      dot:SetSize(10, 10)
-      dot:Show()
+    if pane and e and s.kind ~= "bars" and s.kind ~= "candles" and row.x == snapX then
+      local y = pane.y + (row.y - e[1]) / (e[2] - e[1]) * pane.h
+      local r, g, b = colorOf(s.color)
+      for part, size in pairs({ glow = 28, ring = 11, dot = 7 }) do
+        local t = d[part]
+        t:ClearAllPoints()
+        t:SetPoint("CENTER", self.canvas, "BOTTOMLEFT", cx, y)
+        t:SetSize(size, size)
+        t:Show()
+      end
+      d.glow:SetVertexColor(r, g, b, 0.45)
+      d.ring:SetVertexColor(0.06, 0.07, 0.09, 1)
+      d.dot:SetVertexColor(r, g, b, 1)
     else
-      dot:Hide()
+      d.glow:Hide()
+      d.ring:Hide()
+      d.dot:Hide()
     end
   end
 
