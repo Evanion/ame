@@ -13,6 +13,7 @@ Settings.DEFAULTS = {
   announceScans = true,
   alertSound = true,
   syncGuild = true,
+  syncTrusted = true,
   minimap = { hide = false },
 }
 

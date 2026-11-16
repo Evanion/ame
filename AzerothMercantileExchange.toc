@@ -23,6 +23,7 @@ Core\MarketIndex.lua
 Core\MarketFilter.lua
 Core\Watch.lua
 Core\Sync.lua
+Core\Trust.lua
 Core\SyncService.lua
 Core\Main.lua
 Core\SelfTest.lua

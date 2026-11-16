@@ -3,6 +3,8 @@
 --   announce  "1|A|<shard>|<t36>:<src>;<t36>:<src>;..."   newest full scans this peer holds (GUILD broadcast)
 --   request   "1|R|<shard>|<t36>|<src>"                     whisper to the announcer
 --   scan      "1|S|<shard>|<t36>|<src>|<kind>|<packed>"     whisper reply; packed = the raw entry's compressed string
+--   hello     "1|H|<shard>"                                   whisper: "I'd like to share prices with you" (trust)
+--   accept    "1|K|<shard>"                                   whisper: "I trust you too"
 --
 -- Transport (chunking + pacing at BULK priority) is AceComm/ChatThrottleLib in the WoW glue. Received scans are
 -- merged with Store:AddScan, whose dedupe makes repeats harmless; announcements repeat, so dropped whispers retry
@@ -72,6 +74,14 @@ function Sync.EncodeScan(shard, entry)
   )
 end
 
+function Sync.EncodeHello(shard)
+  return table.concat({ Sync.PROTO, "H", shard }, "|")
+end
+
+function Sync.EncodeAccept(shard)
+  return table.concat({ Sync.PROTO, "K", shard }, "|")
+end
+
 -- shard keys contain "|" (realm|house), so fields are counted from the known layout
 function Sync.Decode(msg)
   if type(msg) ~= "string" or msg:sub(1, 2) ~= Sync.PROTO .. "|" then
@@ -92,6 +102,10 @@ function Sync.Decode(msg)
         end
       end
       return { type = "announce", shard = shard, scans = scans }
+    elseif kind == "H" and #f == 4 then
+      return { type = "hello", shard = shard }
+    elseif kind == "K" and #f == 4 then
+      return { type = "accept", shard = shard }
     elseif kind == "R" and #f == 6 then
       return { type = "request", shard = shard, t = Codec.FromBase36(f[5]), src = f[6] }
     elseif kind == "S" and #f >= 8 then

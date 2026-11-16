@@ -490,10 +490,63 @@ describe("addon in a stubbed client", function()
       for id = 1, 10 do
         prices[id] = 1000000 -- 1000x our market
       end
-      deliver(ns.Sync.EncodeScan("TestRealm|Horde", peerScan(prices)), "WHISPER", "Guild Mate")
+      local entry = peerScan(prices)
+      deliver(ns.Sync.EncodeAnnounce("TestRealm|Horde", { { t = entry.t, src = entry.src } }), "GUILD", "Guild Mate")
+      deliver(ns.Sync.EncodeScan("TestRealm|Horde", entry), "WHISPER", "Guild Mate")
       drainJobs()
       assert.are.equal(1, AME_DB.stats.syncRejected)
       assert.are.equal(1, #AME_HistoryDB.shards["TestRealm|Horde"].raw)
+    end)
+
+    it("ignores scans nobody asked for from players it doesn't trust", function()
+      bootSync()
+      deliver(ns.Sync.EncodeScan("TestRealm|Horde", peerScan({ [2589] = 1000 })), "WHISPER", "Random Stranger")
+      drainJobs()
+      assert.is_nil(AME_HistoryDB.shards["TestRealm|Horde"])
+    end)
+
+    it("pairs trusted players with a hello / approve handshake and syncs over whispers", function()
+      bootSync()
+      local svc = ns.SyncService
+      -- a stranger asks to share: becomes a pending request with a chat notice
+      deliver(ns.Sync.EncodeHello("TestRealm|Horde"), "WHISPER", "Ada Lovelace")
+      assert.are.equal(1, #svc.trust:PendingList())
+      assert.is_true(env:chatContains("wants to share auction prices"))
+      -- approving replies with an accept and trusts them both ways
+      svc:Approve("Ada Lovelace")
+      local last = sent[#sent]
+      assert.are.equal("accept", ns.Sync.Decode(last.msg).type)
+      assert.are.equal("Ada Lovelace", last.target)
+      assert.is_true(svc.trust.db.trusted["ada lovelace"].mutual)
+      -- their whispered announcements are now accepted and answered with requests
+      local entry = peerScan({ [2589] = 1000 })
+      deliver(
+        ns.Sync.EncodeAnnounce("TestRealm|Horde", { { t = entry.t, src = entry.src } }),
+        "WHISPER",
+        "Ada Lovelace"
+      )
+      assert.are.equal("request", ns.Sync.Decode(sent[#sent].msg).type)
+      deliver(ns.Sync.EncodeScan("TestRealm|Horde", entry), "WHISPER", "Ada Lovelace")
+      drainJobs()
+      assert.are.equal(1, AME_DB.stats.syncReceived)
+      assert.are.equal(1, svc.trust.db.peers["ada lovelace"].received)
+      -- adding someone sends them a hello; their accept makes it mutual
+      svc:AddTrusted("Bob Builder")
+      assert.are.equal("hello", ns.Sync.Decode(sent[#sent].msg).type)
+      assert.is_false(svc.trust.db.trusted["bob builder"].mutual)
+      deliver(ns.Sync.EncodeAccept("TestRealm|Horde"), "WHISPER", "Bob Builder")
+      assert.is_true(svc.trust.db.trusted["bob builder"].mutual)
+      -- announcements go to trusted players heard from recently (Ada, Bob), on top of the guild
+      local before = #sent
+      svc:Announce()
+      local whispered = {}
+      for i = before + 1, #sent do
+        if sent[i].distribution == "WHISPER" then
+          whispered[#whispered + 1] = sent[i].target
+        end
+      end
+      table.sort(whispered)
+      assert.are.same({ "Ada Lovelace", "Bob Builder" }, whispered)
     end)
 
     it("ignores other realms, its own messages and garbage", function()
