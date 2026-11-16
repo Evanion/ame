@@ -235,7 +235,7 @@ function W.Dropdown(parent, width, options, onSelect)
   b.label:SetPoint("RIGHT", -18, 0)
   b.label:SetJustifyH("LEFT")
   b.arrow = b:CreateTexture(nil, "OVERLAY")
-  b.arrow:SetTexture("InterfaceButtonsArrow-Down-Up")
+  b.arrow:SetTexture("Interface\\Buttons\\Arrow-Down-Up")
   b.arrow:SetSize(12, 12)
   b.arrow:SetPoint("RIGHT", -4, -2)
 
@@ -248,32 +248,47 @@ function W.Dropdown(parent, width, options, onSelect)
   W.Skin(menu, W.COLORS.bg)
   menu:SetFrameStrata("DIALOG")
   menu:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -2)
-  menu:SetSize(width, #options * ROW + 6)
   menu:Hide()
   menu.items = {}
-  for i, o in ipairs(options) do
-    local it = CreateFrame("Button", nil, menu)
-    it:SetSize(width - 6, ROW)
-    it:SetPoint("TOPLEFT", 3, -3 - (i - 1) * ROW)
-    it.hl = it:CreateTexture(nil, "HIGHLIGHT")
-    it.hl:SetAllPoints()
-    it.hl:SetColorTexture(1, 1, 1, 0.08)
-    it.sel = it:CreateTexture(nil, "BACKGROUND")
-    it.sel:SetAllPoints()
-    it.text = W.Text(it, "GameFontHighlightSmall")
-    it.text:SetPoint("LEFT", 6, 0)
-    it.text:SetText(text(o))
-    it:SetScript("OnClick", function()
-      b:SetIndex(i)
-      menu:Hide()
-      onSelect(o[1], o)
-    end)
-    menu.items[i] = it
+
+  -- (re)build the option rows; options can change later via b:SetOptions
+  local function build()
+    for i, o in ipairs(options) do
+      local it = menu.items[i]
+      if not it then
+        it = CreateFrame("Button", nil, menu)
+        it:SetSize(width - 6, ROW)
+        it:SetPoint("TOPLEFT", 3, -3 - (i - 1) * ROW)
+        it.hl = it:CreateTexture(nil, "HIGHLIGHT")
+        it.hl:SetAllPoints()
+        it.hl:SetColorTexture(1, 1, 1, 0.08)
+        it.sel = it:CreateTexture(nil, "BACKGROUND")
+        it.sel:SetAllPoints()
+        it.text = W.Text(it, "GameFontHighlightSmall")
+        it.text:SetPoint("LEFT", 6, 0)
+        menu.items[i] = it
+      end
+      it.text:SetText(text(o))
+      it:SetScript("OnClick", function()
+        b:SetIndex(i)
+        menu:Hide()
+        onSelect(o[1], o)
+      end)
+      it:Show()
+    end
+    for i = #options + 1, #menu.items do
+      menu.items[i]:Hide()
+    end
+    menu:SetSize(width, #options * ROW + 6)
   end
+  build()
   -- close when clicking anywhere else
   menu:SetScript("OnShow", function(self)
     local a = W.COLORS.accent
     for i, it in ipairs(self.items) do
+      if i > #options then
+        break
+      end
       it.sel:SetColorTexture(a[1], a[2], a[3], i == b.index and 0.2 or 0)
     end
     pcall(self.RegisterEvent, self, "GLOBAL_MOUSE_DOWN")
@@ -290,9 +305,25 @@ function W.Dropdown(parent, width, options, onSelect)
     menu:SetShown(not menu:IsShown())
   end)
 
+  function b:SetOptions(newOptions)
+    options = newOptions
+    self.values = newOptions
+    build()
+  end
+
+  -- select the option whose value is `value` (first option if none)
+  function b:SetValue(value)
+    for i, o in ipairs(options) do
+      if o[1] == value then
+        return self:SetIndex(i)
+      end
+    end
+    self:SetIndex(1)
+  end
+
   function b:SetIndex(i)
     self.index = i
-    self.label:SetText(text(options[i]))
+    self.label:SetText(options[i] and text(options[i]) or "")
     self:SetSelected(not self.neutral and i ~= (self.defaultIndex or 1))
   end
   b.menu = menu
@@ -368,7 +399,7 @@ function W.Input(parent)
   return box
 end
 
-W.STAR = "InterfaceCommonFavoritesIcon"
+W.STAR = "Interface\\Common\\FavoritesIcon"
 
 -- Shared popup menu: W.Menu(anchor, entries); entry = { text, checked = bool?, func = fn, disabled = bool? }.
 -- One menu frame for the whole addon; closes on a pick or a click elsewhere.
@@ -408,7 +439,7 @@ function W.Menu(anchor, entries)
       it.hl:SetAllPoints()
       it.hl:SetColorTexture(1, 1, 1, 0.08)
       it.check = it:CreateTexture(nil, "ARTWORK")
-      it.check:SetTexture("InterfaceButtonsUI-CheckBox-Check")
+      it.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
       it.check:SetSize(14, 14)
       it.check:SetPoint("LEFT", 2, 0)
       it.text = W.Text(it, "GameFontHighlightSmall")
@@ -447,7 +478,7 @@ function W.Check(parent, label, onToggle)
   b.box:SetAllPoints()
   W.Skin(b.box, W.COLORS.panel)
   b.mark = b:CreateTexture(nil, "OVERLAY")
-  b.mark:SetTexture("InterfaceButtonsUI-CheckBox-Check")
+  b.mark:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
   b.mark:SetPoint("CENTER")
   b.mark:SetSize(16, 16)
   b.label = W.Text(b, "GameFontHighlightSmall")

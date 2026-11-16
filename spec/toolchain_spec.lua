@@ -8,4 +8,22 @@ describe("toolchain", function()
     assert.are.equal("number", type(1))
     assert.are.equal(0.5, 1 / 2)
   end)
+
+  it("keeps the backslashes in texture paths (a lost one silently breaks the texture)", function()
+    local bad = {}
+    for line in io.lines("AzerothMercantileExchange.toc") do
+      line = line:gsub("\r", "")
+      if line:match("%.lua$") then
+        local path = line:gsub("\\", "/")
+        local n = 0
+        for code in io.lines(path) do
+          n = n + 1
+          if code:find('"Interface[%a]') then
+            bad[#bad + 1] = path .. ":" .. n
+          end
+        end
+      end
+    end
+    assert.are.same({}, bad)
+  end)
 end)

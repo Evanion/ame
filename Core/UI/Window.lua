@@ -88,6 +88,7 @@ function UI:Create()
     UI:ViewChanged()
     UI:ApplyTheme()
   end)
+  self:RefreshViewOptions()
   self:ApplyTheme()
   return f
 end
@@ -110,7 +111,7 @@ function UI:ViewIndex()
   if AME.indexes[shard] then
     return AME.indexes[shard]
   end
-  if AME:HistoryLoaded() and not AME.history.shards[shard] then
+  if AME:HistoryLoaded() and not AME:HasData(shard) then
     return nil, "empty"
   end
   if AME:HistoryLoaded() and self.viewLoading ~= shard then
@@ -123,17 +124,43 @@ function UI:ViewIndex()
   return nil, "loading"
 end
 
+-- The title-bar selector lists only auction houses with history (plus the one you're at); with just one it's
+-- plain text.
+function UI:RefreshViewOptions()
+  if not self.frame then
+    return
+  end
+  local AME = ns.AME
+  local realm, current = AME:MarketRealmName(), AME:CurrentHouse()
+  local options = {}
+  for _, house in ipairs({ "Horde", "Alliance", "Neutral" }) do
+    local hasData = AME:HasData(ns.ShardKey(realm, house))
+    if house == current or hasData then
+      options[#options + 1] = { house, ns.HOUSE_LABEL[house] }
+    end
+  end
+  if self.viewHouse then
+    local listed = false
+    for _, o in ipairs(options) do
+      listed = listed or o[1] == self.viewHouse
+    end
+    if not listed then
+      self.viewHouse = nil
+    end
+  end
+  self.viewSelect:SetOptions(options)
+  self.viewSelect:SetValue(self:ViewHouse())
+  local several = #options > 1
+  self.viewSelect:SetShown(several)
+  self.shardText:SetText(several and realm or ns.ShardLabel(self:ViewShard()))
+end
+
 function UI:ViewChanged()
   if not self.frame then
     return
   end
-  self.shardText:SetText(ns.AME:MarketRealmName())
-  local house = self:ViewHouse()
-  for i, o in ipairs(self.viewSelect.values) do
-    if o[1] == house then
-      self.viewSelect:SetIndex(i)
-    end
-  end
+  self:RefreshViewOptions()
+  self:ApplyTheme()
   self.list = nil
   self:RefreshMarket(true)
   if self.current == "item" and self.itemID then
@@ -141,12 +168,13 @@ function UI:ViewChanged()
   end
 end
 
--- Faction colours for the chrome, from the auction house in use (or the character's faction before the first visit).
+-- Faction colours for the chrome, from the auction house being viewed (by default the one in use, or the character's
+-- faction before the first visit).
 function UI:ApplyTheme()
   if not self.frame then
     return
   end
-  W.SetTheme(ns.AME:CurrentHouse())
+  W.SetTheme(self:ViewHouse())
   local a = W.COLORS.accent
   self.title:SetText(("|c%sAzeroth|r Mercantile Exchange"):format(W.Hex(a)))
   for n, b in pairs(self.tabs) do

@@ -36,6 +36,12 @@ end)
 ---------------------------------------------------------------------------------------------------------------------
 -- history (load on demand)
 
+-- does a shard hold any scans or history? (an empty table can exist from an index build)
+function AME:HasData(shard)
+  local d = self.history and self.history.shards[shard]
+  return d ~= nil and (next(d.raw or {}) ~= nil or next(d.days or {}) ~= nil or next(d.weeks or {}) ~= nil)
+end
+
 function AME:HistoryLoaded()
   return self.history ~= nil
 end
@@ -300,6 +306,9 @@ function AME:OnSnapshot(snap, t, kind, info)
       return
     end
     self:InvalidateIndex(shard)
+    if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
+      ns.UI:RefreshViewOptions()
+    end
     if kind == "full" then
       local ms = started and math.floor(debugprofilestop() - started) or nil
       AME_DB.stats.lastFull = {
@@ -481,7 +490,7 @@ function handlers.PLAYER_LOGIN()
       local realm, current = AME:MarketRealmName(), AME:CurrentHouse()
       for _, house in ipairs({ "Alliance", "Horde", "Neutral" }) do
         local shard = ns.ShardKey(realm, house)
-        if house ~= current and AME.history.shards[shard] then
+        if house ~= current and AME:HasData(shard) then
           AME:IndexFor(shard, function() end)
         end
       end

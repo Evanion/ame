@@ -284,6 +284,9 @@ function Service:Merge(m, sender)
         AME.Say("received a full scan from %s via sync (%d items, %s)", m.src, #snap.ids, ns.ShardLabel(m.shard))
       end
       AME:InvalidateIndex(m.shard)
+      if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
+        ns.UI:RefreshViewOptions()
+      end
       if m.shard == AME:CurrentShard() then
         AME:RebuildIndex()
       end

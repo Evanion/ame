@@ -433,22 +433,33 @@ describe("addon in a stubbed client", function()
       ns.UI:ShowTab("market")
       assert.are.equal("Neutral", ns.UI:ViewHouse()) -- standing at the goblin AH
       assert.are.equal(2, #ns.UI.list)
+      -- only houses with data are offered (no Alliance scans here); the theme follows the viewed house
+      local offered = {}
+      for _, o in ipairs(ns.UI.viewSelect.values) do
+        offered[#offered + 1] = o[1]
+      end
+      assert.are.same({ "Horde", "Neutral" }, offered)
+      assert.are.equal("Neutral", ns.Widgets.theme)
       -- pick the Horde AH in the title bar
       local horde = ns.UI.viewSelect.menu.items[1]
       horde.scripts.OnClick(horde)
       drainJobs()
       assert.are.equal("Horde", ns.UI:ViewHouse())
+      assert.are.equal("Horde", ns.Widgets.theme)
       assert.are.equal(1, #ns.UI.list)
       assert.are.equal(1000 / 10, ns.UI.list[1].market)
       -- the item page follows the viewed house
       ns.UI:ShowItem(2589)
       drainJobs()
       assert.truthy(ns.UI.itemView.sub.text:find("Horde AH", 1, true))
-      -- an auction house without data says so
+      -- the auction house you're at is always offered, even before its first scan
+      env:fire("AUCTION_HOUSE_CLOSED")
+      env.npcFaction = "Alliance"
+      env:fire("AUCTION_HOUSE_SHOW")
       ns.UI:ShowTab("market")
-      local alliance = ns.UI.viewSelect.menu.items[2]
-      alliance.scripts.OnClick(alliance)
+      assert.are.equal("Alliance", ns.UI:ViewHouse())
       assert.truthy(ns.UI.marketView.status.text:find("No price history for the Alliance AH"))
+      assert.are.equal(3, #ns.UI.viewSelect.values)
       -- no raw shard keys ("|N" is an escape code in WoW text) anywhere in chat
       for _, line in ipairs(env.chat) do
         assert.is_nil(line:find("|Neutral", 1, true), line)
