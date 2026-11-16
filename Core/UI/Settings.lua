@@ -14,6 +14,8 @@ Settings.DEFAULTS = {
   alertSound = true,
   cutFaction = 5, -- seller's cut in % at faction auction houses
   cutNeutral = 15, -- and at goblin (neutral) auction houses
+  listingHours = 24, -- listing length used for deposit estimates (2 / 8 / 24)
+  minDeposit = 100, -- copper; Forever lowers it to 1 copper with the Nov 17, 2026 maintenance
   outlierFactor = 4, -- ignore days priced more than this many times off their neighbours (false = off)
   syncGuild = true,
   syncTrusted = true,

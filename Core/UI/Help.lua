@@ -55,9 +55,9 @@ Help.TERMS = {
   },
   arbFee = {
     "AH cut",
-    "The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones by "
-      .. "default (change it in Settings if Forever differs). Deposits aren't included - you get them back when "
-      .. "the item sells.",
+    "The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones "
+      .. "(WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the "
+      .. "item sells.",
   },
   arbProfit = { "Profit", "Per item: what it sells for, minus the AH cut, minus what you paid." },
   arbMargin = { "Margin", "Profit as a share of what you paid. 50% means every 10g spent comes back as 15g." },
@@ -65,6 +65,12 @@ Help.TERMS = {
     "Supply",
     "Listed at the buy house / at the sell house. Plenty to buy and little to compete with where you sell is ideal; "
       .. "a big gap on one listing at the buy house may be gone fast.",
+  },
+  arbDeposit = {
+    "Deposit",
+    "What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% "
+      .. "for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and "
+      .. "lose it if it doesn't - so a high deposit on a slow seller is real risk.",
   },
   arbAge = {
     "Data",

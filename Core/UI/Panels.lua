@@ -467,6 +467,19 @@ function UI:CreateSettingsView(parent, contentArea)
   end
   v.cutFaction = cutInput("cutFaction", "Faction auction houses", -284)
   v.cutNeutral = cutInput("cutNeutral", "Goblin auction houses", -310)
+  local hoursLabel = W.Text(v, "GameFontHighlightSmall")
+  hoursLabel:SetPoint("TOPLEFT", COL2 + 250, -284)
+  hoursLabel:SetText("Deposits for")
+  local hours = { { 2, "2 h listings" }, { 8, "8 h listings" }, { 24, "24 h listings" } }
+  v.hours = W.Dropdown(v, 110, hours, function(value)
+    ns.Settings:Set("listingHours", value)
+    if UI.RenderArbitrage then
+      UI:RenderArbitrage()
+    end
+  end)
+  v.hours.neutral = true
+  v.hours.values = hours
+  v.hours:SetPoint("TOPLEFT", COL2 + 330, -280)
 
   local more = W.Text(v, "GameFontDisableSmall")
   more:SetPoint("TOPLEFT", COL2, -340)
@@ -501,6 +514,7 @@ function UI:RefreshSettings()
   v.outliers:SetIndex(indexOf(v.outliers.values, ns.Settings:Get("outlierFactor")))
   v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
   v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))
+  v.hours:SetIndex(indexOf(v.hours.values, ns.Settings:Get("listingHours")))
   local hasIcon = ns.Settings:HasMinimapLibrary()
   v.minimap:SetChecked(hasIcon and not AME_DB.settings.minimap.hide)
   v.minimap.label:SetText(

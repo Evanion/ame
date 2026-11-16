@@ -20,6 +20,7 @@ local COLUMNS = {
   { key = "profit", label = "Profit", width = 86, money = true, term = "arbProfit" },
   { key = "margin", label = "Margin", width = 60, pct = true, term = "arbMargin" },
   { key = "supply", label = "Supply", width = 70, term = "arbSupply" },
+  { key = "deposit", label = "Deposit", width = 76, money = true, term = "arbDeposit" },
   { key = "age", label = "Data", width = 56, term = "arbAge" },
 }
 local ROWS, ROW_H = 16, 22
@@ -274,6 +275,11 @@ function UI:RenderArbitrage()
         local val
         if col.key == "name" then
           val = (color and color.hex or "|cffffffff") .. (name or ("item:" .. e.itemID)) .. "|r"
+        elseif col.key == "deposit" then
+          local info = ns.ItemCache.Get(e.itemID)
+          local dep =
+            ns.Arbitrage.Deposit(info.sellPrice, a.sell, ns.Settings:Get("listingHours"), ns.Settings:Get("minDeposit"))
+          val = dep and W.Money(dep, true) or "-"
         elseif col.key == "profit" then
           val = "|cff4dd973+|r" .. W.Money(e.profit, true)
         elseif col.money then
@@ -297,11 +303,12 @@ function UI:RenderArbitrage()
       self.arbMissing
     )
   else
-    status = ("%d routes  -  buy at %s, sell at %s (%d%% cut, set in Settings)  -  deposits not included"):format(
+    status = ("%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"):format(
       total,
       HOUSE_NAME[a.buy],
       HOUSE_NAME[a.sell],
-      math.floor((self.arbCut or 0) * 100 + 0.5)
+      math.floor((self.arbCut or 0) * 100 + 0.5),
+      ns.Settings:Get("listingHours")
     )
   end
   if a.buy == a.sell then

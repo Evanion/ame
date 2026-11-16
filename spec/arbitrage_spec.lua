@@ -62,4 +62,13 @@ describe("Arbitrage", function()
     assert.are.equal(0, #A.Find(nil, goblin, {}))
     assert.are.equal(0, #A.Find(horde, nil, {}))
   end)
+
+  it("computes listing deposits from vendor price, duration and house", function()
+    assert.are.equal(600, A.Deposit(1000, "Horde", 24)) -- 60%
+    assert.are.equal(3000, A.Deposit(1000, "Neutral", 24)) -- 5x at the goblin AH
+    assert.are.equal(250, A.Deposit(1000, "Neutral", 2))
+    assert.are.equal(100, A.Deposit(10, "Horde", 2)) -- 1 silver minimum
+    assert.are.equal(1, A.Deposit(10, "Horde", 2, 1)) -- 1 copper minimum after Nov 17
+    assert.is_nil(A.Deposit(nil, "Horde", 24))
+  end)
 end)

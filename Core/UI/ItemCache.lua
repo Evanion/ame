@@ -25,8 +25,9 @@ function C.Get(itemID)
     local getInfo = api("GetItemInfo")
     local name, quality
     if getInfo then
-      local n, _, q = getInfo(itemID)
+      local n, _, q, _, _, _, _, _, _, _, sell = getInfo(itemID)
       name, quality = n, q
+      e.sellPrice = sell
     end
     if name then
       e.name, e.quality = name, quality

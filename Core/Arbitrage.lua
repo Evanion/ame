@@ -62,3 +62,20 @@ function Arbitrage.Find(buy, sell, opts)
   end)
   return rows
 end
+
+-- Listing deposit: a share of the item's vendor sell price by listing length, refunded when the item sells and lost
+-- when it doesn't (sources: Classic rules, confirmed for WoW Forever by community guides, Nov 2026). Goblin
+-- (neutral) auction houses charge 5x the faction rate. Minimum 1 silver per listing (1 copper after the
+-- Nov 17, 2026 maintenance).
+Arbitrage.DEPOSIT_RATE = { [2] = 0.05, [8] = 0.20, [24] = 0.60 }
+Arbitrage.NEUTRAL_DEPOSIT_FACTOR = 5
+Arbitrage.MIN_DEPOSIT = 100
+
+function Arbitrage.Deposit(vendorPrice, house, hours, minDeposit)
+  if not vendorPrice then
+    return nil
+  end
+  local rate = (Arbitrage.DEPOSIT_RATE[hours or 24] or Arbitrage.DEPOSIT_RATE[24])
+    * (house == "Neutral" and Arbitrage.NEUTRAL_DEPOSIT_FACTOR or 1)
+  return math.max(minDeposit or Arbitrage.MIN_DEPOSIT, math.floor(vendorPrice * rate + 0.5))
+end
