@@ -184,14 +184,56 @@ describe("Ingest", function()
       assert.are.equal(7, snap.qty[1])
     end)
 
-    it("ignores searches and filtered browsing", function()
-      api.browse, api.browseFull = { { 10, 500, 5 } }, true
-      ingest:OnBrowseQuery({ searchString = "linen", filters = {}, itemClassFilters = {} })
-      ingest:OnBrowseResults()
+    it("records category browsing and text searches as partial scans once results settle", function()
+      api.browse, api.browseFull = { { 10, 500, 5 }, { 20, 900, 1 } }, true
       ingest:OnBrowseQuery({ searchString = "", filters = {}, itemClassFilters = { { classID = 7 } } })
       ingest:OnBrowseResults()
       drain()
-      assert.are.equal(0, #got)
+      assert.are.equal(0, #got) -- still arriving
+      fireTimers()
+      drain()
+      assert.are.equal(1, #got)
+      assert.are.equal("partial", got[1].kind)
+      assert.are.same({ 10, 20 }, got[1].snap.ids)
+      ingest:OnBrowseQuery({ searchString = "linen", filters = {}, itemClassFilters = {} })
+      api.browse = { { 30, 70, 9 } }
+      ingest:OnBrowseResults()
+      fireTimers()
+      drain()
+      assert.are.equal("partial", got[2].kind)
+      assert.are.same({ 30 }, got[2].snap.ids)
+    end)
+
+    it("records only the newly shown rows when the list is scrolled further", function()
+      api.browse, api.browseFull = { { 10, 500, 5 }, { 20, 900, 1 } }, false
+      ingest:OnBrowseQuery({ searchString = "", filters = {}, itemClassFilters = { { classID = 7 } } })
+      ingest:OnBrowseResults()
+      fireTimers()
+      drain()
+      api.browse[3], api.browse[4] = { 30, 100, 2 }, { 40, 200, 3 }
+      ingest:OnBrowseResults()
+      fireTimers()
+      drain()
+      assert.are.equal(2, #got)
+      assert.are.same({ 30, 40 }, got[2].snap.ids)
+      ingest:OnBrowseResults() -- an update with nothing new records nothing
+      fireTimers()
+      drain()
+      assert.are.equal(2, #got)
+    end)
+
+    it("an unfiltered scan scrolled only part way is a partial; reaching the end is the full scan", function()
+      api.browse, api.browseFull = { { 10, 500, 5 } }, false
+      ingest:OnBrowseQuery({ searchString = "", sorts = {}, filters = {}, itemClassFilters = {} })
+      ingest:OnBrowseResults()
+      fireTimers()
+      drain()
+      assert.are.equal("partial", got[1].kind)
+      api.browse[2], api.browseFull = { 20, 900, 1 }, true
+      ingest:OnBrowseResults()
+      drain()
+      assert.are.equal("full", got[2].kind)
+      assert.are.same({ 10, 20 }, got[2].snap.ids)
     end)
 
     it("is dropped when the AH closes mid-read", function()

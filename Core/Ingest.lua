@@ -24,6 +24,7 @@ Ingest.__index = Ingest
 ns.Ingest = Ingest
 
 Ingest.SETTLE = 1.0
+Ingest.BROWSE_SETTLE = 2.0 -- browse pages arrive as the list scrolls; record a partial once they pause
 Ingest.POLL = 1.0 -- seconds between legacy list checks
 Ingest.POLL_LIMIT = 180 -- give up waiting for a getAll list after this many polls
 
@@ -63,7 +64,11 @@ function Ingest:OnReplicateUpdate()
   self:read(0, total - 1, total, api.GetReplicateItemInfo)
 end
 
--- browse query sent; only an unfiltered one is a full (summary) scan
+-- Browse queries. An unfiltered one paged to the end is a full (summary) scan. Everything else - category browsing,
+-- text searches in the browse list, a full scan you only scrolled part of - is recorded as a partial scan once
+-- results stop arriving for BROWSE_SETTLE seconds. Only rows not recorded yet for this query are read, so scrolling
+-- further later adds the new items without double-counting. Browse rows carry each item's lowest price and total
+-- quantity, which is complete per item however much of the list was shown.
 function Ingest:OnBrowseQuery(query)
   if type(query) ~= "table" then
     return
@@ -71,27 +76,56 @@ function Ingest:OnBrowseQuery(query)
   local text = query.searchString or ""
   local filtered = (query.filters and #query.filters > 0) or (query.itemClassFilters and #query.itemClassFilters > 0)
   self.browseRequested = text == "" and not filtered
+  self.browseActive = true
+  self.browseRecorded = 0
+  self.browseGen = (self.browseGen or 0) + 1
 end
 
 -- AUCTION_HOUSE_BROWSE_RESULTS_UPDATED / _ADDED
 function Ingest:OnBrowseResults()
   local api = self.api
-  if not self.browseRequested or self.reading or not api.HasFullBrowseResults() then
+  if not self.browseActive then
     return
   end
-  self.browseRequested = false
-  local results = api.GetBrowseResults() or {}
-  self.reading, self.aborted = true, false
+  if self.browseRequested and not self.reading and api.HasFullBrowseResults() then
+    self.browseRequested, self.browseActive = false, false
+    self.browseGen = (self.browseGen or 0) + 1
+    self:readBrowse(api.GetBrowseResults() or {}, 1, "full")
+    return
+  end
+  -- partial: once the results settle
+  self.browseGen = (self.browseGen or 0) + 1
+  local gen = self.browseGen
+  self.after(Ingest.BROWSE_SETTLE, function()
+    if gen ~= self.browseGen or not self.browseActive then
+      return
+    end
+    local results = api.GetBrowseResults() or {}
+    local first = (self.browseRecorded or 0) + 1
+    if #results >= first then
+      self.browseRecorded = #results
+      self:readBrowse(results, first, "partial")
+    end
+  end)
+end
+
+-- browse rows results[first..] -> one snapshot (lowest price and quantity per item), time-sliced
+function Ingest:readBrowse(results, first, kind)
+  local full = kind == "full"
+  if full then
+    self.reading, self.aborted = true, false
+  end
   local t = self.now()
-  if self.onReadStart then
+  if full and self.onReadStart then
     self.onReadStart(#results)
   end
-  self.jobs:Add("ingest-browse", function(job)
+  self.jobs:Add("ingest-browse-" .. kind, function(job)
     local byID = {}
-    for i, r in ipairs(results) do
-      if self.aborted then
+    for i = first, #results do
+      if full and self.aborted then
         return nil
       end
+      local r = results[i]
       local id = r.itemKey and r.itemKey.itemID
       if id and id > 0 and r.minPrice and r.minPrice > 0 and (r.totalQuantity or 0) > 0 then
         local e = byID[id]
@@ -120,11 +154,13 @@ function Ingest:OnBrowseResults()
     end
     return snap
   end, function(ok, snap)
-    self.reading = false
+    if full then
+      self.reading = false
+    end
     if not ok then
       self.onSnapshot(nil, t, "error", { error = snap })
-    elseif snap and not self.aborted then
-      self.onSnapshot(snap, t, "full", { rows = #results, skipped = 0, source = "browse" })
+    elseif snap and #snap.ids > 0 and not (full and self.aborted) then
+      self.onSnapshot(snap, t, kind, { rows = #results - first + 1, skipped = 0, source = "browse" })
     end
   end)
 end
@@ -200,7 +236,8 @@ function Ingest:OnAuctionHouseClosed()
   if self.reading then
     self.aborted = true
   end
-  self.requested, self.browseRequested = false, false
+  self.requested, self.browseRequested, self.browseActive = false, false, false
+  self.browseGen = (self.browseGen or 0) + 1
   self.pollGen = (self.pollGen or 0) + 1 -- stop waiting for a getAll list
 end
 
