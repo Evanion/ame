@@ -83,4 +83,18 @@ describe("Sync (protocol core)", function()
       assert.is_true(Sync.Plausible(snap({ 1, 2, 3 }), {}))
     end)
   end)
+
+  describe("ParseBlocklist", function()
+    it("reads 'AME block:' lines from the guild info, case-insensitively", function()
+      local set = Sync.ParseBlocklist(
+        "Welcome!\nRaids Wed/Sun\nAME block: Spam Bot, Price Fixer\nane block: nope\name BLOCK:  Third One  "
+      )
+      assert.are.same({ ["spam bot"] = "Spam Bot", ["price fixer"] = "Price Fixer", ["third one"] = "Third One" }, set)
+    end)
+
+    it("handles no guild info", function()
+      assert.are.same({}, Sync.ParseBlocklist(nil))
+      assert.are.same({}, Sync.ParseBlocklist("just a motd"))
+    end)
+  end)
 end)

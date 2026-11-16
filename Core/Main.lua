@@ -372,6 +372,8 @@ function handlers.PLAYER_LOGIN()
     "AUCTION_HOUSE_CLOSED",
     "REPLICATE_ITEM_LIST_UPDATE",
     "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
+    "GUILD_ROSTER_UPDATE",
+    "PLAYER_GUILD_UPDATE",
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "COMMODITY_SEARCH_RESULTS_UPDATED",
     "ITEM_SEARCH_RESULTS_UPDATED",
@@ -403,6 +405,13 @@ function handlers.AUCTION_HOUSE_SHOW()
     AME:Backfill(false)
   end
 end
+
+function handlers.GUILD_ROSTER_UPDATE()
+  if ns.SyncService.trust then
+    ns.SyncService:RefreshGuildBlocklist()
+  end
+end
+handlers.PLAYER_GUILD_UPDATE = handlers.GUILD_ROSTER_UPDATE
 
 function handlers.AUCTION_HOUSE_CLOSED()
   if AME.ingest.reading then

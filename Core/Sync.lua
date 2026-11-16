@@ -157,3 +157,26 @@ function Sync.Plausible(snap, reference)
   end
   return true
 end
+
+-- Guild-wide blocklist from the guild information text (only the GM and officers can edit it). Any line like
+--   AME block: Name One, Name Two
+-- (case-insensitive, several lines allowed) blocks those players' sync data for every guild member running AME.
+-- Returns a set of lower-cased names.
+function Sync.ParseBlocklist(text)
+  local out = {}
+  if type(text) ~= "string" then
+    return out
+  end
+  for line in (text .. "\n"):gmatch("([^\r\n]*)\r?\n") do
+    local names = line:match("^%s*[Aa][Mm][Ee]%s+[Bb][Ll][Oo][Cc][Kk]%s*:%s*(.-)%s*$")
+    if names then
+      for name in names:gmatch("[^,]+") do
+        name = name:gsub("^%s+", ""):gsub("%s+$", "")
+        if name ~= "" then
+          out[name:lower()] = name
+        end
+      end
+    end
+  end
+  return out
+end

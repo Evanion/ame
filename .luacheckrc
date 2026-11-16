@@ -29,7 +29,7 @@ read_globals = {
   "C_AuctionHouse", "C_ChatInfo", "QueryAuctionItems", "GetNumAuctionItems", "GetAuctionItemInfo", "C_AddOns", "LoadAddOn",
   -- unit / realm
   "GetServerTime", "GetNormalizedRealmName", "GetRealmName", "GetAutoCompleteRealms", "UnitName",
-  "UnitFactionGroup", "IsInGuild", "C_FriendList",
+  "UnitFactionGroup", "IsInGuild", "C_FriendList", "GetGuildInfoText",
   -- optional integrations
   "Auctionator", "LibStub",
 }

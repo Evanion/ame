@@ -568,6 +568,48 @@ describe("addon in a stubbed client", function()
       assert.are.same({ "Ada Lovelace", "Bob Builder" }, whispered)
     end)
 
+    it("drops data from players blocked by the guild officers or by me, including relayed scans", function()
+      bootSync()
+      _G.GetGuildInfoText = function()
+        return "Be nice.\nAME block: Price Fixer"
+      end
+      env:fire("GUILD_ROSTER_UPDATE")
+      local svc = ns.SyncService
+      assert.are.equal("guild", svc.trust:IsBlocked("Price Fixer"))
+      -- an announce from the blocked player is ignored: no request goes out
+      local entry = peerScan({ [2589] = 1000 })
+      local before = #sent
+      deliver(ns.Sync.EncodeAnnounce("TestRealm|Horde", { { t = entry.t, src = entry.src } }), "GUILD", "Price Fixer")
+      assert.are.equal(before, #sent)
+      -- a guild mate relaying a scan made by the blocked player is ignored too
+      local relayed = peerScan({ [2589] = 1000 })
+      relayed.src = "Price Fixer"
+      deliver(
+        ns.Sync.EncodeAnnounce("TestRealm|Horde", { { t = relayed.t, src = relayed.src } }),
+        "GUILD",
+        "Guild Mate"
+      )
+      assert.are.equal(before, #sent)
+      assert.is_true(AME_DB.stats.syncBlocked >= 2)
+      -- personal block from the Sync tab's peer list
+      deliver(ns.Sync.EncodeHello("TestRealm|Horde"), "WHISPER", "Spam Bot")
+      ns.UI:Toggle()
+      ns.UI:ShowTab("sync")
+      local v = ns.UI.syncView
+      v.scripts.OnShow(v)
+      local row
+      for _, r in ipairs(v.peers) do
+        if r.name == "Spam Bot" then
+          row = r
+        end
+      end
+      row.block.scripts.OnClick(row.block)
+      assert.are.equal("me", svc.trust:IsBlocked("Spam Bot"))
+      assert.are.equal(0, #svc.trust:PendingList())
+      assert.truthy(v.guildBlocked.text:find("Price Fixer"))
+      _G.GetGuildInfoText = nil
+    end)
+
     it("drives trust from the Sync tab and options from the Settings tab", function()
       bootSync()
       deliver(ns.Sync.EncodeHello("TestRealm|Horde"), "WHISPER", "Ada Lovelace")

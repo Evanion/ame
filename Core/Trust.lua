@@ -8,6 +8,7 @@
 --     pending  = { [key] = { name, at } },                     requests from others waiting for approval
 --     declined = { [key] = at },                               ignore their hellos for a day
 --     peers    = { [key] = { name, at, via, received } },      anyone heard from (guild or whisper)
+--     blocked  = { [key] = { name, at } },                     personal blocklist (plus the guild's, see IsBlocked)
 --   }
 local _, ns = ...
 
@@ -28,7 +29,8 @@ function Trust.New(db)
   db.pending = db.pending or {}
   db.declined = db.declined or {}
   db.peers = db.peers or {}
-  return setmetatable({ db = db }, Trust)
+  db.blocked = db.blocked or {}
+  return setmetatable({ db = db, guildBlocked = {} }, Trust)
 end
 
 local function clean(name)
@@ -76,7 +78,7 @@ end
 -- a hello from someone we don't trust yet; returns true if it's a new request to show
 function Trust:Request(name, now)
   local k = key(name)
-  if self.db.trusted[k] then
+  if self.db.trusted[k] or self:IsBlocked(name) then
     return false
   end
   local d = self.db.declined[k]
@@ -146,6 +148,48 @@ local function sorted(t, by)
   end
   table.sort(out, by)
   return out
+end
+
+-- personal block: also drops any trust or pending request
+function Trust:Block(name, now)
+  local k = key(name)
+  if not k or k == "" then
+    return nil
+  end
+  self.db.blocked[k] = { name = clean(name), at = now }
+  self.db.trusted[k] = nil
+  self.db.pending[k] = nil
+  return self.db.blocked[k]
+end
+
+function Trust:Unblock(name)
+  self.db.blocked[key(name)] = nil
+end
+
+-- guild officers' list (set of lower-cased names), refreshed from the guild info text
+function Trust:SetGuildBlocklist(set)
+  self.guildBlocked = set or {}
+end
+
+-- blocked by me ("me"), by the guild ("guild"), or nil
+function Trust:IsBlocked(name)
+  local k = key(name)
+  if not k then
+    return nil
+  end
+  if self.db.blocked[k] then
+    return "me"
+  end
+  if self.guildBlocked[k] then
+    return "guild"
+  end
+  return nil
+end
+
+function Trust:BlockedList()
+  return sorted(self.db.blocked, function(a, b)
+    return a.name:lower() < b.name:lower()
+  end)
 end
 
 function Trust:TrustedList()

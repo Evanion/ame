@@ -39,6 +39,7 @@ function Service:Init(AME, transport)
   self.stats = AME_DB.stats
   AME_DB.sync = AME_DB.sync or {}
   self.trust = ns.Trust.New(AME_DB.sync)
+  self:RefreshGuildBlocklist()
   if not self.transport then
     return false
   end
@@ -97,6 +98,21 @@ end
 
 function Service:RemoveTrusted(name)
   self.trust:Remove(name)
+end
+
+function Service:Block(name)
+  return self.trust:Block(name, GetServerTime())
+end
+
+function Service:Unblock(name)
+  self.trust:Unblock(name)
+end
+
+-- re-read the officers' blocklist from the guild information text
+function Service:RefreshGuildBlocklist()
+  local text = IsInGuild and IsInGuild() and GetGuildInfoText and GetGuildInfoText() or nil
+  self.trust:SetGuildBlocklist(Sync.ParseBlocklist(text))
+  self:Changed()
 end
 
 function Service:Changed()
@@ -169,6 +185,11 @@ function Service:OnMessage(msg, distribution, sender)
   if not m or not sameRealm(m.shard) or not self:Allowed(m, distribution, sender) then
     return
   end
+  -- blocked players: by me, or by the guild officers (guild info text); scans relayed from them too
+  if self.trust:IsBlocked(sender) or (m.src and self.trust:IsBlocked(m.src)) then
+    self.stats.syncBlocked = (self.stats.syncBlocked or 0) + 1
+    return
+  end
   self.trust:Heard(sender, GetServerTime(), distribution)
   if m.type == "hello" then
     if self.trust:IsTrusted(sender) then
@@ -196,7 +217,9 @@ function Service:OnMessage(msg, distribution, sender)
     for _, s in ipairs(want) do
       local key = m.shard .. ":" .. s.t .. ":" .. s.src
       local last = self.requested[key]
-      if not last or GetServerTime() - last > Service.REQUEST_COOLDOWN then
+      if self.trust:IsBlocked(s.src) then
+        self.stats.syncBlocked = (self.stats.syncBlocked or 0) + 1
+      elseif not last or GetServerTime() - last > Service.REQUEST_COOLDOWN then
         self.requested[key] = GetServerTime()
         self.requestedFrom[ns.Trust.Key(sender) .. ":" .. key] = true
         self.transport:Send(Service.PREFIX, Sync.EncodeRequest(m.shard, s.t, s.src), "WHISPER", sender)

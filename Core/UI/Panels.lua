@@ -52,7 +52,7 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Sync
 
-local MAX_TRUSTED, MAX_PENDING, MAX_PEERS = 9, 3, 7
+local MAX_TRUSTED, MAX_PENDING, MAX_PEERS, MAX_BLOCKED = 9, 3, 5, 3
 local COL2 = 490
 
 function UI:CreateSyncView(parent, contentArea)
@@ -82,10 +82,37 @@ function UI:CreateSyncView(parent, contentArea)
   heading(v, "Recently heard from", 0, -236)
   v.peers = {}
   for i = 1, MAX_PEERS do
-    local t = W.Text(v, "GameFontHighlightSmall")
-    t:SetPoint("TOPLEFT", 0, -258 - (i - 1) * 18)
-    t:SetWidth(450)
-    v.peers[i] = t
+    local row = CreateFrame("Frame", nil, v)
+    row:SetSize(460, 18)
+    row:SetPoint("TOPLEFT", 0, -258 - (i - 1) * 20)
+    row.text = W.Text(row, "GameFontHighlightSmall")
+    row.text:SetPoint("LEFT", 0, 0)
+    row.text:SetWidth(390)
+    row.block = W.Button(row, "Block", 50, 16, function()
+      svc:Block(row.name)
+      UI:RefreshSync()
+    end)
+    row.block:SetPoint("RIGHT", 0, 0)
+    v.peers[i] = row
+  end
+
+  heading(v, "Blocked", 0, -364)
+  v.guildBlocked = W.Text(v, "GameFontDisableSmall")
+  v.guildBlocked:SetPoint("TOPLEFT", 0, -384)
+  v.guildBlocked:SetWidth(460)
+  v.blocked = {}
+  for i = 1, MAX_BLOCKED do
+    local row = CreateFrame("Frame", nil, v)
+    row:SetSize(460, 18)
+    row:SetPoint("TOPLEFT", 0, -400 - (i - 1) * 18)
+    row.text = W.Text(row, "GameFontHighlightSmall")
+    row.text:SetPoint("LEFT", 0, 0)
+    row.unblock = W.Button(row, "Unblock", 60, 16, function()
+      svc:Unblock(row.name)
+      UI:RefreshSync()
+    end)
+    row.unblock:SetPoint("RIGHT", 0, 0)
+    v.blocked[i] = row
   end
 
   -- trusted players
@@ -130,12 +157,17 @@ function UI:CreateSyncView(parent, contentArea)
       svc:Approve(row.name)
       UI:RefreshSync()
     end)
-    row.approve:SetPoint("RIGHT", -70, 0)
+    row.approve:SetPoint("RIGHT", -126, 0)
     row.decline = W.Button(row, "Decline", 64, 18, function()
       svc:Decline(row.name)
       UI:RefreshSync()
     end)
-    row.decline:SetPoint("RIGHT", 0, 0)
+    row.decline:SetPoint("RIGHT", -56, 0)
+    row.block = W.Button(row, "Block", 50, 18, function()
+      svc:Block(row.name)
+      UI:RefreshSync()
+    end)
+    row.block:SetPoint("RIGHT", 0, 0)
     v.pending[i] = row
   end
 
@@ -206,19 +238,45 @@ function UI:RefreshSync()
   v.activity:SetText(table.concat(lines, "\n"))
 
   local peers = svc.trust and svc.trust:PeerList() or {}
-  for i, t in ipairs(v.peers) do
+  for i, row in ipairs(v.peers) do
     local p = peers[i]
+    row.name = p and p.name
+    row.block:SetShown(p ~= nil and not svc.trust:IsBlocked(p.name))
     if p then
-      t:SetText(
-        ("%s  |cff999999via %s, %s%s|r"):format(
+      local blocked = svc.trust:IsBlocked(p.name)
+      row.text:SetText(
+        ("%s  |cff999999via %s, %s%s%s|r"):format(
           p.name,
           p.via == "GUILD" and "guild" or "whisper",
           ago(p.at),
-          (p.received or 0) > 0 and (", %d scans received"):format(p.received) or ""
+          (p.received or 0) > 0 and (", %d scans received"):format(p.received) or "",
+          blocked and ", |cffff6159blocked|r" or ""
         )
       )
     else
-      t:SetText(i == 1 and "|cff999999No one yet.|r" or "")
+      row.text:SetText(i == 1 and "|cff999999No one yet.|r" or "")
+    end
+  end
+
+  local guildList = {}
+  for _, name in pairs(svc.trust and svc.trust.guildBlocked or {}) do
+    guildList[#guildList + 1] = name
+  end
+  table.sort(guildList)
+  v.guildBlocked:SetText(
+    #guildList > 0 and ("By your guild officers: |cffffffff%s|r"):format(table.concat(guildList, ", "))
+      or 'Guild officers can block players for everyone: add a line "AME block: Name, Name" to the guild info.'
+  )
+  local blocked = svc.trust and svc.trust:BlockedList() or {}
+  for i, row in ipairs(v.blocked) do
+    local b = blocked[i]
+    row:SetShown(b ~= nil or (i == 1 and #blocked == 0))
+    row.name = b and b.name
+    row.unblock:SetShown(b ~= nil)
+    if b then
+      row.text:SetText(("%s  |cff999999blocked %s|r"):format(b.name, ago(b.at)))
+    else
+      row.text:SetText("|cff999999You haven't blocked anyone.|r")
     end
   end
 
