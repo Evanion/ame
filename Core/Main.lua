@@ -141,7 +141,17 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- ingestion
 
+-- scan pipeline counters, saved so they can be read after a reload
+function AME:ScanDiag()
+  AME_DB.stats.scan = AME_DB.stats.scan or {}
+  return AME_DB.stats.scan
+end
+
 function AME:OnSnapshot(snap, t, kind, info)
+  if kind == "full" then
+    local d = self:ScanDiag()
+    d.readDoneAt, d.readItems = GetServerTime(), #snap.ids
+  end
   if kind == "error" then
     say("|cffff5555scan read failed:|r %s", tostring(info and info.error))
     return
@@ -253,6 +263,8 @@ function handlers.PLAYER_LOGIN()
   if C_AuctionHouse and C_AuctionHouse.ReplicateItems then
     hooksecurefunc(C_AuctionHouse, "ReplicateItems", function()
       AME.scanRequestedAt = debugprofilestop()
+      local d = AME:ScanDiag()
+      d.requests, d.lastRequestAt, d.eventsSinceRequest = (d.requests or 0) + 1, GetServerTime(), 0
       AME.ingest:OnReplicateRequested()
     end)
   end
@@ -288,11 +300,29 @@ function handlers.AUCTION_HOUSE_SHOW()
 end
 
 function handlers.AUCTION_HOUSE_CLOSED()
+  if AME.ingest.reading then
+    local d = AME:ScanDiag()
+    d.aborted = (d.aborted or 0) + 1
+    say(
+      "|cffffcc00the AH closed before AME finished reading the full scan; it wasn't recorded.|r Keep the AH open "
+        .. 'until AME says "recorded full scan".'
+    )
+  end
   AME.ingest:OnAuctionHouseClosed()
 end
 
 function handlers.REPLICATE_ITEM_LIST_UPDATE()
+  local d = AME:ScanDiag()
+  d.events = (d.events or 0) + 1
+  d.eventsSinceRequest = (d.eventsSinceRequest or 0) + 1
+  local wasRequested = AME.ingest.requested
   AME.ingest:OnReplicateUpdate()
+  if wasRequested and AME.ingest.reading then
+    d.readStartedAt, d.readRows = GetServerTime(), C_AuctionHouse.GetNumReplicateItems()
+    if ns.Settings:Get("announceScans") then
+      say("reading full scan (%d listings) in the background...", d.readRows or 0)
+    end
+  end
 end
 
 function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)
@@ -390,8 +420,25 @@ local function cmdStatus()
       say("history: %d raw scans, %d days, %.0f KB", #(data.raw or {}), days, bytes / 1024)
     end
   end
+  local d = AME:ScanDiag()
   say(
-    "guild sync: %s · announced %d, served %d, received %d, rejected %d",
+    "scan pipeline: %d requests, %d events (%d since last request), read %s, aborted %d; ingest requested=%s "
+      .. "reading=%s",
+    d.requests or 0,
+    d.events or 0,
+    d.eventsSinceRequest or 0,
+    d.readItems and (d.readItems .. " items") or "none",
+    d.aborted or 0,
+    tostring(AME.ingest.requested),
+    tostring(AME.ingest.reading)
+  )
+  local names = {}
+  for _, job in ipairs(AME.jobs.queue) do
+    names[#names + 1] = job.name
+  end
+  say("background jobs: %s", #names > 0 and table.concat(names, ", ") or "idle")
+  say(
+    "guild sync: %s, announced %d, served %d, received %d, rejected %d",
     ns.SyncService:Active() and "on" or "off",
     s.syncAnnounced or 0,
     s.syncServed or 0,
