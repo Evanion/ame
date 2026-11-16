@@ -104,14 +104,17 @@ describe("addon in a stubbed client", function()
     assert.is_true(env:chatContains("recorded full scan"))
   end)
 
-  it("/ame selftest runs every check and schedules a reload", function()
+  it("/ame selftest runs every check and offers a reload button", function()
     boot()
     env.npcFaction = "Horde"
     env:fire("AUCTION_HOUSE_SHOW")
     fullScan({ { 2589, 1000, 10 }, { 4306, 5000, 5 } })
     env:slash("AZEROTHMERCANTILEEXCHANGE", "selftest")
     assert.is_true(env:chatContains("selftest: %d+ passed, %d+ warnings, 0 failed"))
-    env:advance(6)
+    assert.are.equal(0, env.reloads) -- ReloadUI is protected outside hardware events
+    local popup = StaticPopupDialogs.AME_SELFTEST_RELOAD
+    assert.are.equal("AME_SELFTEST_RELOAD", env.popup)
+    popup.OnAccept()
     assert.are.equal(1, env.reloads)
     assert.are.equal("PASS", AME_DB.selftest.results[1].status)
   end)

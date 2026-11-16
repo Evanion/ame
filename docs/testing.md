@@ -12,7 +12,7 @@ Edits in the repo are live after `/reload`. The M0 spike (`AME_Spike`) is no lon
 2. Open the auction house and run an **Auctionator full scan**.
    - Wait for `AME recorded full scan: N items ...` in chat. That's about 25 s after Auctionator's own message.
    - The first time you open the AH, AME also imports Auctionator's recent history ("imported N days ...").
-3. Type **`/ame selftest`**. It runs every check, prints PASS/WARN/FAIL lines, and reloads the UI 5 s later so the results and timings reach `AME_DB` on disk.
+3. Type **`/ame selftest`**. It runs every check, prints PASS/WARN/FAIL lines, then shows a **Reload UI** popup: click it so the results and timings reach `AME_DB` on disk (the game blocks addons from reloading on their own).
 
 That's it. Claude reads the results from
 `WTF\Account\<ACCOUNT>\SavedVariables\AzerothMercantileExchange.lua` (`AME_DB.selftest`, `AME_DB.stats`).

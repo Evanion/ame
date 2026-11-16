@@ -229,6 +229,10 @@ function M.install(opts)
   set("SecondsToTime", function(s)
     return tostring(s) .. "s"
   end)
+  set("StaticPopupDialogs", {})
+  set("StaticPopup_Show", function(name)
+    env.popup = name
+  end)
   set("ReloadUI", function()
     env.reloads = env.reloads + 1
   end)

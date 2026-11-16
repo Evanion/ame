@@ -21,6 +21,7 @@ read_globals = {
   "CreateFrame", "C_Timer", "UIParent", "GameTooltip", "hooksecurefunc", "DEFAULT_CHAT_FRAME", "ReloadUI",
   "GetCoinTextureString", "SecondsToTime", "BackdropTemplateMixin", "GameFontNormal", "GameFontHighlight",
   "GameFontHighlightSmall", "GameFontNormalLarge", "GameFontDisableSmall", "UISpecialFrames", "GetCursorPosition",
+  "StaticPopup_Show", "RELOADUI", "CANCEL",
   "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "Item", "TooltipDataProcessor", "Enum", "C_TooltipInfo",
   "GetItemInfo", "C_Item", "CreateFramePool", "CreateTexturePool", "Mixin", "CreateFromMixins", "ColorMixin",
   "CreateColor", "ITEM_QUALITY_COLORS", "ItemRefTooltip", "ChatEdit_InsertLink", "HandleModifiedItemClick",
@@ -34,7 +35,7 @@ read_globals = {
 }
 
 globals = {
-  "SlashCmdList",
+  "SlashCmdList", "StaticPopupDialogs",
   "AME_DB",
   "AME_HistoryDB",
   "SLASH_AZEROTHMERCANTILEEXCHANGE1",

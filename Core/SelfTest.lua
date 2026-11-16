@@ -1,5 +1,5 @@
 -- /ame selftest: one command that checks every M1 piece in game, records timings to AME_DB.selftest (readable from
--- the SavedVariables file outside the game), then reloads the UI so the results are written to disk.
+-- the SavedVariables file outside the game), then offers a Reload button so the results are written to disk.
 local _, ns = ...
 
 local SelfTest = {}
@@ -191,6 +191,28 @@ function SelfTest.Run(AME)
   end)
 
   AME_DB.selftest = { at = GetServerTime(), results = results, version = ns.VERSION }
-  say("selftest: %d passed, %d warnings, %d failed. Reloading in 5 s to save the results...", passed, warned, failed)
-  C_Timer.After(5, ReloadUI)
+  say("selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload).", passed, warned, failed)
+  SelfTest.PromptReload(passed, warned, failed)
+end
+
+-- ReloadUI is protected outside hardware events (a timer callback gets ADDON_ACTION_BLOCKED), so ask with a popup
+-- whose button click is the hardware event.
+function SelfTest.PromptReload(passed, warned, failed)
+  if not (StaticPopupDialogs and StaticPopup_Show) then
+    return
+  end
+  StaticPopupDialogs.AME_SELFTEST_RELOAD = StaticPopupDialogs.AME_SELFTEST_RELOAD
+    or {
+      text = "Azeroth Mercantile Exchange selftest finished:\n%s\n\nReload the UI now to save the results?",
+      button1 = RELOADUI or "Reload UI",
+      button2 = CANCEL or "Cancel",
+      OnAccept = function()
+        ReloadUI()
+      end,
+      timeout = 0,
+      whileDead = true,
+      hideOnEscape = true,
+      preferredIndex = 3,
+    }
+  StaticPopup_Show("AME_SELFTEST_RELOAD", ("%d passed, %d warnings, %d failed"):format(passed, warned, failed))
 end
