@@ -10,7 +10,7 @@ ns.SyncService = Service
 Service.PREFIX = "AME1"
 Service.ANNOUNCE_EVERY = 600 -- seconds
 Service.REQUEST_COOLDOWN = 600
-Service.MAX_REQUESTS_PER_ANNOUNCE = 2
+Service.MAX_REQUESTS_PER_ANNOUNCE = 4
 
 local function aceTransport()
   local AceComm = LibStub and LibStub("AceComm-3.0", true)
@@ -126,29 +126,41 @@ local function isMe(sender)
   return sender == me or (me and sender and sender:sub(1, #me + 1) == me .. "-")
 end
 
+-- Announce the full scans we hold (our own and relayed ones) for every auction house of our market - faction AHs
+-- and the goblin AH - so scans reach players who weren't online when they were made.
 function Service:Announce()
   if not self:Active() or not self.AME:LoadHistory() then
     return
   end
-  local shard = self.AME:CurrentShard()
-  local data = self.AME.history.shards[shard]
-  local inventory = data and Sync.Inventory(data.raw or {}, Sync.MAX_ANNOUNCE) or {}
-  if #inventory == 0 then
-    return
-  end
-  local msg = Sync.EncodeAnnounce(shard, inventory)
-  if self:GuildActive() then
-    self.transport:Send(Service.PREFIX, msg, "GUILD")
-  end
+  local realm = self.AME:MarketRealmName()
+  local targets = {}
   if self:TrustActive() then
     for _, name in ipairs(self.trust:OnlineTargets(GetServerTime(), friendOnline)) do
       local e = self.trust.db.trusted[ns.Trust.Key(name)]
       if e and e.mutual then
-        self.transport:Send(Service.PREFIX, msg, "WHISPER", name)
+        targets[#targets + 1] = name
       end
     end
   end
-  self.stats.syncAnnounced = (self.stats.syncAnnounced or 0) + 1
+  local any = false
+  for shard, data in pairs(self.AME.history.shards) do
+    if shard:match("^(.-)|") == realm then
+      local inventory = Sync.Inventory(data.raw or {}, Sync.MAX_ANNOUNCE)
+      if #inventory > 0 then
+        local msg = Sync.EncodeAnnounce(shard, inventory)
+        if self:GuildActive() then
+          self.transport:Send(Service.PREFIX, msg, "GUILD")
+        end
+        for _, name in ipairs(targets) do
+          self.transport:Send(Service.PREFIX, msg, "WHISPER", name)
+        end
+        any = true
+      end
+    end
+  end
+  if any then
+    self.stats.syncAnnounced = (self.stats.syncAnnounced or 0) + 1
+  end
 end
 
 local function sameRealm(shard)

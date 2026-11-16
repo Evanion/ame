@@ -532,6 +532,43 @@ describe("addon in a stubbed client", function()
       }
     end
 
+    it("relays other players' scans for every auction house, and backfills a day of scans quickly", function()
+      bootSync()
+      -- we (player 2) received player 1's goblin-AH scan earlier and hold our own Horde scan
+      fullScan({ { 2589, 1000, 10 } })
+      local relayed = peerScan({ [2589] = 1500 })
+      relayed.src = "Player One"
+      local entry = relayed
+      deliver(ns.Sync.EncodeAnnounce("TestRealm|Neutral", { { t = entry.t, src = entry.src } }), "GUILD", "Player One")
+      local req = ns.Sync.Decode(sent[#sent].msg)
+      assert.are.equal("request", req.type) -- standing at the Horde AH, the goblin AH's scan is still wanted
+      assert.are.equal("TestRealm|Neutral", req.shard)
+      deliver(ns.Sync.EncodeScan("TestRealm|Neutral", entry), "WHISPER", "Player One")
+      drainJobs()
+      assert.are.equal("Player One", AME_HistoryDB.shards["TestRealm|Neutral"].raw[1].src)
+      -- player 1 logs off; our next announcement carries their scan (for player 3), for both houses
+      local before = #sent
+      ns.SyncService:Announce()
+      local shards, srcs = {}, {}
+      for i = before + 1, #sent do
+        local m = ns.Sync.Decode(sent[i].msg)
+        shards[m.shard] = true
+        for _, s in ipairs(m.scans) do
+          srcs[s.src] = true
+        end
+      end
+      assert.is_true(shards["TestRealm|Horde"] and shards["TestRealm|Neutral"])
+      assert.is_true(srcs["Player One"])
+      -- a day of 6 scans from a guild mate: 4 requested from one announcement
+      local scans = {}
+      for i = 1, 6 do
+        scans[i] = { t = env.now - i * 3600, src = "Busy Scanner" }
+      end
+      before = #sent
+      deliver(ns.Sync.EncodeAnnounce("TestRealm|Horde", scans), "GUILD", "Busy Scanner")
+      assert.are.equal(4, #sent - before)
+    end)
+
     it("announces our full scan to the guild after recording it", function()
       bootSync()
       fullScan({ { 2589, 1000, 10 } })

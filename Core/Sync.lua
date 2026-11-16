@@ -17,7 +17,7 @@ local Sync = {}
 ns.Sync = Sync
 
 Sync.PROTO = "1"
-Sync.MAX_ANNOUNCE = 8
+Sync.MAX_ANNOUNCE = 32 -- every full scan of the last 48 h on a normal day (~20 bytes each)
 Sync.WINDOW = 48 * 3600
 Sync.OUTLIER_FACTOR = 5 -- a price 5x above or below ours counts as "off"
 Sync.MAX_OFF_SHARE = 0.3 -- reject a scan when more than 30% of comparable items are off
