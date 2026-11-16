@@ -1,0 +1,13 @@
+# packager output
+.release/
+# libraries fetched by the packager (declared in .pkgmeta)
+**/Libs/
+# local Lua toolchain / rocks
+.lua/
+lua_modules/
+luacov.*.out
+# editor / OS
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db
+.DS_Store
