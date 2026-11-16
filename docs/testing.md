@@ -33,3 +33,5 @@ See GitHub issues. Notable ones:
 - Cold chart loads take ~3 ms per day of history.
 - Item variants (suffix and item level) share one series.
 - LibDBIcon isn't embedded in dev builds; the minimap button appears only if another addon loaded LibDBIcon.
+- Full scans are picked up whichever addon starts them (Auctionator, AHDB's auto-scan on AH open, ...). They share the
+  game's one-full-scan-per-15-minutes limit, so another addon's auto-scan puts Auctionator's Full Scan on cooldown.
