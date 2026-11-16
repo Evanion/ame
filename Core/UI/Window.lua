@@ -37,15 +37,16 @@ function UI:Create()
   self.shardText = W.Text(f, "GameFontDisableSmall")
   self.shardText:SetPoint("LEFT", title, "RIGHT", 10, 0)
 
-  local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-  close:SetPoint("TOPRIGHT", 2, 2)
+  local close = W.CloseButton(f)
+  close:SetPoint("TOPRIGHT", -6, -7)
+  self.closeButton = close
 
   self.tabs = {}
   local function tab(name, label, x)
     local b = W.Button(f, label, 70, 20, function()
       UI:ShowTab(name)
     end)
-    b:SetPoint("TOPRIGHT", -(30 + x), -8)
+    b:SetPoint("TOPRIGHT", -(34 + x), -8)
     self.tabs[name] = b
   end
   tab("market", "Market", 76)

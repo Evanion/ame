@@ -299,3 +299,42 @@ function W.Dropdown(parent, width, options, onSelect)
   b:SetIndex(1)
   return b
 end
+
+-- Flat close button: an X drawn from two rotated bars; dim, red on hover. onClick defaults to hiding the parent.
+function W.CloseButton(parent, onClick)
+  local b = CreateFrame("Button", nil, parent)
+  b:SetSize(22, 22)
+  b.bg = b:CreateTexture(nil, "BACKGROUND")
+  b.bg:SetAllPoints()
+  b.bg:SetColorTexture(1, 1, 1, 0)
+  b.bars = {}
+  for i, angle in ipairs({ math.pi / 4, -math.pi / 4 }) do
+    local t = b:CreateTexture(nil, "ARTWORK")
+    t:SetColorTexture(1, 1, 1, 1)
+    t:SetSize(12, 1.5)
+    t:SetPoint("CENTER")
+    t:SetRotation(angle)
+    t:SetVertexColor(0.65, 0.67, 0.7, 1)
+    b.bars[i] = t
+  end
+  b:SetScript("OnEnter", function(self)
+    self.bg:SetColorTexture(1, 0.3, 0.25, 0.18)
+    for _, t in ipairs(self.bars) do
+      t:SetVertexColor(1, 0.45, 0.4, 1)
+    end
+  end)
+  b:SetScript("OnLeave", function(self)
+    self.bg:SetColorTexture(1, 1, 1, 0)
+    for _, t in ipairs(self.bars) do
+      t:SetVertexColor(0.65, 0.67, 0.7, 1)
+    end
+  end)
+  b:SetScript("OnClick", function()
+    if onClick then
+      onClick()
+    else
+      parent:Hide()
+    end
+  end)
+  return b
+end

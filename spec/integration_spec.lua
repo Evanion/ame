@@ -302,6 +302,11 @@ describe("addon in a stubbed client", function()
       env.npcFaction = nil
       env:fire("AUCTION_HOUSE_SHOW")
       assert.are.equal("Neutral", ns.Widgets.theme)
+      local close = ns.UI.closeButton
+      close.scripts.OnEnter(close)
+      close.scripts.OnLeave(close)
+      close.scripts.OnClick(close)
+      assert.is_false(ns.UI.frame:IsShown())
     end)
 
     it("switches the item chart to candles and back", function()
