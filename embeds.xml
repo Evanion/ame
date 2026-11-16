@@ -3,4 +3,5 @@
   <Script file="Libs\Ace3\LibStub\LibStub.lua"/>
   <Include file="Libs\Ace3\CallbackHandler-1.0\CallbackHandler-1.0.xml"/>
   <Include file="Libs\LibDeflate\lib.xml"/>
+  <Include file="LibAMEChart-1.0\lib.xml"/>
 </Ui>

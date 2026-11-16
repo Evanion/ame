@@ -18,5 +18,10 @@ Core\Store.lua
 Core\Jobs.lua
 Core\Ingest.lua
 Core\Backfill.lua
+Core\Analytics.lua
+Core\MarketIndex.lua
 Core\Main.lua
 Core\SelfTest.lua
+Core\UI\Widgets.lua
+Core\UI\Window.lua
+Core\UI\Tooltip.lua

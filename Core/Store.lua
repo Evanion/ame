@@ -348,6 +348,38 @@ function Store:Series(itemID, fromDay, toDay)
   return out
 end
 
+-- Every item's points in one bucket over a day range: { [itemID] = { points oldest first } }. Used to build the
+-- market index bucket by bucket, so memory stays bounded.
+function Store:BucketSeries(b, fromDay, toDay)
+  local out = {}
+  local function add(tier, res)
+    for period, buckets in pairs(tier) do
+      local first = res == "week" and period * 7 or period
+      local last = res == "week" and first + 6 or period
+      if buckets[b] and last >= fromDay and first <= toDay then
+        local seg = self:decode(buckets[b], Store.SEGMENT_FIELDS)
+        self.yield()
+        for i, id in ipairs(seg.ids) do
+          local list = out[id]
+          if not list then
+            list = {}
+            out[id] = list
+          end
+          list[#list + 1] = point(seg, i, res, period)
+        end
+      end
+    end
+  end
+  add(self.data.weeks, "week")
+  add(self.data.days, "day")
+  for _, list in pairs(out) do
+    sort(list, function(x, y)
+      return x.day < y.day
+    end)
+  end
+  return out
+end
+
 function Store:Latest(itemID)
   local raw = self.data.raw
   for k = #raw, 1, -1 do

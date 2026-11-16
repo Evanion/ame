@@ -103,6 +103,9 @@ local function newObject(kind)
     GetStringWidth = function(self)
       return #(self.text or "") * 6
     end,
+    GetStringHeight = function()
+      return 12
+    end,
     CreateTexture = function()
       return newObject("Texture")
     end,
@@ -172,7 +175,6 @@ function M.install(opts)
   M.unknownEvents = opts.unknownEvents
   local env = { chat = {}, timers = {}, now = opts.now or 1794825000, clock = 0, reloads = 0, loaded = {} }
   env.ah = newAuctionHouse()
-  local LibDeflate = dofile("Libs/LibDeflate/LibDeflate.lua")
 
   set("CreateFrame", function(kind, _, parent)
     local f = newObject(kind)
@@ -231,12 +233,45 @@ function M.install(opts)
     env.reloads = env.reloads + 1
   end)
   set("SlashCmdList", {})
-  set("LibStub", function(name)
-    if name == "LibDeflate" then
-      return LibDeflate
-    end
-    error("LibStub: unknown library " .. tostring(name))
+  -- real libraries, registered through the real LibStub (like embeds.xml does)
+  set("LibStub", nil)
+  dofile("Libs/Ace3/LibStub/LibStub.lua")
+  dofile("Libs/Ace3/CallbackHandler-1.0/CallbackHandler-1.0.lua")
+  dofile("Libs/LibDeflate/LibDeflate.lua")
+  dofile("LibAMEChart-1.0/LibAMEChart-1.0.lua")
+  -- UI globals
+  set("UISpecialFrames", {})
+  set("tinsert", table.insert)
+  set("ITEM_QUALITY_COLORS", { [1] = { hex = "|cffffffff" }, [3] = { hex = "|cff0070dd" } })
+  set("GameTooltip", newObject("GameTooltip"))
+  set("ChatEdit_InsertLink", function() end)
+  set("HandleModifiedItemClick", function() end)
+  set("IsAltKeyDown", function()
+    return env.altDown
   end)
+  set("IsShiftKeyDown", function()
+    return false
+  end)
+  set("IsControlKeyDown", function()
+    return false
+  end)
+  set("GetCursorPosition", function()
+    return 50, 50
+  end)
+  set("BackdropTemplateMixin", {})
+  set("Mixin", function(o, ...)
+    for _, m in ipairs({ ... }) do
+      for k, v in pairs(m) do
+        o[k] = v
+      end
+    end
+    return o
+  end)
+  set("C_Item", {
+    GetItemInfo = function(id)
+      return "Item " .. id, "|Hitem:" .. id .. "|h", 1, nil, nil, nil, nil, nil, nil, 134400
+    end,
+  })
   set("C_AuctionHouse", env.ah)
   set("C_AddOns", {
     LoadAddOn = function(name)

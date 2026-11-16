@@ -1,0 +1,138 @@
+-- Small flat-style widget helpers shared by AME windows.
+local _, ns = ...
+
+local W = {}
+ns.Widgets = W
+
+W.COLORS = {
+  bg = { 0.055, 0.06, 0.075, 0.96 },
+  panel = { 0.09, 0.1, 0.12, 1 },
+  border = { 1, 1, 1, 0.1 },
+  accent = { 0.2, 0.8, 1, 1 },
+  text = { 0.9, 0.9, 0.9, 1 },
+  dim = { 0.6, 0.62, 0.66, 1 },
+  up = { 0.3, 0.85, 0.45, 1 },
+  down = { 1, 0.38, 0.35, 1 },
+  hover = { 1, 1, 1, 0.06 },
+  selected = { 0.2, 0.8, 1, 0.18 },
+}
+
+local FLAT = {
+  bgFile = "Interface\\Buttons\\WHITE8x8",
+  edgeFile = "Interface\\Buttons\\WHITE8x8",
+  edgeSize = 1,
+}
+
+function W.Skin(frame, color, border)
+  if not frame.SetBackdrop then
+    Mixin(frame, BackdropTemplateMixin)
+  end
+  frame:SetBackdrop(FLAT)
+  local c, b = color or W.COLORS.bg, border or W.COLORS.border
+  frame:SetBackdropColor(c[1], c[2], c[3], c[4])
+  frame:SetBackdropBorderColor(b[1], b[2], b[3], b[4])
+end
+
+function W.Text(parent, font, justify)
+  local fs = parent:CreateFontString(nil, "OVERLAY", font or "GameFontHighlightSmall")
+  fs:SetJustifyH(justify or "LEFT")
+  return fs
+end
+
+-- flat button with hover and optional selected state; onClick(button)
+function W.Button(parent, label, width, height, onClick)
+  local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
+  b:SetSize(width or 60, height or 20)
+  W.Skin(b, W.COLORS.panel)
+  b.label = W.Text(b, "GameFontHighlightSmall", "CENTER")
+  b.label:SetPoint("CENTER")
+  b.label:SetText(label)
+  b:SetScript("OnEnter", function(self)
+    if not self.selected then
+      self:SetBackdropColor(0.14, 0.15, 0.18, 1)
+    end
+  end)
+  b:SetScript("OnLeave", function(self)
+    if not self.selected then
+      local c = W.COLORS.panel
+      self:SetBackdropColor(c[1], c[2], c[3], c[4])
+    end
+  end)
+  b:SetScript("OnClick", function(self)
+    if onClick then
+      onClick(self)
+    end
+  end)
+  function b:SetSelected(on)
+    self.selected = on
+    local c = on and W.COLORS.selected or W.COLORS.panel
+    self:SetBackdropColor(c[1], c[2], c[3], on and 1 or c[4])
+    local bc = on and W.COLORS.accent or W.COLORS.border
+    self:SetBackdropBorderColor(bc[1], bc[2], bc[3], on and 0.6 or bc[4])
+  end
+  return b
+end
+
+-- compact money: "1,234g 56s" / "56s 7c" / "7c", with coloured unit letters
+local function commas(n)
+  local s = tostring(n)
+  local out = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+  return (out:gsub("^,", ""))
+end
+
+function W.Money(copper, short)
+  if not copper then
+    return "|cff777777-|r"
+  end
+  copper = math.floor(copper + 0.5)
+  local g, s, c = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
+  local G, S, C = "|cffffd100g|r", "|cffc7c7cfs|r", "|cffeda55fc|r"
+  if g > 0 then
+    if short or g >= 1000 then
+      return commas(g) .. G
+    end
+    return ("%s%s %d%s"):format(commas(g), G, s, S)
+  elseif s > 0 then
+    return ("%d%s %d%s"):format(s, S, c, C)
+  end
+  return ("%d%s"):format(c, C)
+end
+
+function W.Percent(x, decimals)
+  if not x then
+    return "|cff777777-|r"
+  end
+  local c = x > 0.0005 and W.COLORS.up or x < -0.0005 and W.COLORS.down or W.COLORS.dim
+  return ("|cff%02x%02x%02x%+." .. (decimals or 1) .. "f%%|r"):format(c[1] * 255, c[2] * 255, c[3] * 255, x * 100)
+end
+
+function W.Signal(signal)
+  if signal == "buy" then
+    return "|cff4dd973BUY|r"
+  elseif signal == "sell" then
+    return "|cffff6159SELL|r"
+  end
+  return "|cff777777-|r"
+end
+
+-- item name/icon/quality colour; may be nil until the client has cached the item (call again after load)
+function W.ItemInfo(itemID)
+  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+  local name, link, quality, _, _, _, _, _, _, icon = getInfo(itemID)
+  if not icon and C_Item and C_Item.GetItemIconByID then
+    icon = C_Item.GetItemIconByID(itemID)
+  end
+  return name, link, quality, icon
+end
+
+-- run fn once item data is cached
+function W.OnItemLoaded(itemID, fn)
+  if Item and Item.CreateFromItemID then
+    local item = Item:CreateFromItemID(itemID)
+    if item and not item:IsItemEmpty() then
+      item:ContinueOnItemLoad(fn)
+      return
+    end
+  end
+  fn()
+end

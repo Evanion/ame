@@ -104,6 +104,38 @@ function AME:WithStore(name, shardKey, fn, onDone)
   end, onDone)
 end
 
+-- Rebuild the market index (30-day summary per item) in the background; tooltips and the screener read it.
+function AME:RebuildIndex()
+  if self.indexing then
+    self.indexPending = true
+    return
+  end
+  local shard = self:CurrentShard()
+  self.indexing = true
+  local t0 = debugprofilestop()
+  self:WithStore("index", shard, function(store, job)
+    return ns.MarketIndex.Build(store, math.floor(GetServerTime() / 86400), 30, function()
+      job:Checkpoint()
+    end)
+  end, function(ok, index)
+    self.indexing = false
+    if ok and index then
+      self.index = index
+      self.indexShard = shard
+      AME_DB.stats.indexBuild = { ms = math.floor(debugprofilestop() - t0), items = index.count }
+      if ns.UI and ns.UI.RefreshMarket then
+        ns.UI:RefreshMarket()
+      end
+    elseif not ok then
+      say("|cffff5555market index failed:|r %s", tostring(index))
+    end
+    if self.indexPending then
+      self.indexPending = false
+      self:RebuildIndex()
+    end
+  end)
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- ingestion
 
@@ -134,6 +166,7 @@ function AME:OnSnapshot(snap, t, kind, info)
         added = added,
       }
       say("recorded full scan: %d items from %d listings (%s)", #snap.ids, info and info.rows or 0, shard)
+      self:RebuildIndex()
     else
       AME_DB.stats.partials = (AME_DB.stats.partials or 0) + 1
     end
@@ -185,6 +218,7 @@ function AME:Backfill(force)
       AME_DB.backfilled[shard] = GetServerTime()
       if (n or 0) > 0 then
         say("imported %d days of Auctionator price history into %s", n, shard)
+        self:RebuildIndex()
       end
     else
       say("Auctionator import failed: %s", tostring(n))
@@ -225,6 +259,15 @@ function handlers.PLAYER_LOGIN()
   }) do
     pcall(events.RegisterEvent, events, e) -- tolerate events a client flavour doesn't have
   end
+  if ns.Tooltip then
+    ns.Tooltip:Install()
+  end
+  -- load history shortly after login (not during it) so tooltips have market data
+  C_Timer.After(3, function()
+    if AME:LoadHistory() then
+      AME:RebuildIndex()
+    end
+  end)
 end
 
 function handlers.AUCTION_HOUSE_SHOW()
@@ -352,13 +395,14 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     ns.SelfTest.Run(AME)
   elseif cmd == "backfill" then
     AME:Backfill(true)
-  elseif cmd == "window" or cmd == "" then
-    if ns.ItemWindow then
-      ns.ItemWindow:Toggle(itemIDFrom(rest))
-    else
-      say("commands: item <link>, status, selftest, backfill")
-    end
+  elseif cmd == "" then
+    ns.UI:Toggle()
+  elseif cmd == "help" then
+    say("/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it")
+    say("/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill")
+  elseif itemIDFrom(msg) then
+    ns.UI:ShowItem(itemIDFrom(msg))
   else
-    say("commands: /ame [item link], /ame item <link>, /ame status, /ame selftest, /ame backfill")
+    say("unknown command, try /ame help")
   end
 end

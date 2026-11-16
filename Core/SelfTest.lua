@@ -145,6 +145,22 @@ function SelfTest.Run(AME)
     return "PASS", ("item %d: %d points in %.1f ms"):format(id, #series, ms)
   end)
 
+  check("market index", function()
+    local b = AME_DB.stats.indexBuild
+    if not AME.index then
+      return "WARN", AME.indexing and "still building in the background" or "not built yet (needs history)"
+    end
+    return "PASS", ("%d items summarized%s"):format(AME.index.count, b and (" in " .. b.ms .. " ms wall") or "")
+  end)
+
+  check("chart library + window", function()
+    assert(LibStub("LibAMEChart-1.0", true), "LibAMEChart-1.0 not loaded")
+    ns.UI:Create()
+    ns.UI:ShowTab("market")
+    ns.UI.frame:Hide()
+    return "PASS", "window created, market tab rendered"
+  end)
+
   check("backfill", function()
     local when = AME_DB.backfilled[AME:CurrentShard()]
     if not when then

@@ -1,0 +1,173 @@
+-- Market analytics over daily series. Pure: no WoW API calls.
+--
+-- Summarize(series) -> {
+--   market, min, qty            latest day's values
+--   avg7, avg30                 mean market over the last 7 / 30 points
+--   change1, change7, change30  fractional change of market vs 1 / 7 / 30 points earlier (0.1 = +10%)
+--   vol30                       stdev of daily log returns over the last 30 points
+--   z30                         z-score of today's market vs the last 30 points (mean reversion)
+--   trend30                     least-squares slope per day / mean (drift: +0.01 = +1%/day)
+--   supplyTrend30               same for quantity
+--   days                        number of points
+--   score, signal               opportunity score (higher = cheaper than usual on a stable item) and
+--                               "buy" | "sell" | "none"
+-- }
+-- Signals are deliberately conservative: they need >= MIN_DAYS of history and a big enough deviation relative to the
+-- item's own volatility.
+local _, ns = ...
+
+local exp, floor, log, max, min, sqrt = math.exp, math.floor, math.log, math.max, math.min, math.sqrt
+
+local Analytics = {}
+ns.Analytics = Analytics
+
+Analytics.MIN_DAYS = 7
+Analytics.BUY_Z = -1.5
+Analytics.SELL_Z = 1.5
+
+local function round(x)
+  return floor(x + 0.5)
+end
+
+-- mean of values[last-n+1 .. last]
+function Analytics.SMA(values, n, last)
+  last = last or #values
+  if last < n or n <= 0 then
+    return nil
+  end
+  local sum = 0
+  for i = last - n + 1, last do
+    sum = sum + values[i]
+  end
+  return sum / n
+end
+
+function Analytics.EMASeries(values, n)
+  local alpha = 2 / (n + 1)
+  local out = {}
+  for i, v in ipairs(values) do
+    out[i] = i == 1 and v or (alpha * v + (1 - alpha) * out[i - 1])
+  end
+  return out
+end
+
+function Analytics.Change(from, to)
+  if not from or not to or from == 0 then
+    return nil
+  end
+  return (to - from) / from
+end
+
+local function meanStd(values, first, last)
+  local n = last - first + 1
+  if n < 1 then
+    return nil, nil
+  end
+  local sum = 0
+  for i = first, last do
+    sum = sum + values[i]
+  end
+  local mean = sum / n
+  local sq = 0
+  for i = first, last do
+    sq = sq + (values[i] - mean) ^ 2
+  end
+  return mean, sqrt(sq / n)
+end
+
+function Analytics.Volatility(values)
+  local returns = {}
+  for i = 2, #values do
+    if values[i - 1] > 0 and values[i] > 0 then
+      returns[#returns + 1] = log(values[i] / values[i - 1])
+    end
+  end
+  if #returns < 1 then
+    return nil
+  end
+  local _, std = meanStd(returns, 1, #returns)
+  return std
+end
+
+function Analytics.ZScore(values)
+  local mean, std = meanStd(values, 1, #values)
+  if not mean then
+    return nil
+  end
+  if std == 0 then
+    return 0
+  end
+  return (values[#values] - mean) / std
+end
+
+-- least-squares slope per step, divided by the mean (relative drift per step)
+function Analytics.Trend(values)
+  local n = #values
+  if n < 2 then
+    return nil
+  end
+  local sx, sy, sxx, sxy = 0, 0, 0, 0
+  for i = 1, n do
+    local y = values[i]
+    sx, sy, sxx, sxy = sx + i, sy + y, sxx + i * i, sxy + i * y
+  end
+  local denom = n * sxx - sx * sx
+  local mean = sy / n
+  if denom == 0 or mean == 0 then
+    return 0
+  end
+  return ((n * sxy - sx * sy) / denom) / mean
+end
+
+local function tail(values, n)
+  local out = {}
+  for i = max(1, #values - n + 1), #values do
+    out[#out + 1] = values[i]
+  end
+  return out
+end
+
+function Analytics.Summarize(series)
+  local n = #series
+  if n == 0 then
+    return nil
+  end
+  local markets, qtys = {}, {}
+  for i, p in ipairs(series) do
+    markets[i], qtys[i] = p.market, p.qty or 0
+  end
+  local last = series[n]
+  local s = {
+    market = last.market,
+    min = last.min,
+    qty = last.qty,
+    days = n,
+    avg7 = round(Analytics.SMA(markets, min(7, n))),
+    avg30 = round(Analytics.SMA(markets, min(30, n))),
+    change1 = n > 1 and Analytics.Change(markets[n - 1], markets[n]) or nil,
+    change7 = n > 7 and Analytics.Change(markets[n - 7], markets[n]) or nil,
+    change30 = n > 30 and Analytics.Change(markets[n - 30], markets[n]) or nil,
+  }
+  local window = tail(markets, 30)
+  s.vol30 = Analytics.Volatility(window)
+  s.z30 = Analytics.ZScore(window)
+  s.trend30 = Analytics.Trend(window)
+  s.supplyTrend30 = Analytics.Trend(tail(qtys, 30))
+
+  -- opportunity score: how far below its usual price an item is (negative z), damped for volatile items, nudged by
+  -- a rising trend. Squashed to (-100, 100) so it sorts nicely in the screener.
+  local z = s.z30 or 0
+  local volPenalty = 1 / (1 + 10 * (s.vol30 or 0))
+  local raw = -z * volPenalty + 5 * (s.trend30 or 0)
+  s.score = round(100 * (2 / (1 + exp(-raw)) - 1))
+
+  s.signal = "none"
+  if n >= Analytics.MIN_DAYS and s.z30 then
+    if z <= Analytics.BUY_Z then
+      s.signal = "buy"
+    elseif z >= Analytics.SELL_Z then
+      s.signal = "sell"
+    end
+  end
+  return s
+end

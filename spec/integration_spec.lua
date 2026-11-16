@@ -113,6 +113,61 @@ describe("addon in a stubbed client", function()
     assert.are.equal("PASS", AME_DB.selftest.results[1].status)
   end)
 
+  describe("UI", function()
+    local function seeded()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      for d = 0, 9 do
+        env.now = env.now + 86400
+        fullScan({ { 2589, 1000 + d * 10, 10 }, { 4306, 5000 - d * 100, 5 } })
+      end
+      env:advance(4) -- login timer: load history + build index
+      drainJobs()
+    end
+
+    it("builds the market index after scans and feeds the screener", function()
+      seeded()
+      assert.is_not_nil(ns.AME.index)
+      assert.are.equal(2, ns.AME.index.count)
+      env:slash("AZEROTHMERCANTILEEXCHANGE", "")
+      ns.UI:ShowTab("market")
+      local rows = ns.UI.marketView.rows
+      assert.is_not_nil(rows[1].itemID)
+      assert.truthy(rows[1].cells[1].text:find("Item"))
+    end)
+
+    it("opens an item chart from /ame <link> and fills stats after loading", function()
+      seeded()
+      env:slash("AZEROTHMERCANTILEEXCHANGE", "|cffffffff|Hitem:2589::::|h[Linen Cloth]|h|r")
+      assert.are.equal(2589, ns.UI.itemID)
+      drainJobs()
+      local cards = ns.UI.itemView.cards
+      assert.truthy(cards[1].value.text:find("c") or cards[1].value.text:find("s"))
+      assert.is_not_nil(ns.UI.chart.view) -- chart rendered
+    end)
+
+    it("shows a friendly message for an item without history", function()
+      seeded()
+      ns.UI:ShowItem(99999)
+      drainJobs()
+      assert.truthy(ns.UI.chart.message.text:find("No history"))
+    end)
+
+    it("range buttons and zoom don't error", function()
+      seeded()
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      for _, b in ipairs(ns.UI.itemView.rangeButtons) do
+        b.scripts.OnClick(b)
+      end
+      local chartFrame = ns.UI.chart.frame
+      chartFrame.scripts.OnEnter(chartFrame)
+      chartFrame.scripts.OnMouseWheel(chartFrame, 1)
+      chartFrame.scripts.OnDoubleClick(chartFrame)
+    end)
+  end)
+
   it("/ame status works before any scan", function()
     boot()
     env:slash("AZEROTHMERCANTILEEXCHANGE", "status")

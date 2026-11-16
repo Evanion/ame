@@ -10,6 +10,7 @@ exclude_files = {
 
 ignore = {
   "212/self", -- unused self argument (method style)
+  "432/self", -- shadowing self in nested script handlers (idiomatic in WoW UI code)
 }
 
 -- WoW API globals we read. Extend as code starts using more of the API.
@@ -22,7 +23,7 @@ read_globals = {
   "GameFontHighlightSmall", "GameFontNormalLarge", "GameFontDisableSmall", "UISpecialFrames", "GetCursorPosition",
   "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "Item", "TooltipDataProcessor", "Enum", "C_TooltipInfo",
   "GetItemInfo", "C_Item", "CreateFramePool", "CreateTexturePool", "Mixin", "CreateFromMixins", "ColorMixin",
-  "CreateColor",
+  "CreateColor", "ITEM_QUALITY_COLORS", "ItemRefTooltip", "ChatEdit_InsertLink", "HandleModifiedItemClick",
   -- namespaces
   "C_AuctionHouse", "C_ChatInfo", "C_AddOns", "LoadAddOn",
   -- unit / realm
