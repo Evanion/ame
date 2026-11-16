@@ -28,7 +28,7 @@ read_globals = {
   "C_AuctionHouse", "C_ChatInfo", "C_AddOns", "LoadAddOn",
   -- unit / realm
   "GetServerTime", "GetNormalizedRealmName", "GetRealmName", "GetAutoCompleteRealms", "UnitName",
-  "UnitFactionGroup",
+  "UnitFactionGroup", "IsInGuild",
   -- optional integrations
   "Auctionator", "LibStub",
 }

@@ -169,6 +169,7 @@ function AME:OnSnapshot(snap, t, kind, info)
         say("recorded full scan: %d items from %d listings (%s)", #snap.ids, info and info.rows or 0, shard)
       end
       self:RebuildIndex()
+      ns.SyncService:Announce()
     else
       AME_DB.stats.partials = (AME_DB.stats.partials or 0) + 1
     end
@@ -271,6 +272,9 @@ function handlers.PLAYER_LOGIN()
       AME:RebuildIndex()
     end
   end)
+  if ns.SyncService:Init(AME, AME.syncTransport) then
+    ns.SyncService:Start()
+  end
 end
 
 function handlers.AUCTION_HOUSE_SHOW()
@@ -384,6 +388,14 @@ local function cmdStatus()
       say("history: %d raw scans, %d days, %.0f KB", #(data.raw or {}), days, bytes / 1024)
     end
   end
+  say(
+    "guild sync: %s · announced %d, served %d, received %d, rejected %d",
+    ns.SyncService:Active() and "on" or "off",
+    s.syncAnnounced or 0,
+    s.syncServed or 0,
+    s.syncReceived or 0,
+    s.syncRejected or 0
+  )
 end
 
 SLASH_AZEROTHMERCANTILEEXCHANGE1 = "/ame"

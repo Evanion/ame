@@ -240,6 +240,9 @@ function M.install(opts)
   dofile("Libs/LibDeflate/LibDeflate.lua")
   dofile("LibAMEChart-1.0/LibAMEChart-1.0.lua")
   -- UI globals
+  set("IsInGuild", function()
+    return env.inGuild
+  end)
   set("UISpecialFrames", {})
   set("tinsert", table.insert)
   set("ITEM_QUALITY_COLORS", { [1] = { hex = "|cffffffff" }, [3] = { hex = "|cff0070dd" } })

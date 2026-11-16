@@ -18,6 +18,9 @@ describe("addon in a stubbed client", function()
   local function boot(opts)
     env = wow.install(opts)
     ns = wow.loadAddon("AzerothMercantileExchange.toc", "AzerothMercantileExchange")
+    if opts and opts.pre then
+      opts.pre(ns)
+    end
     env:fire("ADDON_LOADED", "AzerothMercantileExchange")
     env:fire("PLAYER_LOGIN")
   end
@@ -165,6 +168,110 @@ describe("addon in a stubbed client", function()
       chartFrame.scripts.OnEnter(chartFrame)
       chartFrame.scripts.OnMouseWheel(chartFrame, 1)
       chartFrame.scripts.OnDoubleClick(chartFrame)
+    end)
+  end)
+
+  describe("guild sync", function()
+    local sent, deliver
+
+    local function bootSync()
+      sent = {}
+      boot({
+        pre = function(n)
+          n.AME.syncTransport = {
+            Register = function(_, _, handler)
+              deliver = handler
+            end,
+            Send = function(_, _, msg, distribution, target)
+              sent[#sent + 1] = { msg = msg, distribution = distribution, target = target }
+            end,
+          }
+        end,
+      })
+      env.inGuild = true
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+    end
+
+    -- a guildmate's packed full scan
+    local function peerScan(prices)
+      local acc = ns.Stats.NewAccumulator()
+      for id, p in pairs(prices) do
+        acc:Add(id, p, 1)
+      end
+      return {
+        t = env.now - 600,
+        src = "Guild Mate",
+        k = "full",
+        s = ns.Codec.Pack(ns.Codec.EncodeSnapshot(acc:Finish()), ns.AME.compressor),
+      }
+    end
+
+    it("announces our full scan to the guild after recording it", function()
+      bootSync()
+      fullScan({ { 2589, 1000, 10 } })
+      local last = sent[#sent]
+      assert.are.equal("GUILD", last.distribution)
+      assert.are.equal("announce", ns.Sync.Decode(last.msg).type)
+    end)
+
+    it("requests a scan it lacks and merges the reply", function()
+      bootSync()
+      local entry = peerScan({ [2589] = 120, [4306] = 900 })
+      deliver(ns.Sync.EncodeAnnounce("TestRealm|Horde", { { t = entry.t, src = entry.src } }), "GUILD", "Guild Mate")
+      local req = ns.Sync.Decode(sent[#sent].msg)
+      assert.are.equal("request", req.type)
+      assert.are.equal("Guild Mate", sent[#sent].target)
+
+      deliver(ns.Sync.EncodeScan("TestRealm|Horde", entry), "WHISPER", "Guild Mate")
+      drainJobs()
+      local raw = AME_HistoryDB.shards["TestRealm|Horde"].raw
+      assert.are.equal("Guild Mate", raw[#raw].src)
+      assert.is_true(env:chatContains("received a full scan from Guild Mate"))
+      assert.are.equal(1, AME_DB.stats.syncReceived)
+
+      -- the same announcement again: nothing more to request
+      local before = #sent
+      deliver(ns.Sync.EncodeAnnounce("TestRealm|Horde", { { t = entry.t, src = entry.src } }), "GUILD", "Guild Mate")
+      assert.are.equal(before, #sent)
+    end)
+
+    it("serves our scans to guildmates who ask", function()
+      bootSync()
+      fullScan({ { 2589, 1000, 10 } })
+      local mine = AME_HistoryDB.shards["TestRealm|Horde"].raw[1]
+      deliver(ns.Sync.EncodeRequest("TestRealm|Horde", mine.t, mine.src), "WHISPER", "Guild Mate")
+      local reply = ns.Sync.Decode(sent[#sent].msg)
+      assert.are.equal("scan", reply.type)
+      assert.are.equal("Guild Mate", sent[#sent].target)
+      assert.are.equal(mine.s, reply.packed)
+    end)
+
+    it("rejects a poisoned scan that disagrees wildly with our prices", function()
+      bootSync()
+      local rows = {}
+      for id = 1, 10 do
+        rows[#rows + 1] = { id, 1000, 1 }
+      end
+      fullScan(rows)
+      env:advance(4)
+      drainJobs()
+      local prices = {}
+      for id = 1, 10 do
+        prices[id] = 1000000 -- 1000x our market
+      end
+      deliver(ns.Sync.EncodeScan("TestRealm|Horde", peerScan(prices)), "WHISPER", "Guild Mate")
+      drainJobs()
+      assert.are.equal(1, AME_DB.stats.syncRejected)
+      assert.are.equal(1, #AME_HistoryDB.shards["TestRealm|Horde"].raw)
+    end)
+
+    it("ignores other realms, its own messages and garbage", function()
+      bootSync()
+      deliver(ns.Sync.EncodeAnnounce("OtherRealm|Horde", { { t = env.now, src = "X" } }), "GUILD", "Guild Mate")
+      deliver(ns.Sync.EncodeAnnounce("TestRealm|Horde", { { t = env.now, src = "X" } }), "GUILD", "Tyken")
+      deliver("garbage", "GUILD", "Guild Mate")
+      assert.are.equal(0, #sent)
     end)
   end)
 

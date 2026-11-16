@@ -10,6 +10,7 @@ Settings.DEFAULTS = {
   tooltip = true,
   clickModifier = "alt", -- "alt" | "altshift" | "none"
   announceScans = true,
+  syncGuild = true,
   minimap = { hide = false },
 }
 
@@ -123,6 +124,25 @@ function Settings:RegisterOptions()
                 end
               end
             end,
+          },
+        },
+      },
+      sync = {
+        type = "group",
+        inline = true,
+        order = 15,
+        name = "Sharing",
+        args = {
+          syncGuild = {
+            type = "toggle",
+            order = 1,
+            width = "full",
+            name = "Share full scans with guild members who use AME",
+            desc = "Announces your recent full scans to the guild and fetches ones you're missing, paced in the "
+              .. "background so it never disrupts chat or raid addons. Received scans that disagree wildly with "
+              .. "your own prices are rejected.",
+            get = get,
+            set = set,
           },
         },
       },

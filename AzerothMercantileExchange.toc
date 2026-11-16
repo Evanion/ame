@@ -20,6 +20,8 @@ Core\Ingest.lua
 Core\Backfill.lua
 Core\Analytics.lua
 Core\MarketIndex.lua
+Core\Sync.lua
+Core\SyncService.lua
 Core\Main.lua
 Core\SelfTest.lua
 Core\UI\Widgets.lua

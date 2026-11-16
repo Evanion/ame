@@ -161,6 +161,27 @@ function SelfTest.Run(AME)
     return "PASS", "window created, market tab rendered"
   end)
 
+  check("guild sync", function()
+    local svc = ns.SyncService
+    if not svc.enabled then
+      return "WARN", "AceComm not available: sync disabled"
+    end
+    if not ns.Settings:Get("syncGuild") then
+      return "WARN", "turned off in settings"
+    end
+    if not (IsInGuild and IsInGuild()) then
+      return "WARN", "not in a guild"
+    end
+    local s = AME_DB.stats
+    return "PASS",
+      ("announced %d, served %d, received %d, rejected %d"):format(
+        s.syncAnnounced or 0,
+        s.syncServed or 0,
+        s.syncReceived or 0,
+        s.syncRejected or 0
+      )
+  end)
+
   check("backfill", function()
     local when = AME_DB.backfilled[AME:CurrentShard()]
     if not when then
