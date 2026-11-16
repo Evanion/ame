@@ -134,6 +134,19 @@ M.newObject = newObject
 local function newAuctionHouse()
   local a = { rows = {}, commodities = {} }
   function a.ReplicateItems() end
+  -- browse results: a.browse = { { itemID, minPrice, totalQuantity }, ... }; a.browseFull
+  a.browse, a.browseFull = {}, true
+  function a.SendBrowseQuery() end
+  function a.HasFullBrowseResults()
+    return a.browseFull
+  end
+  function a.GetBrowseResults()
+    local out = {}
+    for i, r in ipairs(a.browse) do
+      out[i] = { itemKey = { itemID = r[1], itemLevel = 0, itemSuffix = 0 }, minPrice = r[2], totalQuantity = r[3] }
+    end
+    return out
+  end
   function a.GetNumReplicateItems()
     return #a.rows
   end

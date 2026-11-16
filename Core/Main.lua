@@ -284,7 +284,19 @@ function handlers.PLAYER_LOGIN()
       AME.ingest:OnReplicateRequested()
     end)
   end
-  -- legacy AH API (Auctionator on Forever): a getAll query is a full scan
+  -- browse summary scan (Auctionator's default full scan): an unfiltered browse query paged to the end
+  if C_AuctionHouse and C_AuctionHouse.SendBrowseQuery then
+    hooksecurefunc(C_AuctionHouse, "SendBrowseQuery", function(query)
+      AME.ingest:OnBrowseQuery(query)
+      if AME.ingest.browseRequested then
+        AME.scanRequestedAt = debugprofilestop()
+        local d = AME:ScanDiag()
+        d.requests, d.browseRequests = (d.requests or 0) + 1, (d.browseRequests or 0) + 1
+        d.lastRequestAt, d.eventsSinceRequest = GetServerTime(), 0
+      end
+    end)
+  end
+  -- legacy AH API (classic flavours): a getAll query is a full scan
   if QueryAuctionItems then
     hooksecurefunc("QueryAuctionItems", function(_, _, _, _, _, _, getAll)
       if getAll then
@@ -300,6 +312,8 @@ function handlers.PLAYER_LOGIN()
     "AUCTION_HOUSE_SHOW",
     "AUCTION_HOUSE_CLOSED",
     "REPLICATE_ITEM_LIST_UPDATE",
+    "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
+    "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "COMMODITY_SEARCH_RESULTS_UPDATED",
     "ITEM_SEARCH_RESULTS_UPDATED",
   }) do
@@ -345,6 +359,14 @@ function handlers.REPLICATE_ITEM_LIST_UPDATE()
   d.eventsSinceRequest = (d.eventsSinceRequest or 0) + 1
   AME.ingest:OnReplicateUpdate()
 end
+
+function handlers.AUCTION_HOUSE_BROWSE_RESULTS_UPDATED()
+  local d = AME:ScanDiag()
+  d.events = (d.events or 0) + 1
+  d.eventsSinceRequest = (d.eventsSinceRequest or 0) + 1
+  AME.ingest:OnBrowseResults()
+end
+handlers.AUCTION_HOUSE_BROWSE_RESULTS_ADDED = handlers.AUCTION_HOUSE_BROWSE_RESULTS_UPDATED
 
 function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)
   AME.ingest:OnCommodityResults(itemID)

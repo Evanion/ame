@@ -5,7 +5,11 @@
 -- ~once per row for over a minute. We read the list ONCE per request, on the first event, time-sliced via Jobs.
 -- Prices and counts are present even on rows with hasAllInfo == false, so no item-data loading is needed.
 --
--- Legacy full scans (Auctionator on Forever loads its legacy AH code): QueryAuctionItems(..., getAll = true).
+-- Browse summary scans (Auctionator's default "Full Scan" when its replicate option is off): an empty
+-- C_AuctionHouse.SendBrowseQuery paged with RequestMoreBrowseResults until HasFullBrowseResults(). Each result is one
+-- item key with minPrice and totalQuantity only, so the snapshot's market/median equal the minimum.
+--
+-- Legacy full scans (Auctionator on classic flavours with the old AH): QueryAuctionItems(..., getAll = true).
 -- Auctionator unregisters every other frame's AUCTION_ITEM_LIST_UPDATE during its scan, so instead of waiting for the
 -- event we poll GetNumAuctionItems("list") until the list is complete and stable, then read it the same way.
 -- Legacy rows have count, buyout and itemID at the same positions as replicate rows.
@@ -57,6 +61,72 @@ function Ingest:OnReplicateUpdate()
   local api = self.api
   local total = api.GetNumReplicateItems() or 0
   self:read(0, total - 1, total, api.GetReplicateItemInfo)
+end
+
+-- browse query sent; only an unfiltered one is a full (summary) scan
+function Ingest:OnBrowseQuery(query)
+  if type(query) ~= "table" then
+    return
+  end
+  local text = query.searchString or ""
+  local filtered = (query.filters and #query.filters > 0) or (query.itemClassFilters and #query.itemClassFilters > 0)
+  self.browseRequested = text == "" and not filtered
+end
+
+-- AUCTION_HOUSE_BROWSE_RESULTS_UPDATED / _ADDED
+function Ingest:OnBrowseResults()
+  local api = self.api
+  if not self.browseRequested or self.reading or not api.HasFullBrowseResults() then
+    return
+  end
+  self.browseRequested = false
+  local results = api.GetBrowseResults() or {}
+  self.reading, self.aborted = true, false
+  local t = self.now()
+  if self.onReadStart then
+    self.onReadStart(#results)
+  end
+  self.jobs:Add("ingest-browse", function(job)
+    local byID = {}
+    for i, r in ipairs(results) do
+      if self.aborted then
+        return nil
+      end
+      local id = r.itemKey and r.itemKey.itemID
+      if id and id > 0 and r.minPrice and r.minPrice > 0 and (r.totalQuantity or 0) > 0 then
+        local e = byID[id]
+        if not e then
+          byID[id] = { min = r.minPrice, qty = r.totalQuantity, keys = 1 }
+        else
+          e.min = math.min(e.min, r.minPrice)
+          e.qty = e.qty + r.totalQuantity
+          e.keys = e.keys + 1
+        end
+      end
+      if i % 64 == 0 then
+        job:Checkpoint()
+      end
+    end
+    local ids = {}
+    for id in pairs(byID) do
+      ids[#ids + 1] = id
+    end
+    table.sort(ids)
+    local snap = { ids = ids, min = {}, market = {}, median = {}, qty = {}, auctions = {}, skipped = 0 }
+    for i, id in ipairs(ids) do
+      local e = byID[id]
+      snap.min[i], snap.market[i], snap.median[i] = e.min, e.min, e.min
+      snap.qty[i], snap.auctions[i] = e.qty, e.keys
+    end
+    return snap
+  end, function(ok, snap)
+    self.reading = false
+    if not ok then
+      self.onSnapshot(nil, t, "error", { error = snap })
+    elseif snap and not self.aborted then
+      self.onSnapshot(snap, t, "full", { rows = #results, skipped = 0, source = "browse" })
+    end
+  end)
 end
 
 -- legacy getAll query sent (hook on QueryAuctionItems with getAll = true)
@@ -130,7 +200,7 @@ function Ingest:OnAuctionHouseClosed()
   if self.reading then
     self.aborted = true
   end
-  self.requested = false
+  self.requested, self.browseRequested = false, false
   self.pollGen = (self.pollGen or 0) + 1 -- stop waiting for a getAll list
 end
 

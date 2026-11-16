@@ -5,7 +5,17 @@ describe("Ingest", function()
 
   -- fake C_AuctionHouse: replicate rows are {itemID, buyout, count}
   local function fakeApi()
-    local a = { rows = {}, commodities = {}, items = {}, full = {} }
+    local a = { rows = {}, commodities = {}, items = {}, full = {}, browse = {}, browseFull = false }
+    function a.HasFullBrowseResults()
+      return a.browseFull
+    end
+    function a.GetBrowseResults()
+      local out = {}
+      for i, r in ipairs(a.browse) do
+        out[i] = { itemKey = { itemID = r[1], itemLevel = r[4] or 0 }, minPrice = r[2], totalQuantity = r[3] }
+      end
+      return out
+    end
     function a.GetNumReplicateItems()
       return #a.rows
     end
@@ -147,6 +157,54 @@ describe("Ingest", function()
       ingest:OnReplicateUpdate()
       drain()
       assert.are.equal(2, #got)
+    end)
+  end)
+
+  describe("browse summary scans", function()
+    local EMPTY = { searchString = "", sorts = {}, filters = {}, itemClassFilters = {} }
+
+    it("reads an unfiltered browse once all pages are in", function()
+      ingest:OnBrowseQuery(EMPTY)
+      api.browse = { { 10, 500, 5 } }
+      ingest:OnBrowseResults() -- first page, more to come
+      drain()
+      assert.are.equal(0, #got)
+      api.browse = { { 10, 500, 5 }, { 10, 300, 2, 60 }, { 20, 1000, 1 }, { 30, 0, 4 } }
+      api.browseFull = true
+      ingest:OnBrowseResults()
+      ingest:OnBrowseResults() -- later events are ignored
+      drain()
+      assert.are.equal(1, #got)
+      local snap = got[1].snap
+      assert.are.equal("full", got[1].kind)
+      assert.are.equal("browse", got[1].info.source)
+      assert.are.same({ 10, 20 }, snap.ids) -- item 30 has no price
+      assert.are.equal(300, snap.min[1]) -- cheapest of the item's keys
+      assert.are.equal(300, snap.market[1])
+      assert.are.equal(7, snap.qty[1])
+    end)
+
+    it("ignores searches and filtered browsing", function()
+      api.browse, api.browseFull = { { 10, 500, 5 } }, true
+      ingest:OnBrowseQuery({ searchString = "linen", filters = {}, itemClassFilters = {} })
+      ingest:OnBrowseResults()
+      ingest:OnBrowseQuery({ searchString = "", filters = {}, itemClassFilters = { { classID = 7 } } })
+      ingest:OnBrowseResults()
+      drain()
+      assert.are.equal(0, #got)
+    end)
+
+    it("is dropped when the AH closes mid-read", function()
+      for i = 1, 3000 do
+        api.browse[i] = { i, 100, 1 }
+      end
+      api.browseFull = true
+      ingest:OnBrowseQuery(EMPTY)
+      ingest:OnBrowseResults()
+      runner:Tick()
+      ingest:OnAuctionHouseClosed()
+      drain()
+      assert.are.equal(0, #got)
     end)
   end)
 

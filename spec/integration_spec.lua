@@ -149,7 +149,20 @@ describe("addon in a stubbed client", function()
     assert.is_not_nil(AME_DB.stats.lastFull)
   end)
 
-  it("records a legacy getAll full scan (Auctionator on Forever)", function()
+  it("records Auctionator's default browse summary scan", function()
+    boot()
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    env.ah.browse = { { 2589, 120, 40 }, { 4306, 900, 12 } }
+    C_AuctionHouse.SendBrowseQuery({ searchString = "", sorts = {}, filters = {}, itemClassFilters = {} })
+    env:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+    drainJobs()
+    assert.is_true(env:chatContains("reading full scan %(2 listings%)"))
+    assert.is_true(env:chatContains("recorded full scan: 2 items"))
+    assert.are.equal(1, AME_DB.stats.scan.browseRequests)
+  end)
+
+  it("records a legacy getAll full scan (classic AH)", function()
     boot()
     env.npcFaction = "Horde"
     env:fire("AUCTION_HOUSE_SHOW")
