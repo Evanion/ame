@@ -126,6 +126,29 @@ describe("addon in a stubbed client", function()
     assert.is_not_nil(ns.AME.index)
   end)
 
+  it("records a full scan on a day that Auctionator history already covers", function()
+    local DAY = 86400
+    local today = math.floor(1794825000 / DAY)
+    boot({
+      auctionator = {
+        Constants = { SCAN_DAY_0 = (today - 5) * DAY },
+        Database = {
+          db = {
+            ["2589"] = { l = { ["5"] = 80 }, h = { ["5"] = 120, ["4"] = 110 }, a = { ["5"] = 3 }, m = 100 },
+            ["4306"] = { h = { ["5"] = 500 }, m = 500 },
+          },
+        },
+      },
+    })
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    drainJobs()
+    fullScan({ { 2589, 1000, 10 }, { 4306, 5000, 5 }, { 774, 300, 1 } })
+    assert.is_false(env:chatContains("failed"))
+    assert.is_true(env:chatContains("recorded full scan"))
+    assert.is_not_nil(AME_DB.stats.lastFull)
+  end)
+
   it("survives a client that lacks some events", function()
     boot({ unknownEvents = { COMMODITY_SEARCH_RESULTS_UPDATED = true } })
     env:fire("AUCTION_HOUSE_SHOW")
