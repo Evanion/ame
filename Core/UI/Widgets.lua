@@ -338,3 +338,32 @@ function W.CloseButton(parent, onClick)
   end)
   return b
 end
+
+-- Flat text input matching the buttons: panel background, padded text, accent border while focused.
+function W.Input(parent)
+  local box = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
+  W.Skin(box, W.COLORS.panel)
+  box:SetFontObject("GameFontHighlightSmall")
+  box:SetTextInsets(6, 6, 0, 0)
+  box:SetAutoFocus(false)
+  box:SetHeight(20)
+  box:HookScript("OnEditFocusGained", function(self)
+    local a = W.COLORS.accent
+    self:SetBackdropBorderColor(a[1], a[2], a[3], 0.7)
+  end)
+  box:HookScript("OnEditFocusLost", function(self)
+    local b = W.COLORS.border
+    self:SetBackdropBorderColor(b[1], b[2], b[3], b[4])
+  end)
+  box:HookScript("OnEnter", function(self)
+    if not self:HasFocus() then
+      self:SetBackdropColor(0.14, 0.15, 0.18, 1)
+    end
+  end)
+  box:HookScript("OnLeave", function(self)
+    local c = W.COLORS.panel
+    self:SetBackdropColor(c[1], c[2], c[3], c[4])
+  end)
+  box:SetScript("OnEscapePressed", box.ClearFocus)
+  return box
+end
