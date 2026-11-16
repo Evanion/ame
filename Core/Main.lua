@@ -191,6 +191,50 @@ function AME:CheckAlerts(index)
   end
 end
 
+-- Market index for any auction house (e.g. the goblin AH while you're at your faction's): cached per shard,
+-- dropped when that shard gets new data. cb(index or nil).
+AME.indexes = {}
+AME.indexWaiters = {}
+function AME:IndexFor(shard, cb)
+  if shard == self.indexShard and self.index then
+    return cb(self.index)
+  end
+  if self.indexes[shard] then
+    return cb(self.indexes[shard])
+  end
+  if not self:LoadHistory() or not self.history.shards[shard] then
+    return cb(nil)
+  end
+  local waiting = self.indexWaiters[shard]
+  if waiting then
+    waiting[#waiting + 1] = cb
+    return
+  end
+  self.indexWaiters[shard] = { cb }
+  self:WithStore("index-" .. shard, shard, function(store, job)
+    return ns.MarketIndex.Build(store, math.floor(GetServerTime() / 86400), 30, function()
+      job:Checkpoint()
+    end, ns.Settings:Get("outlierFactor"))
+  end, function(ok, index)
+    local cbs = self.indexWaiters[shard] or {}
+    self.indexWaiters[shard] = nil
+    if ok and index then
+      self.indexes[shard] = index
+    end
+    for _, f in ipairs(cbs) do
+      f(ok and index or nil)
+    end
+  end)
+end
+
+function AME:InvalidateIndex(shard)
+  if shard then
+    self.indexes[shard] = nil
+  else
+    self.indexes = {}
+  end
+end
+
 -- Rebuild the market index (30-day summary per item) in the background; tooltips and the screener read it.
 function AME:RebuildIndex()
   if self.indexing then
@@ -209,6 +253,7 @@ function AME:RebuildIndex()
     if ok and index then
       self.index = index
       self.indexShard = shard
+      self.indexes[shard] = index
       if shard == self:CurrentShard() then
         self:CheckAlerts(index)
       end
@@ -254,6 +299,7 @@ function AME:OnSnapshot(snap, t, kind, info)
       say("|cffff5555storing %s scan failed:|r %s", kind, tostring(added))
       return
     end
+    self:InvalidateIndex(shard)
     if kind == "full" then
       local ms = started and math.floor(debugprofilestop() - started) or nil
       AME_DB.stats.lastFull = {

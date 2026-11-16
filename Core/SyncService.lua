@@ -269,6 +269,7 @@ function Service:Merge(m, sender)
       if ns.Settings:Get("announceScans") then
         AME.Say("received a full scan from %s via sync (%d items, %s)", m.src, #snap.ids, m.shard)
       end
+      AME:InvalidateIndex(m.shard)
       if m.shard == AME:CurrentShard() then
         AME:RebuildIndex()
       end

@@ -22,6 +22,7 @@ Core\Analytics.lua
 Core\MarketIndex.lua
 Core\MarketFilter.lua
 Core\Watch.lua
+Core\Arbitrage.lua
 Core\Sync.lua
 Core\Trust.lua
 Core\SyncService.lua
@@ -32,5 +33,6 @@ Core\UI\ItemCache.lua
 Core\UI\Help.lua
 Core\UI\Window.lua
 Core\UI\Panels.lua
+Core\UI\ArbitrageView.lua
 Core\UI\Tooltip.lua
 Core\UI\Settings.lua

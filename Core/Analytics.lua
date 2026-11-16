@@ -139,6 +139,7 @@ function Analytics.Summarize(series)
   local last = series[n]
   local s = {
     market = last.market,
+    day = last.day,
     min = last.min,
     qty = last.qty,
     days = n,

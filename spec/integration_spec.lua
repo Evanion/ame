@@ -381,6 +381,43 @@ describe("addon in a stubbed client", function()
       assert.truthy(ns.UI.itemView.sub.text:find("1 outlier price ignored"))
     end)
 
+    it("finds buy-here-sell-there routes between the faction and goblin AH after the cut", function()
+      boot()
+      -- Horde AH: Linen cheap; goblin AH: Linen dear, Wool cheaper than at Horde
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 1000, 10 }, { 2592, 4000, 10 } })
+      env:fire("AUCTION_HOUSE_CLOSED")
+      env.now = env.now + 60
+      env.npcFaction = nil
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 3000, 10 }, { 2592, 4100, 10 } })
+      env:advance(4)
+      drainJobs()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("arbitrage")
+      local v = ns.UI.arbView
+      assert.are.equal("Horde", ns.UI.arb.buy) -- standing at the goblin AH: default is own faction -> goblin
+      assert.are.equal("Neutral", ns.UI.arb.sell)
+      v.scripts.OnShow(v)
+      drainJobs()
+      local rows = ns.UI.arbRows
+      assert.are.equal(1, #rows) -- Wool's 2.5% gap doesn't survive the 15% cut
+      local r = rows[1]
+      assert.are.equal(2589, r.itemID)
+      assert.are.equal(100, r.buy) -- per unit
+      assert.are.equal(300, r.sell)
+      assert.are.equal(45, r.fee) -- 15% goblin cut
+      assert.are.equal(155, r.profit)
+      assert.are.equal(2589, v.rows[1].itemID)
+      assert.truthy(v.status.text:find("15%% cut"))
+      -- the other way round finds nothing
+      v.swap.scripts.OnClick(v.swap)
+      drainJobs()
+      assert.are.equal(0, #ns.UI.arbRows)
+      assert.truthy(ns.UI.footer.text:find("Tyken Evanion"))
+    end)
+
     it("themes the window by auction house faction", function()
       boot()
       env.npcFaction = "Horde"

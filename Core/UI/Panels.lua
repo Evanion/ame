@@ -386,6 +386,7 @@ function UI:CreateSettingsView(parent, contentArea)
   }
   v.outliers = W.Dropdown(v, 120, factors, function(value)
     ns.Settings:Set("outlierFactor", value)
+    ns.AME:InvalidateIndex()
     ns.AME:RebuildIndex()
     if UI.itemID and UI.current == "item" then
       UI:ShowItem(UI.itemID)
@@ -442,8 +443,33 @@ function UI:CreateSettingsView(parent, contentArea)
     t:SetWidth(440)
     t:SetText(a[2])
   end
+  heading(v, "Auction house cut", COL2, -258)
+  local function cutInput(key, label, y)
+    local t = W.Text(v, "GameFontHighlightSmall")
+    t:SetPoint("TOPLEFT", COL2, y)
+    t:SetText(label)
+    local input = W.Input(v)
+    input:SetSize(44, 20)
+    input:SetNumeric(true)
+    input:SetPoint("TOPLEFT", COL2 + 170, y + 4)
+    input:SetScript("OnTextChanged", function(self, user)
+      local n = tonumber(self:GetText())
+      if user and n and n <= 100 then
+        ns.Settings:Set(key, n)
+      end
+    end)
+    input:SetScript("OnEnterPressed", input.ClearFocus)
+    local pct = W.Text(v, "GameFontHighlightSmall")
+    pct:SetPoint("LEFT", input, "RIGHT", 4, 0)
+    pct:SetText("%")
+    input.key = key
+    return input
+  end
+  v.cutFaction = cutInput("cutFaction", "Faction auction houses", -284)
+  v.cutNeutral = cutInput("cutNeutral", "Goblin auction houses", -310)
+
   local more = W.Text(v, "GameFontDisableSmall")
-  more:SetPoint("TOPLEFT", COL2, -260)
+  more:SetPoint("TOPLEFT", COL2, -340)
   more:SetWidth(440)
   more:SetText("Sharing settings are on the Sync tab. These options are also in the game's AddOns settings.")
 
@@ -473,6 +499,8 @@ function UI:RefreshSettings()
   v.style:SetIndex(indexOf(v.style.values, ns.Settings:Get("chartStyle")))
   v.click:SetIndex(indexOf(v.click.values, ns.Settings:Get("clickModifier")))
   v.outliers:SetIndex(indexOf(v.outliers.values, ns.Settings:Get("outlierFactor")))
+  v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
+  v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))
   local hasIcon = ns.Settings:HasMinimapLibrary()
   v.minimap:SetChecked(hasIcon and not AME_DB.settings.minimap.hide)
   v.minimap.label:SetText(

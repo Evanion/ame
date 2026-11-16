@@ -51,7 +51,8 @@ function UI:Create()
     b:SetPoint("TOPRIGHT", -(34 + x), -8)
     self.tabs[name] = b
   end
-  tab("market", "Market", 304)
+  tab("market", "Market", 380)
+  tab("arbitrage", "Arbitrage", 304)
   tab("item", "Item", 228)
   tab("sync", "Sync", 152)
   tab("settings", "Settings", 76)
@@ -62,8 +63,17 @@ function UI:Create()
     market = self:CreateMarketView(f),
     guide = ns.Help.CreateGuide(f, contentArea),
     sync = self:CreateSyncView(f, contentArea),
+    arbitrage = self:CreateArbitrageView(f, contentArea),
     settings = self:CreateSettingsView(f, contentArea),
   }
+  local footer = W.Text(f, "GameFontDisableSmall", "RIGHT")
+  footer:SetPoint("BOTTOMRIGHT", -12, 7)
+  footer:SetText(
+    ("Azeroth Mercantile Exchange %s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"):format(ns.VERSION)
+  )
+  footer:SetAlpha(0.7)
+  self.footer = footer
+
   f:SetScript("OnShow", function()
     UI.shardText:SetText(ns.AME:CurrentShard())
     UI:ApplyTheme()
@@ -130,7 +140,7 @@ end
 function contentArea(parent)
   local v = CreateFrame("Frame", nil, parent)
   v:SetPoint("TOPLEFT", 10, -36)
-  v:SetPoint("BOTTOMRIGHT", -10, 10)
+  v:SetPoint("BOTTOMRIGHT", -10, 24) -- room for the footer
   v:Hide()
   return v
 end
@@ -1089,6 +1099,9 @@ function UI:RenderWhenLoaded(itemID)
       C_Timer.After(0.05, function()
         self.renderQueued = false
         self:RenderMarket()
+        if self.RenderArbitrage then
+          self:RenderArbitrage()
+        end
       end)
     end
   end)

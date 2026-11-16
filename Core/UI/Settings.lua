@@ -12,11 +12,19 @@ Settings.DEFAULTS = {
   clickModifier = "alt", -- "alt" | "altshift" | "none"
   announceScans = true,
   alertSound = true,
+  cutFaction = 5, -- seller's cut in % at faction auction houses
+  cutNeutral = 15, -- and at goblin (neutral) auction houses
   outlierFactor = 4, -- ignore days priced more than this many times off their neighbours (false = off)
   syncGuild = true,
   syncTrusted = true,
   minimap = { hide = false },
 }
+
+-- seller's cut (fraction) at a house: Alliance / Horde / Neutral
+function Settings:AuctionCut(house)
+  local pct = house == "Neutral" and self:Get("cutNeutral") or self:Get("cutFaction")
+  return (tonumber(pct) or 0) / 100
+end
 
 function Settings:Get(key)
   local s = AME_DB.settings

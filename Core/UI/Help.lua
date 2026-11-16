@@ -45,6 +45,32 @@ Help.TERMS = {
       .. "stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. "
       .. "Sort by it to find bargains quickly.",
   },
+  arbBuy = {
+    "Buy at",
+    "The cheapest listing at the auction house you buy from - what the first units cost you.",
+  },
+  arbSell = {
+    "Sells for",
+    "The market price at the auction house you sell at: what the item typically sells for there.",
+  },
+  arbFee = {
+    "AH cut",
+    "The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones by "
+      .. "default (change it in Settings if Forever differs). Deposits aren't included - you get them back when "
+      .. "the item sells.",
+  },
+  arbProfit = { "Profit", "Per item: what it sells for, minus the AH cut, minus what you paid." },
+  arbMargin = { "Margin", "Profit as a share of what you paid. 50% means every 10g spent comes back as 15g." },
+  arbSupply = {
+    "Supply",
+    "Listed at the buy house / at the sell house. Plenty to buy and little to compete with where you sell is ideal; "
+      .. "a big gap on one listing at the buy house may be gone fast.",
+  },
+  arbAge = {
+    "Data",
+    "How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both "
+      .. "auction houses (alts on this account count) before buying.",
+  },
   candles = {
     "Candles",
     "Each candle covers one or more days. It opens at the previous candle's close and closes at the market "
@@ -81,6 +107,12 @@ Help.GUIDE = {
     "A screener over every item with history. Pick a category or watchlist on the left, search by name, filter "
       .. "by quality, price range or signal, and click a column to sort. Hover a column header for what it means. "
       .. "Click a row to open its chart; click the star to watch it.",
+  },
+  {
+    "Arbitrage tab",
+    "Items you can buy at one auction house and sell at another for a profit after the AH cut - e.g. your "
+      .. "faction's AH and the goblin AH (cross-faction). Each auction house keeps its own history, so scan both "
+      .. "(alts on this account count). Hover the columns for details.",
   },
   {
     "Item tab",
