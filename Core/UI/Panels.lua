@@ -449,8 +449,8 @@ function UI:CreateSettingsView(parent, contentArea)
   v.storage:SetSpacing(3)
   local actions = {
     {
-      "Re-import Auctionator history",
-      "Imports Auctionator's recent daily prices for this auction house again (fills gaps only).",
+      "Import history from Auctionator",
+      "If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH).",
       function()
         ns.AME:Backfill(true)
       end,

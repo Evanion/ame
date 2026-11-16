@@ -10,8 +10,9 @@ Help.TERMS = {
   market = {
     "Market price",
     "What the item typically sells for right now. From full listing data it's the average of the cheapest "
-      .. "15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From "
-      .. "Auctionator's default summary scan only the cheapest listing is known, so then it's the lowest price.",
+      .. "15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a "
+      .. "browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the "
+      .. "lowest price.",
   },
   min = { "Lowest", "The cheapest single listing seen in the latest data." },
   avg = {
@@ -104,9 +105,10 @@ end
 Help.GUIDE = {
   {
     "Where the data comes from",
-    "AME records every auction house scan you (or Auctionator, or AHDB) run - full scans and the searches you "
-      .. "do while buying and selling. Nothing extra is scanned. History is kept per market (realm or Forever "
-      .. "ruleset) and auction house, and guild members running AME share their full scans automatically.",
+    "AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the "
+      .. "default auction house window or any scanning addon (it works well with addons like Auctionator). "
+      .. "Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and "
+      .. "guild members running AME share their full scans automatically.",
   },
   {
     "Market tab",

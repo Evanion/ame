@@ -2,11 +2,13 @@
 
 A World of Warcraft: Forever addon that records auction house prices over time and turns them into a futures-market view: price and volume charts, trend and volatility signals, and a screener for items worth investing in.
 
-- It reuses Auctionator's full scans, so you never have to scan twice.
-- Prices are kept separately per realm and auction house (Alliance, Horde or Neutral).
-- Planned: sharing scans with guildmates and trusted friends.
+- It records every scan and search through the game's native auction house APIs, so it works with the default
+  auction house window and any scanning addon (it works well with addons like Auctionator). No extra scanning.
+- Prices are kept separately per market (realm, or ruleset on Forever) and auction house (Alliance, Horde or goblin).
+- Scans are shared with guildmates and trusted friends running AME.
+- Optional: imports your existing Auctionator price history on first use.
 
-**Status:** pre-alpha. See [docs/design.md](docs/design.md).
+**Status:** beta. See [docs/design.md](docs/design.md) and [docs/roadmap.md](docs/roadmap.md).
 
 ## Development
 

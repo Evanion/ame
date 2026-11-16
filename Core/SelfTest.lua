@@ -106,9 +106,9 @@ function SelfTest.Run(AME)
     return "PASS", key
   end)
 
-  check("auctionator", function()
+  check("auctionator history import", function()
     if not (Auctionator and Auctionator.API and Auctionator.API.v1) then
-      return "WARN", "Auctionator not loaded: full scans must come from another addon"
+      return "PASS", "Auctionator not installed: nothing to import (scans are recorded from the game either way)"
     end
     local hasDb = Auctionator.Database and type(Auctionator.Database.db) == "table"
     return "PASS", hasDb and "API + database found" or "API found, database not readable (no backfill)"
@@ -117,7 +117,7 @@ function SelfTest.Run(AME)
   check("last full scan", function()
     local f = AME_DB.stats.lastFull
     if not f then
-      return "WARN", "none yet: open the AH and run an Auctionator full scan, then rerun /ame selftest"
+      return "WARN", "none yet: open the AH and run a full scan, then rerun /ame selftest"
     end
     return "PASS",
       ("%d items from %s listings, stored %s ms after the scan request"):format(
@@ -185,7 +185,7 @@ function SelfTest.Run(AME)
   check("backfill", function()
     local when = AME_DB.backfilled[AME:CurrentShard()]
     if not when then
-      return "WARN", "not run for this shard (runs on AH open when Auctionator data is available)"
+      return "PASS", "nothing imported here (only with Auctionator data, at your faction's auction house)"
     end
     return "PASS", "done " .. date("%Y-%m-%d %H:%M", when)
   end)

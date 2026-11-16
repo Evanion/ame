@@ -6,12 +6,14 @@ The addon is linked into `C:\Games\World of Warcraft\_forever_\Interface\AddOns\
 
 Edits in the repo are live after `/reload`. The M0 spike (`AME_Spike`) is no longer linked.
 
-## Playbook (≈ 20 min, mostly waiting for Auctionator's scan cooldown)
+## Playbook (≈ 5-20 min; replicate-style full scans have a 15-minute server cooldown)
 
 1. Log in. Make sure **Azeroth Mercantile Exchange** (and its History module, which loads on demand) is enabled.
-2. Open the auction house and run an **Auctionator full scan**.
-   - Wait for `AME recorded full scan: N items ...` in chat. That's about 25 s after Auctionator's own message.
-   - The first time you open the AH, AME also imports Auctionator's recent history ("imported N days ...").
+2. Open the auction house and run a **full scan** with your scanning addon (e.g. Auctionator's Full Scan), or browse
+   the auction house with an empty search to the end.
+   - AME says `reading full scan (N listings)...`, then `recorded full scan: N items ...`.
+   - If Auctionator is installed, the first visit to your faction's AH also imports its recent history
+     ("imported N days ...").
 3. Type **`/ame selftest`**. It runs every check, prints PASS/WARN/FAIL lines, then shows a **Reload UI** popup: click it so the results and timings reach `AME_DB` on disk (the game blocks addons from reloading on their own).
 
 That's it. Claude reads the results from
@@ -33,5 +35,5 @@ See GitHub issues. Notable ones:
 - Cold chart loads take ~3 ms per day of history.
 - Item variants (suffix and item level) share one series.
 - LibDBIcon isn't embedded in dev builds; the minimap button appears only if another addon loaded LibDBIcon.
-- Full scans are picked up whichever addon starts them (Auctionator, AHDB's auto-scan on AH open, ...). They share the
-  game's one-full-scan-per-15-minutes limit, so another addon's auto-scan puts Auctionator's Full Scan on cooldown.
+- AME listens to the native auction house APIs, so full scans are picked up whichever addon (or the default UI)
+  starts them. Replicate-style scans share the game's one-per-15-minutes limit across addons.

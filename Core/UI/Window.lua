@@ -655,7 +655,7 @@ function UI:FillItem(_, series, latest)
   local v = self.itemView
   if #series == 0 then
     self.series = nil
-    self.chart:SetMessage("No history for this item yet. Run an Auctionator full scan, or search for it at the AH.")
+    self.chart:SetMessage("No history for this item yet. Search for it at the auction house, or run a full scan.")
     v.sub:SetText(ns.ShardLabel(self:ViewShard()))
     for _, c in ipairs(v.cards) do
       c.value:SetText("-")

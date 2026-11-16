@@ -415,7 +415,7 @@ function AME:Backfill(force)
   -- faction AH only, so the goblin AH's history stays clean for cross-AH comparisons.
   if self:CurrentHouse() == "Neutral" then
     if force then
-      say("Auctionator import is only done at your faction's auction house (its data mixes all auction houses).")
+      say("history import from Auctionator is only done at your faction's auction house (its data mixes all houses).")
     end
     return
   end
@@ -427,7 +427,7 @@ function AME:Backfill(force)
   end
   local ok, days = pcall(ns.Backfill.FromAuctionator, db, day0)
   if not ok then
-    say("Auctionator import skipped: %s", tostring(days))
+    say("history import from Auctionator skipped: %s", tostring(days))
     return
   end
   self:WithStore("backfill", shard, function(store, job)
@@ -443,11 +443,11 @@ function AME:Backfill(force)
     if okDone then
       AME_DB.backfilled[shard] = GetServerTime()
       if (n or 0) > 0 then
-        say("imported %d days of Auctionator price history into %s", n, ns.ShardLabel(shard))
+        say("imported %d days of price history from Auctionator into %s", n, ns.ShardLabel(shard))
         self:RebuildIndex()
       end
     else
-      say("Auctionator import failed: %s", tostring(n))
+      say("history import from Auctionator failed: %s", tostring(n))
     end
   end)
 end
@@ -672,7 +672,7 @@ local function cmdStatus()
       SecondsToTime and SecondsToTime(GetServerTime() - s.lastFull.at) or "?"
     )
   else
-    say("no full scan recorded yet: open the AH and run an Auctionator full scan")
+    say("no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)")
   end
   if AME:HistoryLoaded() then
     local data = AME.history.shards[shard]

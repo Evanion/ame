@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: Azeroth Mercantile Exchange
-## Notes: Auction house price history, charts and market signals. Reuses Auctionator scans. /ame
+## Notes: Auction house price history, charts, market signals and arbitrage, from your own scans. /ame
 ## Author: Evanion
 ## Version: @project-version@
 ## IconTexture: Interface\Icons\INV_Misc_Coin_02

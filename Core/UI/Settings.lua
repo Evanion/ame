@@ -84,7 +84,8 @@ function Settings:RegisterOptions()
       intro = {
         type = "description",
         order = 1,
-        name = "Records auction house prices from Auctionator's scans and your searches, per realm and auction house.\n"
+        name = "Records auction house prices from every scan and search you run (native APIs; works with any "
+          .. "scanning addon), per realm and auction house.\n"
           .. "Open the window with |cff33ccff/ame|r.",
       },
       display = {
@@ -172,8 +173,8 @@ function Settings:RegisterOptions()
           backfill = {
             type = "execute",
             order = 1,
-            name = "Re-import Auctionator history",
-            desc = "Fills days that have no AME data from Auctionator's recent price history (current realm).",
+            name = "Import history from Auctionator",
+            desc = "If Auctionator is installed: fills days that have no AME data from its recent price history.",
             func = function()
               ns.AME:Backfill(true)
             end,
