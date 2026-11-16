@@ -467,6 +467,22 @@ describe("addon in a stubbed client", function()
       assert.are.equal("PvP · Goblin AH", ns.ShardLabel("PvP|Neutral"))
     end)
 
+    it("tooltips use your faction's auction house even right after visiting the goblin AH", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 1000, 10 } }) -- 1s each at the Horde AH
+      env:fire("AUCTION_HOUSE_CLOSED")
+      env.npcFaction = nil
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 5000, 10 } }) -- 5s each at the goblin AH
+      env:advance(4)
+      drainJobs()
+      assert.are.equal("Neutral", ns.AME:CurrentHouse())
+      local s = ns.Tooltip.Summary(2589)
+      assert.are.equal(100, s.market)
+    end)
+
     it("lets you pick a fixed window theme in Settings, saved with the settings", function()
       boot()
       env.npcFaction = "Horde"

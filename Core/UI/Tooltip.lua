@@ -7,8 +7,6 @@ local Tooltip = {}
 ns.Tooltip = Tooltip
 
 Tooltip.AVG_DAYS = { 3, 7, 14, 30 }
-local HOUSE_NAME = { Alliance = "Alliance AH", Horde = "Horde AH", Neutral = "Goblin AH" }
-Tooltip.HOUSE_NAME = HOUSE_NAME
 
 local function ago(day, today)
   if not (day and today) then
@@ -27,8 +25,7 @@ local DIM = "|cff999999"
 
 -- Pure: tooltip rows for an item summary.
 --   s       market summary (index item)
---   opts    avgDays (3/7/14/30), detail (bool: full view), today (day number),
---           others = { { house, summary }, ... }  same item at the market's other auction houses
+--   opts    avgDays (3/7/14/30), detail (bool: full view), today (day number)
 -- returns { { left, right }, ... } (a row with only left is a plain line)
 function Tooltip.Lines(s, opts)
   opts = opts or {}
@@ -59,10 +56,6 @@ function Tooltip.Lines(s, opts)
   if s.signal == "none" or not s.signal then
     row("score", ("%+d"):format(s.score or 0))
   end
-  for _, o in ipairs(opts.others or {}) do
-    local name = HOUSE_NAME[o[1]] or o[1]
-    row(name, W.Money(o[2].market))
-  end
   local seen = ago(s.day, opts.today)
   if seen then
     row("last data", seen)
@@ -70,30 +63,39 @@ function Tooltip.Lines(s, opts)
   return rows
 end
 
--- the same item at the market's other auction houses (only from indexes already built, nothing on hover)
-local function others(itemID)
+-- Tooltips always show your own faction's auction house (the market you trade in), never the goblin AH or the
+-- other faction's - even right after visiting those. Cross-AH comparisons live on the Arbitrage tab.
+local function factionIndex()
   local AME = ns.AME
-  local out = {}
-  local realm = AME:MarketRealmName()
-  local current = AME:CurrentHouse()
-  for _, house in ipairs({ "Alliance", "Horde", "Neutral" }) do
-    if house ~= current then
-      local index = AME.indexes and AME.indexes[ns.ShardKey(realm, house)]
-      local s = index and index.items[itemID]
-      if s and s.market then
-        out[#out + 1] = { house, s }
-      end
-    end
+  if not AME then
+    return nil
   end
-  return out
+  local house = UnitFactionGroup("player")
+  if house ~= "Horde" and house ~= "Alliance" then
+    house = AME:CurrentHouse()
+  end
+  local shard = ns.ShardKey(AME:MarketRealmName(), house)
+  if AME.indexShard == shard and AME.index then
+    return AME.index
+  end
+  local cached = AME.indexes and AME.indexes[shard]
+  if not cached and AME:HistoryLoaded() and AME:HasData(shard) then
+    AME:IndexFor(shard, function() end) -- built in the background; tooltips show it next time
+  end
+  return cached
+end
+
+-- the item's summary at your faction's auction house (nil when unknown)
+function Tooltip.Summary(itemID)
+  local index = factionIndex()
+  return index and itemID and index.items[itemID] or nil
 end
 
 local function addLines(tooltip, itemID)
   if ns.Settings and not ns.Settings:Get("tooltip") then
     return
   end
-  local index = ns.AME and ns.AME.index
-  local s = index and itemID and index.items[itemID]
+  local s = Tooltip.Summary(itemID)
   if not s then
     return
   end
@@ -102,7 +104,6 @@ local function addLines(tooltip, itemID)
     avgDays = ns.Settings:Get("tooltipAvgDays"),
     detail = detail,
     today = math.floor(GetServerTime() / 86400),
-    others = detail and others(itemID) or nil,
   })
   for _, r in ipairs(rows) do
     if r[2] then
