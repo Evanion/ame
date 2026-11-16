@@ -401,6 +401,35 @@ end
 
 W.STAR = "Interface\\Common\\FavoritesIcon"
 
+-- Watchlist star: the auction house's own favourite star (atlas) when the client has it, else a file texture.
+-- Empty stars stay clearly visible (not just a faint ghost) and light up on hover.
+local FAV_ON, FAV_OFF = "auctionhouse-icon-favorite", "auctionhouse-icon-favorite-off"
+local function hasAtlas(name)
+  return C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(name) ~= nil
+end
+
+function W.SetStar(tex, on, hot)
+  if hasAtlas(FAV_ON) then
+    local off = hasAtlas(FAV_OFF)
+    tex:SetAtlas(on and FAV_ON or (off and FAV_OFF or FAV_ON))
+    tex:SetDesaturated(not on and not off)
+    tex:SetAlpha(on and 1 or (hot and 1 or 0.6))
+  else
+    tex:SetTexture(W.STAR)
+    tex:SetDesaturated(not on)
+    tex:SetAlpha(on and 1 or (hot and 0.9 or 0.45))
+  end
+end
+
+-- inline star for text (sidebar list names)
+function W.StarInline(size)
+  size = size or 12
+  if hasAtlas(FAV_ON) then
+    return ("|A:%s:%d:%d|a"):format(FAV_ON, size, size)
+  end
+  return ("|T%s:%d:%d|t"):format(W.STAR, size, size)
+end
+
 -- Shared popup menu: W.Menu(anchor, entries); entry = { text, checked = bool?, func = fn, disabled = bool? }.
 -- One menu frame for the whole addon; closes on a pick or a click elsewhere.
 local menu

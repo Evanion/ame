@@ -319,7 +319,7 @@ function UI:CreateItemView(parent)
     UI:WatchMenu(self, UI.itemID)
   end)
   v.watch.star = v.watch:CreateTexture(nil, "OVERLAY")
-  v.watch.star:SetTexture(W.STAR)
+  W.SetStar(v.watch.star, false)
   v.watch.star:SetSize(14, 14)
   v.watch.star:SetPoint("LEFT", 6, 0)
   v.watch.label:ClearAllPoints()
@@ -801,8 +801,7 @@ function UI:UpdateWatchControls(keepInputs)
   end
   v.watch.label:SetText(inList and "Watching" or "Watch")
   v.watch:SetSelected(inList)
-  v.watch.star:SetDesaturated(not inList)
-  v.watch.star:SetAlpha(inList and 1 or 0.5)
+  W.SetStar(v.watch.star, inList)
   local a = watch:Alert(id) or {}
   if not keepInputs then
     v.alertBelow:SetText(a.below and tostring(math.floor(a.below / 10000)) or "")
@@ -931,7 +930,7 @@ function UI:RenderCategories()
   local watch = ns.AME.watch
   if watch then
     for i, l in ipairs(watch:Lists()) do
-      entries[#entries + 1] = { list = i, label = ("|T%s:12:12|t %s"):format(W.STAR, l.name), count = watch:Count(i) }
+      entries[#entries + 1] = { list = i, label = W.StarInline(12) .. " " .. l.name, count = watch:Count(i) }
     end
     entries[#entries + 1] = { newList = true, label = "|cff999999+ New list|r", count = "" }
   end
@@ -1101,7 +1100,17 @@ function UI:CreateMarketView(parent)
     row.star:SetPoint("LEFT", 0, 0)
     row.star.tex = row.star:CreateTexture(nil, "ARTWORK")
     row.star.tex:SetAllPoints()
-    row.star.tex:SetTexture(W.STAR)
+    W.SetStar(row.star.tex, false)
+    row.star:SetScript("OnEnter", function(self)
+      W.SetStar(self.tex, self.watched, true)
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:SetText(self.watched and "On a watchlist - click to change" or "Add to a watchlist", 1, 1, 1)
+      GameTooltip:Show()
+    end)
+    row.star:SetScript("OnLeave", function(self)
+      W.SetStar(self.tex, self.watched)
+      GameTooltip:Hide()
+    end)
     row.star:SetScript("OnClick", function(self)
       if row.itemID then
         UI:StarClicked(self, row.itemID)
@@ -1324,8 +1333,8 @@ function UI:RenderMarket()
         self:RenderWhenLoaded(s.itemID)
       end
       local watched = ns.AME.watch and ns.AME.watch:Watched(s.itemID)
-      row.star.tex:SetDesaturated(not watched)
-      row.star.tex:SetAlpha(watched and 1 or 0.18)
+      row.star.watched = watched
+      W.SetStar(row.star.tex, watched)
       for c, col in ipairs(COLUMNS) do
         local val
         if col.key == "name" then

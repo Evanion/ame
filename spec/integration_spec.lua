@@ -338,6 +338,7 @@ describe("addon in a stubbed client", function()
       local id = row.itemID
       row.star.scripts.OnClick(row.star)
       assert.is_true(ns.AME.watch:Has(1, id))
+      assert.is_true(row.star.watched) -- drawn as a filled star
       -- sidebar: line 2 is the watchlist; selecting it shows only watched items
       local listLine = v.side.lines[2]
       assert.are.equal(1, listLine.entry.list)

@@ -1,7 +1,7 @@
 -- Namespace and shared constants. Pure: no WoW API calls (loaded by busted specs too).
 local _, ns = ...
 
-ns.VERSION = "0.1.0-beta.5"
+ns.VERSION = "0.1.0-beta.6"
 
 ns.HOUSES = { Alliance = true, Horde = true, Neutral = true }
 
