@@ -323,6 +323,25 @@ describe("addon in a stubbed client", function()
       header.scripts.OnEnter(header)
     end)
 
+    it("ignores an outrageous one-day price in the index and on the item page", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      for d = 0, 9 do
+        env.now = env.now + 86400
+        local price = d == 5 and 10000 or 1000 -- one day with a single 10x listing
+        fullScan({ { 2589, price, 1 } })
+      end
+      env:advance(4)
+      drainJobs()
+      local s = ns.AME.index.items[2589]
+      assert.are.equal(1, s.outliers)
+      assert.is_true(s.avg30 < 1500)
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      assert.truthy(ns.UI.itemView.sub.text:find("1 outlier price ignored"))
+    end)
+
     it("themes the window by auction house faction", function()
       boot()
       env.npcFaction = "Horde"

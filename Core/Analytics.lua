@@ -211,3 +211,45 @@ function Analytics.Candles(series, periodDays)
   end
   return out
 end
+
+-- Outlier days: a day whose market price is more than `factor` times above (or below) the median of the item's
+-- neighbouring days (up to 7 either side) is treated as a bad print - typically one wildly overpriced listing in a
+-- thin market. Needs at least 3 neighbours to judge. Returns the series without those days and how many were
+-- dropped. factor nil/false/<= 1 disables.
+Analytics.OUTLIER_NEIGHBOURS = 7
+
+local function median(values)
+  table.sort(values)
+  local n = #values
+  if n % 2 == 1 then
+    return values[(n + 1) / 2]
+  end
+  return (values[n / 2] + values[n / 2 + 1]) / 2
+end
+
+function Analytics.Clean(series, factor)
+  if not factor or factor <= 1 or #series < 4 then
+    return series, 0
+  end
+  local out, dropped = {}, 0
+  local k = Analytics.OUTLIER_NEIGHBOURS
+  for i, p in ipairs(series) do
+    local around = {}
+    for j = math.max(1, i - k), math.min(#series, i + k) do
+      if j ~= i and series[j].market then
+        around[#around + 1] = series[j].market
+      end
+    end
+    local bad = false
+    if p.market and #around >= 3 then
+      local m = median(around)
+      bad = m > 0 and (p.market > m * factor or p.market < m / factor)
+    end
+    if bad then
+      dropped = dropped + 1
+    else
+      out[#out + 1] = p
+    end
+  end
+  return out, dropped
+end

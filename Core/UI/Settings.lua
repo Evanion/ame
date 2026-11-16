@@ -12,6 +12,7 @@ Settings.DEFAULTS = {
   clickModifier = "alt", -- "alt" | "altshift" | "none"
   announceScans = true,
   alertSound = true,
+  outlierFactor = 4, -- ignore days priced more than this many times off their neighbours (false = off)
   syncGuild = true,
   syncTrusted = true,
   minimap = { hide = false },

@@ -172,7 +172,7 @@ function AME:RebuildIndex()
   self:WithStore("index", shard, function(store, job)
     return ns.MarketIndex.Build(store, math.floor(GetServerTime() / 86400), 30, function()
       job:Checkpoint()
-    end)
+    end, ns.Settings:Get("outlierFactor"))
   end, function(ok, index)
     self.indexing = false
     if ok and index then

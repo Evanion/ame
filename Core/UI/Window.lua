@@ -483,6 +483,9 @@ function UI:FillItem(_, series, latest)
     return
   end
   self.chart:SetMessage(nil)
+  local factor = ns.Settings:Get("outlierFactor")
+  local dropped
+  series, dropped = ns.Analytics.Clean(series, factor)
   self.series = series
   self:DrawItemChart()
   if self.rangeKey == "All" then
@@ -492,6 +495,12 @@ function UI:FillItem(_, series, latest)
   end
 
   local s = ns.Analytics.Summarize(series)
+  -- the latest raw scan can itself be a bad print (one overpriced listing): fall back to the cleaned series
+  if latest and factor and s.avg30 and s.avg30 > 0 and latest.market then
+    if latest.market > s.avg30 * factor or latest.market < s.avg30 / factor then
+      latest, dropped = nil, dropped + 1
+    end
+  end
   local cards = v.cards
   cards[1].value:SetText(W.Money(latest and latest.market or s.market))
   cards[2].value:SetText(W.Money(latest and latest.min or s.min))
@@ -503,10 +512,11 @@ function UI:FillItem(_, series, latest)
   )
   cards[7].value:SetText(W.Signal(s.signal) .. ("  |cff999999%+d|r"):format(s.score or 0))
   v.sub:SetText(
-    ("%s  ·  %d days of history%s"):format(
+    ("%s  ·  %d days of history%s%s"):format(
       ns.AME:CurrentShard(),
       #series,
-      latest and ("  ·  last seen " .. date("%b %d %H:%M", latest.t)) or ""
+      latest and ("  ·  last seen " .. date("%b %d %H:%M", latest.t)) or "",
+      dropped > 0 and ("  ·  |cffffcc00%d outlier price%s ignored|r"):format(dropped, dropped == 1 and "" or "s") or ""
     )
   )
 end

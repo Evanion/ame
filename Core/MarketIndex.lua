@@ -6,13 +6,17 @@ local MarketIndex = {}
 ns.MarketIndex = MarketIndex
 
 -- returns { day =, days =, count =, items = { [itemID] = summary (see Analytics.Summarize) + itemID } }
-function MarketIndex.Build(store, today, days, checkpoint)
-  local index = { day = today, days = days, count = 0, items = {} }
+-- outlierFactor: drop days priced more than this many times off the item's neighbouring days (nil = keep all)
+function MarketIndex.Build(store, today, days, checkpoint, outlierFactor)
+  local index = { day = today, days = days, count = 0, items = {}, outliers = 0 }
   for b = 0, ns.Store.BUCKETS - 1 do
     local series = store:BucketSeries(b, today - days + 1, today)
     for id, points in pairs(series) do
-      local s = ns.Analytics.Summarize(points)
+      local clean, dropped = ns.Analytics.Clean(points, outlierFactor)
+      index.outliers = index.outliers + dropped
+      local s = ns.Analytics.Summarize(clean)
       if s then
+        s.outliers = dropped > 0 and dropped or nil
         s.itemID = id
         index.items[id] = s
         index.count = index.count + 1

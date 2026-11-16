@@ -135,3 +135,44 @@ describe("Analytics.Candles", function()
     assert.are.equal(0, #A.Candles({}, 3).xs)
   end)
 end)
+
+describe("Analytics.Clean", function()
+  local A
+  before_each(function()
+    A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+  end)
+
+  local function series(prices)
+    local out = {}
+    for i, m in ipairs(prices) do
+      out[i] = { day = 100 + i, market = m, min = m }
+    end
+    return out
+  end
+
+  it("drops a day priced wildly above its neighbours (one 1000% markup listing)", function()
+    local clean, dropped = A.Clean(series({ 100, 105, 98, 1100, 102, 99, 101 }), 4)
+    assert.are.equal(1, dropped)
+    for _, p in ipairs(clean) do
+      assert.is_true(p.market < 200)
+    end
+  end)
+
+  it("drops absurdly cheap prints too", function()
+    local _, dropped = A.Clean(series({ 1000, 1010, 1, 990, 1005 }), 4)
+    assert.are.equal(1, dropped)
+  end)
+
+  it("keeps real trends and big-but-plausible moves", function()
+    local _, dropped = A.Clean(series({ 100, 120, 150, 190, 240, 300, 380, 470 }), 4)
+    assert.are.equal(0, dropped)
+    local _, dropped2 = A.Clean(series({ 100, 100, 100, 250, 100, 100 }), 4)
+    assert.are.equal(0, dropped2)
+  end)
+
+  it("does nothing when disabled or with too little history", function()
+    local s = series({ 100, 5000, 100, 100 })
+    assert.are.equal(0, select(2, A.Clean(s, false)))
+    assert.are.equal(0, select(2, A.Clean(series({ 100, 5000, 100 }), 4)))
+  end)
+end)

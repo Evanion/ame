@@ -315,6 +315,38 @@ function UI:CreateSettingsView(parent, contentArea)
   checks[#checks + 1] = settingCheck(v, "Announce recorded full scans in chat", "announceScans", 0, -188)
   checks[#checks + 1] = settingCheck(v, "Play a sound when a watchlist alert fires", "alertSound", 0, -210)
 
+  heading(v, "Data quality", 0, -246)
+  local outlierLabel = W.Text(v, "GameFontHighlightSmall")
+  outlierLabel:SetPoint("TOPLEFT", 0, -274)
+  outlierLabel:SetText("Ignore outrageous prices")
+  local factors = {
+    { false, "Off" },
+    { 3, "3x off usual" },
+    { 4, "4x off usual" },
+    { 6, "6x off usual" },
+    { 10, "10x off usual" },
+  }
+  v.outliers = W.Dropdown(v, 120, factors, function(value)
+    ns.Settings:Set("outlierFactor", value)
+    ns.AME:RebuildIndex()
+    if UI.itemID and UI.current == "item" then
+      UI:ShowItem(UI.itemID)
+    end
+  end)
+  v.outliers:SetPoint("TOPLEFT", 150, -270)
+  v.outliers.values = factors
+  v.outliers.neutral = true
+  local why = W.Text(v, "GameFontDisableSmall")
+  why:SetPoint("TOPLEFT", 0, -298)
+  why:SetWidth(440)
+  why:SetSpacing(2)
+  why:SetText(
+    "Days where an item's price is this many times above (or below) its neighbouring days are left out of "
+      .. "the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. "
+      .. "Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the "
+      .. "supply."
+  )
+
   -- data
   heading(v, "Data", COL2, 0)
   v.storage = W.Text(v, "GameFontHighlightSmall")
@@ -382,6 +414,7 @@ function UI:RefreshSettings()
   end
   v.style:SetIndex(indexOf(v.style.values, ns.Settings:Get("chartStyle")))
   v.click:SetIndex(indexOf(v.click.values, ns.Settings:Get("clickModifier")))
+  v.outliers:SetIndex(indexOf(v.outliers.values, ns.Settings:Get("outlierFactor")))
   local hasIcon = ns.Settings:HasMinimapLibrary()
   v.minimap:SetChecked(hasIcon and not AME_DB.settings.minimap.hide)
   v.minimap.label:SetText(
