@@ -2,7 +2,7 @@
 --
 -- Summarize(series) -> {
 --   market, min, qty            latest day's values
---   avg7, avg30                 mean market over the last 7 / 30 points
+--   avg3, avg7, avg14, avg30    mean market over the last 3 / 7 / 14 / 30 points
 --   change1, change7, change30  fractional change of market vs 1 / 7 / 30 points earlier (0.1 = +10%)
 --   vol30                       stdev of daily log returns over the last 30 points
 --   z30                         z-score of today's market vs the last 30 points (mean reversion)
@@ -143,7 +143,9 @@ function Analytics.Summarize(series)
     min = last.min,
     qty = last.qty,
     days = n,
+    avg3 = round(Analytics.SMA(markets, min(3, n))),
     avg7 = round(Analytics.SMA(markets, min(7, n))),
+    avg14 = round(Analytics.SMA(markets, min(14, n))),
     avg30 = round(Analytics.SMA(markets, min(30, n))),
     change1 = n > 1 and Analytics.Change(markets[n - 1], markets[n]) or nil,
     change7 = n > 7 and Analytics.Change(markets[n - 7], markets[n]) or nil,
@@ -159,7 +161,9 @@ function Analytics.Summarize(series)
   -- a rising trend. Squashed to (-100, 100) so it sorts nicely in the screener.
   local z = s.z30 or 0
   local volPenalty = 1 / (1 + 10 * (s.vol30 or 0))
-  local raw = -z * volPenalty + 5 * (s.trend30 or 0)
+  -- the trend only nudges (capped), so an item far above its usual price never scores as a bargain
+  local trendTerm = math.max(-0.25, math.min(0.25, 5 * (s.trend30 or 0)))
+  local raw = -z * volPenalty + trendTerm
   s.score = round(100 * (2 / (1 + exp(-raw)) - 1))
 
   s.signal = "none"

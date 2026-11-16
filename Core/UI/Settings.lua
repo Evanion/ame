@@ -8,6 +8,8 @@ ns.Settings = Settings
 
 Settings.DEFAULTS = {
   tooltip = true,
+  tooltipAvgDays = 7, -- average period shown in tooltips: 3 / 7 / 14 / 30
+  tooltipDetail = false, -- full tooltip without holding Shift
   chartStyle = "line", -- "line" | "candles"
   clickModifier = "alt", -- "alt" | "altshift" | "none"
   announceScans = true,

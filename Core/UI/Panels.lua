@@ -331,9 +331,21 @@ function UI:CreateSettingsView(parent, contentArea)
 
   heading(v, "Display", 0, 0)
   checks[#checks + 1] = settingCheck(v, "Show AME prices in item tooltips", "tooltip", 0, -24)
+  local avgLabel = W.Text(v, "GameFontHighlightSmall")
+  avgLabel:SetPoint("TOPLEFT", 260, -26)
+  avgLabel:SetText("average over")
+  local avgs = { { 3, "3 days" }, { 7, "7 days" }, { 14, "14 days" }, { 30, "30 days" } }
+  v.avgDays = W.Dropdown(v, 90, avgs, function(value)
+    ns.Settings:Set("tooltipAvgDays", value)
+  end)
+  v.avgDays:SetPoint("TOPLEFT", 340, -22)
+  v.avgDays.values = avgs
+  v.avgDays.neutral = true
+  checks[#checks + 1] =
+    settingCheck(v, "Always show full tooltip details (otherwise hold Shift)", "tooltipDetail", 0, -48)
 
   local styleLabel = W.Text(v, "GameFontHighlightSmall")
-  styleLabel:SetPoint("TOPLEFT", 0, -54)
+  styleLabel:SetPoint("TOPLEFT", 0, -80)
   styleLabel:SetText("Chart style")
   local styles = { { "line", "Line" }, { "candles", "Candles" } }
   v.style = W.Dropdown(v, 120, styles, function(value)
@@ -342,18 +354,18 @@ function UI:CreateSettingsView(parent, contentArea)
       UI:DrawItemChart()
     end
   end)
-  v.style:SetPoint("TOPLEFT", 150, -50)
+  v.style:SetPoint("TOPLEFT", 150, -76)
   v.style.values = styles
   v.style.neutral = true
 
   local clickLabel = W.Text(v, "GameFontHighlightSmall")
-  clickLabel:SetPoint("TOPLEFT", 0, -82)
+  clickLabel:SetPoint("TOPLEFT", 0, -106)
   clickLabel:SetText("Open item charts with")
   local clicks = { { "alt", "Alt-click" }, { "altshift", "Alt+Shift-click" }, { "none", "Off" } }
   v.click = W.Dropdown(v, 120, clicks, function(value)
     ns.Settings:Set("clickModifier", value)
   end)
-  v.click:SetPoint("TOPLEFT", 150, -78)
+  v.click:SetPoint("TOPLEFT", 150, -102)
   v.click.values = clicks
   v.click.neutral = true
   note(v, clickLabel, "Change this if another addon (e.g. AHDB) also uses Alt-click on items.", 440):SetPoint(
@@ -367,15 +379,15 @@ function UI:CreateSettingsView(parent, contentArea)
   v.minimap = W.Check(v, "Show minimap button", function(on)
     ns.Settings:SetMinimap(on)
   end)
-  v.minimap:SetPoint("TOPLEFT", 0, -128)
+  v.minimap:SetPoint("TOPLEFT", 0, -150)
 
-  heading(v, "Notifications", 0, -164)
-  checks[#checks + 1] = settingCheck(v, "Announce recorded full scans in chat", "announceScans", 0, -188)
-  checks[#checks + 1] = settingCheck(v, "Play a sound when a watchlist alert fires", "alertSound", 0, -210)
+  heading(v, "Notifications", 0, -182)
+  checks[#checks + 1] = settingCheck(v, "Announce recorded full scans in chat", "announceScans", 0, -204)
+  checks[#checks + 1] = settingCheck(v, "Play a sound when a watchlist alert fires", "alertSound", 0, -226)
 
-  heading(v, "Data quality", 0, -246)
+  heading(v, "Data quality", 0, -258)
   local outlierLabel = W.Text(v, "GameFontHighlightSmall")
-  outlierLabel:SetPoint("TOPLEFT", 0, -274)
+  outlierLabel:SetPoint("TOPLEFT", 0, -284)
   outlierLabel:SetText("Ignore outrageous prices")
   local factors = {
     { false, "Off" },
@@ -392,11 +404,11 @@ function UI:CreateSettingsView(parent, contentArea)
       UI:ShowItem(UI.itemID)
     end
   end)
-  v.outliers:SetPoint("TOPLEFT", 150, -270)
+  v.outliers:SetPoint("TOPLEFT", 150, -280)
   v.outliers.values = factors
   v.outliers.neutral = true
   local why = W.Text(v, "GameFontDisableSmall")
-  why:SetPoint("TOPLEFT", 0, -298)
+  why:SetPoint("TOPLEFT", 0, -306)
   why:SetWidth(440)
   why:SetSpacing(2)
   why:SetText(
@@ -512,6 +524,7 @@ function UI:RefreshSettings()
   v.style:SetIndex(indexOf(v.style.values, ns.Settings:Get("chartStyle")))
   v.click:SetIndex(indexOf(v.click.values, ns.Settings:Get("clickModifier")))
   v.outliers:SetIndex(indexOf(v.outliers.values, ns.Settings:Get("outlierFactor")))
+  v.avgDays:SetIndex(indexOf(v.avgDays.values, ns.Settings:Get("tooltipAvgDays")))
   v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
   v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))
   v.hours:SetIndex(indexOf(v.hours.values, ns.Settings:Get("listingHours")))

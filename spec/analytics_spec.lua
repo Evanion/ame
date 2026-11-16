@@ -176,3 +176,29 @@ describe("Analytics.Clean", function()
     assert.are.equal(0, select(2, A.Clean(series({ 100, 5000, 100 }), 4)))
   end)
 end)
+
+describe("Analytics score vs signal", function()
+  local A
+  before_each(function()
+    A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+  end)
+
+  it("never scores an item that spiked far above its usual price as a bargain", function()
+    local series = {}
+    for i = 1, 20 do
+      series[i] = { day = i, market = 40 + (i % 3), qty = 100 }
+    end
+    for i = 21, 26 do -- a steep climb to ~1s (like Crocolisk Meat at 1s 3c vs a 42c average)
+      series[i] = { day = i, market = 40 + (i - 20) * 11, qty = 100 }
+    end
+    local s = A.Summarize(series)
+    assert.are.equal("sell", s.signal)
+    assert.is_true(s.score < 0, "score " .. s.score)
+  end)
+
+  it("keeps short averages for tooltips", function()
+    local s = A.Summarize({ { day = 1, market = 10 }, { day = 2, market = 20 }, { day = 3, market = 30 } })
+    assert.are.equal(20, s.avg3)
+    assert.are.equal(20, s.avg14)
+  end)
+end)

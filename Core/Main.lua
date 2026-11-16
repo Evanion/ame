@@ -472,6 +472,14 @@ function handlers.PLAYER_LOGIN()
   C_Timer.After(3, function()
     if AME:LoadHistory() then
       AME:RebuildIndex()
+      -- other auction houses of this market (e.g. the goblin AH), for tooltips and arbitrage
+      local realm, current = AME:MarketRealmName(), AME:CurrentHouse()
+      for _, house in ipairs({ "Alliance", "Horde", "Neutral" }) do
+        local shard = ns.ShardKey(realm, house)
+        if house ~= current and AME.history.shards[shard] then
+          AME:IndexFor(shard, function() end)
+        end
+      end
     end
   end)
   if ns.SyncService:Init(AME, AME.syncTransport) then
