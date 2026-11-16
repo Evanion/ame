@@ -15,7 +15,9 @@ local PREFIX = "AMESPK"
 local fileLoadedAt = debugprofilestop()
 
 local db
-local state = { house = nil, reading = false }
+-- v2: REPLICATE_ITEM_LIST_UPDATE turned out to fire ~1x per row (291k times for a 194k-row scan, continuing until
+-- the AH closed). So: count events, read once per ReplicateItems() request, plus one late re-read after 30 s.
+local state = { house = nil, reading = false, events = 0, readThisScan = false, requestedAt = nil }
 
 local function now()
   return debugprofilestop()
@@ -80,6 +82,7 @@ local function readReplicate(trigger)
     unique = 0,
     uniqueLinks = 0,
     notAllInfo = 0,
+    notAllInfoPriced = 0,
     bidOnly = 0,
     noItem = 0,
     batches = 0,
@@ -99,6 +102,9 @@ local function readReplicate(trigger)
       else
         if not hasAllInfo then
           stats.notAllInfo = stats.notAllInfo + 1
+          if buyout and buyout > 0 and count and count > 0 then
+            stats.notAllInfoPriced = stats.notAllInfoPriced + 1
+          end
         end
         count = (count and count > 0) and count or 1
         local e = items[itemID]
@@ -156,7 +162,13 @@ local function readReplicate(trigger)
       stats.batches,
       stats.maxBatchMs
     )
-    out("rows without full info: %d, bid-only: %d, missing itemID: %d", stats.notAllInfo, stats.bidOnly, stats.noItem)
+    out(
+      "rows without full info: %d (%d of those still have buyout+count), bid-only: %d, missing itemID: %d",
+      stats.notAllInfo,
+      stats.notAllInfoPriced,
+      stats.bidOnly,
+      stats.noItem
+    )
     out(
       "snapshot stored for house %s on %s. /reload to write it to disk.",
       tostring(snap.shard.house),
@@ -194,11 +206,14 @@ end
 
 local comm = { recv = nil }
 
-local function sendBurst(target, n)
+-- spacing: seconds between messages (0 = as fast as the client accepts; run 2 showed the client accepts 50 in 1 ms
+-- and the receiver got nothing, so the server presumably drops the excess silently)
+local function sendBurst(target, n, spacing)
   local distribution, whisperTarget
   local t = target:lower()
   if t == "self" then
-    distribution, whisperTarget = "WHISPER", UnitName("player") .. "-" .. GetNormalizedRealmName()
+    -- v1 used Name-NormalizedRealm and got "no player named ... is online" on Forever; plain name for own realm
+    distribution, whisperTarget = "WHISPER", UnitName("player")
   elseif t == "guild" then
     distribution = "GUILD"
   elseif t == "party" then
@@ -223,10 +238,15 @@ local function sendBurst(target, n)
         failed = failed + 1
       end
       seq = seq + 1
+      if spacing > 0 and seq < n then
+        C_Timer.After(spacing, pump)
+        return
+      end
     end
-    local ms = now() - started
+    local ms = math.max(1, now() - started)
     local res = {
       distribution = distribution,
+      spacing = spacing,
       n = n,
       bytes = n * 255,
       ms = math.floor(ms),
@@ -258,7 +278,8 @@ local function onAddonMessage(prefix, text, channel, sender)
     return
   end
   local r = comm.recv
-  if not r or r.sender ~= sender or seq == 0 then
+  -- one stream per sender+channel: self-whisper and guild tests from the same character must not be merged
+  if not r or r.sender ~= sender or r.channel ~= channel or seq == 0 then
     r = { sender = sender, channel = channel, n = n, got = 0, first = now(), seen = {} }
     comm.recv = r
   end
@@ -267,7 +288,12 @@ local function onAddonMessage(prefix, text, channel, sender)
     r.got = r.got + 1
   end
   r.last = now()
-  if seq == n - 1 or r.got == n then
+  -- report when complete, or after 3 s of silence (messages may be dropped, so the last one may never come)
+  local function report()
+    if r.reported then
+      return
+    end
+    r.reported = true
     local ms = math.max(1, r.last - r.first)
     local res = {
       sender = sender,
@@ -279,6 +305,16 @@ local function onAddonMessage(prefix, text, channel, sender)
     }
     log("comm_recv", res)
     out("received %d/%d from %s via %s in %.1f s = %d B/s", r.got, n, sender, channel, ms / 1000, res.bytesPerSec)
+  end
+  if r.got == n then
+    report()
+  else
+    local lastAt = r.last
+    C_Timer.After(3, function()
+      if r.last == lastAt then
+        report()
+      end
+    end)
   end
 end
 
@@ -307,6 +343,11 @@ f:SetScript("OnEvent", function(_, event, ...)
     log("load", { svParseMsApprox = loadMs, stressCopies = db.stress and #db.stress or 0 })
   elseif event == "PLAYER_LOGIN" then
     C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
+    hooksecurefunc(C_AuctionHouse, "ReplicateItems", function()
+      state.requestedAt, state.events, state.readThisScan, state.firstEventMs = now(), 0, false, nil
+      log("replicate_request", {})
+      out("ReplicateItems() called (full scan started by Auctionator or another addon)")
+    end)
     if Auctionator and Auctionator.API and Auctionator.API.v1 and Auctionator.API.v1.RegisterForDBUpdate then
       Auctionator.API.v1.RegisterForDBUpdate("AME_Spike", function()
         log("auctionator_db_update", {})
@@ -329,11 +370,29 @@ f:SetScript("OnEvent", function(_, event, ...)
       #s.connected > 0 and table.concat(s.connected, ", ") or "none"
     )
   elseif event == "AUCTION_HOUSE_CLOSED" then
-    log("ah_closed", {})
+    log("ah_closed", {
+      replicateEvents = state.events,
+      firstEventMs = state.firstEventMs,
+      requestToCloseMs = state.requestedAt and math.floor(now() - state.requestedAt) or nil,
+    })
   elseif event == "REPLICATE_ITEM_LIST_UPDATE" then
-    log("replicate_event", { num = C_AuctionHouse.GetNumReplicateItems() })
-    out("REPLICATE_ITEM_LIST_UPDATE (%d rows), reading...", C_AuctionHouse.GetNumReplicateItems() or 0)
-    readReplicate("event")
+    state.events = state.events + 1
+    if state.readThisScan then
+      return
+    end
+    state.readThisScan = true
+    state.firstEventMs = state.requestedAt and math.floor(now() - state.requestedAt) or nil
+    log("replicate_first_event", { num = C_AuctionHouse.GetNumReplicateItems(), msAfterRequest = state.firstEventMs })
+    out(
+      "REPLICATE_ITEM_LIST_UPDATE (%d rows, %s ms after request), reading...",
+      C_AuctionHouse.GetNumReplicateItems() or 0,
+      tostring(state.firstEventMs)
+    )
+    readReplicate("first-event")
+    C_Timer.After(30, function()
+      log("events_after_30s", { replicateEvents = state.events })
+      readReplicate("late+30s")
+    end)
   elseif event == "CHAT_MSG_ADDON" then
     onAddonMessage(...)
   end
@@ -344,7 +403,7 @@ end)
 
 SLASH_AMESPIKE1 = "/amespike"
 SlashCmdList.AMESPIKE = function(msg)
-  local cmd, a, b = strsplit(" ", strtrim(msg or ""))
+  local cmd, a, b, c = strsplit(" ", strtrim(msg or ""))
   cmd = (cmd or ""):lower()
   if cmd == "read" then
     readReplicate("manual")
@@ -368,7 +427,7 @@ SlashCmdList.AMESPIKE = function(msg)
       db.stress and #db.stress or 0
     )
   elseif cmd == "comm" then
-    sendBurst(a or "self", tonumber(b) or 100)
+    sendBurst(a or "self", tonumber(b) or 100, tonumber(c) or 0)
   elseif cmd == "clear" then
     wipe(db)
     db.log = {}
@@ -379,7 +438,7 @@ SlashCmdList.AMESPIKE = function(msg)
     out("  /amespike shard - show house/realm detection")
     out("  /amespike stress [N=30] - store N copies of the snapshot, then /reload")
     out("  /amespike load  - show SavedVariables load time")
-    out("  /amespike comm <self|guild|party|Name-Realm> [n=100] - addon-message throughput test")
+    out("  /amespike comm <self|guild|party|Name> [n=100] [spacing s=0] - addon-message throughput test")
     out("  /amespike clear - wipe spike data")
   end
 end

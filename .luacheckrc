@@ -17,7 +17,7 @@ read_globals = {
   -- Lua extensions provided by WoW
   "strsplit", "strtrim", "strjoin", "wipe", "tinsert", "tremove", "debugprofilestop", "date", "time",
   -- frames and timers
-  "CreateFrame", "C_Timer", "UIParent", "GameTooltip",
+  "CreateFrame", "C_Timer", "UIParent", "GameTooltip", "hooksecurefunc",
   -- namespaces
   "C_AuctionHouse", "C_ChatInfo", "C_Item", "Enum",
   -- unit / realm

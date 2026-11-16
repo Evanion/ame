@@ -41,6 +41,94 @@ Install path: `C:\Games\World of Warcraft\_forever_\` (flavor `wowf`).
 - It is the closest competitor and a useful reference for an open-source approach.
 - It keeps every scan for about 2 days, then daily summaries for 180 days.
 
+## M0 spike results (run 1, 2026-11-16, Horde AH, realm `CAMWOWEU5Realm6PvP`)
+
+**Piggyback works.** We read Auctionator's full scan with no scan of our own.
+
+**Scan size.** 193,961 rows, 6,446 unique itemIDs, ~15.9k unique item links (suffix and item-level variants).
+- Only 2 rows were bid-only (no buyout).
+- Every item had a buyout price.
+
+**Read cost.** One full read takes 7.5–10 s wall time at 1,000 rows per frame. The worst frame is 11–14 ms, so there's no visible hitch.
+
+**Event storm.** `REPLICATE_ITEM_LIST_UPDATE` fired **291,250 times** in 66 s, roughly once per row as item data loads, and kept firing until the AH closed.
+- Production must read **once per `ReplicateItems()` request**: `hooksecurefunc(C_AuctionHouse, "ReplicateItems", ...)` marks scan start, then the first event triggers the read.
+- Never do per-event work.
+- v1 of the spike re-read 7 times and logged every event; that log made up most of the 27.8 MB file.
+
+**Incomplete rows.** ~25% of rows (48–52k) report `hasAllInfo = false` at read time.
+- Spike v2 checks whether buyout and count are still present on those rows. The v1 aggregate suggests yes, since we got no missing prices.
+- If so, keying by itemID needs no item-data loading. Variant keys (links) need it.
+
+**Auctionator callback.** `RegisterForDBUpdate` fired about 11 s after the first replicate event, once Auctionator finished processing.
+
+**Shard.** Horde AH (`UnitFactionGroup("npc")`). `GetAutoCompleteRealms()` returned no connected realms. The Neutral AH is not tested yet.
+
+**SavedVariables.** A 27.8 MB file (30 stress snapshots plus a 291k-entry log) took about 289 ms between our file loading and `ADDON_LOADED`, roughly 10 ms/MB.
+- WoW writes arrays as `value, -- [n]` lines, which is very verbose.
+- This confirms the plan: pack history into compressed strings, and size it per snapshot in run 2.
+
+**Comms.** Whispering `Name-NormalizedRealm` to yourself failed with "No player named … is online". Spike v2 uses the plain name.
+- All 200 sends returned Success within 3 ms with no throttle result. The client accepted them instantly.
+- So real throughput must be measured on the **receiving** side, not from send results.
+
+## M0 spike results (run 2, 2026-11-16, Horde AH)
+
+**Scan-start hook works.** `hooksecurefunc(C_AuctionHouse, "ReplicateItems", ...)` fired, and the first `REPLICATE_ITEM_LIST_UPDATE` arrived **16.5 s** later (server latency).
+- 198,643 rows, 6,451 itemIDs, read in 9.4 s, worst frame 11 ms.
+
+**Prices are present on incomplete rows.** Of 51,419 rows with `hasAllInfo = false`, **51,417 still had buyout and count**.
+- → Keying by itemID needs **no item-data loading**, so ingestion can start at the first event.
+- A re-read 30 s later found the same items. More links had resolved by then (15,862 → 16,130), which matters only for variant keys.
+
+**Event storm confirmed.** 66,090 events in the first 30 s and 99,468 in total. `AUCTION_HOUSE_CLOSED` arrives **twice** per close.
+
+**Auctionator `RegisterForDBUpdate` fires often:** after the full scan and after every normal browse or search (incremental scans). It's useful as a "prices changed, refresh UI" signal, but it can't mark a full scan.
+
+**Storage per snapshot** (6,451 items × itemID/minUnit/qty/rows), measured offline from the saved data:
+
+| Encoding | Bytes per snapshot | Bytes per item | 180 daily snapshots |
+|---|---|---|---|
+| WoW SavedVariables tables | 130 KB | 20.2 | ~23 MB (slow login) |
+| compact string (sorted, delta itemIDs) | 64 KB | 10.0 | ~11.6 MB |
+| compact + deflate (gzip -9 as a proxy) | **23.5 KB** | **3.7** | **~4.2 MB** (~5.6 MB after print-safe encoding) |
+
+- Deltas *between* days should shrink this further.
+- **Decision for M1: cold history is stored as compressed strings.**
+- Load cost observed: a 27.8 MB table-format file took ~272–289 ms before `ADDON_LOADED`.
+
+## M0 spike results (comms, 2026-11-16)
+
+**Character names on Forever are "First Last"** (the sender showed as `Tyken Evanion`). AHDB's `/ahdb trust <First Last>` reflects the same thing.
+- Whisper targets and trust lists must use the full name. `Name-Realm` and the bare first name both failed.
+
+**Unpaced burst of 50:** the client returned Success for all 50 within 1 ms, with no throttle result. The receiver got exactly **10 of 50**, within 1 ms.
+- → This matches a server-side burst allowance of ~10 messages per prefix. The excess is **dropped silently**, and the sender can't tell.
+
+**Paced at 0.25 s (20 messages):** nothing was received. Self-whispers to the first name only are not a reliable test.
+- The 10 that did arrive were labelled with channel `GUILD`, which is unexplained.
+
+**Correction and guild result:** the "10 of 50" above was most likely the **guild** burst. The spike merged streams per sender across channels; that's now fixed.
+**Guild run (11:12–11:13 UTC).** A burst of 50 and a paced run of 20 (0.25 s) ran **concurrently** on the same prefix.
+- Their receive streams interleaved: they were received as 28/50 and 20/20, so the per-stream receive counts are not reliable.
+
+**The send side is clear: a client-side throttle exists for `GUILD`.** `SendAddonMessage` returned `AddonMessageThrottle` 863 times (401 + 462, retried every 0.1 s).
+- The two streams together pushed 70 messages in ~59 s.
+- That fits **a burst of ~10 messages, then ~1 message/s per prefix**: 10 + 59 ≈ 70.
+- → Sustained throughput is **~255 B/s per prefix**.
+
+**Sizing.** One compressed daily snapshot (~23.5 KB) ≈ **95 s** of guild traffic; daily deltas are less.
+- Bulk sync is feasible if paced at the throttle rate and run in the background.
+- Using multiple prefixes to go faster is possible but antisocial; don't.
+
+**Behaviour difference.** The unpaced self-whisper burst got `Success` for all 50 but delivered 10. `GUILD` reports throttling properly.
+- → Treat `Success` as "maybe" on `WHISPER`; acks are required there.
+
+**Takeaways for sync (M6):**
+- Never rely on send results. Use receiver acks, sequence numbers and resend requests.
+- Pace conservatively.
+- Measure real throughput with two clients (a second account or a guildmate) during M6.
+
 ## External findings (research, 2026-11-16)
 
 - **Charting:** LibGraph-2.0 (last release Dec 2022) is the only reusable library, and it's dated. Serious addons (AHDB, AzerothCharts) hand-roll their charts. → **We build a reusable chart library.**
@@ -150,7 +238,7 @@ Goal: when a guildmate (or a trusted friend or alt) scans, everyone gets the dat
    - Delta-encoded against the previous snapshot, then LibSerialize → LibDeflate → `EncodeForWoWAddonChannel`.
    - Chunking and throttling via AceComm + ChatThrottleLib at `BULK` priority, so we never disconnect anyone or starve boss-mod and raid traffic.
    - Transfers pause in combat and in instances.
-   - Back-of-envelope: ~15k items × ~10 B compressed ≈ 150 KB per full snapshot (a few minutes). Daily deltas are much smaller.
+   - Measured in M0: 6.4k items ≈ 23.5 KB compressed per snapshot. At the measured ~255 B/s guild throttle that's ≈ 95 s. Daily deltas are much smaller.
 4. **Lazy deep history:** when you open an item's chart and a peer has older history than you, ask for just that item (like AHDB's per-item `Q`/`H` queries).
 5. **Scopes:**
    - **Guild** (default on);
