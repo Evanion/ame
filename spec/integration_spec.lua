@@ -437,6 +437,39 @@ describe("addon in a stubbed client", function()
       assert.is_false(ns.UI.frame:IsShown())
     end)
 
+    it("shows the last 2 days scan by scan on the 2D range", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      local times = {}
+      for h = 1, 5 do
+        env.now = env.now + 3 * 3600
+        times[#times + 1] = env.now
+        fullScan({ { 2589, 1000 + h * 100, 10 } })
+      end
+      env:advance(4)
+      drainJobs()
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      local v = ns.UI.itemView
+      local two = v.rangeButtons[1]
+      assert.are.equal("2D", two.key)
+      two.scripts.OnClick(two)
+      drainJobs()
+      local market = ns.UI.chart.series.market
+      assert.are.same(times, market.xs) -- one point per scan, at the scan's time
+      assert.is_nil(ns.UI.chart.series.sma)
+      -- intraday candles: 2-hour candles from the scans
+      v.style.scripts.OnClick(v.style)
+      assert.are.equal(5, #ns.UI.candles.xs)
+      assert.are.equal(2 * 3600, ns.UI.candles.period)
+      v.style.scripts.OnClick(v.style)
+      -- back to daily history
+      local thirty = v.rangeButtons[3]
+      thirty.scripts.OnClick(thirty)
+      assert.is_not_nil(ns.UI.chart.series.sma)
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)

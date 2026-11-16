@@ -7,7 +7,9 @@ local DAY = 86400
 local UI = {}
 ns.UI = UI
 
-local RANGES = { { "7D", 7 }, { "30D", 30 }, { "90D", 90 }, { "1Y", 365 }, { "All", nil } }
+-- 2D plots every recent scan (intraday); the others plot daily history
+local RANGES = { { "2D", 2 }, { "7D", 7 }, { "30D", 30 }, { "90D", 90 }, { "1Y", 365 }, { "All", nil } }
+local INTRADAY = "2D"
 
 ---------------------------------------------------------------------------------------------------------------------
 -- window shell
@@ -305,7 +307,7 @@ function UI:CreateItemView(parent)
     return val >= 1000 and ("%.1fk"):format(val / 1000) or tostring(math.floor(val))
   end)
   chart:SetHoverFormatter(function(_, x, rows)
-    local lines = { "|cffffffff" .. date("%a %b %d, %Y", x) .. "|r" }
+    local lines = { "|cffffffff" .. date(UI.intradayMode and "%a %b %d, %H:%M" or "%a %b %d, %Y", x) .. "|r" }
     local c = rows.candles and UI.candles
     if c and rows.candles.x == x then
       local i = rows.candles.index
@@ -344,6 +346,15 @@ function UI:SetRange(days, key)
   for _, b in ipairs(self.itemView.rangeButtons) do
     b:SetSelected(b.key == key)
   end
+  local wasIntraday = self.intradayMode
+  self.intradayMode = key == INTRADAY
+  if self.intradayMode then
+    self:LoadIntraday()
+    return
+  end
+  if wasIntraday and self.series then
+    self:DrawItemChart()
+  end
   if days then
     local now = GetServerTime()
     self.chart:SetXRange(now - days * DAY, now + DAY)
@@ -353,6 +364,37 @@ function UI:SetRange(days, key)
   if ns.Settings:Get("chartStyle") == "candles" and self.series then
     self:DrawItemChart() -- candle period depends on the range
   end
+end
+
+-- the last 2 days scan by scan (full scans and searches), from the scans kept in full
+function UI:LoadIntraday()
+  local itemID = self.itemID
+  if not itemID then
+    return
+  end
+  local function show()
+    local now = GetServerTime()
+    self:DrawItemChart()
+    if #(self.intraday or {}) == 0 then
+      self.chart:SetMessage("No scans of this item in the last 2 days. Daily history is on the other ranges.")
+    else
+      self.chart:SetMessage(nil)
+      self.chart:SetXRange(now - 2 * DAY, now + 3600)
+    end
+  end
+  if self.intradayItem == itemID and self.intraday then
+    return show()
+  end
+  self.chart:SetMessage("Loading recent scans...")
+  ns.AME:WithStore("intraday-" .. itemID, nil, function(store)
+    return store:Intraday(itemID, GetServerTime() - 2 * DAY)
+  end, function(ok, points)
+    if self.itemID ~= itemID or not self.intradayMode then
+      return
+    end
+    self.intraday, self.intradayItem = ok and points or {}, itemID
+    show()
+  end)
 end
 
 -- days per candle so a range shows at most ~60 candles
@@ -366,15 +408,17 @@ end
 
 -- (Re)draw the item chart in the current style from self.series.
 function UI:DrawItemChart()
-  local series, v, chart = self.series, self.itemView, self.chart
+  local intraday = self.intradayMode
+  local series, v, chart = intraday and self.intraday or self.series, self.itemView, self.chart
   if not series or #series == 0 then
+    chart:ClearSeries()
     return
   end
   local candles = ns.Settings:Get("chartStyle") == "candles"
   v.style.label:SetText(candles and "Line" or "Candles")
   local xs, market, low, qty, sma = {}, {}, {}, {}, {}
   for i, p in ipairs(series) do
-    xs[i] = p.day * DAY + (p.res == "week" and 3.5 * DAY or DAY / 2)
+    xs[i] = p.t or (p.day * DAY + (p.res == "week" and 3.5 * DAY or DAY / 2))
     market[i], low[i], qty[i] = p.market, p.min, p.qty
   end
   for i = 1, #market do
@@ -385,7 +429,17 @@ function UI:DrawItemChart()
   chart:ClearSeries()
   chart:SetSeries("qty", { xs = xs, ys = qty, kind = "bars", axis = "volume", color = { 0.53, 0.53, 0.67, 1 } })
   if candles then
-    local c = ns.Analytics.Candles(series, candlePeriod(series, self.rangeDays))
+    local c
+    if intraday then
+      -- hourly candles from the individual scans (2 hours each over 2 days)
+      local hourly = {}
+      for i, p in ipairs(series) do
+        hourly[i] = { day = math.floor(p.t / 3600), market = p.market, min = p.min }
+      end
+      c = ns.Analytics.Candles(hourly, 2, 3600)
+    else
+      c = ns.Analytics.Candles(series, candlePeriod(series, self.rangeDays))
+    end
     self.candles = c
     chart:SetSeries("candles", {
       kind = "candles",
@@ -431,14 +485,19 @@ function UI:DrawItemChart()
         .. " supply      wheel: zoom, drag: pan, double-click: reset"
     )
   end
-  chart:SetSeries("sma", {
-    xs = xs,
-    ys = sma,
-    kind = "line",
-    axis = "price",
-    color = { 1, 0.67, 0.2, 0.9 },
-    width = 1.5,
-  })
+  if not intraday then -- a 7-point average of scans isn't a 7-day average
+    chart:SetSeries("sma", {
+      xs = xs,
+      ys = sma,
+      kind = "line",
+      axis = "price",
+      color = { 1, 0.67, 0.2, 0.9 },
+      width = 1.5,
+    })
+  else
+    local text = v.legend:GetText() or ""
+    v.legend:SetText((text:gsub("|T[^|]*|t 7d average   ", "")) .. "   (each point is one scan)")
+  end
   chart.range = range
   chart:Refresh()
 end
@@ -448,6 +507,7 @@ function UI:ShowItem(itemID)
   self.frame:Show()
   self:ShowTab("item")
   self.itemID = itemID
+  self.intraday, self.intradayItem = nil, nil
   local v = self.itemView
 
   local function header()

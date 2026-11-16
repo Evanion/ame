@@ -399,3 +399,31 @@ function Store:Latest(itemID)
     end
   end
 end
+
+-- Every recent scan (full and partial, kept in full for RAW_KEEP) that saw the item, oldest first:
+-- { { t, min, market, median, qty, auctions, kind, src }, ... }. Decodes one snapshot per scan (uncached, yields
+-- between scans), so it's meant for a background job.
+function Store:Intraday(itemID, fromT)
+  local out = {}
+  for _, e in ipairs(self.data.raw) do
+    if not fromT or e.t >= fromT then
+      -- not through the segment cache: a full scan decodes to ~40k numbers, dozens of them would pin lots of memory
+      local snap = Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor))
+      local i = find(snap.ids, itemID)
+      if i then
+        out[#out + 1] = {
+          t = e.t,
+          min = snap.min[i],
+          market = snap.market[i],
+          median = snap.median[i],
+          qty = snap.qty[i],
+          auctions = snap.auctions[i],
+          kind = e.k or "full",
+          src = e.src,
+        }
+      end
+      self.yield()
+    end
+  end
+  return out
+end

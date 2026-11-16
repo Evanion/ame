@@ -178,8 +178,9 @@ end
 -- close = last market price in the period,
 -- high = highest market price (at least the open), low = cheapest listing seen (the "min" price).
 -- Returns { xs, open, high, low, close, period } with xs at the middle of each period (seconds).
-function Analytics.Candles(series, periodDays)
-  local DAY = 86400
+-- unit: seconds per "day" step of the series (default a day; 3600 for hourly points built from scans)
+function Analytics.Candles(series, periodDays, unit)
+  local DAY = unit or 86400
   periodDays = math.max(1, math.floor(periodDays or 1))
   local out = { xs = {}, open = {}, high = {}, low = {}, close = {}, period = periodDays * DAY }
   local prevClose
