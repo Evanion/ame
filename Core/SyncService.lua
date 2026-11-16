@@ -74,7 +74,7 @@ function Service:Announce()
 end
 
 local function sameRealm(shard)
-  return shard and shard:match("^(.-)|") == GetNormalizedRealmName()
+  return shard and shard:match("^(.-)|") == ns.MarketRealm(GetNormalizedRealmName())
 end
 
 function Service:OnMessage(msg, _, sender)

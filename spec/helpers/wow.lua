@@ -220,7 +220,7 @@ function M.install(opts)
   end)
   set("date", os.date)
   set("GetNormalizedRealmName", function()
-    return "TestRealm"
+    return opts.realm or "TestRealm"
   end)
   set("UnitFactionGroup", function(unit)
     if unit == "npc" then

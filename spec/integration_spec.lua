@@ -187,6 +187,25 @@ describe("addon in a stubbed client", function()
     assert.is_false(env:chatContains("recorded full scan"))
   end)
 
+  it("uses the ruleset as the market on Forever and migrates old realm-named history", function()
+    boot({
+      realm = "CAMWOWEU5Realm6PvP",
+      pre = function()
+        _G.AME_HistoryDB =
+          { v = 1, shards = { ["CAMWOWEU5Realm6PvP|Horde"] = { raw = {}, seen = {}, days = {}, weeks = {} } } }
+        _G.AME_DB = { v = 1, stats = {}, backfilled = { ["CAMWOWEU5Realm6PvP|Horde"] = 123 } }
+      end,
+    })
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    assert.are.equal("PvP|Horde", ns.AME:CurrentShard())
+    assert.is_not_nil(AME_HistoryDB.shards["PvP|Horde"])
+    assert.is_nil(AME_HistoryDB.shards["CAMWOWEU5Realm6PvP|Horde"])
+    assert.are.equal(123, AME_DB.backfilled["PvP|Horde"])
+    fullScan({ { 2589, 1000, 10 } })
+    assert.is_true(env:chatContains("recorded full scan: 1 items from 1 listings %(PvP|Horde%)"))
+  end)
+
   it("survives a client that lacks some events", function()
     boot({ unknownEvents = { COMMODITY_SEARCH_RESULTS_UPDATED = true } })
     env:fire("AUCTION_HOUSE_SHOW")

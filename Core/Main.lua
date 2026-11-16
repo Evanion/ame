@@ -55,8 +55,31 @@ function AME:LoadHistory()
   AME_HistoryDB.v = AME_HistoryDB.v or 1
   AME_HistoryDB.shards = AME_HistoryDB.shards or {}
   self.history = AME_HistoryDB
+  self:MigrateShardKeys()
   AME_DB.stats.historyLoadMs = math.floor(debugprofilestop() - t0)
   return true
+end
+
+-- Shard keys used to carry the full realm name; on Forever they're now the ruleset ("PvP|Horde"). Rename old keys,
+-- leaving a shard alone if the new key already has data.
+function AME:MigrateShardKeys()
+  local function migrate(t)
+    local moves = {}
+    for key in pairs(t) do
+      local realm, house = key:match("^(.+)|(%a+)$")
+      if realm and ns.HOUSES[house] then
+        local newKey = ns.ShardKey(ns.MarketRealm(realm), house)
+        if newKey ~= key and t[newKey] == nil then
+          moves[key] = newKey
+        end
+      end
+    end
+    for old, new in pairs(moves) do
+      t[new], t[old] = t[old], nil
+    end
+  end
+  migrate(self.history.shards)
+  migrate(AME_DB.backfilled)
 end
 
 function AME:CurrentHouse()
@@ -64,7 +87,7 @@ function AME:CurrentHouse()
 end
 
 function AME:CurrentShard()
-  return ns.ShardKey(GetNormalizedRealmName(), self:CurrentHouse())
+  return ns.ShardKey(ns.MarketRealm(GetNormalizedRealmName()), self:CurrentHouse())
 end
 
 AME.stores = {}
