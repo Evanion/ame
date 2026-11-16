@@ -130,29 +130,43 @@ local function decodeColumn(text, n, delta)
   return values
 end
 
-function Codec.EncodeSnapshot(snap)
-  local n = #snap.ids
+-- Generic columnar table: fieldNames[1] is the key column (sorted ascending, delta-encoded); all columns have the
+-- same length. Used for scan snapshots and for daily/weekly point segments.
+function Codec.Encode(fieldNames, cols)
+  local n = #cols[fieldNames[1]]
   local out = { Codec.VERSION, Codec.ToBase36(n) }
-  for f, name in ipairs(Codec.SNAPSHOT_FIELDS) do
-    out[f + 2] = encodeColumn(snap[name], n, f == 1)
+  for f, name in ipairs(fieldNames) do
+    local col = cols[name]
+    if not col then
+      error("Codec: missing column " .. name, 2)
+    end
+    out[f + 2] = encodeColumn(col, n, f == 1)
   end
   return concat(out, "|")
 end
 
-function Codec.DecodeSnapshot(text)
+function Codec.Decode(fieldNames, text)
   local fields, count = split(text, "|")
   if fields[1] ~= Codec.VERSION then
     error("Codec: unsupported version " .. tostring(fields[1]), 2)
   end
-  if count ~= #Codec.SNAPSHOT_FIELDS + 2 then
+  if count ~= #fieldNames + 2 then
     error("Codec: wrong field count", 2)
   end
   local n = Codec.FromBase36(fields[2])
-  local snap = {}
-  for f, name in ipairs(Codec.SNAPSHOT_FIELDS) do
-    snap[name] = decodeColumn(fields[f + 2], n, f == 1)
+  local cols = {}
+  for f, name in ipairs(fieldNames) do
+    cols[name] = decodeColumn(fields[f + 2], n, f == 1)
   end
-  return snap
+  return cols
+end
+
+function Codec.EncodeSnapshot(snap)
+  return Codec.Encode(Codec.SNAPSHOT_FIELDS, snap)
+end
+
+function Codec.DecodeSnapshot(text)
+  return Codec.Decode(Codec.SNAPSHOT_FIELDS, text)
 end
 
 function Codec.Pack(text, compressor)

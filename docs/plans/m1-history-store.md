@@ -25,6 +25,24 @@ Goal: every Auctionator full scan ends up in a compact, per-shard price history 
 
 Prices are integer copper. Bid-only listings (no buyout) are skipped and counted.
 
+**Store as built (tasks 4–7; supersedes the tier table below where they differ):**
+- **Layout.** `days[day][bucket]` and `weeks[week][bucket]` hold packed segments, with 32 buckets by `itemID % 32`.
+  - Day-major segments are written once per day and never rewritten after the day.
+  - A lookup decompresses about 1/32 of history. That's about the same number of bytes as an item-major layout, without rewriting history every day.
+- **Running sums.** Segments store running **sums** (market, median, qty, auctions), the min, and the scan count. Merging a scan is an incremental add.
+  - Closed days never need their raw scans.
+  - Late arrivals (sync) merge exactly.
+  - `seen[day]` dedupes scans by time, source, kind and content shape.
+- **One sample per item per hour.** An `hours` bitmask per item per day enforces it.
+  - Repeated searches or sell-tab rechecks of the same items update `Latest`, and can lower the day's `min`, but don't skew daily means.
+  - Full and partial scans (`kind`) are treated alike. A full scan covers every item.
+- **Time slicing.** An injected `yield` is called between buckets, so ingest can time-slice inside a coroutine.
+- **Benchmark** (plain Lua 5.1, identity compressor, 6,451 items, `bench/store_bench.lua`):
+  - full-scan merge: 75 ms average, 196 ms worst (so it must be time-sliced);
+  - partial: 1.3 ms;
+  - `Series`: 16 ms cold, 0.06 ms warm.
+- **`Summary` is moved to M4 (analytics).** M1 provides `Latest` and `Series`.
+
 **Tiers:**
 
 | Tier | Layout | Content | Retention |
