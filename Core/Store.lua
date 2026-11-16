@@ -34,7 +34,10 @@ Store.CACHE_SIZE = 96
 -- hours: bitmask of UTC hours already sampled for that item that day (0 in weekly segments)
 -- high: the highest single market price seen in the period (the upper candle wick); 0 = unknown. Added later, so
 -- older segments decode without it.
-Store.SEGMENT_FIELDS = { "ids", "min", "market", "median", "qty", "auctions", "scans", "hours", "high" }
+-- drain / obs (liquidity): units that disappeared between consecutive full scans of this house (sold, cancelled or
+-- expired) and the minutes those scan pairs covered; their ratio is the sell rate. Also added later.
+Store.SEGMENT_FIELDS = { "ids", "min", "market", "median", "qty", "auctions", "scans", "hours", "high", "drain", "obs" }
+Store.DRAIN_WINDOW = 12 * 3600 -- pair a full scan with the previous one up to this much older
 local SUMMED = { "market", "median", "qty", "auctions" }
 
 local function round(x)
@@ -62,7 +65,19 @@ end
 -- segment helpers
 
 local function emptySegment()
-  return { ids = {}, min = {}, market = {}, median = {}, qty = {}, auctions = {}, scans = {}, hours = {}, high = {} }
+  return {
+    ids = {},
+    min = {},
+    market = {},
+    median = {},
+    qty = {},
+    auctions = {},
+    scans = {},
+    hours = {},
+    high = {},
+    drain = {},
+    obs = {},
+  }
 end
 
 function Store:decode(packed, fields)
@@ -107,7 +122,9 @@ local function hasSlot(mask, slot)
 end
 
 -- Merge rows into a segment (both sorted by id). rows: list of
---   { id, min, market, median, qty, auctions, scans, slot, high }
+--   { id, min, market, median, qty, auctions, scans, slot, high, drain, obs }
+-- or a drain-only row { id, drainOnly = true, [10] = drain, [11] = obs } for an item that vanished from the AH:
+-- it only adds liquidity to a row the segment already has.
 -- where market..auctions are sums and slot is the sample's hour bit (2^hour) or 0 for "no slot check" (weekly
 -- folds). A row whose hour slot is already taken only lowers min: one sample per item per hour feeds the means, so
 -- repeated searches of the same item can't skew the day. Returns a new segment.
@@ -115,24 +132,36 @@ local function mergeRows(seg, rows)
   local out = emptySegment()
   local i, j, n = 1, 1, 0
   local sids = seg.ids
-  local sh = seg.high or {}
+  local sh, sd, so = seg.high or {}, seg.drain or {}, seg.obs or {}
+  local function copySeg(k)
+    out.ids[n], out.min[n], out.market[n], out.median[n] = sids[k], seg.min[k], seg.market[k], seg.median[k]
+    out.qty[n], out.auctions[n], out.scans[n], out.hours[n] = seg.qty[k], seg.auctions[k], seg.scans[k], seg.hours[k]
+    out.high[n], out.drain[n], out.obs[n] = sh[k] or 0, sd[k] or 0, so[k] or 0
+  end
   while i <= #sids or j <= #rows do
     local a, r = sids[i], rows[j]
     n = n + 1
     if r and (not a or r[1] < a) then
-      out.ids[n], out.min[n], out.market[n], out.median[n] = r[1], r[2], r[3], r[4]
-      out.qty[n], out.auctions[n], out.scans[n], out.hours[n] = r[5], r[6], r[7], r[8]
-      out.high[n] = r[9] or 0
+      if r.drainOnly then -- nothing to add liquidity to
+        n = n - 1
+      else
+        out.ids[n], out.min[n], out.market[n], out.median[n] = r[1], r[2], r[3], r[4]
+        out.qty[n], out.auctions[n], out.scans[n], out.hours[n] = r[5], r[6], r[7], r[8]
+        out.high[n], out.drain[n], out.obs[n] = r[9] or 0, r[10] or 0, r[11] or 0
+      end
       j = j + 1
     elseif not r or a < r[1] then
-      out.ids[n], out.min[n], out.market[n], out.median[n] = a, seg.min[i], seg.market[i], seg.median[i]
-      out.qty[n], out.auctions[n], out.scans[n], out.hours[n] = seg.qty[i], seg.auctions[i], seg.scans[i], seg.hours[i]
-      out.high[n] = sh[i] or 0
+      copySeg(i)
       i = i + 1
+    elseif r.drainOnly then
+      copySeg(i)
+      out.drain[n], out.obs[n] = out.drain[n] + (r[10] or 0), out.obs[n] + (r[11] or 0)
+      i, j = i + 1, j + 1
     elseif r[8] ~= 0 and hasSlot(seg.hours[i], r[8]) then -- same id, hour already sampled: only min
       out.ids[n], out.min[n], out.market[n], out.median[n] = a, min(seg.min[i], r[2]), seg.market[i], seg.median[i]
       out.qty[n], out.auctions[n], out.scans[n], out.hours[n] = seg.qty[i], seg.auctions[i], seg.scans[i], seg.hours[i]
       out.high[n] = max(sh[i] or 0, r[9] or 0)
+      out.drain[n], out.obs[n] = (sd[i] or 0) + (r[10] or 0), (so[i] or 0) + (r[11] or 0)
       i, j = i + 1, j + 1
     else -- same id: add
       out.ids[n], out.min[n] = a, min(seg.min[i], r[2])
@@ -140,6 +169,7 @@ local function mergeRows(seg, rows)
       out.qty[n], out.auctions[n], out.scans[n] = seg.qty[i] + r[5], seg.auctions[i] + r[6], seg.scans[i] + r[7]
       out.hours[n] = seg.hours[i] + r[8]
       out.high[n] = max(sh[i] or 0, r[9] or 0)
+      out.drain[n], out.obs[n] = (sd[i] or 0) + (r[10] or 0), (so[i] or 0) + (r[11] or 0)
       i, j = i + 1, j + 1
     end
   end
@@ -182,19 +212,50 @@ function Store:AddScan(snap, t, src, kind)
     pos = pos - 1
   end
   table.insert(raw, pos, entry)
+  local prevQty, obs = nil, 0
+  if kind == "full" then
+    prevQty, obs = self:previousFull(pos)
+  end
 
   -- merge into the day
   local slot = 2 ^ floor((t % Store.DAY) / 3600)
   local byBucket = {}
-  for i, id in ipairs(ids) do
+  local function bucketRows(id)
     local b = id % Store.BUCKETS
     local rows = byBucket[b]
     if not rows then
       rows = {}
       byBucket[b] = rows
     end
-    rows[#rows + 1] =
-      { id, snap.min[i], snap.market[i], snap.median[i], snap.qty[i], snap.auctions[i], 1, slot, snap.market[i] }
+    return rows
+  end
+  for i, id in ipairs(ids) do
+    local rows = bucketRows(id)
+    local before = prevQty and prevQty[id]
+    local drain = before and max(0, before - snap.qty[i]) or 0
+    rows[#rows + 1] = {
+      id,
+      snap.min[i],
+      snap.market[i],
+      snap.median[i],
+      snap.qty[i],
+      snap.auctions[i],
+      1,
+      slot,
+      snap.market[i],
+      drain,
+      before and obs or 0,
+    }
+    if prevQty then
+      prevQty[id] = nil
+    end
+  end
+  -- items that were listed in the previous scan and are gone now: all of it drained
+  for id, before in pairs(prevQty or {}) do
+    if before > 0 then
+      local rows = bucketRows(id)
+      rows[#rows + 1] = { id, drainOnly = true, [10] = before, [11] = obs }
+    end
   end
   data.days[day] = data.days[day] or {}
   self:mergeInto(data.days[day], byBucket)
@@ -228,6 +289,39 @@ function Store:ImportDay(day, rows, key)
   self:mergeInto(tier, byBucket)
   data.seen[day][key] = true
   return true
+end
+
+-- The full scan before raw[pos] (same house, within DRAIN_WINDOW), as { [itemID] = qty } plus the minutes between
+-- them - but only when raw[pos] is the newest full scan: a late one (e.g. relayed by sync) would count an interval
+-- twice.
+function Store:previousFull(pos)
+  local raw = self.data.raw
+  local entry = raw[pos]
+  for k = pos + 1, #raw do
+    if (raw[k].k or "full") == "full" then
+      return nil, 0
+    end
+  end
+  for k = pos - 1, 1, -1 do
+    local e = raw[k]
+    if entry.t - e.t > Store.DRAIN_WINDOW then
+      return nil, 0
+    end
+    if (e.k or "full") == "full" and e.t < entry.t then
+      local ok, snap = pcall(function()
+        return Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor))
+      end)
+      if not ok then
+        return nil, 0
+      end
+      local qty = {}
+      for i, id in ipairs(snap.ids) do
+        qty[id] = snap.qty[i]
+      end
+      return qty, floor((entry.t - e.t) / 60)
+    end
+  end
+  return nil, 0
 end
 
 -- Retention: prune raw scans, fold old days into weeks. Safe to call any time.
@@ -276,6 +370,8 @@ function Store:Rollup()
               seg.scans[i],
               0,
               seg.high and seg.high[i] or 0,
+              seg.drain and seg.drain[i] or 0,
+              seg.obs and seg.obs[i] or 0,
             }
           end
         end
@@ -298,8 +394,9 @@ function Store:Rollup()
             last[k] = last[k] + r[k]
           end
           last[9] = max(last[9], r[9])
+          last[10], last[11] = last[10] + r[10], last[11] + r[11]
         else
-          last = { r[1], r[2], r[3], r[4], r[5], r[6], r[7], 0, r[9] }
+          last = { r[1], r[2], r[3], r[4], r[5], r[6], r[7], 0, r[9], r[10], r[11] }
           run[#run + 1] = last
         end
       end
@@ -314,11 +411,14 @@ end
 local function point(seg, i, res, period)
   local scans = seg.scans[i]
   local high = seg.high and seg.high[i]
+  local obs = seg.obs and seg.obs[i] or 0
   local p = {
     res = res,
     min = seg.min[i],
     high = high and high > 0 and high or nil,
     scans = scans,
+    drain = obs > 0 and seg.drain[i] or nil,
+    obs = obs > 0 and obs or nil,
   }
   for _, f in ipairs(SUMMED) do
     p[f] = round(seg[f][i] / scans)

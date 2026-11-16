@@ -13,7 +13,7 @@ local HOUSE_NAME = { Alliance = "Alliance AH", Horde = "Horde AH", Neutral = "Go
 local AGES = { { 1, "Seen today/yesterday" }, { 3, "Seen in 3 days" }, { 7, "Seen in 7 days" }, { false, "Any age" } }
 
 local COLUMNS = {
-  { key = "name", label = "Item", width = 214 },
+  { key = "name", label = "Item", width = 186 },
   { key = "buy", label = "Buy at", width = 86, money = true, term = "arbBuy" },
   { key = "sell", label = "Sells for", width = 86, money = true, term = "arbSell" },
   { key = "fee", label = "AH cut", width = 76, money = true, term = "arbFee" },
@@ -21,7 +21,8 @@ local COLUMNS = {
   { key = "margin", label = "Margin", width = 60, pct = true, term = "arbMargin" },
   { key = "supply", label = "Supply", width = 70, term = "arbSupply" },
   { key = "deposit", label = "Deposit", width = 76, money = true, term = "arbDeposit" },
-  { key = "age", label = "Data", width = 56, term = "arbAge" },
+  { key = "sellRate", label = "Sells/d", width = 58, term = "arbSellRate" },
+  { key = "age", label = "Data", width = 48, term = "arbAge" },
 }
 local ROWS, ROW_H = 16, 22
 
@@ -308,6 +309,8 @@ function UI:RenderArbitrage()
           val = W.Percent(e.margin, 0)
         elseif col.key == "supply" then
           val = ("%s / %s"):format(tostring(e.buyQty or "-"), tostring(e.sellQty or "-"))
+        elseif col.key == "sellRate" then
+          val = W.Rate(e.sellRate)
         elseif col.key == "age" then
           val = ageText(e.age)
         end

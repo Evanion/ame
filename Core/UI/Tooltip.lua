@@ -50,6 +50,9 @@ function Tooltip.Lines(s, opts)
   row("lowest", W.Money(s.min))
   local trend = s.supplyTrend30 and ("  " .. W.Percent(s.supplyTrend30 * 7, 0) .. DIM .. "/week|r") or ""
   row("supply", tostring(s.qty or 0) .. DIM .. " listed|r" .. trend)
+  if s.sellRate then
+    row("sells", W.Rate(s.sellRate) .. DIM .. " (est.)|r")
+  end
   if s.vol30 then
     row("volatility", ("%.1f%%"):format(s.vol30 * 100))
   end

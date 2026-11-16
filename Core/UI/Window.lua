@@ -360,8 +360,8 @@ function UI:CreateItemView(parent)
 
   -- stat cards
   v.cards = {}
-  local labels = { "Market", "Lowest", "Average", "7d change", "Volatility", "Supply", "Signal" }
-  local terms = { "market", "min", "avg", "change7", "vol30", "qty", "signal" }
+  local labels = { "Market", "Lowest", "Average", "7d change", "Volatility", "Supply  ·  sells/day", "Signal" }
+  local terms = { "market", "min", "avg", "change7", "vol30", "sellRate", "signal" }
   for i, label in ipairs(labels) do
     local c = statCard(v, label)
     c:EnableMouse(true)
@@ -689,7 +689,10 @@ function UI:FillItem(_, series, latest)
   cards[4].value:SetText(W.Percent(s.change7))
   cards[5].value:SetText(s.vol30 and ("%.1f%%"):format(s.vol30 * 100) or "-")
   cards[6].value:SetText(
-    tostring(latest and latest.qty or s.qty or 0) .. " " .. W.Percent(s.supplyTrend30 and s.supplyTrend30 * 7, 0)
+    tostring(latest and latest.qty or s.qty or 0)
+      .. " "
+      .. W.Percent(s.supplyTrend30 and s.supplyTrend30 * 7, 0)
+      .. (s.sellRate and ("  |cff999999%s|r"):format(W.Rate(s.sellRate)) or "")
   )
   cards[7].value:SetText(W.Signal(s.signal) .. ("  |cff999999%+d|r"):format(s.score or 0))
   v.sub:SetText(
@@ -917,12 +920,13 @@ end
 -- Market view (screener)
 
 local COLUMNS = {
-  { key = "name", label = "Item", width = 230 },
-  { key = "market", label = "Market", width = 92, money = true },
-  { key = "avg", label = "avg", width = 92, money = true }, -- period from Settings
+  { key = "name", label = "Item", width = 190 },
+  { key = "market", label = "Market", width = 86, money = true },
+  { key = "avg", label = "avg", width = 86, money = true }, -- period from Settings
   { key = "change7", label = "7d", width = 62, pct = true },
   { key = "vol30", label = "Volatility", width = 70, pct = true, plain = true },
-  { key = "qty", label = "Supply", width = 60 },
+  { key = "qty", label = "Supply", width = 52 },
+  { key = "sellRate", label = "Sells/d", width = 58, rate = true },
   { key = "signal", label = "Signal", width = 50 },
   { key = "score", label = "Score", width = 50 },
 }
@@ -1457,6 +1461,8 @@ function UI:RenderMarket()
           val = W.Money(s[col.key == "avg" and ("avg" .. avgDays()) or col.key], true)
         elseif col.plain then
           val = s[col.key] and ("%.1f%%"):format(s[col.key] * 100) or "-"
+        elseif col.rate then
+          val = W.Rate(s.sellRate)
         elseif col.pct then
           val = W.Percent(s[col.key])
         elseif col.key == "signal" then

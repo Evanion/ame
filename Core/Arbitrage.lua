@@ -44,6 +44,7 @@ function Arbitrage.Find(buy, sell, opts)
           margin = margin,
           buyQty = b.qty,
           sellQty = s.qty,
+          sellRate = s.sellRate,
           age = age,
         }
       end

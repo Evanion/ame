@@ -539,3 +539,14 @@ function W.HideMenu(anchor)
     m:Hide()
   end
 end
+
+-- estimated units sold per day: "~350/d", "~4.5/d", "-"
+function W.Rate(perDay)
+  if not perDay then
+    return "|cff777777-|r"
+  end
+  if perDay >= 10 then
+    return ("~%d/d"):format(math.floor(perDay + 0.5))
+  end
+  return ("~%.1f/d"):format(perDay)
+end

@@ -220,3 +220,14 @@ describe("Analytics.Candles upper wick", function()
     assert.are.equal(100, c.high[1]) -- no recorded high: the wick stays at the body
   end)
 end)
+
+describe("Analytics sell rate", function()
+  it("turns drained units over observed minutes into units per day", function()
+    local A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+    local s = A.Summarize({
+      { day = 1, market = 10, drain = 30, obs = 360 },
+      { day = 2, market = 10, drain = 90, obs = 720 },
+    })
+    assert.are.equal(160, s.sellRate) -- 120 units over 18 observed hours = 160 per day
+  end)
+end)

@@ -8,6 +8,7 @@
 --   z30                         z-score of today's market vs the last 30 points (mean reversion)
 --   trend30                     least-squares slope per day / mean (drift: +0.01 = +1%/day)
 --   supplyTrend30               same for quantity
+--   sellRate                    estimated units sold per day (supply drain between full scans, last 7 points)
 --   days                        number of points
 --   score, signal               opportunity score (higher = cheaper than usual on a stable item) and
 --                               "buy" | "hold" | "sell" | "none" (not enough history yet)
@@ -151,6 +152,14 @@ function Analytics.Summarize(series)
     change7 = n > 7 and Analytics.Change(markets[n - 7], markets[n]) or nil,
     change30 = n > 30 and Analytics.Change(markets[n - 30], markets[n]) or nil,
   }
+  -- liquidity: units gone between consecutive full scans over the last 7 points, per day observed
+  local drained, observed = 0, 0
+  for k = math.max(1, n - 6), n do
+    drained, observed = drained + (series[k].drain or 0), observed + (series[k].obs or 0)
+  end
+  if observed >= 120 then -- at least two hours of scan pairs
+    s.sellRate = drained / (observed / 1440)
+  end
   local window = tail(markets, 30)
   s.vol30 = Analytics.Volatility(window)
   s.z30 = Analytics.ZScore(window)

@@ -647,6 +647,30 @@ describe("addon in a stubbed client", function()
       assert.truthy(ns.UI.marketView.headers[3].text.text:find("7d avg"))
     end)
 
+    it("estimates how fast items sell from supply draining between full scans", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      env.now = env.now - env.now % 86400 + 3600
+      fullScan({ { 2589, 1000, 100 } })
+      env.now = env.now + 6 * 3600
+      fullScan({ { 2589, 1000, 70 } }) -- 30 gone in 6 hours
+      env:advance(4)
+      drainJobs()
+      local s = ns.AME.index.items[2589]
+      assert.are.equal(120, s.sellRate) -- 30 per 6 h = 120 a day
+      ns.UI:Toggle()
+      ns.UI:ShowTab("market")
+      local v = ns.UI.marketView
+      local col
+      for c, h in ipairs(v.headers) do
+        if h.text.text:find("Sells/d") then
+          col = c
+        end
+      end
+      assert.are.equal("~120/d", v.rows[1].cells[col].text)
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)

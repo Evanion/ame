@@ -146,6 +146,32 @@ describe("Store", function()
       assert.are.equal(300, fresh:Series(10)[1].high)
     end)
 
+    it("records liquidity: units gone between consecutive full scans and the minutes covered", function()
+      local store = newStore()
+      local day0 = clock - clock % 86400
+      store:AddScan(snap({ [10] = { 100, 100, 100, 100, 5 }, [11] = { 50, 50, 50, 20, 2 } }), day0 + 3600, "a")
+      store:AddScan(snap({ [10] = { 100, 100, 100, 130, 5 }, [11] = { 50, 50, 50, 20, 2 } }), day0 + 7200, "a")
+      -- 3 hours later: 60 of item 10 gone, item 11 sold out (not listed any more)
+      store:AddScan(snap({ [10] = { 100, 100, 100, 70, 5 } }), day0 + 4 * 3600, "a")
+      local p10 = store:Series(10)[1]
+      assert.are.equal(60, p10.drain) -- 100 -> 130 adds nothing (new listings), 130 -> 70 drains 60
+      assert.are.equal(60 + 120, p10.obs) -- minutes covered by both scan pairs
+      local p11 = store:Series(11)[1]
+      assert.are.equal(20, p11.drain) -- everything gone
+      assert.are.equal(60 + 120, p11.obs)
+    end)
+
+    it("doesn't add liquidity for a scan that arrives late (relayed), so no interval counts twice", function()
+      local store = newStore()
+      local day0 = clock - clock % 86400
+      store:AddScan(snap({ [10] = { 100, 100, 100, 100, 5 } }), day0 + 3600, "a")
+      store:AddScan(snap({ [10] = { 100, 100, 100, 40, 5 } }), day0 + 5 * 3600, "a")
+      store:AddScan(snap({ [10] = { 100, 100, 100, 70, 5 } }), day0 + 3 * 3600, "relayed")
+      local p = store:Series(10)[1]
+      assert.are.equal(60, p.drain)
+      assert.are.equal(240, p.obs)
+    end)
+
     it("writes today's daily point on every scan", function()
       local store = newStore()
       store:AddScan(snap({ [10] = { 100, 110, 120, 5, 2 } }), clock, "a")
