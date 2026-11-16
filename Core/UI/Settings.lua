@@ -125,15 +125,7 @@ function Settings:RegisterOptions()
               return not AME_DB.settings.minimap.hide
             end,
             set = function(_, value)
-              AME_DB.settings.minimap.hide = not value
-              local icon = LibStub("LibDBIcon-1.0", true)
-              if icon then
-                if value then
-                  icon:Show(ADDON)
-                else
-                  icon:Hide(ADDON)
-                end
-              end
+              Settings:SetMinimap(value)
             end,
           },
         },
@@ -197,10 +189,28 @@ function Settings:RegisterOptions()
   self.panel = AceConfigDialog:AddToBlizOptions(ADDON, "Azeroth Mercantile Exchange")
 end
 
+function Settings:SetMinimap(show)
+  AME_DB.settings.minimap.hide = not show
+  local icon = LibStub("LibDBIcon-1.0", true)
+  if icon then
+    if show then
+      icon:Show(ADDON)
+    else
+      icon:Hide(ADDON)
+    end
+  end
+end
+
+function Settings:HasMinimapLibrary()
+  return LibStub("LibDBIcon-1.0", true) ~= nil
+end
+
+-- /ame config: the Settings tab of the AME window (the same options are also in the game's AddOns settings)
 function Settings:Open()
-  local AceConfigDialog = LibStub("AceConfigDialog-3.0", true)
-  if AceConfigDialog then
-    AceConfigDialog:Open(ADDON)
+  if ns.UI then
+    ns.UI:Create()
+    ns.UI.frame:Show()
+    ns.UI:ShowTab("settings")
   end
 end
 

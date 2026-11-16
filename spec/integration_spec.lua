@@ -549,6 +549,41 @@ describe("addon in a stubbed client", function()
       assert.are.same({ "Ada Lovelace", "Bob Builder" }, whispered)
     end)
 
+    it("drives trust from the Sync tab and options from the Settings tab", function()
+      bootSync()
+      deliver(ns.Sync.EncodeHello("TestRealm|Horde"), "WHISPER", "Ada Lovelace")
+      ns.UI:Toggle()
+      ns.UI:ShowTab("sync")
+      local v = ns.UI.syncView
+      v.scripts.OnShow(v)
+      local req = v.pending[1]
+      assert.are.equal("Ada Lovelace", req.name)
+      req.approve.scripts.OnClick(req.approve)
+      assert.is_true(ns.SyncService.trust.db.trusted["ada lovelace"].mutual)
+      assert.are.equal("Ada Lovelace", v.trustedRows[1].name)
+      -- add a player by name
+      v.input:SetText("Bob Builder")
+      v.input.scripts.OnEnterPressed(v.input)
+      assert.truthy(v.addStatus.text:find("Asked Bob Builder"))
+      assert.are.equal("hello", ns.Sync.Decode(sent[#sent].msg).type)
+      -- turning guild sharing off stops guild announcements
+      v.guild.scripts.OnClick(v.guild)
+      assert.is_false(ns.Settings:Get("syncGuild"))
+      -- settings tab
+      ns.UI:ShowTab("settings")
+      local s = ns.UI.settingsView
+      s.scripts.OnShow(s)
+      local tooltip = s.checks[1]
+      tooltip.scripts.OnClick(tooltip)
+      assert.is_false(ns.Settings:Get("tooltip"))
+      local altShift = s.click.menu.items[2]
+      altShift.scripts.OnClick(altShift)
+      assert.are.equal("altshift", ns.Settings:Get("clickModifier"))
+      assert.truthy(s.storage.text:find("Market:"))
+      env:slash("AZEROTHMERCANTILEEXCHANGE", "config")
+      assert.are.equal("settings", ns.UI.current)
+    end)
+
     it("ignores other realms, its own messages and garbage", function()
       bootSync()
       deliver(ns.Sync.EncodeAnnounce("OtherRealm|Horde", { { t = env.now, src = "X" } }), "GUILD", "Guild Mate")

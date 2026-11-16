@@ -51,14 +51,18 @@ function UI:Create()
     b:SetPoint("TOPRIGHT", -(34 + x), -8)
     self.tabs[name] = b
   end
-  tab("market", "Market", 152)
-  tab("item", "Item", 76)
+  tab("market", "Market", 304)
+  tab("item", "Item", 228)
+  tab("sync", "Sync", 152)
+  tab("settings", "Settings", 76)
   tab("guide", "Guide", 0)
 
   self.views = {
     item = self:CreateItemView(f),
     market = self:CreateMarketView(f),
     guide = ns.Help.CreateGuide(f, contentArea),
+    sync = self:CreateSyncView(f, contentArea),
+    settings = self:CreateSettingsView(f, contentArea),
   }
   f:SetScript("OnShow", function()
     UI.shardText:SetText(ns.AME:CurrentShard())

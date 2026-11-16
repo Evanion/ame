@@ -293,7 +293,7 @@ function W.Dropdown(parent, width, options, onSelect)
   function b:SetIndex(i)
     self.index = i
     self.label:SetText(text(options[i]))
-    self:SetSelected(i > 1)
+    self:SetSelected(not self.neutral and i > 1)
   end
   b.menu = menu
   b:SetIndex(1)
