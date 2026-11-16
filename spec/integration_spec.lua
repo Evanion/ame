@@ -555,6 +555,39 @@ describe("addon in a stubbed client", function()
       assert.is_not_nil(ns.UI.chart.series.sma)
     end)
 
+    it("finds items by name in the item box, and Shift-clicked links open on the Item tab", function()
+      seeded()
+      ns.UI:ShowItem(4306)
+      drainJobs()
+      assert.are.equal("7D", ns.UI.rangeKey) -- 7 days by default (Forever is young)
+      assert.truthy(ns.UI.itemView.cards[3].label.text:find("7%-day average"))
+      local box = ns.UI.searchBox
+      box.scripts.OnEditFocusGained(box)
+      box:SetText("item 25")
+      box.scripts.OnTextChanged(box, true)
+      assert.truthy(ns.Widgets.menu:IsShown()) -- suggestions
+      assert.truthy(ns.Widgets.menu.items[1].text.text:find("Item 2589"))
+      box.scripts.OnEnterPressed(box)
+      assert.are.equal(2589, ns.UI.itemID)
+      -- Shift-click a chat link while the Item tab is up
+      env.shiftDown = true
+      HandleModifiedItemClick("|cffffffff|Hitem:4306::::::::::::|h[Item 4306]|h|r")
+      assert.are.equal(4306, ns.UI.itemID)
+      -- on the Market tab with its search focused, Shift-click searches for the item
+      ns.UI:ShowTab("market")
+      local search = ns.UI.marketView.search
+      search.HasFocus = function()
+        return true
+      end
+      env.now = env.now + 1
+      HandleModifiedItemClick("|cffffffff|Hitem:2589::::::::::::|h[Item 2589]|h|r")
+      assert.are.equal("Item 2589", ns.UI.mq.text)
+      assert.are.equal(1, #ns.UI.list)
+      env.shiftDown = false
+      -- the screener's average column follows the period too
+      assert.truthy(ns.UI.marketView.headers[3].text.text:find("7d avg"))
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)

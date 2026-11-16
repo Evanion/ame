@@ -333,10 +333,16 @@ function UI:CreateSettingsView(parent, contentArea)
   checks[#checks + 1] = settingCheck(v, "Show AME prices in item tooltips", "tooltip", 0, -24)
   local avgLabel = W.Text(v, "GameFontHighlightSmall")
   avgLabel:SetPoint("TOPLEFT", 260, -26)
-  avgLabel:SetText("average over")
+  avgLabel:SetText("average period")
   local avgs = { { 3, "3 days" }, { 7, "7 days" }, { 14, "14 days" }, { 30, "30 days" } }
   v.avgDays = W.Dropdown(v, 90, avgs, function(value)
+    -- one period everywhere: tooltips, the screener's average column and the item page
     ns.Settings:Set("tooltipAvgDays", value)
+    local q = UI.mq
+    if q and q.sortKey and q.sortKey:match("^avg%d+$") then
+      q.sortKey = "avg" .. value
+    end
+    UI.list = nil
   end)
   v.avgDays:SetPoint("TOPLEFT", 340, -22)
   v.avgDays.values = avgs

@@ -74,3 +74,26 @@ describe("MarketFilter", function()
     assert.are.same({ 3, 1, 5, 2, 4 }, ids(MF.Apply(index, { sortKey = "market", ascending = true }, info)))
   end)
 end)
+
+describe("MarketFilter.FindByName", function()
+  it("ranks exact names, then names starting with the text, then the rest; shorter first", function()
+    local MF = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/MarketFilter.lua" }).MarketFilter
+    local names = {
+      [1] = "Swiftthistle",
+      [2] = "Swiftness Potion",
+      [3] = "Recipe: Swiftness Potion",
+      [4] = "Swift",
+      [5] = "Linen Cloth",
+    }
+    local index = { items = { [1] = {}, [2] = {}, [3] = {}, [4] = {}, [5] = {}, [6] = {} } }
+    local hits = MF.FindByName(index, "SWIFT", function(id)
+      return names[id] and { name = names[id], quality = 1 } or {}
+    end, 3)
+    local ids = {}
+    for i, h in ipairs(hits) do
+      ids[i] = h.itemID
+    end
+    assert.are.same({ 4, 1, 2 }, ids)
+    assert.are.same({}, MF.FindByName(index, "", function() end))
+  end)
+end)

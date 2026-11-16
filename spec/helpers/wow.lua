@@ -274,7 +274,7 @@ function M.install(opts)
     return env.altDown
   end)
   set("IsShiftKeyDown", function()
-    return false
+    return env.shiftDown
   end)
   set("IsControlKeyDown", function()
     return false

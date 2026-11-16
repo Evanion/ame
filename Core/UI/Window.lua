@@ -11,6 +11,12 @@ ns.UI = UI
 local RANGES = { { "2D", 2 }, { "7D", 7 }, { "30D", 30 }, { "90D", 90 }, { "1Y", 365 }, { "All", nil } }
 local INTRADAY = "2D"
 
+-- the average period used everywhere (screener column, item card, tooltips): Settings, default 7 days
+local function avgDays()
+  return ns.Settings:Get("tooltipAvgDays") or 7
+end
+UI.AvgDays = avgDays
+
 ---------------------------------------------------------------------------------------------------------------------
 -- window shell
 
@@ -258,29 +264,47 @@ function UI:CreateItemView(parent)
   box:SetAutoFocus(false)
   box:SetScript("OnEnterPressed", function(self)
     local id = ns.AME.ItemIDFrom(self:GetText())
+    if not id then
+      local best = UI:ItemSuggestions(self:GetText(), 1)[1]
+      id = best and best.itemID
+    end
     self:ClearFocus()
+    W.HideMenu(self)
     if id then
+      self:SetText("")
       UI:ShowItem(id)
     end
   end)
   box.hint = W.Text(box, "GameFontDisableSmall")
   box.hint:SetPoint("LEFT", 6, 0)
-  box.hint:SetText("Shift-click an item or type an ID")
-  box:SetScript("OnTextChanged", function(self)
-    self.hint:SetShown(self:GetText() == "")
-  end)
-  self.searchBox = box
-  -- shift-clicking an item while the box has focus inserts its link
-  hooksecurefunc("ChatEdit_InsertLink", function(link)
-    if box:HasFocus() and link then
-      box:SetText(link)
-      local id = ns.AME.ItemIDFrom(link)
-      if id then
-        box:ClearFocus()
-        UI:ShowItem(id)
-      end
+  box.hint:SetText("Item name, ID, or Shift-click an item")
+  box:SetScript("OnTextChanged", function(self, user)
+    local text = self:GetText()
+    self.hint:SetShown(text == "")
+    if user then
+      UI:SuggestItems(self, text)
     end
   end)
+  box:HookScript("OnEditFocusGained", function()
+    UI:WarmItemNames()
+  end)
+  box:SetScript("OnEscapePressed", function(self)
+    self:SetText("")
+    self:ClearFocus()
+    W.HideMenu(self)
+  end)
+  self.searchBox = box
+  -- Shift-clicking an item (chat link, bags, AH) opens it while the Item tab is up. Every modified item click goes
+  -- through HandleModifiedItemClick (hooked in Tooltip); the chat-insert hooks are a fallback for older clients.
+  local function onInsert(link)
+    UI:OnItemLinkClicked(link, true)
+  end
+  if ChatFrameUtil and ChatFrameUtil.InsertLink then
+    pcall(hooksecurefunc, ChatFrameUtil, "InsertLink", onInsert)
+  end
+  if ChatEdit_InsertLink then
+    pcall(hooksecurefunc, "ChatEdit_InsertLink", onInsert)
+  end
 
   -- watch + alerts (second header row, right-aligned under the search box)
   v.alertSignal = W.Check(v, "on buy/sell signal", function(on)
@@ -336,8 +360,8 @@ function UI:CreateItemView(parent)
 
   -- stat cards
   v.cards = {}
-  local labels = { "Market", "Lowest", "30d average", "7d change", "Volatility", "Supply", "Signal" }
-  local terms = { "market", "min", "avg30", "change7", "vol30", "qty", "signal" }
+  local labels = { "Market", "Lowest", "Average", "7d change", "Volatility", "Supply", "Signal" }
+  local terms = { "market", "min", "avg", "change7", "vol30", "qty", "signal" }
   for i, label in ipairs(labels) do
     local c = statCard(v, label)
     c:EnableMouse(true)
@@ -647,7 +671,7 @@ function UI:FillItem(_, series, latest)
   if self.rangeKey == "All" then
     self:SetRange(nil, "All")
   else
-    self:SetRange(self.rangeDays or 30, self.rangeKey or "30D")
+    self:SetRange(self.rangeDays or 7, self.rangeKey or "7D")
   end
 
   local s = ns.Analytics.Summarize(series)
@@ -660,7 +684,8 @@ function UI:FillItem(_, series, latest)
   local cards = v.cards
   cards[1].value:SetText(W.Money(latest and latest.market or s.market))
   cards[2].value:SetText(W.Money(latest and latest.min or s.min))
-  cards[3].value:SetText(W.Money(s.avg30))
+  cards[3].label:SetText(avgDays() .. "-day average")
+  cards[3].value:SetText(W.Money(s["avg" .. avgDays()] or s.avg30))
   cards[4].value:SetText(W.Percent(s.change7))
   cards[5].value:SetText(s.vol30 and ("%.1f%%"):format(s.vol30 * 100) or "-")
   cards[6].value:SetText(
@@ -675,6 +700,84 @@ function UI:FillItem(_, series, latest)
       dropped > 0 and ("  ·  |cffffcc00%d outlier price%s ignored|r"):format(dropped, dropped == 1 and "" or "s") or ""
     )
   )
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Item search box: suggestions by name, Shift-click links
+
+function UI:WarmItemNames()
+  local index = self:ViewIndex()
+  if index and self.warmedIndex ~= index then
+    self.warmedIndex = index
+    local ids = {}
+    for id in pairs(index.items) do
+      ids[#ids + 1] = id
+    end
+    ns.ItemCache.Warm(ids)
+  end
+end
+
+function UI:ItemSuggestions(text, limit)
+  if not text or text == "" or ns.AME.ItemIDFrom(text) then
+    return {}
+  end
+  return ns.MarketFilter.FindByName((self:ViewIndex()), text, function(id)
+    return ns.ItemCache.Get(id)
+  end, limit or 10)
+end
+
+function UI:SuggestItems(box, text)
+  local hits = #(text or "") >= 2 and self:ItemSuggestions(text, 10) or {}
+  if #hits == 0 then
+    W.HideMenu(box)
+    return
+  end
+  local entries = {}
+  for i, h in ipairs(hits) do
+    local color = h.quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[h.quality]
+    entries[i] = {
+      text = (color and color.hex or "|cffffffff") .. h.name .. "|r",
+      func = function()
+        box:SetText("")
+        box:ClearFocus()
+        UI:ShowItem(h.itemID)
+      end,
+    }
+  end
+  W.Menu(box, entries, { refresh = true })
+end
+
+-- Shift-click on an item link anywhere: opens it on the Item tab, or searches for it on the Market tab, when AME is
+-- the obvious target (its box has focus, or no chat box is open). fromInsert: called from a chat-insert hook.
+function UI:OnItemLinkClicked(link, fromInsert)
+  if not (link and self.frame and self.frame:IsShown()) then
+    return
+  end
+  local id = ns.AME.ItemIDFrom(link)
+  if not id then
+    return
+  end
+  -- several hooks can report the same click
+  local now = GetTime and GetTime() or 0
+  if self.lastLink == link and now - (self.lastLinkAt or 0) < 0.3 then
+    return
+  end
+  local chatOpen = ChatEdit_GetActiveWindow and ChatEdit_GetActiveWindow()
+  if self.current == "item" and (self.searchBox:HasFocus() or (not chatOpen and not fromInsert)) then
+    self.lastLink, self.lastLinkAt = link, now
+    self.searchBox:SetText("")
+    self.searchBox:ClearFocus()
+    self:ShowItem(id)
+  elseif self.current == "market" and self.marketView.search:HasFocus() then
+    self.lastLink, self.lastLinkAt = link, now
+    local name = ns.ItemCache.Get(id).name or link:match("%[(.-)%]")
+    if name then
+      self.marketView.search:SetText(name)
+      self.mq.text = name
+      self.offset = 0
+      self:RefreshMarket(true)
+    end
+  end
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -816,7 +919,7 @@ end
 local COLUMNS = {
   { key = "name", label = "Item", width = 230 },
   { key = "market", label = "Market", width = 92, money = true },
-  { key = "avg30", label = "30d avg", width = 92, money = true },
+  { key = "avg", label = "avg", width = 92, money = true }, -- period from Settings
   { key = "change7", label = "7d", width = 62, pct = true },
   { key = "vol30", label = "Volatility", width = 70, pct = true, plain = true },
   { key = "qty", label = "Supply", width = 60 },
@@ -1072,10 +1175,11 @@ function UI:CreateMarketView(parent)
     ns.Help.Explain(h, col.key)
     h:SetScript("OnClick", function()
       local q = UI.mq
-      if q.sortKey == col.key then
+      local key = col.key == "avg" and ("avg" .. avgDays()) or col.key
+      if q.sortKey == key then
         q.ascending = not q.ascending
       else
-        q.sortKey, q.ascending = col.key, false
+        q.sortKey, q.ascending = key, false
       end
       UI:RefreshMarket(true)
     end)
@@ -1282,8 +1386,10 @@ function UI:RenderMarket()
   v.quality:SetIndex(v.quality.index)
   for i, h in ipairs(v.headers) do
     local col = COLUMNS[i]
-    local arrow = (q.sortKey == col.key) and (q.ascending and W.ARROW_UP or W.ARROW_DOWN) or ""
-    h.text:SetText(col.label .. arrow)
+    local key = col.key == "avg" and ("avg" .. avgDays()) or col.key
+    local label = col.key == "avg" and (avgDays() .. "d avg") or col.label
+    local arrow = (q.sortKey == key) and (q.ascending and W.ARROW_UP or W.ARROW_DOWN) or ""
+    h.text:SetText(label .. arrow)
   end
 
   local total = #list
@@ -1340,7 +1446,7 @@ function UI:RenderMarket()
         if col.key == "name" then
           val = (color and color.hex or "|cffffffff") .. (name or ("item:" .. s.itemID)) .. "|r"
         elseif col.money then
-          val = W.Money(s[col.key], true)
+          val = W.Money(s[col.key == "avg" and ("avg" .. avgDays()) or col.key], true)
         elseif col.plain then
           val = s[col.key] and ("%.1f%%"):format(s[col.key] * 100) or "-"
         elseif col.pct then

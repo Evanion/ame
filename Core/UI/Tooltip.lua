@@ -136,6 +136,8 @@ function Tooltip:Install()
         if id then
           ns.UI:ShowItem(id)
         end
+      elseif link and IsShiftKeyDown() and not IsAltKeyDown() and not IsControlKeyDown() then
+        ns.UI:OnItemLinkClicked(link)
       end
     end)
   end

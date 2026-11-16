@@ -14,10 +14,10 @@ Help.TERMS = {
       .. "Auctionator's default summary scan only the cheapest listing is known, so then it's the lowest price.",
   },
   min = { "Lowest", "The cheapest single listing seen in the latest data." },
-  avg30 = {
-    "30-day average",
-    "The average daily market price over the last 30 days with data. Compare it with today's market price to "
-      .. "see if the item is cheap or expensive right now.",
+  avg = {
+    "Average",
+    "The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare "
+      .. "it with today's market price to see if the item is cheap or expensive right now.",
   },
   change7 = {
     "7-day change",

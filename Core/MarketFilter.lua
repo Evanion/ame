@@ -55,6 +55,41 @@ function MarketFilter.Categories(index, info)
   return out
 end
 
+-- Items whose (cached) name contains text, best first: exact name, then names starting with it, then the rest;
+-- shorter names first within each group. returns { { itemID, name, quality }, ... } (at most limit)
+function MarketFilter.FindByName(index, text, info, limit)
+  local needle = (text or ""):lower()
+  if needle == "" then
+    return {}
+  end
+  local hits = {}
+  for itemID in pairs(index and index.items or {}) do
+    local i = info(itemID)
+    local name = i and i.name
+    if name then
+      local lower = name:lower()
+      local at = lower:find(needle, 1, true)
+      if at then
+        local order = lower == needle and 0 or at == 1 and 1 or 2
+        hits[#hits + 1] = { itemID = itemID, name = name, quality = i.quality, rank = order }
+      end
+    end
+  end
+  table.sort(hits, function(a, b)
+    if a.rank ~= b.rank then
+      return a.rank < b.rank
+    end
+    if #a.name ~= #b.name then
+      return #a.name < #b.name
+    end
+    return a.name < b.name
+  end)
+  for k = (limit or 10) + 1, #hits do
+    hits[k] = nil
+  end
+  return hits
+end
+
 -- query: { text, classID, subClassID, only (set of itemIDs, e.g. a watchlist), minQuality, signal ("buy"/"sell"),
 --          minPrice, maxPrice (copper, on market),
 --          sortKey, ascending }

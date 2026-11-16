@@ -433,7 +433,8 @@ end
 -- Shared popup menu: W.Menu(anchor, entries); entry = { text, checked = bool?, func = fn, disabled = bool? }.
 -- One menu frame for the whole addon; closes on a pick or a click elsewhere.
 local menu
-function W.Menu(anchor, entries)
+-- opts.refresh: update a menu already open on this anchor instead of toggling it (live suggestions)
+function W.Menu(anchor, entries, opts)
   if not menu then
     menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     W.Skin(menu, W.COLORS.bg)
@@ -452,7 +453,7 @@ function W.Menu(anchor, entries)
     end)
     W.menu = menu
   end
-  if menu:IsShown() and menu.anchor == anchor then
+  if menu:IsShown() and menu.anchor == anchor and not (opts and opts.refresh) then
     menu:Hide()
     return menu
   end
@@ -527,4 +528,12 @@ function W.Check(parent, label, onToggle)
   end)
   b:SetChecked(false)
   return b
+end
+
+-- close the shared menu if it's open on this anchor (or any anchor when nil)
+function W.HideMenu(anchor)
+  local m = W.menu
+  if m and m:IsShown() and (anchor == nil or m.anchor == anchor) then
+    m:Hide()
+  end
 end
