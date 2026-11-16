@@ -171,8 +171,21 @@ function UI:CreateArbitrageView(parent, contentArea)
       row.cells[c] = fs
       cx = cx + col.width + 8
     end
+    -- Search button: shown when you're at the buy auction house
+    row.search = W.Button(row, "Search", 56, 18, function()
+      if row.itemID then
+        ns.AME:SearchAuctionHouse(row.itemID)
+      end
+    end)
+    row.search:SetPoint("LEFT", row, "RIGHT", 4, 0)
+    row.search:Hide()
     row:SetScript("OnClick", function(self)
-      if self.itemID then
+      if not self.itemID then
+        return
+      end
+      if IsShiftKeyDown() and UI:AtBuyHouse() then
+        ns.AME:SearchAuctionHouse(self.itemID)
+      else
         UI:ShowItem(self.itemID)
       end
     end)
@@ -246,12 +259,18 @@ function UI:RefreshArbitrage(keepOffset)
   end)
 end
 
+-- standing at the auction house you'd buy from (so a row can be searched there)
+function UI:AtBuyHouse()
+  return ns.AME.ahOpen and self.arb and ns.AME:CurrentHouse() == self.arb.buy
+end
+
 function UI:RenderArbitrage()
   local v = self.arbView
   if not (v and v:IsShown()) then
     return
   end
   local a = self.arb
+  local canSearch = self:AtBuyHouse()
   for i, h in ipairs(v.headers) do
     local col = COLUMNS[i]
     local arrow = (a.sortKey == h.key) and (a.ascending and W.ARROW_UP or W.ARROW_DOWN) or ""
@@ -264,6 +283,7 @@ function UI:RenderArbitrage()
     local e = rows[self.arbOffset + r]
     row.itemID = e and e.itemID
     row:SetShown(e ~= nil)
+    row.search:SetShown(e ~= nil and canSearch)
     if e then
       local name, _, quality, icon = W.ItemInfo(e.itemID)
       row.icon:SetTexture(icon or 134400)
@@ -313,6 +333,8 @@ function UI:RenderArbitrage()
   end
   if a.buy == a.sell then
     status = "Pick two different auction houses."
+  elseif canSearch and self.arbRows and #self.arbRows > 0 then
+    status = status .. "  -  you're at the buy AH: Search (or Shift-click a row) to buy"
   end
   v.status:SetText(status)
 end

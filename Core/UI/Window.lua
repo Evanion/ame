@@ -1234,7 +1234,12 @@ function UI:CreateMarketView(parent)
       cx = cx + col.width + 8
     end
     row:SetScript("OnClick", function(self)
-      if self.itemID then
+      if not self.itemID then
+        return
+      end
+      if IsShiftKeyDown() and ns.AME.ahOpen then
+        ns.AME:SearchAuctionHouse(self.itemID)
+      else
         UI:ShowItem(self.itemID)
       end
     end)
@@ -1242,6 +1247,9 @@ function UI:CreateMarketView(parent)
       if self.itemID then
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetItemByID(self.itemID)
+        if ns.AME.ahOpen then
+          GameTooltip:AddLine("Shift-click to search the auction house", 0.6, 0.6, 0.6)
+        end
         GameTooltip:Show()
       end
     end)

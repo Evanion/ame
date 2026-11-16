@@ -365,6 +365,45 @@ AME.ingest = ns.Ingest.New({
 })
 
 ---------------------------------------------------------------------------------------------------------------------
+-- Search the open auction house for an item, to buy it: Auctionator's shopping search when Auctionator is
+-- installed (its public API), otherwise the default auction house window. Returns true when a search started.
+function AME:SearchAuctionHouse(itemID)
+  if not self.ahOpen then
+    say("open the auction house first")
+    return false
+  end
+  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+  local name = getInfo(itemID)
+  if not name then
+    say("item not loaded yet - try again in a moment")
+    return false
+  end
+  local api = Auctionator and Auctionator.API and Auctionator.API.v1
+  if api and api.MultiSearchExact and pcall(api.MultiSearchExact, ADDON, { name }) then
+    return true
+  end
+  local frame = AuctionHouseFrame
+  if frame and frame:IsShown() and frame.SearchBar then
+    if AuctionHouseFrameDisplayMode and frame.SetDisplayMode then
+      pcall(frame.SetDisplayMode, frame, AuctionHouseFrameDisplayMode.Buy)
+    end
+    local ok = pcall(function()
+      frame.SearchBar:SetSearchText(name)
+      frame.SearchBar:StartSearch()
+    end)
+    if ok then
+      return true
+    end
+  end
+  if AuctionFrame and AuctionFrame:IsShown() and BrowseName and AuctionFrameBrowse_Search then -- classic AH
+    BrowseName:SetText(name)
+    return pcall(AuctionFrameBrowse_Search)
+  end
+  say("couldn't start an auction house search for %s", name)
+  return false
+end
+
+---------------------------------------------------------------------------------------------------------------------
 -- Auctionator backfill (reads Auctionator internals; guarded)
 
 function AME:Backfill(force)
@@ -502,6 +541,7 @@ function handlers.PLAYER_LOGIN()
 end
 
 function handlers.AUCTION_HOUSE_SHOW()
+  AME.ahOpen = true
   AME.house = UnitFactionGroup("npc") or "Neutral"
   AME_DB.lastHouse = AME.house
   if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
@@ -522,6 +562,10 @@ end
 handlers.PLAYER_GUILD_UPDATE = handlers.GUILD_ROSTER_UPDATE
 
 function handlers.AUCTION_HOUSE_CLOSED()
+  AME.ahOpen = false
+  if ns.UI and ns.UI.RenderArbitrage then
+    ns.UI:RenderArbitrage()
+  end
   if AME.ingest.reading then
     local d = AME:ScanDiag()
     d.aborted = (d.aborted or 0) + 1

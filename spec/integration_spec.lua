@@ -503,6 +503,65 @@ describe("addon in a stubbed client", function()
       assert.are.equal("Horde", ns.Widgets.theme)
     end)
 
+    it("searches the buy auction house from an arbitrage row, via Auctionator or the default AH", function()
+      local searched = {}
+      boot({
+        auctionator = {
+          API = {
+            v1 = {
+              MultiSearchExact = function(caller, terms)
+                searched[#searched + 1] = { caller = caller, term = terms[1] }
+              end,
+            },
+          },
+        },
+      })
+      env.npcFaction = nil
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 3000, 10 } }) -- goblin AH: dear
+      env:fire("AUCTION_HOUSE_CLOSED")
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 1000, 10 } }) -- Horde AH: cheap - and we're standing here
+      env:advance(4)
+      drainJobs()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("arbitrage")
+      local v = ns.UI.arbView
+      v.scripts.OnShow(v)
+      drainJobs()
+      local row = v.rows[1]
+      assert.are.equal(2589, row.itemID)
+      assert.is_true(row.search:IsShown())
+      row.search.scripts.OnClick(row.search)
+      assert.are.same({ caller = "AzerothMercantileExchange", term = "Item 2589" }, searched[1])
+      -- without Auctionator: the default auction house window's search box
+      _G.Auctionator = nil
+      local text, started
+      _G.AuctionHouseFrame = {
+        IsShown = function()
+          return true
+        end,
+        SearchBar = {
+          SetSearchText = function(_, t)
+            text = t
+          end,
+          StartSearch = function()
+            started = true
+          end,
+        },
+      }
+      env.shiftDown = true
+      row.scripts.OnClick(row) -- Shift-click the row
+      env.shiftDown = false
+      assert.are.equal("Item 2589", text)
+      assert.is_true(started)
+      _G.AuctionHouseFrame = nil
+      -- away from the auction house the buttons go away
+      env:fire("AUCTION_HOUSE_CLOSED")
+      assert.is_false(row.search:IsShown())
+    end)
+
     it("themes the window by auction house faction", function()
       boot()
       env.npcFaction = "Horde"
