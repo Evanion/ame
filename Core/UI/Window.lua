@@ -1141,7 +1141,7 @@ function UI:CreateMarketView(parent)
   maxBox:SetPoint("LEFT", minBox, "RIGHT", 6, 0)
   v.minBox, v.maxBox = minBox, maxBox
 
-  local filters = { { nil, "All" }, { "buy", "Buy" }, { "sell", "Sell" } }
+  local filters = { { nil, "All" }, { "buy", "Buy" }, { "hold", "Hold" }, { "sell", "Sell" } }
   v.filterButtons = {}
   for i, fdef in ipairs(filters) do
     local b = W.Button(main, fdef[2], 46, 20, function()

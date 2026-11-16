@@ -66,6 +66,12 @@ describe("Watch", function()
       assert.are.equal("above", fired[1].kind)
     end)
 
+    it("doesn't fire on hold", function()
+      w:SetAlert(10, { signal = true })
+      assert.are.equal(0, #w:Check({ [10] = { market = 1, signal = "hold" } }))
+      assert.are.equal("buy", w:Check({ [10] = { market = 1, signal = "buy" } })[1].kind)
+    end)
+
     it("fires on new buy/sell signals", function()
       w:SetAlert(10, { signal = true })
       assert.are.equal("buy", w:Check({ [10] = { market = 1, signal = "buy" } })[1].kind)

@@ -139,7 +139,7 @@ function Watch:Check(items)
         end
       end
       if a.signal then
-        local sig = s.signal ~= "none" and s.signal or nil
+        local sig = (s.signal == "buy" or s.signal == "sell") and s.signal or nil -- not hold
         if sig and st.signal ~= sig then
           fired[#fired + 1] = { itemID = itemID, kind = sig, market = m }
         end

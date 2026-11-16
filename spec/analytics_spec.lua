@@ -92,6 +92,11 @@ describe("Analytics", function()
       assert.are.equal("none", s.signal)
     end)
 
+    it("says hold when the price is within its normal range", function()
+      local s = A.Summarize(series({ 100, 102, 99, 101, 100, 98, 101, 100, 99, 101 }))
+      assert.are.equal("hold", s.signal)
+    end)
+
     it("handles an empty series", function()
       assert.is_nil(A.Summarize({}))
     end)

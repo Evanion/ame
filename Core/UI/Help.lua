@@ -37,8 +37,9 @@ Help.TERMS = {
   signal = {
     "Signal",
     "BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own "
-      .. "30-day average. SELL: unusually high by the same measure. Needs 7+ days of history. It compares the "
-      .. "item with itself, not with other items, and it's a hint, not financial advice.",
+      .. "30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you "
+      .. 'own it, no edge to buy. Needs 7+ days of history ("-" until then). It compares the item with itself, '
+      .. "not with other items, and it's a hint, not financial advice.",
   },
   score = {
     "Score",

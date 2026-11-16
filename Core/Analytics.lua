@@ -10,7 +10,7 @@
 --   supplyTrend30               same for quantity
 --   days                        number of points
 --   score, signal               opportunity score (higher = cheaper than usual on a stable item) and
---                               "buy" | "sell" | "none"
+--                               "buy" | "hold" | "sell" | "none" (not enough history yet)
 -- }
 -- Signals are deliberately conservative: they need >= MIN_DAYS of history and a big enough deviation relative to the
 -- item's own volatility.
@@ -166,12 +166,16 @@ function Analytics.Summarize(series)
   local raw = -z * volPenalty + trendTerm
   s.score = round(100 * (2 / (1 + exp(-raw)) - 1))
 
+  -- buy: unusually cheap for this item; sell: unusually expensive; hold: within its normal range (keep it if you
+  -- own it, no edge to buy); none: too little history to judge
   s.signal = "none"
   if n >= Analytics.MIN_DAYS and s.z30 then
     if z <= Analytics.BUY_Z then
       s.signal = "buy"
     elseif z >= Analytics.SELL_Z then
       s.signal = "sell"
+    else
+      s.signal = "hold"
     end
   end
   return s
