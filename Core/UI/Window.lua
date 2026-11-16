@@ -40,6 +40,14 @@ function UI:Create()
   self.title = title
   self.shardText = W.Text(f, "GameFontDisableSmall")
   self.shardText:SetPoint("LEFT", title, "RIGHT", 10, 0)
+  local houses = { { "Horde", "Horde AH" }, { "Alliance", "Alliance AH" }, { "Neutral", "Goblin AH" } }
+  self.viewSelect = W.Dropdown(f, 110, houses, function(value)
+    UI.viewHouse = value
+    UI:ViewChanged()
+  end)
+  self.viewSelect.neutral = true
+  self.viewSelect.values = houses
+  self.viewSelect:SetPoint("LEFT", self.shardText, "RIGHT", 8, 0)
 
   local close = W.CloseButton(f)
   close:SetPoint("TOPRIGHT", -6, -7)
@@ -77,11 +85,60 @@ function UI:Create()
   self.footer = footer
 
   f:SetScript("OnShow", function()
-    UI.shardText:SetText(ns.AME:CurrentShard())
+    UI:ViewChanged()
     UI:ApplyTheme()
   end)
   self:ApplyTheme()
   return f
+end
+
+-- Which auction house the Market and Item tabs show: the one you're at, unless picked in the title bar.
+function UI:ViewHouse()
+  return self.viewHouse or ns.AME:CurrentHouse()
+end
+
+function UI:ViewShard()
+  return ns.ShardKey(ns.AME:MarketRealmName(), self:ViewHouse())
+end
+
+-- market index for the viewed house: nil + "loading" (built in the background, refreshes when ready) or "empty"
+function UI:ViewIndex()
+  local AME, shard = ns.AME, self:ViewShard()
+  if shard == AME.indexShard and AME.index then
+    return AME.index
+  end
+  if AME.indexes[shard] then
+    return AME.indexes[shard]
+  end
+  if AME:HistoryLoaded() and not AME.history.shards[shard] then
+    return nil, "empty"
+  end
+  if AME:HistoryLoaded() and self.viewLoading ~= shard then
+    self.viewLoading = shard
+    AME:IndexFor(shard, function()
+      self.viewLoading = nil
+      self:RefreshMarket(true)
+    end)
+  end
+  return nil, "loading"
+end
+
+function UI:ViewChanged()
+  if not self.frame then
+    return
+  end
+  self.shardText:SetText(ns.AME:MarketRealmName())
+  local house = self:ViewHouse()
+  for i, o in ipairs(self.viewSelect.values) do
+    if o[1] == house then
+      self.viewSelect:SetIndex(i)
+    end
+  end
+  self.list = nil
+  self:RefreshMarket(true)
+  if self.current == "item" and self.itemID then
+    self:ShowItem(self.itemID)
+  end
 end
 
 -- Faction colours for the chrome, from the auction house in use (or the character's faction before the first visit).
@@ -386,7 +443,7 @@ function UI:LoadIntraday()
     return show()
   end
   self.chart:SetMessage("Loading recent scans...")
-  ns.AME:WithStore("intraday-" .. itemID, nil, function(store)
+  ns.AME:WithStore("intraday-" .. itemID, self:ViewShard(), function(store)
     return store:Intraday(itemID, GetServerTime() - 2 * DAY)
   end, function(ok, points)
     if self.itemID ~= itemID or not self.intradayMode then
@@ -527,7 +584,7 @@ function UI:ShowItem(itemID)
   self.chart:ClearSeries()
   self.chart:SetMessage("Loading history...")
 
-  ns.AME:WithStore("chart-" .. itemID, nil, function(store)
+  ns.AME:WithStore("chart-" .. itemID, self:ViewShard(), function(store)
     return { series = store:Series(itemID), latest = store:Latest(itemID) }
   end, function(ok, res)
     if self.itemID ~= itemID then
@@ -546,7 +603,7 @@ function UI:FillItem(_, series, latest)
   if #series == 0 then
     self.series = nil
     self.chart:SetMessage("No history for this item yet. Run an Auctionator full scan, or search for it at the AH.")
-    v.sub:SetText(ns.AME:CurrentShard())
+    v.sub:SetText(ns.ShardLabel(self:ViewShard()))
     for _, c in ipairs(v.cards) do
       c.value:SetText("-")
     end
@@ -583,7 +640,7 @@ function UI:FillItem(_, series, latest)
   cards[7].value:SetText(W.Signal(s.signal) .. ("  |cff999999%+d|r"):format(s.score or 0))
   v.sub:SetText(
     ("%s  ·  %d days of history%s%s"):format(
-      ns.AME:CurrentShard(),
+      ns.ShardLabel(self:ViewShard()),
       #series,
       latest and ("  ·  last seen " .. date("%b %d %H:%M", latest.t)) or "",
       dropped > 0 and ("  ·  |cffffcc00%d outlier price%s ignored|r"):format(dropped, dropped == 1 and "" or "s") or ""
@@ -1115,10 +1172,16 @@ function UI:RefreshMarket(force)
   if not (v and v:IsShown()) then
     return
   end
-  local index = ns.AME.index
+  local index, why = self:ViewIndex()
   if not index then
     self.list = nil
-    v.status:SetText(ns.AME:HistoryLoaded() and "Building market index..." or "Loading history...")
+    local text = ns.AME:HistoryLoaded() and "Building market index..." or "Loading history..."
+    if why == "empty" then
+      text = ("No price history for the %s yet: scan there (any character on this account counts)."):format(
+        ns.HOUSE_LABEL[self:ViewHouse()] or self:ViewHouse()
+      )
+    end
+    v.status:SetText(text)
     for _, row in ipairs(v.rows) do
       row:Hide()
     end

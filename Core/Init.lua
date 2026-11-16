@@ -1,7 +1,7 @@
 -- Namespace and shared constants. Pure: no WoW API calls (loaded by busted specs too).
 local _, ns = ...
 
-ns.VERSION = "0.1.0-beta.2"
+ns.VERSION = "0.1.0-beta.3"
 
 ns.HOUSES = { Alliance = true, Horde = true, Neutral = true }
 
@@ -23,6 +23,18 @@ function ns.MarketRealm(realm, rules)
     return "Forever"
   end
   return realm
+end
+
+ns.HOUSE_LABEL = { Alliance = "Alliance AH", Horde = "Horde AH", Neutral = "Goblin AH" }
+
+-- Human-readable market name: "PvP · Goblin AH". Never show raw shard keys: WoW treats "|N" (as in "|Neutral")
+-- and other "|x" pairs in displayed text as escape codes.
+function ns.ShardLabel(shard)
+  local realm, house = tostring(shard):match("^(.*)|(%a+)$")
+  if not realm then
+    return (tostring(shard):gsub("|", "/"))
+  end
+  return realm .. " · " .. (ns.HOUSE_LABEL[house] or house)
 end
 
 -- Shard key: one price history per market (realm, or Forever ruleset) + auction house.

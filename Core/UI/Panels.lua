@@ -535,7 +535,7 @@ function UI:RefreshSettings()
   )
 
   local AME = ns.AME
-  local lines = { ("Market: |cffffffff%s|r"):format(AME:CurrentShard()) }
+  local lines = { ("Market: |cffffffff%s|r"):format(ns.ShardLabel(AME:CurrentShard())) }
   if AME:HistoryLoaded() then
     local shards, days, bytes = 0, 0, 0
     for _, data in pairs(AME.history.shards) do

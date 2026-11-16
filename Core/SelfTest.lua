@@ -102,7 +102,7 @@ function SelfTest.Run(AME)
   end)
 
   check("shard", function()
-    local key = AME:CurrentShard()
+    local key = ns.ShardLabel(AME:CurrentShard())
     return "PASS", key
   end)
 

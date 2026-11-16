@@ -263,7 +263,9 @@ function Service:Merge(m, sender)
     self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
     return
   end
-  local reference = (AME.index and AME.indexShard == m.shard) and AME.index.items or {}
+  -- compare with our own prices for that same auction house (goblin AH scans against goblin AH prices)
+  local ref = (AME.index and AME.indexShard == m.shard) and AME.index or (AME.indexes and AME.indexes[m.shard])
+  local reference = ref and ref.items or {}
   local plausible, why = Sync.Plausible(snap, reference)
   if not plausible then
     self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
@@ -279,7 +281,7 @@ function Service:Merge(m, sender)
       self.stats.lastSyncReceived = { from = sender, at = GetServerTime(), items = #snap.ids }
       self:Changed()
       if ns.Settings:Get("announceScans") then
-        AME.Say("received a full scan from %s via sync (%d items, %s)", m.src, #snap.ids, m.shard)
+        AME.Say("received a full scan from %s via sync (%d items, %s)", m.src, #snap.ids, ns.ShardLabel(m.shard))
       end
       AME:InvalidateIndex(m.shard)
       if m.shard == AME:CurrentShard() then

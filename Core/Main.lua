@@ -312,7 +312,12 @@ function AME:OnSnapshot(snap, t, kind, info)
         added = added,
       }
       if ns.Settings:Get("announceScans") then
-        say("recorded full scan: %d items from %d listings (%s)", #snap.ids, info and info.rows or 0, shard)
+        say(
+          "recorded full scan: %d items from %d listings (%s)",
+          #snap.ids,
+          info and info.rows or 0,
+          ns.ShardLabel(shard)
+        )
       end
       self:RebuildIndex()
       ns.SyncService:Announce()
@@ -390,7 +395,7 @@ function AME:Backfill(force)
     if okDone then
       AME_DB.backfilled[shard] = GetServerTime()
       if (n or 0) > 0 then
-        say("imported %d days of Auctionator price history into %s", n, shard)
+        say("imported %d days of Auctionator price history into %s", n, ns.ShardLabel(shard))
         self:RebuildIndex()
       end
     else
@@ -491,7 +496,8 @@ function handlers.AUCTION_HOUSE_SHOW()
   AME.house = UnitFactionGroup("npc") or "Neutral"
   AME_DB.lastHouse = AME.house
   if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
-    ns.UI.shardText:SetText(AME:CurrentShard())
+    ns.UI.viewHouse = nil -- follow the auction house you're at
+    ns.UI:ViewChanged()
     ns.UI:ApplyTheme()
   end
   if AME:LoadHistory() then
@@ -585,7 +591,7 @@ local function cmdItem(arg)
   end
   local series = store:Series(id)
   if #series == 0 then
-    say("no history for %s in %s", arg, AME:CurrentShard())
+    say("no history for %s in %s", arg, ns.ShardLabel(AME:CurrentShard()))
     return
   end
   for k = math.max(1, #series - 13), #series do
@@ -604,7 +610,7 @@ end
 
 local function cmdStatus()
   local shard = AME:CurrentShard()
-  say("shard %s, history %s", shard, AME:HistoryLoaded() and "loaded" or "not loaded")
+  say("market %s, history %s", ns.ShardLabel(shard), AME:HistoryLoaded() and "loaded" or "not loaded")
   local s = AME_DB.stats
   if s.lastFull then
     say(

@@ -56,7 +56,7 @@ describe("addon in a stubbed client", function()
     env:fire("AUCTION_HOUSE_SHOW")
     fullScan({ { 2589, 1000, 10 }, { 2589, 1500, 10 }, { 4306, 5000, 5 } })
 
-    assert.is_true(env:chatContains("recorded full scan: 2 items from 3 listings %(TestRealm|Neutral%)"))
+    assert.is_true(env:chatContains("recorded full scan: 2 items from 3 listings %(TestRealm · Goblin AH%)"))
     local shard = AME_HistoryDB.shards["TestRealm|Neutral"]
     assert.are.equal(1, #shard.raw)
 
@@ -203,7 +203,7 @@ describe("addon in a stubbed client", function()
     assert.is_nil(AME_HistoryDB.shards["CAMWOWEU5Realm6PvP|Horde"])
     assert.are.equal(123, AME_DB.backfilled["PvP|Horde"])
     fullScan({ { 2589, 1000, 10 } })
-    assert.is_true(env:chatContains("recorded full scan: 1 items from 1 listings %(PvP|Horde%)"))
+    assert.is_true(env:chatContains("recorded full scan: 1 items from 1 listings %(PvP · Horde AH%)"))
   end)
 
   it("reads the Forever market from the game's rules (like Auctionator), Hardcore included", function()
@@ -416,6 +416,44 @@ describe("addon in a stubbed client", function()
       drainJobs()
       assert.are.equal(0, #ns.UI.arbRows)
       assert.truthy(ns.UI.footer.text:find("Tyken Evanion"))
+    end)
+
+    it("views any auction house of the market from the title bar, with readable labels", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 1000, 10 } })
+      env:fire("AUCTION_HOUSE_CLOSED")
+      env.npcFaction = nil
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 3000, 10 }, { 4306, 5000, 5 } })
+      env:advance(4)
+      drainJobs()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("market")
+      assert.are.equal("Neutral", ns.UI:ViewHouse()) -- standing at the goblin AH
+      assert.are.equal(2, #ns.UI.list)
+      -- pick the Horde AH in the title bar
+      local horde = ns.UI.viewSelect.menu.items[1]
+      horde.scripts.OnClick(horde)
+      drainJobs()
+      assert.are.equal("Horde", ns.UI:ViewHouse())
+      assert.are.equal(1, #ns.UI.list)
+      assert.are.equal(1000 / 10, ns.UI.list[1].market)
+      -- the item page follows the viewed house
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      assert.truthy(ns.UI.itemView.sub.text:find("Horde AH", 1, true))
+      -- an auction house without data says so
+      ns.UI:ShowTab("market")
+      local alliance = ns.UI.viewSelect.menu.items[2]
+      alliance.scripts.OnClick(alliance)
+      assert.truthy(ns.UI.marketView.status.text:find("No price history for the Alliance AH"))
+      -- no raw shard keys ("|N" is an escape code in WoW text) anywhere in chat
+      for _, line in ipairs(env.chat) do
+        assert.is_nil(line:find("|Neutral", 1, true), line)
+      end
+      assert.are.equal("PvP · Goblin AH", ns.ShardLabel("PvP|Neutral"))
     end)
 
     it("themes the window by auction house faction", function()

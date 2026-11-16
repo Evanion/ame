@@ -246,7 +246,7 @@ function Settings:CreateLauncher()
     end,
     OnTooltipShow = function(tt)
       tt:AddLine("|cff33ccffAzeroth|r Mercantile Exchange")
-      tt:AddLine(ns.AME:CurrentShard(), 0.7, 0.7, 0.7)
+      tt:AddLine(ns.ShardLabel(ns.AME:CurrentShard()), 0.7, 0.7, 0.7)
       local last = AME_DB.stats.lastFull
       if last then
         tt:AddDoubleLine("Last full scan", date("%b %d %H:%M", last.at), 1, 1, 1, 1, 1, 1)
