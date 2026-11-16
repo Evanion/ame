@@ -233,6 +233,35 @@ describe("addon in a stubbed client", function()
       assert.truthy(rows[1].cells[1].text:find("Item"))
     end)
 
+    it("scrolls without re-filtering and filters by search and category", function()
+      seeded()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("market")
+      local v = ns.UI.marketView
+      local applies = 0
+      local apply = ns.MarketFilter.Apply
+      ns.MarketFilter.Apply = function(...)
+        applies = applies + 1
+        return apply(...)
+      end
+      for _ = 1, 20 do
+        v.main.scripts.OnMouseWheel(v.main, -1)
+      end
+      assert.are.equal(0, applies) -- scrolling only re-renders rows
+      v.search:SetText("2589")
+      v.search.scripts.OnTextChanged(v.search)
+      assert.are.equal(1, #ns.UI.list)
+      assert.are.equal(2589, v.rows[1].itemID)
+      v.search:SetText("")
+      v.search.scripts.OnTextChanged(v.search)
+      -- category sidebar: All items, then classes; clicking a class filters to it
+      local classLine = v.side.lines[2]
+      assert.are.equal(7, classLine.entry.classID)
+      classLine.scripts.OnClick(classLine)
+      assert.are.equal(2, #ns.UI.list)
+      ns.MarketFilter.Apply = apply
+    end)
+
     it("opens an item chart from /ame <link> and fills stats after loading", function()
       seeded()
       env:slash("AZEROTHMERCANTILEEXCHANGE", "|cffffffff|Hitem:2589::::|h[Linen Cloth]|h|r")

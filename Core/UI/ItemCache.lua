@@ -1,0 +1,115 @@
+-- Item facts for filtering the market screener: class/subclass come from GetItemInfoInstant (always available);
+-- name/quality come from GetItemInfo once the client has the item cached. Warm() asks the client to load names for
+-- many items in small batches so name search and quality filters cover the whole market.
+local _, ns = ...
+
+local C = { info = {}, listeners = {} }
+ns.ItemCache = C
+
+local function api(name)
+  return (C_Item and C_Item[name]) or _G[name]
+end
+
+function C.Get(itemID)
+  local e = C.info[itemID]
+  if not e then
+    e = {}
+    local instant = api("GetItemInfoInstant")
+    if instant then
+      local _, _, _, _, _, classID, subClassID = instant(itemID)
+      e.classID, e.subClassID = classID, subClassID
+    end
+    C.info[itemID] = e
+  end
+  if not e.name then
+    local getInfo = api("GetItemInfo")
+    local name, quality
+    if getInfo then
+      local n, _, q = getInfo(itemID)
+      name, quality = n, q
+    end
+    if name then
+      e.name, e.quality = name, quality
+    end
+  end
+  return e
+end
+
+function C.ClassName(classID)
+  local f = api("GetItemClassInfo")
+  return f and f(classID) or ("Class " .. classID)
+end
+
+function C.SubClassName(classID, subClassID)
+  local f = api("GetItemSubClassInfo")
+  return f and f(classID, subClassID) or ("Type " .. subClassID)
+end
+
+-- fn() runs (debounced) after names arrive
+function C.OnNamesChanged(fn)
+  C.listeners[#C.listeners + 1] = fn
+end
+
+local pendingNotify = false
+local function notify()
+  if pendingNotify then
+    return
+  end
+  pendingNotify = true
+  C_Timer.After(0.5, function()
+    pendingNotify = false
+    for _, fn in ipairs(C.listeners) do
+      fn()
+    end
+  end)
+end
+
+-- GET_ITEM_INFO_RECEIVED / ITEM_DATA_LOAD_RESULT
+function C.OnItemData(itemID)
+  local e = itemID and C.info[itemID]
+  if e and not e.name then
+    C.Get(itemID)
+    if e.name then
+      C.named = (C.named or 0) + 1
+      notify()
+    end
+  end
+end
+
+-- request names for ids (array) in batches; C.warmDone / C.warmTotal track progress
+function C.Warm(ids)
+  local request = api("RequestLoadItemDataByID")
+  local i = 0
+  C.warmTotal, C.warmDone = #ids, 0
+  local gen = (C.warmGen or 0) + 1
+  C.warmGen = gen
+  local function step()
+    if gen ~= C.warmGen then
+      return
+    end
+    local n = 0
+    while i < #ids and n < 150 do
+      i = i + 1
+      local e = C.Get(ids[i])
+      if not e.name and request then
+        request(ids[i])
+      end
+      n = n + 1
+    end
+    C.warmDone = i
+    if i < #ids then
+      C_Timer.After(0.1, step)
+    else
+      notify()
+    end
+  end
+  step()
+end
+
+local events = CreateFrame("Frame")
+for _, e in ipairs({ "GET_ITEM_INFO_RECEIVED", "ITEM_DATA_LOAD_RESULT" }) do
+  pcall(events.RegisterEvent, events, e)
+end
+events:SetScript("OnEvent", function(_, _, itemID)
+  C.OnItemData(itemID)
+end)

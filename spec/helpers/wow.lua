@@ -291,6 +291,16 @@ function M.install(opts)
     GetItemInfo = function(id)
       return "Item " .. id, "|Hitem:" .. id .. "|h", 1, nil, nil, nil, nil, nil, nil, 134400
     end,
+    GetItemInfoInstant = function(id)
+      return id, "Trade Goods", "Cloth", "", 134400, 7, id % 2 == 0 and 5 or 6
+    end,
+    GetItemClassInfo = function(classID)
+      return "Class" .. classID
+    end,
+    GetItemSubClassInfo = function(classID, subID)
+      return "Sub" .. classID .. "." .. subID
+    end,
+    RequestLoadItemDataByID = function() end,
   })
   set("C_AuctionHouse", env.ah)
   -- legacy AH API (Forever): env.legacyRows = { { itemID, buyout, count } }, 1-based

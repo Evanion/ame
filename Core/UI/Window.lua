@@ -18,7 +18,7 @@ function UI:Create()
   end
   local f = CreateFrame("Frame", "AMEMainWindow", UIParent, "BackdropTemplate")
   self.frame = f
-  f:SetSize(780, 500)
+  f:SetSize(980, 500)
   f:SetPoint("CENTER")
   f:SetFrameStrata("HIGH")
   f:SetClampedToScreen(true)
@@ -350,63 +350,240 @@ local COLUMNS = {
   { key = "signal", label = "Signal", width = 50 },
   { key = "score", label = "Score", width = 50 },
 }
-local ROWS = 16
+local ROWS = 17
 local ROW_H = 22
+local SIDEBAR_W = 170
+local CAT_ROWS = 22
+local CAT_H = 19
+local QUALITIES = {
+  { nil, "Any quality" },
+  { 1, "Common+" },
+  { 2, "Uncommon+" },
+  { 3, "Rare+" },
+  { 4, "Epic+" },
+}
+
+local function itemInfo(itemID)
+  return ns.ItemCache.Get(itemID)
+end
+
+local function goldBox(parent, hint, onChange)
+  local box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+  box:SetSize(58, 20)
+  box:SetAutoFocus(false)
+  box:SetNumeric(true)
+  box.hint = W.Text(box, "GameFontDisableSmall")
+  box.hint:SetPoint("LEFT", 2, 0)
+  box.hint:SetText(hint)
+  box:SetScript("OnTextChanged", function(self)
+    self.hint:SetShown(self:GetText() == "")
+    onChange(tonumber(self:GetText()))
+  end)
+  box:SetScript("OnEnterPressed", box.ClearFocus)
+  box:SetScript("OnEscapePressed", box.ClearFocus)
+  return box
+end
+
+-- category sidebar: "All items", classes in AH order, the selected class's subclasses indented
+function UI:CreateCategories(v)
+  local side = CreateFrame("Frame", nil, v, "BackdropTemplate")
+  W.Skin(side, W.COLORS.panel)
+  side:SetPoint("TOPLEFT", 0, 0)
+  side:SetPoint("BOTTOMLEFT", 0, 0)
+  side:SetWidth(SIDEBAR_W)
+  side.lines = {}
+  for i = 1, CAT_ROWS do
+    local b = CreateFrame("Button", nil, side)
+    b:SetSize(SIDEBAR_W - 8, CAT_H)
+    b:SetPoint("TOPLEFT", 4, -4 - (i - 1) * CAT_H)
+    b.sel = b:CreateTexture(nil, "BACKGROUND")
+    b.sel:SetAllPoints()
+    b.sel:SetColorTexture(0.2, 0.8, 1, 0.18)
+    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+    b.hl:SetAllPoints()
+    b.hl:SetColorTexture(1, 1, 1, 0.06)
+    b.text = W.Text(b, "GameFontHighlightSmall")
+    b.text:SetPoint("LEFT", 6, 0)
+    b.text:SetPoint("RIGHT", -34, 0)
+    b.text:SetWordWrap(false)
+    b.count = W.Text(b, "GameFontDisableSmall", "RIGHT")
+    b.count:SetPoint("RIGHT", -4, 0)
+    b:SetScript("OnClick", function(self)
+      local e = self.entry
+      if not e then
+        return
+      end
+      local q = UI.mq
+      if e.all then
+        q.classID, q.subClassID = nil, nil
+      elseif e.subClassID then
+        q.classID, q.subClassID = e.classID, e.subClassID
+      elseif q.classID == e.classID and not q.subClassID then
+        q.classID = nil -- clicking the open class again closes it
+      else
+        q.classID, q.subClassID = e.classID, nil
+      end
+      UI.offset = 0
+      UI:RenderCategories()
+      UI:RefreshMarket(true)
+    end)
+    side.lines[i] = b
+  end
+  side:EnableMouseWheel(true)
+  side:SetScript("OnMouseWheel", function(_, delta)
+    UI.catOffset = math.max(0, (UI.catOffset or 0) - delta * 2)
+    UI:RenderCategories()
+  end)
+  v.side = side
+end
+
+function UI:RenderCategories()
+  local v = self.marketView
+  local q = self.mq
+  local entries = { { all = true, label = "All items", count = self.index and self.index.count or 0 } }
+  for _, c in ipairs(self.categories or {}) do
+    entries[#entries + 1] = { classID = c.classID, label = ns.ItemCache.ClassName(c.classID), count = c.count }
+    if q.classID == c.classID then
+      for _, s in ipairs(c.subs) do
+        entries[#entries + 1] = {
+          classID = c.classID,
+          subClassID = s.subClassID,
+          label = "   " .. ns.ItemCache.SubClassName(c.classID, s.subClassID),
+          count = s.count,
+        }
+      end
+    end
+  end
+  self.catOffset = math.min(self.catOffset or 0, math.max(0, #entries - CAT_ROWS))
+  for i, b in ipairs(v.side.lines) do
+    local e = entries[(self.catOffset or 0) + i]
+    b.entry = e
+    if e then
+      b:Show()
+      local selected
+      if e.all then
+        selected = q.classID == nil
+      elseif e.subClassID then
+        selected = q.classID == e.classID and q.subClassID == e.subClassID
+      else
+        selected = q.classID == e.classID and q.subClassID == nil
+      end
+      b.sel:SetShown(selected)
+      b.text:SetText(e.label)
+      b.text:SetFontObject(e.subClassID and "GameFontHighlightSmall" or "GameFontNormalSmall")
+      b.count:SetText(e.count)
+    else
+      b:Hide()
+    end
+  end
+end
 
 function UI:CreateMarketView(parent)
   local v = contentArea(parent)
   self.marketView = v
-  self.sortKey, self.sortAsc, self.filter = "score", false, "all"
+  self.mq = { sortKey = "score", ascending = false }
+  self:CreateCategories(v)
 
-  local filters = { { "all", "All" }, { "buy", "Buy signals" }, { "sell", "Sell signals" } }
+  local main = CreateFrame("Frame", nil, v)
+  main:SetPoint("TOPLEFT", SIDEBAR_W + 10, 0)
+  main:SetPoint("BOTTOMRIGHT", 0, 0)
+  v.main = main
+
+  -- toolbar: search, quality, price range, signals, reset
+  local search = CreateFrame("EditBox", nil, main, "InputBoxTemplate")
+  search:SetSize(170, 20)
+  search:SetPoint("TOPLEFT", 6, 0)
+  search:SetAutoFocus(false)
+  search.hint = W.Text(search, "GameFontDisableSmall")
+  search.hint:SetPoint("LEFT", 2, 0)
+  search.hint:SetText("Search items...")
+  search:SetScript("OnTextChanged", function(self)
+    self.hint:SetShown(self:GetText() == "")
+    UI.mq.text = self:GetText()
+    UI.offset = 0
+    UI:RefreshMarket(true)
+  end)
+  search:SetScript("OnEnterPressed", search.ClearFocus)
+  search:SetScript("OnEscapePressed", function(self)
+    self:SetText("")
+    self:ClearFocus()
+  end)
+  v.search = search
+
+  local quality = W.Button(main, QUALITIES[1][2], 92, 20, function(self)
+    self.qi = self.qi % #QUALITIES + 1
+    UI.mq.minQuality = QUALITIES[self.qi][1]
+    UI.offset = 0
+    UI:RefreshMarket(true)
+  end)
+  quality:SetPoint("LEFT", search, "RIGHT", 8, 0)
+  quality.qi = 1
+  v.quality = quality
+
+  local minBox = goldBox(main, "min g", function(g)
+    UI.mq.minPrice = g and g * 10000 or nil
+    UI.offset = 0
+    UI:RefreshMarket(true)
+  end)
+  minBox:SetPoint("LEFT", quality, "RIGHT", 10, 0)
+  local maxBox = goldBox(main, "max g", function(g)
+    UI.mq.maxPrice = g and g * 10000 or nil
+    UI.offset = 0
+    UI:RefreshMarket(true)
+  end)
+  maxBox:SetPoint("LEFT", minBox, "RIGHT", 6, 0)
+  v.minBox, v.maxBox = minBox, maxBox
+
+  local filters = { { nil, "All" }, { "buy", "Buy" }, { "sell", "Sell" } }
   v.filterButtons = {}
   for i, fdef in ipairs(filters) do
-    local b = W.Button(v, fdef[2], 84, 18, function()
-      UI.filter = fdef[1]
+    local b = W.Button(main, fdef[2], 46, 20, function()
+      UI.mq.signal = fdef[1]
       UI.offset = 0
-      UI:RefreshMarket()
+      UI:RefreshMarket(true)
     end)
-    b.key = fdef[1]
+    b.key = fdef[1] or "all"
     if i == 1 then
-      b:SetPoint("TOPLEFT", 0, 0)
+      b:SetPoint("LEFT", maxBox, "RIGHT", 10, 0)
     else
-      b:SetPoint("LEFT", v.filterButtons[i - 1], "RIGHT", 4, 0)
+      b:SetPoint("LEFT", v.filterButtons[i - 1], "RIGHT", 3, 0)
     end
     v.filterButtons[i] = b
   end
-  v.status = W.Text(v, "GameFontDisableSmall", "RIGHT")
-  v.status:SetPoint("TOPRIGHT", 0, -3)
+  local reset = W.Button(main, "Reset", 52, 20, function()
+    UI:ResetMarketFilters()
+  end)
+  reset:SetPoint("LEFT", v.filterButtons[#filters], "RIGHT", 10, 0)
 
   -- header
   local x = 0
   v.headers = {}
   for _, col in ipairs(COLUMNS) do
-    local h = CreateFrame("Button", nil, v)
+    local h = CreateFrame("Button", nil, main)
     h:SetSize(col.width, 18)
-    h:SetPoint("TOPLEFT", x, -26)
+    h:SetPoint("TOPLEFT", x, -28)
     h.text = W.Text(h, "GameFontNormalSmall", col.key == "name" and "LEFT" or "RIGHT")
     h.text:SetAllPoints()
     h.text:SetText(col.label)
-    if col.key ~= "name" then
-      h:SetScript("OnClick", function()
-        if UI.sortKey == col.key then
-          UI.sortAsc = not UI.sortAsc
-        else
-          UI.sortKey, UI.sortAsc = col.key, false
-        end
-        UI:RefreshMarket()
-      end)
-    end
+    h:SetScript("OnClick", function()
+      local q = UI.mq
+      if q.sortKey == col.key then
+        q.ascending = not q.ascending
+      else
+        q.sortKey, q.ascending = col.key, false
+      end
+      UI:RefreshMarket(true)
+    end)
     x = x + col.width + 8
     v.headers[#v.headers + 1] = h
   end
 
-  -- rows
+  -- rows: a fixed pool, scrolling only re-renders them
   v.rows = {}
   for r = 1, ROWS do
-    local row = CreateFrame("Button", nil, v)
+    local row = CreateFrame("Button", nil, main)
     row:SetSize(x, ROW_H)
-    row:SetPoint("TOPLEFT", 0, -46 - (r - 1) * ROW_H)
+    row:SetPoint("TOPLEFT", 0, -48 - (r - 1) * ROW_H)
     row.bg = row:CreateTexture(nil, "BACKGROUND")
     row.bg:SetAllPoints()
     row.bg:SetColorTexture(1, 1, 1, r % 2 == 0 and 0.025 or 0)
@@ -443,29 +620,73 @@ function UI:CreateMarketView(parent)
     end)
     v.rows[r] = row
   end
-  v:EnableMouseWheel(true)
-  v:SetScript("OnMouseWheel", function(_, delta)
+
+  -- scrollbar
+  local bar = CreateFrame("Slider", nil, main, "BackdropTemplate")
+  bar:SetOrientation("VERTICAL")
+  bar:SetPoint("TOPLEFT", x - 2, -48)
+  bar:SetSize(8, ROWS * ROW_H)
+  W.Skin(bar, W.COLORS.panel)
+  bar.thumb = bar:CreateTexture(nil, "OVERLAY")
+  bar.thumb:SetColorTexture(1, 1, 1, 0.25)
+  bar.thumb:SetSize(8, 40)
+  bar:SetThumbTexture(bar.thumb)
+  bar:SetMinMaxValues(0, 0)
+  bar:SetValueStep(1)
+  bar:SetObeyStepOnDrag(true)
+  bar:SetScript("OnValueChanged", function(_, value)
+    if UI.syncingBar then
+      return
+    end
+    UI.offset = math.floor(value + 0.5)
+    UI:RenderMarket()
+  end)
+  v.bar = bar
+
+  v.status = W.Text(main, "GameFontDisableSmall", "LEFT")
+  v.status:SetPoint("BOTTOMLEFT", 2, 0)
+
+  main:EnableMouseWheel(true)
+  main:SetScript("OnMouseWheel", function(_, delta)
     UI.offset = math.max(0, (UI.offset or 0) - delta * 3)
-    UI:RefreshMarket()
+    UI:RenderMarket()
+  end)
+
+  ns.ItemCache.OnNamesChanged(function()
+    local q = UI.mq
+    if not v:IsShown() then
+      return
+    end
+    if (q.text and q.text ~= "") or q.minQuality or q.sortKey == "name" then
+      UI:RefreshMarket(true)
+    else
+      UI:RenderMarket()
+    end
   end)
   return v
 end
 
-function UI:RefreshMarket()
+function UI:ResetMarketFilters()
+  local v = self.marketView
+  self.mq = { sortKey = self.mq.sortKey, ascending = self.mq.ascending }
+  v.quality.qi = 1
+  v.search:SetText("")
+  v.minBox:SetText("")
+  v.maxBox:SetText("")
+  self.offset = 0
+  self:RenderCategories()
+  self:RefreshMarket(true)
+end
+
+-- Rebuild the filtered, sorted list (only when the index, filters or sort change), then render.
+function UI:RefreshMarket(force)
   local v = self.marketView
   if not (v and v:IsShown()) then
     return
   end
-  for _, b in ipairs(v.filterButtons) do
-    b:SetSelected(b.key == self.filter)
-  end
-  for i, h in ipairs(v.headers) do
-    local col = COLUMNS[i]
-    local arrow = (self.sortKey == col.key) and (self.sortAsc and W.ARROW_UP or W.ARROW_DOWN) or ""
-    h.text:SetText(col.label .. arrow)
-  end
   local index = ns.AME.index
   if not index then
+    self.list = nil
     v.status:SetText(ns.AME:HistoryLoaded() and "Building market index..." or "Loading history...")
     for _, row in ipairs(v.rows) do
       row:Hide()
@@ -476,23 +697,66 @@ function UI:RefreshMarket()
     end
     return
   end
-  local filter
-  if self.filter ~= "all" then
-    filter = function(s)
-      return s.signal == self.filter
+  if index ~= self.index then
+    self.index = index
+    self.categories = ns.MarketFilter.Categories(index, itemInfo)
+    local ids = {}
+    for id in pairs(index.items) do
+      ids[#ids + 1] = id
     end
+    ns.ItemCache.Warm(ids)
+    self:RenderCategories()
+    force = true
   end
-  local list = ns.MarketIndex.Rank(index, self.sortKey, filter, self.sortAsc)
+  if force or not self.list then
+    self.list, self.unnamed = ns.MarketFilter.Apply(index, self.mq, itemInfo)
+  end
+  self:RenderMarket()
+end
+
+-- Draw the visible rows from the cached list: cheap, so scrolling stays smooth.
+function UI:RenderMarket()
+  local v = self.marketView
+  local list = self.list
+  if not (v and list and v:IsShown()) then
+    return
+  end
+  local q = self.mq
+  for _, b in ipairs(v.filterButtons) do
+    b:SetSelected(b.key == (q.signal or "all"))
+  end
+  local qi = v.quality.qi
+  v.quality.label:SetText(QUALITIES[qi][2])
+  v.quality:SetSelected(qi > 1)
+  for i, h in ipairs(v.headers) do
+    local col = COLUMNS[i]
+    local arrow = (q.sortKey == col.key) and (q.ascending and W.ARROW_UP or W.ARROW_DOWN) or ""
+    h.text:SetText(col.label .. arrow)
+  end
+
   local total = #list
-  self.offset = math.min(self.offset or 0, math.max(0, total - ROWS))
-  v.status:SetText(
-    ("%d items  ·  showing %d–%d  ·  index from %s"):format(
-      total,
-      math.min(total, self.offset + 1),
-      math.min(total, self.offset + ROWS),
-      date("%b %d", index.day * DAY)
-    )
+  local maxOffset = math.max(0, total - ROWS)
+  self.offset = math.min(self.offset or 0, maxOffset)
+  self.syncingBar = true
+  v.bar:SetMinMaxValues(0, maxOffset)
+  v.bar:SetValue(self.offset)
+  v.bar:SetShown(maxOffset > 0)
+  self.syncingBar = false
+
+  local cache = ns.ItemCache
+  local status = ("%d items  -  showing %d-%d  -  index from %s"):format(
+    total,
+    math.min(total, self.offset + 1),
+    math.min(total, self.offset + ROWS),
+    date("%b %d", self.index.day * DAY)
   )
+  if cache.warmTotal and cache.warmDone and cache.warmDone < cache.warmTotal then
+    status = status .. ("  -  loading item names %d/%d"):format(cache.warmDone, cache.warmTotal)
+  elseif (self.unnamed or 0) > 0 then
+    status = status .. ("  -  %d items not searchable yet (names loading)"):format(self.unnamed)
+  end
+  v.status:SetText(status)
+
   for r, row in ipairs(v.rows) do
     local s = list[self.offset + r]
     if not s then
@@ -504,13 +768,6 @@ function UI:RefreshMarket()
       local name, _, quality, icon = W.ItemInfo(s.itemID)
       row.icon:SetTexture(icon or 134400)
       local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
-      if not name then
-        W.OnItemLoaded(s.itemID, function()
-          if row.itemID == s.itemID then
-            UI:RefreshMarket()
-          end
-        end)
-      end
       for c, col in ipairs(COLUMNS) do
         local val
         if col.key == "name" then
