@@ -359,6 +359,10 @@ end
 function handlers.AUCTION_HOUSE_SHOW()
   AME.house = UnitFactionGroup("npc") or "Neutral"
   AME_DB.lastHouse = AME.house
+  if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
+    ns.UI.shardText:SetText(AME:CurrentShard())
+    ns.UI:ApplyTheme()
+  end
   if AME:LoadHistory() then
     AME:Backfill(false)
   end

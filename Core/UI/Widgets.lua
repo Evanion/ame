@@ -17,6 +17,28 @@ W.COLORS = {
   selected = { 0.2, 0.8, 1, 0.18 },
 }
 
+-- Faction themes for window chrome (title, selected buttons, panel glow). Data colours in charts stay fixed.
+W.THEMES = {
+  Alliance = { 0.25, 0.56, 1 },
+  Horde = { 0.93, 0.25, 0.2 },
+  Neutral = { 1, 0.73, 0.22 }, -- goblin auction houses
+}
+
+function W.SetTheme(house)
+  local c = W.THEMES[house] or W.THEMES.Neutral
+  W.theme = W.THEMES[house] and house or "Neutral"
+  W.COLORS.accent = { c[1], c[2], c[3], 1 }
+  W.COLORS.selected = { c[1], c[2], c[3], 0.22 }
+end
+
+-- "ffRRGGBB" for |c escapes
+function W.Hex(c)
+  local function byte(x)
+    return math.floor(x * 255 + 0.5)
+  end
+  return ("ff%02x%02x%02x"):format(byte(c[1]), byte(c[2]), byte(c[3]))
+end
+
 local FLAT = {
   bgFile = "Interface\\Buttons\\WHITE8x8",
   edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -162,11 +184,9 @@ function W.Gradient(t, orientation, from, to)
   end
 end
 
--- soft inner glow along a frame's edges (fades inward) plus a faint top highlight
+-- soft inner glow along a frame's edges (fades inward) plus a faint top highlight; recolour with W.TintInnerGlow
 function W.InnerGlow(frame, color, size)
-  local c = color or W.COLORS.accent
   size = size or 18
-  local edge, clear = { c[1], c[2], c[3], 0.09 }, { c[1], c[2], c[3], 0 }
   local function tex()
     local t = frame:CreateTexture(nil, "BORDER")
     return t
@@ -175,22 +195,33 @@ function W.InnerGlow(frame, color, size)
   top:SetPoint("TOPLEFT", 1, -1)
   top:SetPoint("TOPRIGHT", -1, -1)
   top:SetHeight(size)
-  W.Gradient(top, "VERTICAL", clear, edge)
   bottom:SetPoint("BOTTOMLEFT", 1, 1)
   bottom:SetPoint("BOTTOMRIGHT", -1, 1)
   bottom:SetHeight(size)
-  W.Gradient(bottom, "VERTICAL", edge, clear)
   left:SetPoint("TOPLEFT", 1, -1)
   left:SetPoint("BOTTOMLEFT", 1, 1)
   left:SetWidth(size)
-  W.Gradient(left, "HORIZONTAL", edge, clear)
   right:SetPoint("TOPRIGHT", -1, -1)
   right:SetPoint("BOTTOMRIGHT", -1, 1)
   right:SetWidth(size)
-  W.Gradient(right, "HORIZONTAL", clear, edge)
+  frame.glowEdges = { top = top, bottom = bottom, left = left, right = right }
+  W.TintInnerGlow(frame, color)
   local hl = frame:CreateTexture(nil, "BORDER", nil, 1)
   hl:SetPoint("TOPLEFT", 1, -1)
   hl:SetPoint("TOPRIGHT", -1, -1)
   hl:SetHeight(1)
   hl:SetColorTexture(1, 1, 1, 0.08)
+end
+
+function W.TintInnerGlow(frame, color)
+  local e = frame.glowEdges
+  if not e then
+    return
+  end
+  local c = color or W.COLORS.accent
+  local edge, clear = { c[1], c[2], c[3], 0.1 }, { c[1], c[2], c[3], 0 }
+  W.Gradient(e.top, "VERTICAL", clear, edge)
+  W.Gradient(e.bottom, "VERTICAL", edge, clear)
+  W.Gradient(e.left, "HORIZONTAL", edge, clear)
+  W.Gradient(e.right, "HORIZONTAL", clear, edge)
 end

@@ -33,7 +33,7 @@ function UI:Create()
 
   local title = W.Text(f, "GameFontNormal")
   title:SetPoint("TOPLEFT", 12, -10)
-  title:SetText("|cff33ccffAzeroth|r Mercantile Exchange")
+  self.title = title
   self.shardText = W.Text(f, "GameFontDisableSmall")
   self.shardText:SetPoint("LEFT", title, "RIGHT", 10, 0)
 
@@ -57,8 +57,40 @@ function UI:Create()
   }
   f:SetScript("OnShow", function()
     UI.shardText:SetText(ns.AME:CurrentShard())
+    UI:ApplyTheme()
   end)
+  self:ApplyTheme()
   return f
+end
+
+-- Faction colours for the chrome, from the auction house in use (or the character's faction before the first visit).
+function UI:ApplyTheme()
+  if not self.frame then
+    return
+  end
+  W.SetTheme(ns.AME:CurrentHouse())
+  local a = W.COLORS.accent
+  self.title:SetText(("|c%sAzeroth|r Mercantile Exchange"):format(W.Hex(a)))
+  for n, b in pairs(self.tabs) do
+    b:SetSelected(n == self.current)
+  end
+  if self.chartHolder then
+    self.chartHolder:SetBackdropBorderColor(a[1], a[2], a[3], 0.22)
+    W.TintInnerGlow(self.chartHolder)
+  end
+  local iv = self.itemView
+  if iv then
+    for _, b in ipairs(iv.rangeButtons) do
+      b:SetSelected(b.key == self.rangeKey)
+    end
+  end
+  local mv = self.marketView
+  if mv then
+    for _, line in ipairs(mv.side.lines) do
+      line.sel:SetColorTexture(a[1], a[2], a[3], 0.2)
+    end
+    self:RenderMarket()
+  end
 end
 
 function UI:ShowTab(name)
@@ -190,8 +222,9 @@ function UI:CreateItemView(parent)
 
   -- chart
   local holder = CreateFrame("Frame", nil, v, "BackdropTemplate")
-  W.Skin(holder, { 0.07, 0.08, 0.1, 1 }, { 0.2, 0.8, 1, 0.18 })
+  W.Skin(holder, { 0.07, 0.08, 0.1, 1 }, W.COLORS.border)
   W.InnerGlow(holder)
+  self.chartHolder = holder
   holder:SetPoint("TOPLEFT", v.rangeButtons[1], "BOTTOMLEFT", 0, -8)
   holder:SetPoint("BOTTOMRIGHT", 0, 0)
   local chart = LibStub("LibAMEChart-1.0"):New(holder, {
@@ -482,7 +515,7 @@ function UI:CreateCategories(v)
     b:SetPoint("TOPLEFT", 4, -4 - (i - 1) * CAT_H)
     b.sel = b:CreateTexture(nil, "BACKGROUND")
     b.sel:SetAllPoints()
-    b.sel:SetColorTexture(0.2, 0.8, 1, 0.18)
+    b.sel:SetColorTexture(W.COLORS.accent[1], W.COLORS.accent[2], W.COLORS.accent[3], 0.2)
     b.hl = b:CreateTexture(nil, "HIGHLIGHT")
     b.hl:SetAllPoints()
     b.hl:SetColorTexture(1, 1, 1, 0.06)

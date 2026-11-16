@@ -281,6 +281,20 @@ describe("addon in a stubbed client", function()
       ns.MarketFilter.Apply = apply
     end)
 
+    it("themes the window by auction house faction", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      ns.UI:Toggle()
+      assert.truthy(ns.UI.title.text:find("|cffed4033Azeroth", 1, true))
+      env.npcFaction = "Alliance"
+      env:fire("AUCTION_HOUSE_SHOW")
+      assert.truthy(ns.UI.title.text:find("|cff408fff", 1, true))
+      env.npcFaction = nil
+      env:fire("AUCTION_HOUSE_SHOW")
+      assert.are.equal("Neutral", ns.Widgets.theme)
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)
