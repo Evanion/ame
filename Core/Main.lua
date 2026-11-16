@@ -1,0 +1,364 @@
+-- WoW glue: events, scan hooks, load-on-demand history, background jobs, slash commands. Logic lives in the pure
+-- modules (Stats, Codec, Store, Ingest, Backfill); this file only wires them to the client.
+local ADDON, ns = ...
+
+local AME = {}
+ns.AME = AME
+
+local HISTORY_ADDON = ADDON .. "_History"
+local GetServerTime, debugprofilestop = GetServerTime, debugprofilestop
+
+local function say(fmt, ...)
+  local msg = select("#", ...) > 0 and fmt:format(...) or fmt
+  DEFAULT_CHAT_FRAME:AddMessage("|cff33ccffAME|r " .. msg)
+end
+AME.Say = say
+
+local function money(copper)
+  if not copper then
+    return "-"
+  end
+  return GetCoinTextureString and GetCoinTextureString(copper) or tostring(copper)
+end
+AME.Money = money
+
+---------------------------------------------------------------------------------------------------------------------
+-- background jobs
+
+AME.jobs = ns.Jobs.New({ budgetMs = 8, clock = debugprofilestop })
+local driver = CreateFrame("Frame")
+driver:SetScript("OnUpdate", function()
+  if AME.jobs:Busy() then
+    AME.jobs:Tick()
+  end
+end)
+
+---------------------------------------------------------------------------------------------------------------------
+-- history (load on demand)
+
+function AME:HistoryLoaded()
+  return self.history ~= nil
+end
+
+function AME:LoadHistory()
+  if self.history then
+    return true
+  end
+  local load = (C_AddOns and C_AddOns.LoadAddOn) or LoadAddOn
+  local t0 = debugprofilestop()
+  local loaded, reason = load(HISTORY_ADDON)
+  if not loaded then
+    say("could not load %s: %s", HISTORY_ADDON, tostring(reason))
+    return false
+  end
+  AME_HistoryDB = AME_HistoryDB or {}
+  AME_HistoryDB.v = AME_HistoryDB.v or 1
+  AME_HistoryDB.shards = AME_HistoryDB.shards or {}
+  self.history = AME_HistoryDB
+  AME_DB.stats.historyLoadMs = math.floor(debugprofilestop() - t0)
+  return true
+end
+
+function AME:CurrentHouse()
+  return self.house or AME_DB.lastHouse or UnitFactionGroup("player") or "Neutral"
+end
+
+function AME:CurrentShard()
+  return ns.ShardKey(GetNormalizedRealmName(), self:CurrentHouse())
+end
+
+AME.stores = {}
+function AME:Store(shardKey)
+  shardKey = shardKey or self:CurrentShard()
+  if not self:LoadHistory() then
+    return nil
+  end
+  local store = self.stores[shardKey]
+  if not store then
+    self.history.shards[shardKey] = self.history.shards[shardKey] or {}
+    store = ns.Store.New(self.history.shards[shardKey], {
+      compressor = self.compressor,
+      now = GetServerTime,
+    })
+    self.stores[shardKey] = store
+  end
+  return store
+end
+
+-- run fn(store) as a background job with time slicing inside the store
+function AME:WithStore(name, shardKey, fn, onDone)
+  local store = self:Store(shardKey)
+  if not store then
+    return
+  end
+  self.jobs:Add(name, function(job)
+    store.yield = function()
+      job:Checkpoint()
+    end
+    local ok, result = pcall(fn, store, job)
+    store.yield = function() end
+    if not ok then
+      error(result, 0)
+    end
+    return result
+  end, onDone)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- ingestion
+
+function AME:OnSnapshot(snap, t, kind, info)
+  if kind == "error" then
+    say("|cffff5555scan read failed:|r %s", tostring(info and info.error))
+    return
+  end
+  local shard = self:CurrentShard()
+  local src = UnitName("player") or "?"
+  local started = self.scanRequestedAt
+  self:WithStore("store-" .. kind, shard, function(store)
+    return store:AddScan(snap, t, src, kind)
+  end, function(ok, added)
+    if not ok then
+      say("|cffff5555storing %s scan failed:|r %s", kind, tostring(added))
+      return
+    end
+    if kind == "full" then
+      local ms = started and math.floor(debugprofilestop() - started) or nil
+      AME_DB.stats.lastFull = {
+        at = t,
+        shard = shard,
+        items = #snap.ids,
+        rows = info and info.rows,
+        skipped = info and info.skipped,
+        msSinceRequest = ms,
+        added = added,
+      }
+      say("recorded full scan: %d items from %d listings (%s)", #snap.ids, info and info.rows or 0, shard)
+    else
+      AME_DB.stats.partials = (AME_DB.stats.partials or 0) + 1
+    end
+  end)
+end
+
+AME.ingest = ns.Ingest.New({
+  api = C_AuctionHouse,
+  jobs = AME.jobs,
+  now = GetServerTime,
+  after = function(seconds, fn)
+    C_Timer.After(seconds, fn)
+  end,
+  onSnapshot = function(...)
+    AME:OnSnapshot(...)
+  end,
+})
+
+---------------------------------------------------------------------------------------------------------------------
+-- Auctionator backfill (reads Auctionator internals; guarded)
+
+function AME:Backfill(force)
+  local shard = self:CurrentShard()
+  if AME_DB.backfilled[shard] and not force then
+    return
+  end
+  local atr = Auctionator
+  local db = atr and atr.Database and atr.Database.db
+  local day0 = atr and atr.Constants and atr.Constants.SCAN_DAY_0
+  if type(db) ~= "table" or type(day0) ~= "number" then
+    return
+  end
+  local ok, days = pcall(ns.Backfill.FromAuctionator, db, day0)
+  if not ok then
+    say("Auctionator import skipped: %s", tostring(days))
+    return
+  end
+  self:WithStore("backfill", shard, function(store, job)
+    local n = 0
+    for day, rows in pairs(days) do
+      if store:ImportDay(day, rows, "auctionator") then
+        n = n + 1
+      end
+      job:Checkpoint()
+    end
+    return n
+  end, function(okDone, n)
+    if okDone then
+      AME_DB.backfilled[shard] = GetServerTime()
+      if (n or 0) > 0 then
+        say("imported %d days of Auctionator price history into %s", n, shard)
+      end
+    else
+      say("Auctionator import failed: %s", tostring(n))
+    end
+  end)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- events
+
+local events = CreateFrame("Frame")
+local handlers = {}
+
+function handlers.ADDON_LOADED(name)
+  if name ~= ADDON then
+    return
+  end
+  AME_DB = AME_DB or {}
+  AME_DB.v = AME_DB.v or 1
+  AME_DB.stats = AME_DB.stats or {}
+  AME_DB.backfilled = AME_DB.backfilled or {}
+  AME.compressor = ns.Compress.New(LibStub("LibDeflate"))
+end
+
+function handlers.PLAYER_LOGIN()
+  if C_AuctionHouse and C_AuctionHouse.ReplicateItems then
+    hooksecurefunc(C_AuctionHouse, "ReplicateItems", function()
+      AME.scanRequestedAt = debugprofilestop()
+      AME.ingest:OnReplicateRequested()
+    end)
+  end
+  for _, e in ipairs({
+    "AUCTION_HOUSE_SHOW",
+    "AUCTION_HOUSE_CLOSED",
+    "REPLICATE_ITEM_LIST_UPDATE",
+    "COMMODITY_SEARCH_RESULTS_UPDATED",
+    "ITEM_SEARCH_RESULTS_UPDATED",
+  }) do
+    pcall(events.RegisterEvent, events, e) -- tolerate events a client flavour doesn't have
+  end
+end
+
+function handlers.AUCTION_HOUSE_SHOW()
+  AME.house = UnitFactionGroup("npc") or "Neutral"
+  AME_DB.lastHouse = AME.house
+  if AME:LoadHistory() then
+    AME:Backfill(false)
+  end
+end
+
+function handlers.AUCTION_HOUSE_CLOSED()
+  AME.ingest:OnAuctionHouseClosed()
+end
+
+function handlers.REPLICATE_ITEM_LIST_UPDATE()
+  AME.ingest:OnReplicateUpdate()
+end
+
+function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)
+  AME.ingest:OnCommodityResults(itemID)
+end
+
+function handlers.ITEM_SEARCH_RESULTS_UPDATED(itemKey)
+  AME.ingest:OnItemResults(itemKey)
+end
+
+events:SetScript("OnEvent", function(_, event, ...)
+  local h = handlers[event]
+  if h then
+    h(...)
+  end
+end)
+events:RegisterEvent("ADDON_LOADED")
+events:RegisterEvent("PLAYER_LOGIN")
+
+---------------------------------------------------------------------------------------------------------------------
+-- slash commands
+
+local function itemIDFrom(arg)
+  if not arg or arg == "" then
+    return nil
+  end
+  return tonumber(arg:match("item:(%d+)") or arg:match("^%s*(%d+)%s*$"))
+end
+AME.ItemIDFrom = itemIDFrom
+
+local function cmdItem(arg)
+  local id = itemIDFrom(arg)
+  if not id then
+    say("usage: /ame item <item link or itemID>")
+    return
+  end
+  local store = AME:Store()
+  if not store then
+    return
+  end
+  local l = store:Latest(id)
+  if l then
+    say(
+      "%s latest (%s): min %s, market %s, %d units in %d auctions",
+      arg,
+      date("%H:%M", l.t),
+      money(l.min),
+      money(l.market),
+      l.qty,
+      l.auctions
+    )
+  end
+  local series = store:Series(id)
+  if #series == 0 then
+    say("no history for %s in %s", arg, AME:CurrentShard())
+    return
+  end
+  for k = math.max(1, #series - 13), #series do
+    local p = series[k]
+    say(
+      "  %s %s: min %s, market %s, qty %d (%d samples)",
+      p.res,
+      date("!%Y-%m-%d", p.day * 86400),
+      money(p.min),
+      money(p.market),
+      p.qty,
+      p.scans
+    )
+  end
+end
+
+local function cmdStatus()
+  local shard = AME:CurrentShard()
+  say("shard %s, history %s", shard, AME:HistoryLoaded() and "loaded" or "not loaded")
+  local s = AME_DB.stats
+  if s.lastFull then
+    say(
+      "last full scan: %d items, %s ago",
+      s.lastFull.items,
+      SecondsToTime and SecondsToTime(GetServerTime() - s.lastFull.at) or "?"
+    )
+  else
+    say("no full scan recorded yet: open the AH and run an Auctionator full scan")
+  end
+  if AME:HistoryLoaded() then
+    local data = AME.history.shards[shard]
+    if data then
+      local days, bytes = 0, 0
+      for _, buckets in pairs(data.days or {}) do
+        days = days + 1
+        for _, p in pairs(buckets) do
+          bytes = bytes + #p
+        end
+      end
+      say("history: %d raw scans, %d days, %.0f KB", #(data.raw or {}), days, bytes / 1024)
+    end
+  end
+end
+
+SLASH_AZEROTHMERCANTILEEXCHANGE1 = "/ame"
+SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
+  local cmd, rest = (msg or ""):match("^%s*(%S*)%s*(.-)%s*$")
+  cmd = cmd:lower()
+  if cmd == "item" then
+    cmdItem(rest)
+  elseif cmd == "status" then
+    cmdStatus()
+  elseif cmd == "selftest" then
+    ns.SelfTest.Run(AME)
+  elseif cmd == "backfill" then
+    AME:Backfill(true)
+  elseif cmd == "window" or cmd == "" then
+    if ns.ItemWindow then
+      ns.ItemWindow:Toggle(itemIDFrom(rest))
+    else
+      say("commands: item <link>, status, selftest, backfill")
+    end
+  else
+    say("commands: /ame [item link], /ame item <link>, /ame status, /ame selftest, /ame backfill")
+  end
+end

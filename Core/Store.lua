@@ -197,6 +197,31 @@ function Store:AddScan(snap, t, src, kind)
   return true
 end
 
+-- Backfill: add day points for items that day doesn't have yet (own data always wins). rows: list of
+-- { id, min, market, median, qty, auctions, scans } with market..auctions as sums. key dedupes the import per day.
+function Store:ImportDay(day, rows, key)
+  local data = self.data
+  data.seen[day] = data.seen[day] or {}
+  if data.seen[day][key] then
+    return false
+  end
+  data.days[day] = data.days[day] or {}
+  local tier = data.days[day]
+  local byBucket = {}
+  for _, r in ipairs(rows) do
+    local b = r[1] % Store.BUCKETS
+    local seg = tier[b] and self:decode(tier[b], Store.SEGMENT_FIELDS)
+    if not (seg and find(seg.ids, r[1])) then
+      byBucket[b] = byBucket[b] or {}
+      local list = byBucket[b]
+      list[#list + 1] = { r[1], r[2], r[3], r[4], r[5], r[6], r[7], 0 }
+    end
+  end
+  self:mergeInto(tier, byBucket)
+  data.seen[day][key] = true
+  return true
+end
+
 -- Retention: prune raw scans, fold old days into weeks. Safe to call any time.
 function Store:Rollup()
   local data = self.data

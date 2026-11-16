@@ -238,6 +238,26 @@ describe("Store", function()
     end)
   end)
 
+  describe("ImportDay (backfill)", function()
+    it("adds points for items the day doesn't have yet, once per import key", function()
+      local store = newStore()
+      store:AddScan(snap({ [10] = { 100, 100, 100, 1, 1 } }), clock, "me")
+      local rows = { { 10, 1, 1, 1, 1, 0, 1 }, { 11, 50, 60, 60, 3, 0, 1 } }
+      assert.is_true(store:ImportDay(1000, rows, "auctionator"))
+      assert.is_false(store:ImportDay(1000, rows, "auctionator"))
+      assert.are.equal(100, store:Series(10)[1].market) -- own data wins
+      local p = store:Series(11)[1]
+      assert.are.equal(60, p.market)
+      assert.are.equal(1, p.scans)
+    end)
+
+    it("imports into days that have no data at all", function()
+      local store = newStore()
+      store:ImportDay(990, { { 11, 50, 60, 60, 3, 0, 1 } }, "auctionator")
+      assert.are.equal(990, store:Series(11)[1].day)
+    end)
+  end)
+
   describe("time slicing", function()
     it("calls the injected yield between buckets so a full scan can be spread over frames", function()
       local yields = 0

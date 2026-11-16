@@ -1,0 +1,24 @@
+package-as: AzerothMercantileExchange
+
+externals:
+  Libs/Ace3:
+    url: https://github.com/WoWUIDev/Ace3.git
+  Libs/LibDeflate:
+    url: https://github.com/SafeteeWoW/LibDeflate.git
+
+move-folders:
+  AzerothMercantileExchange/AzerothMercantileExchange_History: AzerothMercantileExchange_History
+
+ignore:
+  - docs
+  - spec
+  - spikes
+  - bench
+  - scripts
+  - .github
+  - .busted
+  - .luacheckrc
+  - .luarc.json
+  - .stylua.toml
+  - .vscode
+  - README.md

@@ -1,0 +1,11 @@
+## Interface: 16001, 120105
+## Title: Azeroth Mercantile Exchange - History
+## Notes: Price history storage for Azeroth Mercantile Exchange. Loaded on demand, so a large history doesn't slow down login.
+## Author: Evanion
+## Version: @project-version@
+## LoadOnDemand: 1
+## Dependencies: AzerothMercantileExchange
+## SavedVariables: AME_HistoryDB
+## X-License: LGPL-3.0-or-later
+
+History.lua

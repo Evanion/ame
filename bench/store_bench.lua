@@ -4,7 +4,7 @@ package.path = "./?.lua;" .. package.path
 local addon = require("spec.helpers.addon")
 local ns = addon.load({ "Core/Init.lua", "Core/Codec.lua", "Core/Store.lua" })
 
-local ITEMS, DAYS, SCANS_PER_DAY = 6451, 30, 4
+local ITEMS, DAYS, SCANS_PER_DAY = 6451, tonumber(os.getenv("AME_DAYS") or 30), 4
 local DAY = 86400
 local clock = 20000 * DAY
 local identity = {
@@ -15,6 +15,10 @@ local identity = {
     return s
   end,
 }
+if os.getenv("AME_DEFLATE") then
+  ns = addon.load({ "Core/Compress.lua" }, ns)
+  identity = ns.Compress.New(dofile("Libs/LibDeflate/LibDeflate.lua"))
+end
 local data = {}
 local store = ns.Store.New(data, {
   compressor = identity,

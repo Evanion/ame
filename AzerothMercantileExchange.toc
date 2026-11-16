@@ -1,0 +1,22 @@
+## Interface: 16001, 120105
+## Title: Azeroth Mercantile Exchange
+## Notes: Auction house price history, charts and market signals. Reuses Auctionator scans. /ame
+## Author: Evanion
+## Version: @project-version@
+## IconTexture: Interface\Icons\INV_Misc_Coin_02
+## OptionalDeps: Auctionator
+## SavedVariables: AME_DB
+## X-License: LGPL-3.0-or-later
+
+embeds.xml
+
+Core\Init.lua
+Core\Stats.lua
+Core\Codec.lua
+Core\Compress.lua
+Core\Store.lua
+Core\Jobs.lua
+Core\Ingest.lua
+Core\Backfill.lua
+Core\Main.lua
+Core\SelfTest.lua
