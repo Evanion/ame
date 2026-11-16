@@ -11,3 +11,5 @@ luacov.*.out
 !.vscode/extensions.json
 Thumbs.db
 .DS_Store
+# release zips
+dist/
