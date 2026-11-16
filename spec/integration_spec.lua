@@ -262,6 +262,27 @@ describe("addon in a stubbed client", function()
       ns.MarketFilter.Apply = apply
     end)
 
+    it("switches the item chart to candles and back", function()
+      seeded()
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      local v = ns.UI.itemView
+      v.style.scripts.OnClick(v.style)
+      assert.are.equal("candles", AME_DB.settings.chartStyle)
+      assert.is_not_nil(ns.UI.chart.series.candles)
+      assert.is_nil(ns.UI.chart.series.market)
+      assert.are.equal(10, #ns.UI.candles.xs)
+      for _, b in ipairs(v.rangeButtons) do -- candle period follows the range
+        b.scripts.OnClick(b)
+      end
+      local x = ns.UI.candles.xs[2]
+      local lines = ns.UI.chart.hoverFormatter(ns.UI.chart, x, { candles = { x = x, y = 0, index = 2 } })
+      assert.truthy(table.concat(lines, "\n"):find("Open"))
+      v.style.scripts.OnClick(v.style)
+      assert.is_nil(ns.UI.chart.series.candles)
+      assert.is_not_nil(ns.UI.chart.series.market)
+    end)
+
     it("opens an item chart from /ame <link> and fills stats after loading", function()
       seeded()
       env:slash("AZEROTHMERCANTILEEXCHANGE", "|cffffffff|Hitem:2589::::|h[Linen Cloth]|h|r")

@@ -22,7 +22,7 @@ read_globals = {
   "GetCoinTextureString", "SecondsToTime", "BackdropTemplateMixin", "GameFontNormal", "GameFontHighlight",
   "GameFontHighlightSmall", "GameFontNormalLarge", "GameFontDisableSmall", "UISpecialFrames", "GetCursorPosition",
   "StaticPopup_Show", "RELOADUI", "CANCEL",
-  "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "Item", "TooltipDataProcessor", "Enum", "C_TooltipInfo",
+  "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "Item", "TooltipDataProcessor", "debugstack", "Enum", "C_TooltipInfo",
   "GetItemInfo", "C_Item", "GetItemInfoInstant", "GetItemClassInfo", "GetItemSubClassInfo", "CreateFramePool", "CreateTexturePool", "Mixin", "CreateFromMixins", "ColorMixin",
   "CreateColor", "ITEM_QUALITY_COLORS", "ItemRefTooltip", "ChatEdit_InsertLink", "HandleModifiedItemClick",
   -- namespaces

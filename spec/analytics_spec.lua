@@ -97,3 +97,41 @@ describe("Analytics", function()
     end)
   end)
 end)
+
+describe("Analytics.Candles", function()
+  local A
+  before_each(function()
+    A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+  end)
+
+  local series = {
+    { day = 100, market = 100, min = 90 },
+    { day = 101, market = 120, min = 110 },
+    { day = 102, market = 110, min = 80 },
+    { day = 103, market = 130, min = 125 },
+  }
+
+  it("makes daily candles: open = previous close, wick down to the cheapest listing", function()
+    local c = A.Candles(series, 1)
+    assert.are.equal(4, #c.xs)
+    assert.are.equal(100.5 * 86400, c.xs[1])
+    assert.are.same({ 100, 100, 120, 110 }, c.open)
+    assert.are.same({ 100, 120, 110, 130 }, c.close)
+    assert.are.same({ 100, 120, 120, 130 }, c.high)
+    assert.are.same({ 90, 100, 80, 110 }, c.low)
+  end)
+
+  it("groups several days per candle", function()
+    local c = A.Candles(series, 2) -- days 100-101, 102-103
+    assert.are.equal(2, #c.xs)
+    assert.are.equal(2 * 86400, c.period)
+    assert.are.same({ 100, 120 }, c.open)
+    assert.are.same({ 120, 130 }, c.close)
+    assert.are.same({ 120, 130 }, c.high)
+    assert.are.same({ 90, 80 }, c.low)
+  end)
+
+  it("handles an empty series", function()
+    assert.are.equal(0, #A.Candles({}, 3).xs)
+  end)
+end)

@@ -171,3 +171,43 @@ function Analytics.Summarize(series)
   end
   return s
 end
+
+-- Candles from the daily/weekly series, grouping periodDays days per candle. The store keeps daily aggregates, not
+-- intraday prices, so a candle is: open = previous candle's close (the first candle opens at its first price),
+-- close = last market price in the period,
+-- high = highest market price (at least the open), low = cheapest listing seen (the "min" price).
+-- Returns { xs, open, high, low, close, period } with xs at the middle of each period (seconds).
+function Analytics.Candles(series, periodDays)
+  local DAY = 86400
+  periodDays = math.max(1, math.floor(periodDays or 1))
+  local out = { xs = {}, open = {}, high = {}, low = {}, close = {}, period = periodDays * DAY }
+  local prevClose
+  local i = 1
+  while i <= #series do
+    local group = math.floor(series[i].day / periodDays)
+    local hi, lo, close, first = -math.huge, math.huge, nil, nil
+    local j = i
+    while j <= #series and math.floor(series[j].day / periodDays) == group do
+      local p = series[j]
+      local m = p.market or p.min
+      if m then
+        first = first or m
+        close = m
+        hi = math.max(hi, m)
+        lo = math.min(lo, p.min or m, m)
+      end
+      j = j + 1
+    end
+    if close then
+      local open = prevClose or first
+      local n = #out.xs + 1
+      out.xs[n] = (group * periodDays + periodDays / 2) * DAY
+      out.open[n], out.close[n] = open, close
+      out.high[n] = math.max(hi, open)
+      out.low[n] = math.min(lo, open, close)
+      prevClose = close
+    end
+    i = j
+  end
+  return out
+end

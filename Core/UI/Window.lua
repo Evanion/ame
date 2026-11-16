@@ -156,7 +156,7 @@ function UI:CreateItemView(parent)
   local labels = { "Market", "Lowest", "30d average", "7d change", "Volatility", "Supply", "Signal" }
   for i, label in ipairs(labels) do
     local c = statCard(v, label)
-    c:SetSize((780 - 20 - 6 * 6) / 7, 40)
+    c:SetSize((980 - 20 - 6 * 6) / 7, 40)
     if i == 1 then
       c:SetPoint("TOPLEFT", v.icon, "BOTTOMLEFT", 0, -10)
     else
@@ -179,18 +179,14 @@ function UI:CreateItemView(parent)
     b.key = r[1]
     v.rangeButtons[i] = b
   end
+  v.style = W.Button(v, "Candles", 64, 18, function()
+    local style = ns.Settings:Get("chartStyle") == "candles" and "line" or "candles"
+    ns.Settings:Set("chartStyle", style)
+    UI:DrawItemChart()
+  end)
+  v.style:SetPoint("LEFT", v.rangeButtons[#RANGES], "RIGHT", 12, 0)
   v.legend = W.Text(v, "GameFontDisableSmall")
-  v.legend:SetPoint("LEFT", v.rangeButtons[#RANGES], "RIGHT", 12, 0)
-  v.legend:SetText(
-    W.Swatch(0.2, 0.8, 1)
-      .. " market   "
-      .. W.Swatch(0.4, 0.87, 0.47)
-      .. " lowest   "
-      .. W.Swatch(1, 0.67, 0.2)
-      .. " 7d average   "
-      .. W.Swatch(0.53, 0.53, 0.67)
-      .. " supply      wheel: zoom, drag: pan, double-click: reset"
-  )
+  v.legend:SetPoint("LEFT", v.style, "RIGHT", 12, 0)
 
   -- chart
   local holder = CreateFrame("Frame", nil, v, "BackdropTemplate")
@@ -210,6 +206,20 @@ function UI:CreateItemView(parent)
   end)
   chart:SetHoverFormatter(function(_, x, rows)
     local lines = { "|cffffffff" .. date("%a %b %d, %Y", x) .. "|r" }
+    local c = rows.candles and UI.candles
+    if c and rows.candles.x == x then
+      local i = rows.candles.index
+      if c.period > DAY then
+        lines[1] = ("|cffffffff%s - %s|r"):format(
+          date("%b %d", x - c.period / 2),
+          date("%b %d, %Y", x + c.period / 2 - DAY)
+        )
+      end
+      lines[#lines + 1] = "Open  " .. W.Money(c.open[i])
+      lines[#lines + 1] = "High  " .. W.Money(c.high[i])
+      lines[#lines + 1] = "Low (cheapest)  " .. W.Money(c.low[i])
+      lines[#lines + 1] = "Close  " .. W.Money(c.close[i])
+    end
     if rows.market and rows.market.x == x then
       lines[#lines + 1] = "Market  " .. W.Money(rows.market.y)
     end
@@ -240,6 +250,88 @@ function UI:SetRange(days, key)
   else
     self.chart:SetXRange(nil)
   end
+  if ns.Settings:Get("chartStyle") == "candles" and self.series then
+    self:DrawItemChart() -- candle period depends on the range
+  end
+end
+
+-- days per candle so a range shows at most ~60 candles
+local function candlePeriod(series, rangeDays)
+  local span = rangeDays
+  if not span and #series > 0 then
+    span = series[#series].day - series[1].day + 1
+  end
+  return math.max(1, math.ceil((span or 1) / 60))
+end
+
+-- (Re)draw the item chart in the current style from self.series.
+function UI:DrawItemChart()
+  local series, v, chart = self.series, self.itemView, self.chart
+  if not series or #series == 0 then
+    return
+  end
+  local candles = ns.Settings:Get("chartStyle") == "candles"
+  v.style.label:SetText(candles and "Line" or "Candles")
+  local xs, market, low, qty, sma = {}, {}, {}, {}, {}
+  for i, p in ipairs(series) do
+    xs[i] = p.day * DAY + (p.res == "week" and 3.5 * DAY or DAY / 2)
+    market[i], low[i], qty[i] = p.market, p.min, p.qty
+  end
+  for i = 1, #market do
+    sma[i] = ns.Analytics.SMA(market, math.min(7, i), i)
+  end
+  local range = chart.range
+  chart.range = nil
+  chart:ClearSeries()
+  chart:SetSeries("qty", { xs = xs, ys = qty, kind = "bars", axis = "volume", color = { 0.53, 0.53, 0.67, 1 } })
+  if candles then
+    local c = ns.Analytics.Candles(series, candlePeriod(series, self.rangeDays))
+    self.candles = c
+    chart:SetSeries("candles", {
+      kind = "candles",
+      axis = "price",
+      xs = c.xs,
+      open = c.open,
+      high = c.high,
+      low = c.low,
+      close = c.close,
+      period = c.period,
+    })
+    v.legend:SetText(
+      W.Swatch(0.3, 0.85, 0.45)
+        .. " up  "
+        .. W.Swatch(1, 0.38, 0.35)
+        .. " down  (wick = cheapest)   "
+        .. W.Swatch(1, 0.67, 0.2)
+        .. " 7d average   "
+        .. W.Swatch(0.53, 0.53, 0.67)
+        .. " supply      wheel: zoom, drag: pan, double-click: reset"
+    )
+  else
+    self.candles = nil
+    chart:SetSeries("market", { xs = xs, ys = market, kind = "area", axis = "price", color = { 0.2, 0.8, 1, 1 } })
+    chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = { 0.4, 0.87, 0.47, 0.9 } })
+    v.legend:SetText(
+      W.Swatch(0.2, 0.8, 1)
+        .. " market   "
+        .. W.Swatch(0.4, 0.87, 0.47)
+        .. " lowest   "
+        .. W.Swatch(1, 0.67, 0.2)
+        .. " 7d average   "
+        .. W.Swatch(0.53, 0.53, 0.67)
+        .. " supply      wheel: zoom, drag: pan, double-click: reset"
+    )
+  end
+  chart:SetSeries("sma", {
+    xs = xs,
+    ys = sma,
+    kind = "line",
+    axis = "price",
+    color = { 1, 0.67, 0.2, 0.9 },
+    width = 1.5,
+  })
+  chart.range = range
+  chart:Refresh()
 end
 
 function UI:ShowItem(itemID)
@@ -282,6 +374,7 @@ end
 function UI:FillItem(_, series, latest)
   local v = self.itemView
   if #series == 0 then
+    self.series = nil
     self.chart:SetMessage("No history for this item yet. Run an Auctionator full scan, or search for it at the AH.")
     v.sub:SetText(ns.AME:CurrentShard())
     for _, c in ipairs(v.cards) do
@@ -290,27 +383,8 @@ function UI:FillItem(_, series, latest)
     return
   end
   self.chart:SetMessage(nil)
-  local xs, market, low, qty, sma = {}, {}, {}, {}, {}
-  for i, p in ipairs(series) do
-    xs[i] = p.day * DAY + (p.res == "week" and 3.5 * DAY or DAY / 2)
-    market[i], low[i], qty[i] = p.market, p.min, p.qty
-  end
-  for i = 1, #market do
-    sma[i] = ns.Analytics.SMA(market, math.min(7, i), i)
-  end
-  local chart = self.chart
-  chart:ClearSeries()
-  chart:SetSeries("qty", { xs = xs, ys = qty, kind = "bars", axis = "volume", color = { 0.53, 0.53, 0.67, 1 } })
-  chart:SetSeries("market", { xs = xs, ys = market, kind = "area", axis = "price", color = { 0.2, 0.8, 1, 1 } })
-  chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = { 0.4, 0.87, 0.47, 0.9 } })
-  chart:SetSeries("sma", {
-    xs = xs,
-    ys = sma,
-    kind = "line",
-    axis = "price",
-    color = { 1, 0.67, 0.2, 0.9 },
-    width = 1.5,
-  })
+  self.series = series
+  self:DrawItemChart()
   if self.rangeKey == "All" then
     self:SetRange(nil, "All")
   else
@@ -714,6 +788,25 @@ function UI:RefreshMarket(force)
   self:RenderMarket()
 end
 
+-- An item shown without a name (not cached yet): re-render the rows once it loads, batching many loads into one.
+function UI:RenderWhenLoaded(itemID)
+  self.waitingNames = self.waitingNames or {}
+  if self.waitingNames[itemID] then
+    return
+  end
+  self.waitingNames[itemID] = true
+  W.OnItemLoaded(itemID, function()
+    self.waitingNames[itemID] = nil
+    if not self.renderQueued then
+      self.renderQueued = true
+      C_Timer.After(0.05, function()
+        self.renderQueued = false
+        self:RenderMarket()
+      end)
+    end
+  end)
+end
+
 -- Draw the visible rows from the cached list: cheap, so scrolling stays smooth.
 function UI:RenderMarket()
   local v = self.marketView
@@ -768,6 +861,9 @@ function UI:RenderMarket()
       local name, _, quality, icon = W.ItemInfo(s.itemID)
       row.icon:SetTexture(icon or 134400)
       local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
+      if not name then
+        self:RenderWhenLoaded(s.itemID)
+      end
       for c, col in ipairs(COLUMNS) do
         local val
         if col.key == "name" then

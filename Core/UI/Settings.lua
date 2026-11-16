@@ -8,6 +8,7 @@ ns.Settings = Settings
 
 Settings.DEFAULTS = {
   tooltip = true,
+  chartStyle = "line", -- "line" | "candles"
   clickModifier = "alt", -- "alt" | "altshift" | "none"
   announceScans = true,
   syncGuild = true,

@@ -224,7 +224,23 @@ local Chart = {}
 Chart.__index = Chart
 lib.ChartMixin = Chart
 
+-- The library ships media/Line.tga (soft alpha edges = antialiased lines). It may be embedded in any addon, so find
+-- its folder from the load stack. Without it, lines fall back to solid (aliased) colour textures.
+local LINE_TEXTURE
+do
+  local stack = debugstack and debugstack(1, 2, 0) or ""
+  local dir = stack:match("(Interface[\\/][Aa]dd[Oo]ns[\\/].-)[\\/]LibAMEChart%-1%.0%.lua")
+  if dir then
+    LINE_TEXTURE = dir:gsub("/", "\\") .. "\\media\\Line"
+  end
+end
+lib.LINE_TEXTURE = LINE_TEXTURE
+
 local DEFAULTS = {
+  lineTexture = LINE_TEXTURE, -- false for solid lines
+  lineSoftness = 2, -- soft lines are drawn this much thicker so the solid core keeps the requested width
+  upColor = { 0.3, 0.85, 0.45, 1 },
+  downColor = { 1, 0.38, 0.35, 1 },
   padding = { left = 8, right = 64, top = 8, bottom = 18 }, -- right side holds the y-axis labels
   paneGap = 6,
   gridColor = { 1, 1, 1, 0.06 },
@@ -318,6 +334,11 @@ function Chart:SetSeries(id, s)
   s.axis = s.axis or self.opts.panes[1].axis
   s.kind = s.kind or "line"
   s.color = s.color or { 0.3, 0.7, 1, 1 }
+  if s.kind == "candles" then
+    -- candles: xs plus open/high/low/close arrays; hover and extent helpers read close as the series value
+    assert(s.open and s.high and s.low and s.close, "candles need open, high, low and close")
+    s.ys = s.ys or s.close
+  end
   self.series[id] = s
   self:Refresh()
 end
@@ -435,7 +456,16 @@ function Chart:Refresh()
   for _, id in ipairs(self.order) do
     local s = self.series[id]
     if s.xs and #s.xs > 0 then
-      local lo, hi = M.Extent(s.xs, s.ys, from, to, s.kind == "bars" and 0 or 0.08)
+      local lo, hi
+      if s.kind == "candles" then
+        local l1, h1 = M.Extent(s.xs, s.low, from, to, 0.08)
+        local l2, h2 = M.Extent(s.xs, s.high, from, to, 0.08)
+        if l1 and l2 then
+          lo, hi = min(l1, l2), max(h1, h2)
+        end
+      else
+        lo, hi = M.Extent(s.xs, s.ys, from, to, s.kind == "bars" and 0 or 0.08)
+      end
       if lo then
         if s.kind == "bars" then
           lo = 0
@@ -509,6 +539,10 @@ function Chart:DrawSeries(s, pane, e, from, to, sx, maxPoints)
   local function sy(y)
     return pane.y + (y - e[1]) / (e[2] - e[1]) * pane.h
   end
+  if s.kind == "candles" then
+    self:DrawCandles(s, pane, from, to, sx, sy)
+    return
+  end
   -- visible slice (+1 point either side so lines reach the edges)
   local xs, ys = s.xs, s.ys
   local first, last = 1, #xs
@@ -559,10 +593,17 @@ function Chart:DrawSeries(s, pane, e, from, to, sx, maxPoints)
     end
   end
 
+  local width = s.width or o.lineWidth
   for k = 1, #px - 1 do
     local line = pool(self, "line")
-    line:SetColorTexture(r, g, b, a or 1)
-    line:SetThickness(s.width or o.lineWidth)
+    if o.lineTexture then
+      line:SetTexture(o.lineTexture)
+      line:SetVertexColor(r, g, b, a or 1)
+      line:SetThickness(width * o.lineSoftness)
+    else
+      line:SetColorTexture(r, g, b, a or 1)
+      line:SetThickness(width)
+    end
     line:SetStartPoint("BOTTOMLEFT", self.canvas, px[k], py[k])
     line:SetEndPoint("BOTTOMLEFT", self.canvas, px[k + 1], py[k + 1])
   end
@@ -571,6 +612,43 @@ function Chart:DrawSeries(s, pane, e, from, to, sx, maxPoints)
     dot:SetColorTexture(r, g, b, a or 1)
     dot:SetPoint("CENTER", self.canvas, "BOTTOMLEFT", px[1], py[1])
     dot:SetSize(5, 5)
+  end
+end
+
+-- Candlesticks: a 1px wick from low to high and a body from open to close, coloured by direction. The caller decides
+-- the candle period (s.period, in x units, sets the body width; otherwise the spacing of visible candles does).
+function Chart:DrawCandles(s, pane, from, to, sx, sy)
+  local o = self.opts
+  local xs = s.xs
+  local visible = {}
+  for i = 1, #xs do
+    if xs[i] >= from and xs[i] <= to then
+      visible[#visible + 1] = i
+    end
+  end
+  if #visible == 0 then
+    return
+  end
+  local slot = s.period and (s.period / (to - from) * pane.w) or (pane.w / #visible)
+  local bw = max(1, min(18, floor(slot * 0.7)))
+  local left, right = pane.x, pane.x + pane.w
+  for _, i in ipairs(visible) do
+    local x = sx(xs[i])
+    if x >= left and x <= right then
+      local op, cl = s.open[i], s.close[i]
+      local up = cl >= op
+      local r, g, b, a = colorOf(up and (s.upColor or o.upColor) or (s.downColor or o.downColor))
+      local wick = pool(self, "fill")
+      wick:SetColorTexture(r, g, b, (a or 1) * 0.8)
+      local yl, yh = sy(s.low[i]), sy(s.high[i])
+      wick:SetPoint("BOTTOM", self.canvas, "BOTTOMLEFT", floor(x) + 0.5, yl)
+      wick:SetSize(1, max(1, yh - yl))
+      local body = pool(self, "fill")
+      body:SetColorTexture(r, g, b, a or 1)
+      local y1, y2 = sy(min(op, cl)), sy(max(op, cl))
+      body:SetPoint("BOTTOM", self.canvas, "BOTTOMLEFT", floor(x) + 0.5, y1)
+      body:SetSize(bw, max(1, y2 - y1))
+    end
   end
 end
 
