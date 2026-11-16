@@ -7,6 +7,9 @@ local Tooltip = {}
 ns.Tooltip = Tooltip
 
 local function addLines(tooltip, itemID)
+  if ns.Settings and not ns.Settings:Get("tooltip") then
+    return
+  end
   local index = ns.AME and ns.AME.index
   local s = index and itemID and index.items[itemID]
   if not s then
@@ -51,10 +54,10 @@ function Tooltip:Install()
     end)
   end
 
-  -- Alt-click an item (bags, chat links, AH) to open its chart
+  -- modified click on an item (bags, chat links, AH) opens its chart; modifier is configurable
   if HandleModifiedItemClick then
     hooksecurefunc("HandleModifiedItemClick", function(link)
-      if IsAltKeyDown() and link and not IsShiftKeyDown() and not IsControlKeyDown() then
+      if link and ns.Settings:ClickModifierDown() then
         local id = ns.AME.ItemIDFrom(link)
         if id then
           ns.UI:ShowItem(id)

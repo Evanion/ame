@@ -165,7 +165,9 @@ function AME:OnSnapshot(snap, t, kind, info)
         msSinceRequest = ms,
         added = added,
       }
-      say("recorded full scan: %d items from %d listings (%s)", #snap.ids, info and info.rows or 0, shard)
+      if ns.Settings:Get("announceScans") then
+        say("recorded full scan: %d items from %d listings (%s)", #snap.ids, info and info.rows or 0, shard)
+      end
       self:RebuildIndex()
     else
       AME_DB.stats.partials = (AME_DB.stats.partials or 0) + 1
@@ -241,6 +243,7 @@ function handlers.ADDON_LOADED(name)
   AME_DB.stats = AME_DB.stats or {}
   AME_DB.backfilled = AME_DB.backfilled or {}
   AME.compressor = ns.Compress.New(LibStub("LibDeflate"))
+  ns.Settings:Init()
 end
 
 function handlers.PLAYER_LOGIN()
@@ -395,11 +398,13 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     ns.SelfTest.Run(AME)
   elseif cmd == "backfill" then
     AME:Backfill(true)
+  elseif cmd == "config" or cmd == "settings" or cmd == "options" then
+    ns.Settings:Open()
   elseif cmd == "" then
     ns.UI:Toggle()
   elseif cmd == "help" then
     say("/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it")
-    say("/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill")
+    say("/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config")
   elseif itemIDFrom(msg) then
     ns.UI:ShowItem(itemIDFrom(msg))
   else

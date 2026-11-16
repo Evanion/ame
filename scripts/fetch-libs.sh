@@ -14,3 +14,6 @@ fetch() {
 }
 fetch Ace3 https://github.com/WoWUIDev/Ace3.git
 fetch LibDeflate https://github.com/SafeteeWoW/LibDeflate.git
+fetch LibDataBroker-1.1 https://github.com/tekkub/libdatabroker-1-1.git
+# LibDBIcon-1.0 is SVN-only (WowAce); the packager fetches it for releases. In development another addon usually
+# provides it at runtime.
