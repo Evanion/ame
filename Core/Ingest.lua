@@ -5,6 +5,11 @@
 -- ~once per row for over a minute. We read the list ONCE per request, on the first event, time-sliced via Jobs.
 -- Prices and counts are present even on rows with hasAllInfo == false, so no item-data loading is needed.
 --
+-- Legacy full scans (Auctionator on Forever loads its legacy AH code): QueryAuctionItems(..., getAll = true).
+-- Auctionator unregisters every other frame's AUCTION_ITEM_LIST_UPDATE during its scan, so instead of waiting for the
+-- event we poll GetNumAuctionItems("list") until the list is complete and stable, then read it the same way.
+-- Legacy rows have count, buyout and itemID at the same positions as replicate rows.
+--
 -- Searches / sell-tab rechecks: commodity and item search results are collected per item and flushed as one
 -- "partial" snapshot after SETTLE seconds without new results. Incomplete result sets (only the cheapest page) are
 -- skipped, because they would bias the market price low.
@@ -15,15 +20,20 @@ Ingest.__index = Ingest
 ns.Ingest = Ingest
 
 Ingest.SETTLE = 1.0
+Ingest.POLL = 1.0 -- seconds between legacy list checks
+Ingest.POLL_LIMIT = 180 -- give up waiting for a getAll list after this many polls
 
--- opts: api, jobs, now, after(seconds, fn), onSnapshot(snap, t, kind, info)
+-- opts: api, jobs, now, after(seconds, fn), onSnapshot(snap, t, kind, info), onReadStart(rows) (optional),
+-- legacy (optional: the legacy AH functions { GetNumAuctionItems, GetAuctionItemInfo })
 function Ingest.New(opts)
   return setmetatable({
     api = assert(opts.api),
+    legacy = opts.legacy,
     jobs = assert(opts.jobs),
     now = assert(opts.now),
     after = assert(opts.after),
     onSnapshot = assert(opts.onSnapshot),
+    onReadStart = opts.onReadStart,
     requested = false,
     reading = false,
     aborted = false,
@@ -43,17 +53,58 @@ function Ingest:OnReplicateUpdate()
   if not self.requested or self.reading then
     return
   end
-  self.requested, self.reading, self.aborted = false, true, false
-  local api, t = self.api, self.now()
+  self.requested = false
+  local api = self.api
   local total = api.GetNumReplicateItems() or 0
+  self:read(0, total - 1, total, api.GetReplicateItemInfo)
+end
+
+-- legacy getAll query sent (hook on QueryAuctionItems with getAll = true)
+function Ingest:OnGetAllRequested()
+  if not self.legacy or self.reading then
+    return
+  end
+  self.pollGen = (self.pollGen or 0) + 1
+  local gen, polls, last = self.pollGen, 0, nil
+  local legacy = self.legacy
+  local function poll()
+    if gen ~= self.pollGen or self.reading then
+      return
+    end
+    polls = polls + 1
+    local batch, total = legacy.GetNumAuctionItems("list")
+    batch, total = batch or 0, total or 0
+    -- complete (one batch holds everything) and unchanged since the last poll
+    if batch > 0 and batch >= total and batch == last then
+      self.pollGen = gen + 1
+      self:read(0, batch, batch, function(i)
+        return legacy.GetAuctionItemInfo("list", i)
+      end)
+      return
+    end
+    last = batch
+    if polls < Ingest.POLL_LIMIT then
+      self.after(Ingest.POLL, poll)
+    end
+  end
+  self.after(Ingest.POLL, poll)
+end
+
+-- read rows first..last (missing rows are skipped) into one full snapshot, time-sliced
+function Ingest:read(first, last, total, getInfo)
+  self.reading, self.aborted = true, false
+  local t = self.now()
+  if self.onReadStart then
+    self.onReadStart(total)
+  end
   self.jobs:Add("ingest-full", function(job)
     local acc = ns.Stats.NewAccumulator()
-    for i = 0, total - 1 do
+    for i = first, last do
       if self.aborted then
         return nil
       end
-      local _, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = api.GetReplicateItemInfo(i)
-      if itemID then
+      local _, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = getInfo(i)
+      if itemID and itemID > 0 then
         acc:Add(itemID, buyout, count)
       end
       if i % 64 == 0 then
@@ -80,6 +131,7 @@ function Ingest:OnAuctionHouseClosed()
     self.aborted = true
   end
   self.requested = false
+  self.pollGen = (self.pollGen or 0) + 1 -- stop waiting for a getAll list
 end
 
 ---------------------------------------------------------------------------------------------------------------------

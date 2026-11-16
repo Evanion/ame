@@ -149,6 +149,31 @@ describe("addon in a stubbed client", function()
     assert.is_not_nil(AME_DB.stats.lastFull)
   end)
 
+  it("records a legacy getAll full scan (Auctionator on Forever)", function()
+    boot()
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    env.legacyRows = { { 2589, 1000, 10 }, { 4306, 5000, 5 } }
+    QueryAuctionItems("", nil, nil, 0, nil, nil, true, false, nil)
+    env:advance(1)
+    env:advance(1)
+    drainJobs()
+    assert.is_true(env:chatContains("reading full scan %(2 listings%)"))
+    assert.is_true(env:chatContains("recorded full scan: 2 items"))
+    assert.are.equal(1, AME_DB.stats.scan.getAllRequests)
+    assert.are.equal(2, AME_DB.stats.lastFull.items)
+  end)
+
+  it("ignores ordinary legacy searches", function()
+    boot()
+    env:fire("AUCTION_HOUSE_SHOW")
+    env.legacyRows = { { 2589, 1000, 10 } }
+    QueryAuctionItems("Linen", nil, nil, 0, nil, nil, false, false, nil)
+    env:advance(3)
+    drainJobs()
+    assert.is_false(env:chatContains("recorded full scan"))
+  end)
+
   it("survives a client that lacks some events", function()
     boot({ unknownEvents = { COMMODITY_SEARCH_RESULTS_UPDATED = true } })
     env:fire("AUCTION_HOUSE_SHOW")

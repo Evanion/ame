@@ -150,6 +150,89 @@ describe("Ingest", function()
     end)
   end)
 
+  describe("legacy getAll scans", function()
+    local legacy, list
+
+    local function legacyIngest()
+      list = { rows = {}, total = nil }
+      legacy = {
+        GetNumAuctionItems = function(kind)
+          assert(kind == "list")
+          return #list.rows, list.total or #list.rows
+        end,
+        GetAuctionItemInfo = function(kind, i) -- 1-based like the classic API; index 0 returns nothing
+          assert(kind == "list")
+          local r = list.rows[i]
+          if not r then
+            return
+          end
+          return "x", nil, r[3], 1, true, 1, "", 0, 0, r[2], 0, false, nil, nil, nil, 0, r[1], true
+        end,
+      }
+      return ns.Ingest.New({
+        api = api,
+        jobs = runner,
+        legacy = legacy,
+        now = function()
+          return 6000
+        end,
+        after = function(_, fn)
+          timers[#timers + 1] = fn
+        end,
+        onSnapshot = function(snap, t, kind, info)
+          got[#got + 1] = { snap = snap, t = t, kind = kind, info = info }
+        end,
+      })
+    end
+
+    it("waits for the list to be complete and stable, then reads it once", function()
+      local ing = legacyIngest()
+      ing:OnGetAllRequested()
+      fireTimers() -- nothing yet
+      list.rows = { { 10, 500, 5 }, { 10, 300, 1 } }
+      list.total = 3
+      fireTimers() -- partial batch
+      list.rows[3] = { 20, 1000, 1 }
+      fireTimers() -- complete, first sighting
+      assert.are.equal(0, #got)
+      fireTimers() -- stable: read
+      drain()
+      fireTimers()
+      assert.are.equal(1, #got)
+      assert.are.equal("full", got[1].kind)
+      assert.are.same({ 10, 20 }, got[1].snap.ids)
+      assert.are.equal(100, row(got[1].snap, 10).min)
+    end)
+
+    it("skips rows without an item id", function()
+      local ing = legacyIngest()
+      list.rows = { { 0, 500, 1 }, { 30, 700, 1 } }
+      ing:OnGetAllRequested()
+      fireTimers()
+      fireTimers()
+      drain()
+      assert.are.same({ 30 }, got[1].snap.ids)
+    end)
+
+    it("stops waiting when the AH closes", function()
+      local ing = legacyIngest()
+      ing:OnGetAllRequested()
+      fireTimers()
+      ing:OnAuctionHouseClosed()
+      list.rows = { { 10, 500, 5 } }
+      fireTimers()
+      fireTimers()
+      drain()
+      assert.are.equal(0, #got)
+      assert.are.equal(0, #timers)
+    end)
+
+    it("is ignored without the legacy API", function()
+      ingest:OnGetAllRequested()
+      assert.are.equal(0, #timers)
+    end)
+  end)
+
   describe("search and sell-tab results", function()
     it("turns full commodity results into one partial snapshot after things settle", function()
       api.commodities[2589] = { { 100, 20 }, { 120, 5 } }

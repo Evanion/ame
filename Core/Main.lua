@@ -198,6 +198,22 @@ AME.ingest = ns.Ingest.New({
   onSnapshot = function(...)
     AME:OnSnapshot(...)
   end,
+  onReadStart = function(rows)
+    local d = AME:ScanDiag()
+    d.readStartedAt, d.readRows = GetServerTime(), rows
+    if ns.Settings:Get("announceScans") then
+      say("reading full scan (%d listings) in the background...", rows or 0)
+    end
+  end,
+  -- legacy AH globals, looked up at call time (only used after a QueryAuctionItems hook fires)
+  legacy = {
+    GetNumAuctionItems = function(...)
+      return GetNumAuctionItems(...)
+    end,
+    GetAuctionItemInfo = function(...)
+      return GetAuctionItemInfo(...)
+    end,
+  },
 })
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -268,6 +284,18 @@ function handlers.PLAYER_LOGIN()
       AME.ingest:OnReplicateRequested()
     end)
   end
+  -- legacy AH API (Auctionator on Forever): a getAll query is a full scan
+  if QueryAuctionItems then
+    hooksecurefunc("QueryAuctionItems", function(_, _, _, _, _, _, getAll)
+      if getAll then
+        AME.scanRequestedAt = debugprofilestop()
+        local d = AME:ScanDiag()
+        d.requests, d.getAllRequests = (d.requests or 0) + 1, (d.getAllRequests or 0) + 1
+        d.lastRequestAt, d.eventsSinceRequest = GetServerTime(), 0
+        AME.ingest:OnGetAllRequested()
+      end
+    end)
+  end
   for _, e in ipairs({
     "AUCTION_HOUSE_SHOW",
     "AUCTION_HOUSE_CLOSED",
@@ -315,14 +343,7 @@ function handlers.REPLICATE_ITEM_LIST_UPDATE()
   local d = AME:ScanDiag()
   d.events = (d.events or 0) + 1
   d.eventsSinceRequest = (d.eventsSinceRequest or 0) + 1
-  local wasRequested = AME.ingest.requested
   AME.ingest:OnReplicateUpdate()
-  if wasRequested and AME.ingest.reading then
-    d.readStartedAt, d.readRows = GetServerTime(), C_AuctionHouse.GetNumReplicateItems()
-    if ns.Settings:Get("announceScans") then
-      say("reading full scan (%d listings) in the background...", d.readRows or 0)
-    end
-  end
 end
 
 function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)

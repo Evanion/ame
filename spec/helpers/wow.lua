@@ -280,6 +280,18 @@ function M.install(opts)
     end,
   })
   set("C_AuctionHouse", env.ah)
+  -- legacy AH API (Forever): env.legacyRows = { { itemID, buyout, count } }, 1-based
+  env.legacyRows = {}
+  set("QueryAuctionItems", function() end)
+  set("GetNumAuctionItems", function()
+    return #env.legacyRows, #env.legacyRows
+  end)
+  set("GetAuctionItemInfo", function(_, i)
+    local r = env.legacyRows[i]
+    if r then
+      return "x", nil, r[3], 1, true, 1, "", 0, 0, r[2], 0, false, nil, nil, nil, 0, r[1], true
+    end
+  end)
   set("C_AddOns", {
     LoadAddOn = function(name)
       if env.loaded[name] then
