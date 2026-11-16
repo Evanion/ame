@@ -825,7 +825,7 @@ end
 function UI:CreateMarketView(parent)
   local v = contentArea(parent)
   self.marketView = v
-  self.mq = { sortKey = "score", ascending = false }
+  self.mq = { sortKey = "score", ascending = false, minQuality = 1 } -- Common+: hide grey junk by default
   self:CreateCategories(v)
 
   local main = CreateFrame("Frame", nil, v)
@@ -865,6 +865,8 @@ function UI:CreateMarketView(parent)
     UI:RefreshMarket(true)
   end)
   quality:SetPoint("LEFT", search, "RIGHT", 8, 0)
+  quality.defaultIndex = 2
+  quality:SetIndex(2)
   v.quality = quality
 
   local minBox = goldBox(main, "min g", function(g)
@@ -1027,8 +1029,8 @@ end
 
 function UI:ResetMarketFilters()
   local v = self.marketView
-  self.mq = { sortKey = self.mq.sortKey, ascending = self.mq.ascending }
-  v.quality:SetIndex(1)
+  self.mq = { sortKey = self.mq.sortKey, ascending = self.mq.ascending, minQuality = 1 }
+  v.quality:SetIndex(v.quality.defaultIndex)
   v.search:SetText("")
   v.minBox:SetText("")
   v.maxBox:SetText("")

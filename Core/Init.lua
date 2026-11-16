@@ -7,13 +7,17 @@ ns.HOUSES = { Alliance = true, Horde = true, Neutral = true }
 
 -- WoW Forever runs one layered mega-realm per ruleset; its internal realm names (e.g. "CAMWOWEU5Realm6PvP") differ
 -- per region/layer but share the economy. There the market is identified by the ruleset alone.
-local RULESETS = { "RPPvP", "RPPvE", "RP", "PvP", "PvE", "Normal" }
+local RULESETS = { "RPPvP", "RPPvE", "RP", "PvP", "PvE", "HC", "Normal" }
 
-function ns.MarketRealm(realm)
+-- rules (optional): the ruleset from the game's rules API (see AME:MarketRealmName); wins when present
+function ns.MarketRealm(realm, rules)
+  if rules then
+    return rules
+  end
   if type(realm) == "string" and realm:match("^CAMWOW") then
-    for _, rules in ipairs(RULESETS) do
-      if realm:sub(-#rules) == rules then
-        return rules
+    for _, name in ipairs(RULESETS) do
+      if realm:sub(-#name) == name then
+        return name
       end
     end
     return "Forever"

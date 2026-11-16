@@ -206,6 +206,45 @@ describe("addon in a stubbed client", function()
     assert.is_true(env:chatContains("recorded full scan: 1 items from 1 listings %(PvP|Horde%)"))
   end)
 
+  it("reads the Forever market from the game's rules (like Auctionator), Hardcore included", function()
+    boot({ realm = "CAMWOWEU9Realm1" })
+    _G.RegionalUniqueNamesEnabled = function()
+      return true
+    end
+    _G.C_GameRules = {
+      IsGameRuleActive = function(rule)
+        return rule == "hc"
+      end,
+    }
+    local savedEnum = _G.Enum
+    _G.Enum = setmetatable({ GameRule = { PvPRuleset = "pvp", RPRuleset = "rp", HardcoreRuleset = "hc" } }, {
+      __index = savedEnum,
+    })
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    assert.are.equal("HC|Horde", ns.AME:CurrentShard())
+    _G.RegionalUniqueNamesEnabled, _G.C_GameRules, _G.Enum = nil, nil, savedEnum
+  end)
+
+  it("imports Auctionator history only at the faction auction house", function()
+    local DAY = 86400
+    boot({
+      auctionator = {
+        Constants = { SCAN_DAY_0 = 20000 * DAY },
+        Database = { db = { ["2589"] = { h = { ["5"] = 120 }, m = 100 } } },
+      },
+    })
+    env.npcFaction = nil -- goblin auctioneer
+    env:fire("AUCTION_HOUSE_SHOW")
+    drainJobs()
+    assert.is_false(env:chatContains("imported"))
+    assert.is_nil(AME_DB.backfilled["TestRealm|Neutral"])
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    drainJobs()
+    assert.is_true(env:chatContains("imported 1 days"))
+  end)
+
   it("survives a client that lacks some events", function()
     boot({ unknownEvents = { COMMODITY_SEARCH_RESULTS_UPDATED = true } })
     env:fire("AUCTION_HOUSE_SHOW")
@@ -285,8 +324,8 @@ describe("addon in a stubbed client", function()
       assert.are.equal(0, #ns.UI.list) -- stub items are common quality
       assert.truthy(v.quality.label.text:find("Rare+", 1, true))
       ns.UI:ResetMarketFilters()
-      assert.is_nil(ns.UI.mq.minQuality)
-      assert.are.equal(1, v.quality.index)
+      assert.are.equal(1, ns.UI.mq.minQuality) -- back to the default: Common+ (no grey junk)
+      assert.are.equal(2, v.quality.index)
       ns.MarketFilter.Apply = apply
     end)
 

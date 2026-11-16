@@ -152,7 +152,7 @@ function Service:Announce()
 end
 
 local function sameRealm(shard)
-  return shard and shard:match("^(.-)|") == ns.MarketRealm(GetNormalizedRealmName())
+  return shard and shard:match("^(.-)|") == ns.SyncService.AME:MarketRealmName()
 end
 
 -- Is a message over this channel from this sender acceptable?

@@ -86,8 +86,39 @@ function AME:CurrentHouse()
   return self.house or AME_DB.lastHouse or UnitFactionGroup("player") or "Neutral"
 end
 
+-- Forever (regionally unique names): one economy per ruleset, read from the game's rules like Auctionator does.
+-- Elsewhere: the realm name.
+local function rulesetFromGameRules()
+  if not (RegionalUniqueNamesEnabled and RegionalUniqueNamesEnabled()) then
+    return nil
+  end
+  local rules, enum = C_GameRules, Enum and Enum.GameRule
+  if not (rules and rules.IsGameRuleActive and enum) then
+    return nil
+  end
+  local function on(rule)
+    return rule ~= nil and rules.IsGameRuleActive(rule)
+  end
+  local pvp, rp = on(enum.PvPRuleset), on(enum.RPRuleset)
+  if pvp and rp then
+    return "RPPvP"
+  elseif pvp then
+    return "PvP"
+  elseif rp then
+    return "RP"
+  elseif on(enum.HardcoreRuleset) then
+    return "HC"
+  end
+  return "PvE"
+end
+
+function AME:MarketRealmName()
+  local ok, rules = pcall(rulesetFromGameRules)
+  return ns.MarketRealm(GetNormalizedRealmName(), ok and rules or nil)
+end
+
 function AME:CurrentShard()
-  return ns.ShardKey(ns.MarketRealm(GetNormalizedRealmName()), self:CurrentHouse())
+  return ns.ShardKey(self:MarketRealmName(), self:CurrentHouse())
 end
 
 AME.stores = {}
@@ -279,6 +310,14 @@ AME.ingest = ns.Ingest.New({
 function AME:Backfill(force)
   local shard = self:CurrentShard()
   if AME_DB.backfilled[shard] and not force then
+    return
+  end
+  -- Auctionator's database mixes every auction house of the realm (faction and goblin). Import it into the
+  -- faction AH only, so the goblin AH's history stays clean for cross-AH comparisons.
+  if self:CurrentHouse() == "Neutral" then
+    if force then
+      say("Auctionator import is only done at your faction's auction house (its data mixes all auction houses).")
+    end
     return
   end
   local atr = Auctionator
