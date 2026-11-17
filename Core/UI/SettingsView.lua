@@ -4,7 +4,7 @@ local L = ns.L
 
 local W = ns.Widgets
 local UI = ns.UI
-local heading, note, settingCheck = W.Heading, W.Note, W.SettingCheck
+local heading, settingCheck = W.Heading, W.SettingCheck
 local COL2 = UI.COLUMN2
 
 local function ago(t)
@@ -22,9 +22,6 @@ function UI:CreateSettingsView(parent, contentArea)
 
   heading(v, L["Display"], 0, 0)
   checks[#checks + 1] = settingCheck(v, L["Show AME prices in item tooltips"], "tooltip", 0, -24)
-  local avgLabel = W.Text(v, "GameFontHighlightSmall")
-  avgLabel:SetPoint("TOPLEFT", 260, -26)
-  avgLabel:SetText(L["average period"])
   local avgs = {
     { 3, L["%d days"]:format(3) },
     { 7, L["%d days"]:format(7) },
@@ -40,13 +37,10 @@ function UI:CreateSettingsView(parent, contentArea)
     end
     UI.list = nil
   end, { neutral = true })
-  v.avgDays:SetPoint("TOPLEFT", 340, -22)
+  W.Labeled(v, L["average period"], v.avgDays, nil, 90):SetPoint("TOPLEFT", 260, -26)
   checks[#checks + 1] =
     settingCheck(v, L["Always show full tooltip details (otherwise hold Shift)"], "tooltipDetail", 0, -48)
 
-  local styleLabel = W.Text(v, "GameFontHighlightSmall")
-  styleLabel:SetPoint("TOPLEFT", 0, -80)
-  styleLabel:SetText(L["Chart style"])
   local styles = { { "line", L["Line"] }, { "candles", L["Candles"] } }
   v.style = W.Dropdown(v, 120, styles, function(value)
     ns.Settings:Set("chartStyle", value)
@@ -54,32 +48,22 @@ function UI:CreateSettingsView(parent, contentArea)
       UI:DrawItemChart()
     end
   end, { neutral = true })
-  v.style:SetPoint("TOPLEFT", 150, -76)
+  W.Labeled(v, L["Chart style"], v.style, nil, 150):SetPoint("TOPLEFT", 0, -80)
 
-  local clickLabel = W.Text(v, "GameFontHighlightSmall")
-  clickLabel:SetPoint("TOPLEFT", 0, -106)
-  clickLabel:SetText(L["Open item charts with"])
   local clicks = { { "alt", L["Alt-click"] }, { "altshift", L["Alt+Shift-click"] }, { "none", L["Off"] } }
   v.click = W.Dropdown(v, 120, clicks, function(value)
     ns.Settings:Set("clickModifier", value)
   end, { neutral = true })
-  v.click:SetPoint("TOPLEFT", 150, -102)
-  note(v, clickLabel, L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."], 440):SetPoint(
-    "TOPLEFT",
-    clickLabel,
-    "BOTTOMLEFT",
-    0,
-    -14
-  )
+  local clickLabel = W.Labeled(v, L["Open item charts with"], v.click, nil, 150)
+  clickLabel:SetPoint("TOPLEFT", 0, -106)
+  W.Paragraph(v, L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."])
+    :SetPoint("TOPLEFT", clickLabel, "BOTTOMLEFT", 0, -14)
 
   v.minimap = W.Check(v, L["Show minimap button"], function(on)
     ns.Launcher:SetMinimap(on)
   end)
   v.minimap:SetPoint("TOPLEFT", 0, -150)
 
-  local themeLabel = W.Text(v, "GameFontHighlightSmall")
-  themeLabel:SetPoint("TOPLEFT", 260, -152)
-  themeLabel:SetText(L["Window colours"])
   local themes = {
     { "auto", L["Follow market"] },
     { "Horde", L["Horde red"] },
@@ -90,16 +74,13 @@ function UI:CreateSettingsView(parent, contentArea)
     ns.Settings:Set("theme", value)
     UI:ApplyTheme()
   end, { neutral = true })
-  v.theme:SetPoint("TOPLEFT", 350, -148)
+  W.Labeled(v, L["Window colours"], v.theme, nil, 90):SetPoint("TOPLEFT", 260, -152)
 
   heading(v, L["Notifications"], 0, -182)
   checks[#checks + 1] = settingCheck(v, L["Announce recorded full scans in chat"], "announceScans", 0, -204)
   checks[#checks + 1] = settingCheck(v, L["Play a sound when a watchlist alert fires"], "alertSound", 0, -226)
 
   heading(v, L["Data quality"], 0, -258)
-  local outlierLabel = W.Text(v, "GameFontHighlightSmall")
-  outlierLabel:SetPoint("TOPLEFT", 0, -284)
-  outlierLabel:SetText(L["Ignore outrageous prices"])
   local factors = {
     { false, L["Off"] },
     { 3, L["%dx off usual"]:format(3) },
@@ -115,14 +96,11 @@ function UI:CreateSettingsView(parent, contentArea)
       UI:ShowItem(UI.itemID)
     end
   end, { neutral = true })
-  v.outliers:SetPoint("TOPLEFT", 150, -280)
-  local why = W.Text(v, "GameFontDisableSmall")
-  why:SetPoint("TOPLEFT", 0, -306)
-  why:SetWidth(440)
-  why:SetSpacing(2)
-  why:SetText(
+  W.Labeled(v, L["Ignore outrageous prices"], v.outliers, nil, 150):SetPoint("TOPLEFT", 0, -284)
+  W.Paragraph(
+    v,
     L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."]
-  )
+  ):SetPoint("TOPLEFT", 0, -306)
 
   -- data
   heading(v, L["Data"], COL2, 0)
@@ -156,16 +134,10 @@ function UI:CreateSettingsView(parent, contentArea)
   for i, a in ipairs(actions) do
     local b = W.Button(v, a[1], 190, 22, a[3])
     b:SetPoint("TOPLEFT", COL2, -110 - (i - 1) * 46)
-    local t = W.Text(v, "GameFontDisableSmall")
-    t:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -4)
-    t:SetWidth(440)
-    t:SetText(a[2])
+    W.Paragraph(v, a[2]):SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -4)
   end
   heading(v, L["Auction house cut"], COL2, -258)
   local function cutInput(key, label, y)
-    local t = W.Text(v, "GameFontHighlightSmall")
-    t:SetPoint("TOPLEFT", COL2, y)
-    t:SetText(label)
     local input = W.Input(v, {
       width = 44,
       numeric = true,
@@ -175,7 +147,7 @@ function UI:CreateSettingsView(parent, contentArea)
         end
       end,
     })
-    input:SetPoint("TOPLEFT", COL2 + 170, y + 4)
+    W.Labeled(v, label, input, nil, 170):SetPoint("TOPLEFT", COL2, y)
     local pct = W.Text(v, "GameFontHighlightSmall")
     pct:SetPoint("LEFT", input, "RIGHT", 4, 0)
     pct:SetText("%")
@@ -184,9 +156,6 @@ function UI:CreateSettingsView(parent, contentArea)
   end
   v.cutFaction = cutInput("cutFaction", L["Faction auction houses"], -284)
   v.cutNeutral = cutInput("cutNeutral", L["Goblin auction houses"], -310)
-  local hoursLabel = W.Text(v, "GameFontHighlightSmall")
-  hoursLabel:SetPoint("TOPLEFT", COL2 + 250, -284)
-  hoursLabel:SetText(L["Deposits for"])
   local hours = {
     { 2, L["%d h listings"]:format(2) },
     { 8, L["%d h listings"]:format(8) },
@@ -198,12 +167,10 @@ function UI:CreateSettingsView(parent, contentArea)
       UI:RenderArbitrage()
     end
   end, { neutral = true })
-  v.hours:SetPoint("TOPLEFT", COL2 + 330, -280)
+  W.Labeled(v, L["Deposits for"], v.hours, nil, 80):SetPoint("TOPLEFT", COL2 + 250, -284)
 
-  local more = W.Text(v, "GameFontDisableSmall")
-  more:SetPoint("TOPLEFT", COL2, -340)
-  more:SetWidth(440)
-  more:SetText(L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."])
+  W.Paragraph(v, L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."])
+    :SetPoint("TOPLEFT", COL2, -340)
 
   v:SetScript("OnShow", function()
     UI:RefreshSettings()

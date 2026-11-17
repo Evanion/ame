@@ -842,14 +842,34 @@ function W.Heading(parent, text, x, y)
   return h
 end
 
--- explanatory paragraph under an anchor
-function W.Note(parent, anchor, text, width)
+-- explanatory paragraph: dim, wrapped at width (440 by default); position it yourself
+function W.Paragraph(parent, text, width)
   local t = W.Text(parent, "GameFontDisableSmall")
-  t:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -6)
   t:SetWidth(width or 440)
   t:SetSpacing(2)
   t:SetText(text)
   return t
+end
+
+-- explanatory paragraph under an anchor
+function W.Note(parent, anchor, text, width)
+  local t = W.Paragraph(parent, text, width)
+  t:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -6)
+  return t
+end
+
+-- A label before a control (dropdown, input): returns the label; position the label and the control follows,
+-- gap px after the text, or at labelWidth from the label's start (controls line up across rows).
+function W.Labeled(parent, text, control, gap, labelWidth)
+  local label = W.Text(parent, "GameFontHighlightSmall")
+  label:SetText(text)
+  control:ClearAllPoints()
+  if labelWidth then
+    control:SetPoint("LEFT", label, "LEFT", labelWidth, 0)
+  else
+    control:SetPoint("LEFT", label, "RIGHT", gap or 6, 0)
+  end
+  return label
 end
 
 -- a check bound to a setting

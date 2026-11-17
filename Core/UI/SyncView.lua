@@ -24,13 +24,11 @@ function UI:CreateSyncView(parent, contentArea)
   heading(v, L["Sharing"], 0, 0)
   v.guild = settingCheck(v, L["Share full scans with my guild (members running AME)"], "syncGuild", 0, -24)
   v.trusted = settingCheck(v, L["Share with trusted players (below)"], "syncTrusted", 0, -46)
-  local alts = W.Text(v, "GameFontDisableSmall")
-  alts:SetPoint("TOPLEFT", 0, -72)
-  alts:SetWidth(450)
-  alts:SetSpacing(2)
-  alts:SetText(
-    L["Your alts on this Battle.net account already share everything: AME's history is saved account-wide. Trust players to swap scans with friends, or with your own characters on other accounts. Only your market and auction house are shared, and scans that disagree wildly with your prices are rejected."]
-  )
+  W.Paragraph(
+    v,
+    L["Your alts on this Battle.net account already share everything: AME's history is saved account-wide. Trust players to swap scans with friends, or with your own characters on other accounts. Only your market and auction house are shared, and scans that disagree wildly with your prices are rejected."],
+    450
+  ):SetPoint("TOPLEFT", 0, -72)
 
   heading(v, L["Activity"], 0, -128)
   v.activity = W.Text(v, "GameFontHighlightSmall")

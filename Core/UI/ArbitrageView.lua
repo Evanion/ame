@@ -107,32 +107,21 @@ function UI:CreateArbitrageView(parent, contentArea)
     ascending = false,
   }
 
-  local function label(text, anchor, x)
-    local t = W.Text(v, "GameFontHighlightSmall")
-    t:SetPoint("LEFT", anchor, "RIGHT", x or 10, 0)
-    t:SetText(text)
-    return t
-  end
-
-  local buyLabel = W.Text(v, "GameFontHighlightSmall")
-  buyLabel:SetPoint("TOPLEFT", 0, -4)
-  buyLabel:SetText(L["Buy at"])
   v.buy = W.Dropdown(v, 104, HOUSES, function(value)
     UI.arb.buy = value
     UI:RefreshArbitrage()
   end, { neutral = true })
-  v.buy:SetPoint("LEFT", buyLabel, "RIGHT", 6, 0)
+  W.Labeled(v, L["Buy at"], v.buy):SetPoint("TOPLEFT", 0, -4)
   v.swap = W.Button(v, L["Swap"], 50, 20, function()
     UI.arb.buy, UI.arb.sell = UI.arb.sell, UI.arb.buy
     UI:RefreshArbitrage()
   end)
   v.swap:SetPoint("LEFT", v.buy, "RIGHT", 6, 0)
-  local sellLabel = label(L["Sell at"], v.swap)
   v.sell = W.Dropdown(v, 104, HOUSES, function(value)
     UI.arb.sell = value
     UI:RefreshArbitrage()
   end, { neutral = true })
-  v.sell:SetPoint("LEFT", sellLabel, "RIGHT", 6, 0)
+  W.Labeled(v, L["Sell at"], v.sell):SetPoint("LEFT", v.swap, "RIGHT", 10, 0)
 
   v.minProfit = W.GoldInput(v, L["profit g"], function(g)
     UI.arb.minProfit = g and g * 10000 or 1
