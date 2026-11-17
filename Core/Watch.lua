@@ -19,6 +19,7 @@ Watch.DEFAULT_NAME = "Watchlist"
 function Watch.New(db)
   db.lists = db.lists or {}
   db.alerts = db.alerts or {}
+  db.guild = db.guild or {} -- shared by guild members: [owner/name] = { owner, name, items = set, t }
   if #db.lists == 0 then
     db.lists[1] = { name = Watch.DEFAULT_NAME, items = {} }
   end
@@ -87,6 +88,83 @@ function Watch:Watched(itemID)
     end
   end
   return self.db.alerts[itemID] ~= nil
+end
+
+-- share one of your lists with the guild (sent over sync)
+function Watch:SetShared(i, on)
+  local l = self.db.lists[i]
+  if l then
+    l.shared = on or nil
+    l.version = (l.version or 0) + 1
+  end
+  return l
+end
+
+-- your shared lists as { name, ids (sorted array) }
+function Watch:SharedLists()
+  local out = {}
+  for _, l in ipairs(self.db.lists) do
+    if l.shared then
+      local ids = {}
+      for id in pairs(l.items) do
+        ids[#ids + 1] = id
+      end
+      table.sort(ids)
+      out[#out + 1] = { name = l.name, ids = ids }
+    end
+  end
+  return out
+end
+
+-- a guild member's list arrived: newer versions replace older; an empty list removes it
+function Watch:SetGuildList(owner, name, t, ids)
+  local key = owner .. "/" .. name
+  local cur = self.db.guild[key]
+  if cur and cur.t >= t then
+    return false
+  end
+  if #ids == 0 then
+    self.db.guild[key] = nil
+    return true
+  end
+  local items = {}
+  for _, id in ipairs(ids) do
+    items[id] = true
+  end
+  self.db.guild[key] = { owner = owner, name = name, items = items, t = t }
+  return true
+end
+
+function Watch:GuildLists()
+  local out = {}
+  for key, g in pairs(self.db.guild) do
+    out[#out + 1] = { key = key, owner = g.owner, name = g.name, items = g.items, t = g.t }
+  end
+  table.sort(out, function(a, b)
+    return a.key:lower() < b.key:lower()
+  end)
+  return out
+end
+
+-- copy a guild list into your own lists; returns its index
+function Watch:CopyGuildList(key)
+  local g = self.db.guild[key]
+  if not g then
+    return nil
+  end
+  local base = ("%s (%s)"):format(g.name, g.owner)
+  local name, n = base, 1
+  while true do
+    local i = self:AddList(name)
+    if i then
+      for id in pairs(g.items) do
+        self.db.lists[i].items[id] = true
+      end
+      return i
+    end
+    n = n + 1
+    name = base .. " " .. n
+  end
 end
 
 ---------------------------------------------------------------------------------------------------------------------

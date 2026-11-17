@@ -189,7 +189,8 @@ Help.GUIDE = {
   {
     "Watchlists and alerts",
     'Star items to put them on a watchlist; make more lists with "+ New list" in the sidebar (right-click a '
-      .. "list to delete it). On an item's page set an alert: below or above a price in gold, or when a buy/sell "
+      .. "list to share it with your guild or delete it; guild members' shared lists appear below yours). On an "
+      .. "item's page set an alert: below or above a price in gold, or when a buy/sell "
       .. "signal appears. Alerts are checked after every scan and posted in chat with a sound.",
   },
   {

@@ -855,6 +855,33 @@ function UI:PromptNewList(itemID)
   StaticPopup_Show("AME_NEW_LIST", nil, nil, itemID)
 end
 
+-- right-click on one of your lists: share with the guild, delete
+function UI:ListMenu(anchor, i)
+  local watch = ns.AME.watch
+  local l = watch:Lists()[i]
+  if not l then
+    return
+  end
+  W.Menu(anchor, {
+    {
+      text = "Share with guild",
+      checked = l.shared == true,
+      func = function()
+        watch:SetShared(i, not l.shared)
+        ns.SyncService:QueueShare(not l.shared and { l.name } or nil)
+        UI:WatchChanged()
+      end,
+    },
+    {
+      text = "Delete list...",
+      disabled = #watch:Lists() <= 1,
+      func = function()
+        UI:PromptDeleteList(i)
+      end,
+    },
+  })
+end
+
 function UI:PromptDeleteList(i)
   local l = ns.AME.watch:Lists()[i]
   if not l then
@@ -866,7 +893,12 @@ function UI:PromptDeleteList(i)
       button1 = DELETE or "Delete",
       button2 = CANCEL or "Cancel",
       OnAccept = function(_, data)
+        local doomed = ns.AME.watch:Lists()[data]
+        local wasShared = doomed and doomed.shared and doomed.name
         if ns.AME.watch:RemoveList(data) then
+          if wasShared then
+            ns.SyncService:QueueShare({ wasShared })
+          end
           local q = UI.mq
           if q and q.list then
             q.list, q.only = nil, nil
@@ -886,11 +918,19 @@ end
 function UI:WatchChanged()
   local q = self.mq
   if q and q.list then
-    local l = ns.AME.watch:Lists()[q.list]
+    local l
+    if type(q.list) == "string" then
+      l = ns.AME.watch.db.guild[q.list:sub(3)]
+    else
+      l = ns.AME.watch:Lists()[q.list]
+    end
     q.only = l and l.items or nil
     if not l then
       q.list = nil
     end
+  end
+  if #ns.AME.watch:SharedLists() > 0 and ns.SyncService.QueueShare then
+    ns.SyncService:QueueShare()
   end
   if self.marketView then
     self:RenderCategories()
@@ -1003,12 +1043,31 @@ function UI:CreateCategories(v)
         UI:PromptNewList()
         return
       end
+      if e.header then
+        return
+      end
       if e.list and button == "RightButton" then
-        UI:PromptDeleteList(e.list)
+        UI:ListMenu(self, e.list)
+        return
+      end
+      if e.guild and button == "RightButton" then
+        W.Menu(self, {
+          {
+            text = "Copy to my watchlists",
+            func = function()
+              ns.AME.watch:CopyGuildList(e.guild)
+              UI:WatchChanged()
+            end,
+          },
+        })
         return
       end
       q.list, q.only = nil, nil
-      if e.list then
+      if e.guild then
+        local g = ns.AME.watch.db.guild[e.guild]
+        q.classID, q.subClassID = nil, nil
+        q.list, q.only = "g:" .. e.guild, g and g.items
+      elseif e.list then
         q.classID, q.subClassID = nil, nil
         q.list, q.only = e.list, ns.AME.watch:Lists()[e.list].items
       elseif e.all then
@@ -1041,9 +1100,28 @@ function UI:RenderCategories()
   local watch = ns.AME.watch
   if watch then
     for i, l in ipairs(watch:Lists()) do
-      entries[#entries + 1] = { list = i, label = W.StarInline(12) .. " " .. l.name, count = watch:Count(i) }
+      entries[#entries + 1] = {
+        list = i,
+        label = W.StarInline(12) .. " " .. l.name .. (l.shared and " |cff33ccffshared|r" or ""),
+        count = watch:Count(i),
+      }
     end
     entries[#entries + 1] = { newList = true, label = "|cff999999+ New list|r", count = "" }
+    local guild = watch:GuildLists()
+    if #guild > 0 then
+      entries[#entries + 1] = { header = true, label = "|cff999999Guild watchlists|r", count = "" }
+      for _, g in ipairs(guild) do
+        local n = 0
+        for _ in pairs(g.items) do
+          n = n + 1
+        end
+        entries[#entries + 1] = {
+          guild = g.key,
+          label = ("   %s |cff999999(%s)|r"):format(g.name, g.owner),
+          count = n,
+        }
+      end
+    end
   end
   for _, c in ipairs(self.categories or {}) do
     entries[#entries + 1] = { classID = c.classID, label = ns.ItemCache.ClassName(c.classID), count = c.count }
@@ -1065,8 +1143,10 @@ function UI:RenderCategories()
     if e then
       b:Show()
       local selected
-      if e.newList then
+      if e.newList or e.header then
         selected = false
+      elseif e.guild then
+        selected = q.list == "g:" .. e.guild
       elseif e.list then
         selected = q.list == e.list
       elseif q.list then

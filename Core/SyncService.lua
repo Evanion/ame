@@ -161,6 +161,39 @@ function Service:Announce()
   if any then
     self.stats.syncAnnounced = (self.stats.syncAnnounced or 0) + 1
   end
+  self:ShareWatchlists()
+end
+
+-- a shared list changed: send soon (several quick changes go out once)
+function Service:QueueShare(removed)
+  for _, name in ipairs(removed or {}) do
+    self.pendingRemoved = self.pendingRemoved or {}
+    self.pendingRemoved[#self.pendingRemoved + 1] = name
+  end
+  if self.sharePending then
+    return
+  end
+  self.sharePending = true
+  C_Timer.After(3, function()
+    self.sharePending = false
+    local gone = self.pendingRemoved
+    self.pendingRemoved = nil
+    self:ShareWatchlists(gone)
+  end)
+end
+
+-- Send your shared watchlists to the guild; unshared/deleted names go out empty once so others drop them.
+function Service:ShareWatchlists(removed)
+  if not self:GuildActive() or not self.AME.watch then
+    return
+  end
+  local shard, t = self.AME:CurrentShard(), GetServerTime()
+  for _, l in ipairs(self.AME.watch:SharedLists()) do
+    self.transport:Send(Service.PREFIX, Sync.EncodeWatchlist(shard, l.name, t, l.ids), "GUILD")
+  end
+  for _, name in ipairs(removed or {}) do
+    self.transport:Send(Service.PREFIX, Sync.EncodeWatchlist(shard, name, t, {}), "GUILD")
+  end
 end
 
 local function sameRealm(shard)
@@ -177,6 +210,9 @@ function Service:Allowed(m, distribution, sender)
   end
   if m.type == "hello" or m.type == "accept" then
     return self.enabled
+  end
+  if m.type == "watchlist" then
+    return false -- guild only (handled above)
   end
   local trusted = self:TrustActive() and self.trust:IsTrusted(sender)
   if m.type == "request" then
@@ -203,6 +239,15 @@ function Service:OnMessage(msg, distribution, sender)
     return
   end
   self.trust:Heard(sender, GetServerTime(), distribution)
+  if m.type == "watchlist" then
+    if self.AME.watch and self.AME.watch:SetGuildList(sender, m.name, m.t, m.ids) then
+      self:Changed()
+      if ns.UI and ns.UI.WatchChanged then
+        ns.UI:WatchChanged()
+      end
+    end
+    return
+  end
   if m.type == "hello" then
     if self.trust:IsTrusted(sender) then
       -- we already trust them: they trust us now too

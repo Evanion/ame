@@ -5,6 +5,7 @@
 --   scan      "1|S|<shard>|<t36>|<src>|<kind>|<packed>"     whisper reply; packed = the raw entry's compressed string
 --   hello     "1|H|<shard>"                                   whisper: "I'd like to share prices with you" (trust)
 --   accept    "1|K|<shard>"                                   whisper: "I trust you too"
+--   watchlist "1|W|<shard>|<name>|<t36>|<id36;id36;...>"      guild: a shared watchlist (empty ids = unshared)
 --
 -- Transport (chunking + pacing at BULK priority) is AceComm/ChatThrottleLib in the WoW glue. Received scans are
 -- merged with Store:AddScan, whose dedupe makes repeats harmless; announcements repeat, so dropped whispers retry
@@ -78,6 +79,20 @@ function Sync.EncodeHello(shard)
   return table.concat({ Sync.PROTO, "H", shard }, "|")
 end
 
+Sync.MAX_LIST_ITEMS = 200
+
+local function cleanName(name)
+  return (tostring(name or ""):gsub("[|;:]", ""):sub(1, 40))
+end
+
+function Sync.EncodeWatchlist(shard, name, t, ids)
+  local parts = {}
+  for i = 1, math.min(#ids, Sync.MAX_LIST_ITEMS) do
+    parts[i] = Codec.ToBase36(ids[i])
+  end
+  return table.concat({ Sync.PROTO, "W", shard, cleanName(name), Codec.ToBase36(t), table.concat(parts, ";") }, "|")
+end
+
 function Sync.EncodeAccept(shard)
   return table.concat({ Sync.PROTO, "K", shard }, "|")
 end
@@ -102,6 +117,17 @@ function Sync.Decode(msg)
         end
       end
       return { type = "announce", shard = shard, scans = scans }
+    elseif kind == "W" and #f == 7 then
+      local ids = {}
+      if f[7] ~= "" then
+        for id in f[7]:gmatch("[^;]+") do
+          ids[#ids + 1] = Codec.FromBase36(id)
+          if #ids >= Sync.MAX_LIST_ITEMS then
+            break
+          end
+        end
+      end
+      return { type = "watchlist", shard = shard, name = f[5], t = Codec.FromBase36(f[6]), ids = ids }
     elseif kind == "H" and #f == 4 then
       return { type = "hello", shard = shard }
     elseif kind == "K" and #f == 4 then

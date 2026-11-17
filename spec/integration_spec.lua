@@ -1065,6 +1065,53 @@ describe("addon in a stubbed client", function()
       _G.GetGuildInfoText = nil
     end)
 
+    it("shares watchlists with the guild and shows guild members' lists in the sidebar", function()
+      bootSync()
+      local watch = ns.AME.watch
+      watch:Toggle(1, 2589)
+      ns.UI:Toggle()
+      ns.UI:ShowTab("market")
+      -- right-click my list > Share with guild
+      ns.UI:ListMenu(ns.UI.marketView.side.lines[2], 1)
+      local share = ns.Widgets.menu.items[1]
+      share.scripts.OnClick(share)
+      assert.is_true(watch:Lists()[1].shared)
+      env:advance(3)
+      local m = ns.Sync.Decode(sent[#sent].msg)
+      assert.are.equal("watchlist", m.type)
+      assert.are.equal("GUILD", sent[#sent].distribution)
+      assert.are.same({ 2589 }, m.ids)
+      -- a guild member shares theirs; whispered or blocked lists are ignored
+      deliver(ns.Sync.EncodeWatchlist("TestRealm|Horde", "Herbs", env.now, { 2589, 4306 }), "GUILD", "Guild Mate")
+      deliver(ns.Sync.EncodeWatchlist("TestRealm|Horde", "Spam", env.now, { 1 }), "WHISPER", "Guild Mate")
+      assert.are.equal(1, #watch:GuildLists())
+      local v = ns.UI.marketView
+      ns.UI:RenderCategories()
+      local line
+      for _, l in ipairs(v.side.lines) do
+        local e = rawget(l, "entry")
+        if type(e) == "table" and e.guild then
+          line = l
+        end
+      end
+      assert.are.equal("Guild Mate/Herbs", line.entry.guild)
+      line.scripts.OnClick(line, "LeftButton")
+      assert.are.equal("g:Guild Mate/Herbs", ns.UI.mq.list)
+      -- copy it
+      line.scripts.OnClick(line, "RightButton")
+      local copy = ns.Widgets.menu.items[1]
+      copy.scripts.OnClick(copy)
+      assert.are.equal("Herbs (Guild Mate)", watch:Lists()[2].name)
+      -- unsharing tells the guild to drop it
+      ns.UI:ListMenu(v.side.lines[2], 1)
+      share = ns.Widgets.menu.items[1]
+      share.scripts.OnClick(share)
+      env:advance(3)
+      local gone = ns.Sync.Decode(sent[#sent].msg)
+      assert.are.equal("Watchlist", gone.name)
+      assert.are.same({}, gone.ids)
+    end)
+
     it("drives trust from the Sync tab and options from the Settings tab", function()
       bootSync()
       deliver(ns.Sync.EncodeHello("TestRealm|Horde"), "WHISPER", "Ada Lovelace")
