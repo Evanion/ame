@@ -15,7 +15,7 @@ mkdir -p "$CORE" "$HIST" dist
 
 # addon
 cp AzerothMercantileExchange.toc embeds.xml COPYING COPYING.LESSER "$CORE/"
-cp -r Core LibAMEChart-1.0 "$CORE/"
+cp -r Core LibAMEChart-1.0 media "$CORE/"
 cp AzerothMercantileExchange_History/AzerothMercantileExchange_History.toc AzerothMercantileExchange_History/History.lua \
   "$HIST/"
 

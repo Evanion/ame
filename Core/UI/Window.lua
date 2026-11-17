@@ -41,8 +41,12 @@ function UI:Create()
   f:Hide()
   tinsert(UISpecialFrames, "AMEMainWindow") -- Escape closes
 
+  local logo = f:CreateTexture(nil, "ARTWORK")
+  logo:SetTexture(ns.ICON)
+  logo:SetSize(18, 18)
+  logo:SetPoint("TOPLEFT", 10, -8)
   local title = W.Text(f, "GameFontNormal")
-  title:SetPoint("TOPLEFT", 12, -10)
+  title:SetPoint("LEFT", logo, "RIGHT", 6, 0)
   self.title = title
   self.shardText = W.Text(f, "GameFontDisableSmall")
   self.shardText:SetPoint("LEFT", title, "RIGHT", 10, 0)

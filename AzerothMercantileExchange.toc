@@ -3,7 +3,7 @@
 ## Notes: Auction house price history, charts, market signals and arbitrage, from your own scans. /ame
 ## Author: Evanion
 ## Version: @project-version@
-## IconTexture: Interface\Icons\INV_Misc_Coin_02
+## IconTexture: Interface\AddOns\AzerothMercantileExchange\media\Icon
 ## OptionalDeps: Auctionator, Ace3, LibDeflate, LibDataBroker-1.1, LibDBIcon-1.0
 ## SavedVariables: AME_DB
 ## X-License: LGPL-3.0-or-later

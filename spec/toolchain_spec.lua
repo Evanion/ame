@@ -26,4 +26,15 @@ describe("toolchain", function()
     end
     assert.are.same({}, bad)
   end)
+
+  it("ships the addon icon the TOC points at", function()
+    local icon
+    for line in io.lines("AzerothMercantileExchange.toc") do
+      icon = icon or line:match("^## IconTexture: Interface.AddOns.AzerothMercantileExchange.(.+)$")
+    end
+    assert.is_not_nil(icon, "IconTexture should point inside the addon")
+    local file = io.open(icon:gsub("\r", ""):gsub("\\", "/") .. ".tga", "rb")
+    assert.is_not_nil(file, "missing " .. icon .. ".tga")
+    file:close()
+  end)
 end)

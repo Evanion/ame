@@ -238,7 +238,7 @@ function Settings:CreateLauncher()
   local launcher = LDB:NewDataObject(ADDON, {
     type = "launcher",
     label = "AME",
-    icon = "Interface\\Icons\\INV_Misc_Coin_02",
+    icon = ns.ICON,
     OnClick = function(_, button)
       if button == "RightButton" then
         Settings:Open()

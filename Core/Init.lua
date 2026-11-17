@@ -5,6 +5,9 @@ ns.VERSION = "0.1.0-beta.8"
 
 ns.HOUSES = { Alliance = true, Horde = true, Neutral = true }
 
+-- the addon's icon (also used for the minimap / broker launcher and the window title)
+ns.ICON = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Icon"
+
 -- WoW Forever runs one layered mega-realm per ruleset; its internal realm names (e.g. "CAMWOWEU5Realm6PvP") differ
 -- per region/layer but share the economy. There the market is identified by the ruleset alone.
 local RULESETS = { "RPPvP", "RPPvE", "RP", "PvP", "PvE", "HC", "Normal" }
