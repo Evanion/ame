@@ -547,6 +547,7 @@ function handlers.PLAYER_LOGIN()
     "GUILD_ROSTER_UPDATE",
     "PLAYER_GUILD_UPDATE",
     "MAIL_INBOX_UPDATE",
+    "CHAT_MSG_SYSTEM",
     "BAG_UPDATE_DELAYED",
     "BANKFRAME_OPENED",
     "PLAYERBANKSLOTS_CHANGED",
@@ -602,6 +603,10 @@ end
 handlers.PLAYER_GUILD_UPDATE = handlers.GUILD_ROSTER_UPDATE
 
 -- portfolio: auction mail, bags, bank, own auctions
+function handlers.CHAT_MSG_SYSTEM(msg)
+  ns.Trading:OnSystemMessage(msg)
+end
+
 function handlers.MAIL_INBOX_UPDATE()
   ns.Trading:ScanMail()
 end

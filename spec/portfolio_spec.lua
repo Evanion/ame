@@ -50,6 +50,19 @@ describe("Ledger", function()
     assert.are.equal("sale", recent[1].kind)
   end)
 
+  it("keeps a pending sale until its mail arrives, without counting it as income", function()
+    l:Add({ t = 1000, kind = "pending", name = "Silk", amount = 120, char = "Tyken" })
+    assert.are.equal(0, l:Summary(0).income)
+    assert.are.equal(1, #l:Pending())
+    -- a mail for another item doesn't settle it; one for Silk far later doesn't either
+    l:Add({ t = 1100, kind = "sale", name = "Wool", qty = 1, amount = 50, cut = 2, char = "Tyken" }, "w")
+    l:Add({ t = 1000 + 13 * 3600, kind = "sale", name = "Silk", qty = 3, amount = 360, cut = 18, char = "Tyken" }, "x")
+    assert.are.equal(1, #l:Pending())
+    -- the right mail settles it
+    l:Add({ t = 1200, kind = "sale", name = "Silk", qty = 3, amount = 360, cut = 18, char = "Tyken" }, "s")
+    assert.are.equal(0, #l:Pending())
+  end)
+
   it("forgets entries older than 90 days", function()
     l:Add(buy(100, 1, 50), "old")
     l:Add(buy(100 + 91 * 86400, 1, 50), "new")

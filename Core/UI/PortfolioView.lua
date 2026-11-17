@@ -63,6 +63,53 @@ local POSITION_COLS = {
   },
 }
 
+local function timeLeft(a)
+  if a.timeLeft then
+    local left = a.timeLeft - (GetServerTime() - (a.seen or GetServerTime()))
+    if left <= 0 then
+      return "|cff999999ended?|r"
+    end
+    return left >= 3600 and ("%dh"):format(left / 3600) or ("%dm"):format(left / 60)
+  end
+  local bands = { [0] = "< 30m", [1] = "< 2h", [2] = "< 12h", [3] = "> 12h" }
+  return a.timeLeftBand and bands[a.timeLeftBand] or "|cff777777-|r"
+end
+
+local AUCTION_COLS = {
+  { key = "name", label = "Item", width = 230, item = true, sortKey = false },
+  { key = "qty", label = "Qty", width = 50 },
+  { key = "unit", label = "Price each", width = 92, format = "money" },
+  { key = "total", label = "Total", width = 96, format = "money" },
+  {
+    key = "timeLeft",
+    label = "Time left",
+    width = 70,
+    text = function(a)
+      return timeLeft(a)
+    end,
+  },
+  {
+    key = "char",
+    label = "Character",
+    width = 150,
+    align = "LEFT",
+    sortKey = false,
+    text = function(a)
+      return a.char or ""
+    end,
+  },
+  {
+    key = "house",
+    label = "Auction house",
+    width = 100,
+    align = "LEFT",
+    sortKey = false,
+    text = function(a)
+      return ns.HOUSE_LABEL[a.house] or a.house or ""
+    end,
+  },
+}
+
 local LEDGER_COLS = {
   {
     key = "when",
@@ -78,7 +125,7 @@ local LEDGER_COLS = {
     label = "",
     width = 44,
     text = function(e)
-      return e.kind == "sale" and "|cff4dd973sold|r" or "|cffffcc33bought|r"
+      return (e.kind == "sale" or e.kind == "pending") and "|cff4dd973sold|r" or "|cffffcc33bought|r"
     end,
   },
   {
@@ -90,8 +137,25 @@ local LEDGER_COLS = {
       return e.name
     end,
   },
-  { key = "qty", label = "Qty", width = 44 },
-  { key = "amount", label = "Price", width = 92, format = "money" },
+  {
+    key = "qty",
+    label = "Qty",
+    width = 44,
+    text = function(e)
+      return e.qty and tostring(e.qty) or "|cff999999?|r"
+    end,
+  },
+  {
+    key = "amount",
+    label = "Price",
+    width = 92,
+    text = function(e)
+      if e.kind == "pending" then
+        return "|cff999999awaiting mail|r"
+      end
+      return W.Money(e.amount, true)
+    end,
+  },
   {
     key = "cut",
     label = "AH cut",
@@ -186,6 +250,11 @@ function UI:CreatePortfolioView(parent, contentArea)
     UI:RefreshPortfolio()
   end)
   v.ledgerButton:SetPoint("LEFT", v.positionsButton, "RIGHT", 4, 0)
+  v.auctionsButton = W.Button(v, "Auctions", 80, 20, function()
+    UI.pfMode, UI.pfOffset = "auctions", 0
+    UI:RefreshPortfolio()
+  end)
+  v.auctionsButton:SetPoint("LEFT", v.ledgerButton, "RIGHT", 4, 0)
   local function itemID(e)
     return e.itemID
   end
@@ -212,6 +281,14 @@ function UI:CreatePortfolioView(parent, contentArea)
         end
       end
     end,
+  })
+  v.auctions = ns.DataTable.New(v, {
+    columns = AUCTION_COLS,
+    rows = ROWS,
+    top = -82,
+    itemID = itemID,
+    localSort = true,
+    sort = { key = "total", ascending = false },
   })
   v.ledger = ns.DataTable.New(v, {
     columns = LEDGER_COLS,
@@ -253,6 +330,7 @@ function UI:RefreshPortfolio()
   self.pfWeek = AME.ledger and AME.ledger:Summary(now - 7 * DAY) or {}
   self.pfMonth = AME.ledger and AME.ledger:Summary(now - 30 * DAY) or {}
   self.pfLedger = AME.ledger and AME.ledger:Recent(now - 90 * DAY) or {}
+  self.pfAuctions = ns.Trading:ActiveAuctions()
   self.pfIndexMissing = index == nil
   self:RenderPortfolio()
 end
@@ -271,12 +349,14 @@ function UI:RenderPortfolio()
   v.cards[3].value:SetText(signedMoney(t.unrealized))
   v.cards[4].value:SetText(signedMoney(w.profit))
   v.cards[5].value:SetText(W.Money(m.income or 0, true) .. " / " .. W.Money(m.spent or 0, true))
-  local ledgerMode = self.pfMode == "ledger"
-  v.positionsButton:SetSelected(not ledgerMode)
+  local mode = self.pfMode
+  local ledgerMode, auctionsMode = mode == "ledger", mode == "auctions"
+  v.positionsButton:SetSelected(mode == "positions")
   v.ledgerButton:SetSelected(ledgerMode)
+  v.auctionsButton:SetSelected(auctionsMode)
 
-  local list = ledgerMode and self.pfLedger or self.pfRows
-  local tbl = ledgerMode and v.ledger or v.positions
+  local list = ledgerMode and self.pfLedger or auctionsMode and self.pfAuctions or self.pfRows
+  local tbl = ledgerMode and v.ledger or auctionsMode and v.auctions or v.positions
   if ledgerMode and ns.AME.ledger then
     self.pfProfitOf = {}
     for _, e in ipairs(list) do
@@ -285,8 +365,9 @@ function UI:RenderPortfolio()
       end
     end
   end
-  v.positions:SetShown(not ledgerMode)
+  v.positions:SetShown(mode == "positions")
   v.ledger:SetShown(ledgerMode)
+  v.auctions:SetShown(auctionsMode)
   tbl:SetData(list)
   tbl:Render()
 
@@ -296,7 +377,12 @@ function UI:RenderPortfolio()
     chars = chars + 1
   end
   local status
-  if ledgerMode then
+  if auctionsMode then
+    status = (
+      "%d active auctions on your characters, as of the last time each opened the auction house. Sales show up "
+      .. "in the ledger right away and are settled when the auction mail arrives."
+    ):format(#list)
+  elseif ledgerMode then
     status = (
       "%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your "
       .. "mailbox to catch new ones."

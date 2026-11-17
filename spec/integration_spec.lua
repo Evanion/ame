@@ -772,6 +772,18 @@ describe("addon in a stubbed client", function()
       assert.are.equal(5 * 200 + 300, ns.UI.pfListed.value)
       assert.truthy(v.cards[2].value.text:find("2 auctions"))
       assert.are.equal(46, row.qty) -- 40 in bags + 6 listed
+      -- active auctions view
+      v.auctionsButton.scripts.OnClick(v.auctionsButton)
+      assert.are.equal(2, #ns.UI.pfAuctions)
+      assert.are.equal(1000, ns.UI.pfAuctions[1].total) -- 5 x 2s, sorted by total
+      -- the game says one sold: a pending ledger row (the game's own message is the notification)
+      env:fire("CHAT_MSG_SYSTEM", "A buyer has been found for your auction of Item 2589.")
+      assert.are.equal(1, #ledger:Pending())
+      assert.are.equal("Item 2589", ledger:Pending()[1].name)
+      env:fire("CHAT_MSG_SYSTEM", "Your auction of Item 2589 has expired.")
+      assert.are.equal(1, #ledger:Pending()) -- expiries aren't sales
+      env:fire("CHAT_MSG_SYSTEM", "Something else entirely.")
+      assert.are.equal(1, #ledger:Pending())
       v.ledgerButton.scripts.OnClick(v.ledgerButton)
       assert.are.equal("ledger", ns.UI.pfMode)
       assert.truthy(v.ledger.rows[1].cells[2].text:find("sold"))

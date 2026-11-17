@@ -334,7 +334,7 @@ function DataTable:Render()
   for r, row in ipairs(self.rows) do
     local d = list[offset + r]
     row.data = d
-    row.itemID = d and opts.itemID and opts.itemID(d) or nil
+    row.itemID = d and opts.itemID and opts.itemID(d) or false
     row:SetShown(d ~= nil)
     if row.action then
       row.action:SetShown(d ~= nil and (not opts.action.shown or opts.action.shown(d)) or false)
@@ -351,7 +351,7 @@ function DataTable:Render()
       for c, col in ipairs(opts.columns) do
         local val
         if col.item then
-          val = itemCell(self, row, col, d, row.itemID)
+          val = itemCell(self, row, col, d, row.itemID or nil)
         elseif col.text then
           val = col.text(d, self)
         elseif col.format then

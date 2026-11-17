@@ -11,6 +11,12 @@ local function api(name)
   return (C_Container and C_Container[name]) or _G[name]
 end
 
+-- item name for an ID when the client knows it
+local function W_ItemName(itemID)
+  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+  return getInfo and getInfo(itemID) or nil
+end
+
 local function charKey()
   return ns.AME:MarketRealmName() .. ":" .. (UnitName("player") or "?")
 end
@@ -91,6 +97,7 @@ function Trading:ScanAuctions()
     return
   end
   local out, listed = {}, { count = 0, value = 0, house = ns.AME:CurrentHouse() }
+  local list = {}
   for i = 1, ah.GetNumOwnedAuctions() or 0 do
     local info = ah.GetOwnedAuctionInfo(i)
     local active = info and (info.status == nil or info.status == 0)
@@ -104,10 +111,93 @@ function Trading:ScanAuctions()
         listed.value = listed.value + unit * qty
       end
       listed.count = listed.count + 1
+      list[#list + 1] = {
+        itemID = id,
+        qty = qty,
+        unit = unit,
+        total = unit and unit * qty,
+        timeLeft = info.timeLeftSeconds,
+        timeLeftBand = info.timeLeft,
+      }
     end
   end
   local h = mine()
   h.auctions, h.auctionsAt, h.listed = out, GetServerTime(), listed
+  h.auctionList = list
+end
+
+-- every active auction on all characters: { itemID, qty, unit, total, timeLeft, char, house, seen }
+function Trading:ActiveAuctions()
+  local out = {}
+  for char, h in pairs(AME_DB.holdings) do
+    for _, a in ipairs(h.auctionList or {}) do
+      local e = {}
+      for k, v in pairs(a) do
+        e[k] = v
+      end
+      e.char, e.house, e.seen = char:gsub("^[^:]*:", ""), h.listed and h.listed.house, h.auctionsAt
+      out[#out + 1] = e
+    end
+  end
+  table.sort(out, function(a, b)
+    return (a.total or 0) > (b.total or 0)
+  end)
+  return out
+end
+
+-- "A buyer has been found for your auction of %s." / "Your auction of %s has expired." as Lua patterns
+function Trading.Pattern(fmt, fallback)
+  fmt = type(fmt) == "string" and fmt or fallback
+  local parts = {}
+  for piece in (fmt .. "%s"):gmatch("(.-)%%s") do
+    parts[#parts + 1] = (piece:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"))
+  end
+  return "^" .. table.concat(parts, "(.+)") .. "$"
+end
+local pattern = Trading.Pattern
+
+-- the listing price of an item this character has up, when there's exactly one price (for the notification)
+local function listedUnit(name)
+  local h = AME_DB.holdings[charKey()]
+  local unit
+  for _, a in ipairs(h and h.auctionList or {}) do
+    local n = W_ItemName and W_ItemName(a.itemID)
+    if n == name and a.unit then
+      if unit and unit ~= a.unit then
+        return nil
+      end
+      unit = a.unit
+    end
+  end
+  return unit
+end
+
+-- System chat: your auction sold or expired. The game shows the message; AME records a pending sale in the ledger
+-- (quantity and price come with the auction mail, which settles it).
+function Trading:OnSystemMessage(msg)
+  if type(msg) ~= "string" then
+    return
+  end
+  self.soldPattern = self.soldPattern or pattern(ERR_AUCTION_SOLD_S, "A buyer has been found for your auction of %s.")
+  self.expiredPattern = self.expiredPattern or pattern(ERR_AUCTION_EXPIRED_S, "Your auction of %s has expired.")
+  local sold = msg:match(self.soldPattern)
+  local expired = not sold and msg:match(self.expiredPattern)
+  if sold then
+    local unit = listedUnit(sold)
+    self.ledger:Add({
+      t = GetServerTime(),
+      kind = "pending",
+      name = sold,
+      itemID = nil,
+      qty = nil,
+      amount = unit,
+      char = UnitName("player"),
+    })
+  end
+  -- the game already announces it in chat; AME only records the sale until its mail arrives
+  if (sold or expired) and ns.UI and ns.UI.RefreshPortfolio then
+    ns.UI:RefreshPortfolio()
+  end
 end
 
 function Trading:QueryAuctions()

@@ -1,7 +1,8 @@
 -- Ledger (pure): your auction house sales and purchases, from the game's auction mail invoices.
 --
 --   db = { entries = { entry, ... oldest first }, keys = { [dedupe key] = t } }
---   entry = { t, kind = "sale" | "buy", itemID?, name, qty, amount, cut, char }
+--   entry = { t, kind = "sale" | "buy" | "pending", itemID?, name, qty, amount, cut, char }
+--     pending: the game said an auction sold; the mail with the real quantity and price hasn't arrived yet
 --     sale: amount = sale price (bid/buyout), cut = the auction house's cut; you received amount - cut
 --     buy:  amount = what you paid
 --
@@ -21,10 +22,15 @@ function Ledger.New(db)
   return setmetatable({ db = db }, Ledger)
 end
 
+Ledger.PENDING_WINDOW = 12 * 3600 -- a mail settles a pending sale of the same item within this much time
+
 -- returns true when added (false: already recorded under that key)
 function Ledger:Add(e, key)
   if key and self.db.keys[key] then
     return false
+  end
+  if e.kind == "sale" then
+    self:Settle(e)
   end
   local list = self.db.entries
   local pos = #list + 1
@@ -36,6 +42,32 @@ function Ledger:Add(e, key)
     self.db.keys[key] = e.t
   end
   return true
+end
+
+-- the mail for a sale arrived: drop the oldest pending sale of that item (and character) near its time
+function Ledger:Settle(sale)
+  local list = self.db.entries
+  for k, e in ipairs(list) do
+    if
+      e.kind == "pending"
+      and e.name == sale.name
+      and (not sale.char or not e.char or e.char == sale.char)
+      and math.abs(e.t - sale.t) <= Ledger.PENDING_WINDOW
+    then
+      table.remove(list, k)
+      return e
+    end
+  end
+end
+
+function Ledger:Pending()
+  local out = {}
+  for _, e in ipairs(self.db.entries) do
+    if e.kind == "pending" then
+      out[#out + 1] = e
+    end
+  end
+  return out
 end
 
 function Ledger:Prune(now)
@@ -96,7 +128,7 @@ function Ledger:Summary(since)
         s.income = s.income + e.amount - (e.cut or 0)
         s.profit = s.profit + (profits[e] or 0)
         s.sales = s.sales + 1
-      else
+      elseif e.kind == "buy" then
         s.spent = s.spent + e.amount
         s.buys = s.buys + 1
       end
