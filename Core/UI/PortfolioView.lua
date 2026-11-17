@@ -9,19 +9,6 @@ local DAY = 86400
 
 local ROWS = 13
 
-local function card(parent, label, x)
-  local c = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-  W.Skin(c, W.COLORS.panel)
-  c:SetSize(184, 44)
-  c:SetPoint("TOPLEFT", x, 0)
-  c.label = W.Text(c, "GameFontDisableSmall")
-  c.label:SetPoint("TOPLEFT", 8, -6)
-  c.label:SetText(label)
-  c.value = W.Text(c, "GameFontHighlight")
-  c.value:SetPoint("BOTTOMLEFT", 8, 7)
-  return c
-end
-
 local function days(v)
   return v and (v < 1 and "<1" or ("%.0f"):format(v)) or W.NONE
 end
@@ -219,19 +206,16 @@ function UI:CreatePortfolioView(parent, contentArea)
   local v = contentArea(parent)
   self.pfView = v
   self.pfMode = "positions"
-  v.cards = {
-    card(v, L["Holdings value"], 0),
-    card(v, L["Listed on the AH now"], 192),
-    card(v, L["Unrealized profit"], 384),
-    card(v, L["Realized profit, 7 days"], 576),
-    card(v, L["30 days: sold / bought"], 768),
-  }
-  for i, term in ipairs({ "pfValue", false, "pfUnrealized", "pfProfit", "pfFlow" }) do
-    v.cards[i]:EnableMouse(true)
-    if term then
-      ns.Help.Explain(v.cards[i], term)
-    end
-  end
+  v.cardRow = W.CardRow(v, {
+    { L["Holdings value"], term = "pfValue" },
+    { L["Listed on the AH now"] }, -- its own tooltip: below
+    { L["Unrealized profit"], term = "pfUnrealized" },
+    { L["Realized profit, 7 days"], term = "pfProfit" },
+    { L["30 days: sold / bought"], term = "pfFlow" },
+  }, { width = UI.WIDTH - 20 })
+  v.cardRow:SetPoint("TOPLEFT", 0, 0)
+  v.cardRow:SetPoint("RIGHT", 0, 0)
+  v.cards = v.cardRow.cards
   -- listed: per-character breakdown on hover
   v.cards[2]:SetScript("OnEnter", function(self)
     local l = UI.pfListed
@@ -281,7 +265,7 @@ function UI:CreatePortfolioView(parent, contentArea)
       UI:RefreshPortfolio()
     end,
   })
-  v.modes:SetPoint("TOPLEFT", 0, -54)
+  v.modes:SetPoint("TOPLEFT", v.cardRow, "BOTTOMLEFT", 0, -10)
   v.ledgerButton, v.auctionsButton = v.modes.byKey.ledger, v.modes.byKey.auctions -- shortcuts (specs)
   local function itemID(e)
     return e.itemID
@@ -289,7 +273,7 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.positions = ns.DataTable.New(v, {
     columns = POSITION_COLS,
     rows = ROWS,
-    top = -82,
+    top = -80,
     itemID = itemID,
     sort = { key = "value", ascending = false },
     offset = {
@@ -312,26 +296,26 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.auctions = ns.DataTable.New(v, {
     columns = AUCTION_COLS,
     rows = ROWS,
-    top = -82,
+    top = -80,
     itemID = itemID,
     sort = { key = "total", ascending = false },
   })
   v.customers = ns.DataTable.New(v, {
     columns = counterpartyCols(L["Spent with you"], L["Purchases"]),
     rows = ROWS,
-    top = -82,
+    top = -80,
     sort = { key = "amount", ascending = false },
   })
   v.suppliers = ns.DataTable.New(v, {
     columns = counterpartyCols(L["You spent"], L["Purchases"]),
     rows = ROWS,
-    top = -82,
+    top = -80,
     sort = { key = "amount", ascending = false },
   })
   v.ledger = ns.DataTable.New(v, {
     columns = LEDGER_COLS,
     rows = ROWS,
-    top = -82,
+    top = -80,
     itemID = itemID,
     sort = { key = "t", ascending = false }, -- newest first
     offset = {

@@ -179,6 +179,56 @@ function W.Segmented(parent, items, opts)
   return seg
 end
 
+-- Stat card: a small panel with a dim label over a value (c.label, c.value). opts.term: hover explanation (Help).
+function W.StatCard(parent, label, opts)
+  local c = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+  W.Skin(c, W.COLORS.panel)
+  c:SetSize(120, 42)
+  c.label = W.Text(c, "GameFontDisableSmall")
+  c.label:SetPoint("TOPLEFT", 8, -6)
+  c.label:SetText(label)
+  c.value = W.Text(c, "GameFontHighlight")
+  c.value:SetPoint("BOTTOMLEFT", 8, 7)
+  c:EnableMouse(true)
+  if opts and opts.term and ns.Help then
+    ns.Help.Explain(c, opts.term)
+  end
+  return c
+end
+
+-- A row of stat cards sharing the row's width: defs = { { label, term = "market" }, ... }.
+-- opts: height = 42, gap = 6, width = the row's width until it has one (it follows OnSizeChanged).
+-- Anchor the returned frame's left and right; its cards are row.cards.
+function W.CardRow(parent, defs, opts)
+  opts = opts or {}
+  local h, gap = opts.height or 42, opts.gap or 6
+  local row = CreateFrame("Frame", nil, parent)
+  row:SetHeight(h)
+  row.cards = {}
+  for i, d in ipairs(defs) do
+    local c = W.StatCard(row, d[1], { term = d.term })
+    c:SetHeight(h)
+    row.cards[i] = c
+  end
+  local function layout(width)
+    if type(width) ~= "number" or width <= 0 then
+      return
+    end
+    local n = #row.cards
+    local w = (width - gap * (n - 1)) / n
+    for i, c in ipairs(row.cards) do
+      c:SetWidth(w)
+      c:ClearAllPoints()
+      c:SetPoint("TOPLEFT", (i - 1) * (w + gap), 0)
+    end
+  end
+  row:SetScript("OnSizeChanged", function(_, width)
+    layout(width)
+  end)
+  layout(opts.width)
+  return row
+end
+
 -- The default UI fonts lack glyphs like ▲ ▼ ▮, so use inline textures instead.
 W.ARROW_UP = " |TInterface\\Buttons\\Arrow-Up-Up:12:12:0:-2|t"
 W.ARROW_DOWN = " |TInterface\\Buttons\\Arrow-Down-Up:12:12:0:2|t"

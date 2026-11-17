@@ -14,18 +14,6 @@ local INTRADAY = "2D"
 ---------------------------------------------------------------------------------------------------------------------
 -- Item view
 
-local function statCard(parent, label)
-  local c = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-  W.Skin(c, W.COLORS.panel)
-  c:SetSize(118, 40)
-  c.label = W.Text(c, "GameFontDisableSmall")
-  c.label:SetPoint("TOPLEFT", 8, -6)
-  c.label:SetText(label)
-  c.value = W.Text(c, "GameFontHighlight")
-  c.value:SetPoint("BOTTOMLEFT", 8, 6)
-  return c
-end
-
 function UI:CreateItemView(parent)
   local v = contentArea(parent)
 
@@ -111,22 +99,18 @@ function UI:CreateItemView(parent)
   v.sub:SetPoint("BOTTOMLEFT", v.icon, "BOTTOMRIGHT", 8, 2)
 
   -- stat cards
-  v.cards = {}
-  local labels =
-    { L["Market"], L["Lowest"], L["Average"], L["7d change"], L["Volatility"], L["Supply  ·  sells/day"], L["Signal"] }
-  local terms = { "market", "min", "avg", "change7", "vol30", "sellRate", "signal" }
-  for i, label in ipairs(labels) do
-    local c = statCard(v, label)
-    c:EnableMouse(true)
-    ns.Help.Explain(c, terms[i])
-    c:SetSize((UI.WIDTH - 20 - 6 * 6) / 7, 40) -- seven cards across the content width, 6 px apart
-    if i == 1 then
-      c:SetPoint("TOPLEFT", v.icon, "BOTTOMLEFT", 0, -10)
-    else
-      c:SetPoint("LEFT", v.cards[i - 1], "RIGHT", 6, 0)
-    end
-    v.cards[i] = c
-  end
+  v.cardRow = W.CardRow(v, {
+    { L["Market"], term = "market" },
+    { L["Lowest"], term = "min" },
+    { L["Average"], term = "avg" },
+    { L["7d change"], term = "change7" },
+    { L["Volatility"], term = "vol30" },
+    { L["Supply  ·  sells/day"], term = "sellRate" },
+    { L["Signal"], term = "signal" },
+  }, { width = UI.WIDTH - 20 })
+  v.cardRow:SetPoint("TOPLEFT", v.icon, "BOTTOMLEFT", 0, -10)
+  v.cardRow:SetPoint("RIGHT", 0, 0)
+  v.cards = v.cardRow.cards
 
   -- range buttons
   local ranges, days = {}, {}
@@ -139,7 +123,7 @@ function UI:CreateItemView(parent)
       UI:SetRange(days[key], key)
     end,
   })
-  v.ranges:SetPoint("TOPLEFT", v.cards[1], "BOTTOMLEFT", 0, -10)
+  v.ranges:SetPoint("TOPLEFT", v.cardRow, "BOTTOMLEFT", 0, -10)
   v.rangeButtons = v.ranges.buttons
   v.style = W.Button(v, L["Candles"], 64, 20, function()
     local style = ns.Settings:Get("chartStyle") == "candles" and "line" or "candles"

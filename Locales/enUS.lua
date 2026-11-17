@@ -52,6 +52,7 @@ L["7-day change"] = true
 L["7d"] = true
 L["7d average"] = true
 L["7d avg"] = true
+L["7d change"] = true
 L["<1h"] = true
 L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."] = true
 L["AH cut"] = true
@@ -267,6 +268,7 @@ L["Star items to put them on a watchlist; make more lists with \"+ New list\" in
 L["Steady demand"] = true
 L["Suppliers"] = true
 L["Supply"] = true
+L["Supply  ·  sells/day"] = true
 L["Swap"] = true
 L["Sync"] = true
 L["Sync is unavailable: the AceComm library didn't load."] = true
