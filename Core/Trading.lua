@@ -157,10 +157,14 @@ function Trading:ActiveAuctions()
 end
 
 -- "A buyer has been found for your auction of %s." / "Your auction of %s has expired." as Lua patterns
+-- A Lua pattern matching the game's message for a format string like ERR_AUCTION_SOLD_S, capturing each %s (also
+-- written %1$s in some languages); magic characters in the text are escaped.
 function Trading.Pattern(fmt, fallback)
   fmt = type(fmt) == "string" and fmt or fallback
+  fmt = fmt:gsub("%%%d+%$s", "%%s")
   local parts = {}
   for piece in (fmt .. "%s"):gmatch("(.-)%%s") do
+    piece = piece:gsub("%%%%", "%%") -- "%%" in a format string is one "%" in the message
     parts[#parts + 1] = (piece:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"))
   end
   return "^" .. table.concat(parts, "(.+)") .. "$"

@@ -467,6 +467,16 @@ local function numbers(s)
   return out
 end
 
+-- quick reads of a stored profile without decoding it all (pruning and category averages skim thousands)
+function Pricing.Samples(s) -- scan pairs learned from
+  return tonumber(s:match("^(%d+)")) or 0
+end
+
+function Pricing.LastSeen(s) -- server time of the last scan that saw the item (nil if never)
+  local t = tonumber(s:match("^[^;]*;([^,;]*)"))
+  return t and t > 0 and t or nil
+end
+
 function Pricing.Decode(s)
   local parts = {}
   for part in (s .. ";"):gmatch("([^;]*);") do

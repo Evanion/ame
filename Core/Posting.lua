@@ -27,8 +27,8 @@ function Posting:Init()
   local cutoff = now() - Posting.KEEP
   for _, items in pairs(AME_DB.pricing) do
     for id, s in pairs(items) do
-      local t = tonumber(s:match("^[^;]*;([^,;]*)"))
-      if t and t > 0 and t < cutoff then
+      local t = ns.Pricing.LastSeen(s)
+      if t and t < cutoff then
         items[id] = nil
       end
     end
@@ -108,8 +108,7 @@ function Posting:Prior(shard, itemID)
   end
   local list = {}
   for id, s in pairs(AME_DB.pricing[shard] or {}) do
-    local n = tonumber(s:match("^(%d+)"))
-    if n and n >= 3 then
+    if ns.Pricing.Samples(s) >= 3 then
       local other = ns.ItemCache and ns.ItemCache.Get(id)
       if (other and other.classID or -1) == class then
         list[#list + 1] = self:Peek(shard, id)
