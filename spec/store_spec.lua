@@ -395,7 +395,7 @@ describe("Store", function()
   end)
 
   describe("weekly compaction", function()
-    it("folds daily points older than 180 days into weekly points", function()
+    it("folds daily points older than DAYS_KEEP into weekly points", function()
       local data = {}
       local store = newStore(data)
       -- 7 days of one week, long ago: week 140 = days 980..986
@@ -403,7 +403,7 @@ describe("Store", function()
         clock = d * DAY + 3600
         store:AddScan(snap({ [10] = { d - 900, 100, 100, 10, 2 } }), clock, "a")
       end
-      clock = (986 + 181) * DAY + 3600
+      clock = (986 + Store.DAYS_KEEP + 1) * DAY + 3600
       store:AddScan(snap({ [10] = { 50, 50, 50, 1, 1 } }), clock, "a")
 
       assert.is_nil(data.days[980])
@@ -420,9 +420,25 @@ describe("Store", function()
       local store = newStore(data)
       clock = 1000 * DAY
       store:AddScan(snap({ [10] = { 1, 1, 1, 1, 1 } }), clock, "a")
-      clock = clock + 179 * DAY
+      clock = clock + (Store.DAYS_KEEP - 1) * DAY
       store:AddScan(snap({ [10] = { 1, 1, 1, 1, 1 } }), clock, "a")
       assert.is_not_nil(data.days[1000])
+    end)
+
+    it("drops weekly points older than WEEKS_KEEP", function()
+      local data = {}
+      local store = newStore(data)
+      clock = 1000 * DAY
+      store:AddScan(snap({ [10] = { 1, 1, 1, 1, 1 } }), clock, "a")
+      clock = clock + (Store.DAYS_KEEP + 14) * DAY
+      store:AddScan(snap({ [10] = { 2, 2, 2, 1, 1 } }), clock, "a")
+      assert.is_not_nil(next(data.weeks)) -- folded
+      clock = clock + (Store.WEEKS_KEEP + 2) * 7 * DAY
+      store:AddScan(snap({ [10] = { 3, 3, 3, 1, 1 } }), clock, "a")
+      for week in pairs(data.weeks) do
+        assert.truthy(week >= math.floor(clock / DAY / 7) - Store.WEEKS_KEEP)
+      end
+      assert.are.equal(3, store:Series(10)[#store:Series(10)].min)
     end)
   end)
 end)

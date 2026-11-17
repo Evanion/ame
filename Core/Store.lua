@@ -8,7 +8,8 @@
 -- Persisted layout (data is the shard's SavedVariables table; everything below is plain strings/numbers):
 --   data.raw   = { { t =, src =, s = packed snapshot }, ... }  sorted by t; kept RAW_KEEP seconds (Latest, sync)
 --   data.days  = { [day] = { [bucket] = packed segment } }     day = floor(t / 86400) (UTC)
---   data.weeks = { [week] = { [bucket] = packed segment } }    week = floor(day / 7); days older than DAYS_KEEP
+--   data.weeks = { [week] = { [bucket] = packed segment } }    week = floor(day / 7); days older than DAYS_KEEP,
+--                                                              kept WEEKS_KEEP weeks
 --   data.seen  = { [day] = { ["t:src"] = true } }               scans already merged into that day (dedupe)
 --
 -- Segments hold running SUMS (market, median, qty, auctions), the min, and the scan count per item, so merging a
@@ -28,7 +29,8 @@ ns.Store = Store
 Store.DAY = 86400
 Store.BUCKETS = 32
 Store.RAW_KEEP = 48 * 3600
-Store.DAYS_KEEP = 180
+Store.DAYS_KEEP = 60 -- daily points; older ones fold into weeks (analysis uses 30 days)
+Store.WEEKS_KEEP = 52 -- weekly points older than this are dropped
 Store.CACHE_SIZE = 96
 
 -- hours: bitmask of UTC hours already sampled for that item that day (0 in weekly segments)
@@ -341,7 +343,8 @@ function Store:Book(itemID, maxAge)
   return ns.Depth.Decode(b.s, b.t)
 end
 
--- Retention: prune raw scans, fold old days into weeks. Safe to call any time.
+-- Retention: prune raw scans, fold old days into weeks, drop old weeks. Safe to call any time; yields per folded
+-- day (the first run after a retention change can fold months).
 function Store:Rollup()
   local data = self.data
   local now = self.now()
@@ -399,6 +402,7 @@ function Store:Rollup()
         end
         data.days[day] = nil
         data.seen[day] = nil
+        self.yield()
       end
     end
     -- rows may contain the same id several times (one per day); merge them one day at a time via mergeRows
@@ -423,6 +427,13 @@ function Store:Rollup()
         end
       end
       data.weeks[week][b] = self:encode(mergeRows(seg, run), Store.SEGMENT_FIELDS)
+    end
+  end
+
+  local oldest = floor(today / 7) - Store.WEEKS_KEEP
+  for week in pairs(data.weeks) do
+    if week < oldest then
+      data.weeks[week] = nil
     end
   end
 end
