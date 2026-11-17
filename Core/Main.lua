@@ -198,6 +198,24 @@ function AME:CheckAlerts(index)
   end
 end
 
+AME.INDEX_DAYS = 30
+
+-- Build a shard's market index inside a store job. The auction house you're at gets rebuilt after every scan, so it
+-- keeps its segments decompressed between builds (Store:KeepTexts); other houses' are freed.
+function AME:BuildIndex(store, shard, job)
+  local current = shard == self:CurrentShard()
+  if current then
+    for key, other in pairs(self.stores) do
+      if key ~= shard then
+        other:KeepTexts(false)
+      end
+    end
+  end
+  return ns.MarketIndex.Build(store, math.floor(GetServerTime() / 86400), AME.INDEX_DAYS, function()
+    job:Checkpoint()
+  end, ns.Settings:Get("outlierFactor"), current)
+end
+
 -- Market index for any auction house (e.g. the goblin AH while you're at your faction's): cached per shard,
 -- dropped when that shard gets new data. cb(index or nil).
 AME.indexes = {}
@@ -219,9 +237,7 @@ function AME:IndexFor(shard, cb)
   end
   self.indexWaiters[shard] = { cb }
   self:WithStore("index-" .. shard, shard, function(store, job)
-    return ns.MarketIndex.Build(store, math.floor(GetServerTime() / 86400), 30, function()
-      job:Checkpoint()
-    end, ns.Settings:Get("outlierFactor"))
+    return AME:BuildIndex(store, shard, job)
   end, function(ok, index)
     local cbs = self.indexWaiters[shard] or {}
     self.indexWaiters[shard] = nil
@@ -278,9 +294,7 @@ function AME:RebuildIndex()
   self.indexing = true
   local t0 = debugprofilestop()
   self:WithStore("index", shard, function(store, job)
-    return ns.MarketIndex.Build(store, math.floor(GetServerTime() / 86400), 30, function()
-      job:Checkpoint()
-    end, ns.Settings:Get("outlierFactor"))
+    return AME:BuildIndex(store, shard, job)
   end, function(ok, index)
     self.indexing = false
     if ok and index then

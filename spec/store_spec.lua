@@ -394,6 +394,42 @@ describe("Store", function()
     end)
   end)
 
+  describe("decompressed segments kept between index builds", function()
+    it("decompresses only what changed since the last build, and gives the same series", function()
+      local data = {}
+      local store = newStore(data)
+      for d = 990, 1000 do
+        clock = d * DAY + 3600
+        store:AddScan(snap({ [10] = { d, d, d, 1, 1 }, [42] = { 5, 5, 5, 1, 1 } }), clock, "a")
+      end
+      local b = 10 % Store.BUCKETS
+      local plain = store:BucketSeries(b, 991, 1000)
+      local unpacks = 0
+      local unpack = ns.Codec.Unpack
+      ns.Codec.Unpack = function(...)
+        unpacks = unpacks + 1
+        return unpack(...)
+      end
+      local function build()
+        store.cache, store.cacheOrder = {}, {} -- no help from the decoded-segment cache
+        store:KeepTexts(true)
+        return store:BucketSeries(b, 991, 1000)
+      end
+      build()
+      unpacks = 0
+      assert.are.same(plain, build())
+      assert.are.equal(0, unpacks) -- nothing changed
+      store:AddScan(snap({ [10] = { 1, 1, 1, 1, 1 } }), clock + 60, "a") -- today's segment changes
+      unpacks = 0
+      local after = build()
+      assert.are.equal(1, unpacks)
+      assert.are.equal(1, after[10][#after[10]].min)
+      store:KeepTexts(false)
+      assert.is_nil(store.texts)
+      ns.Codec.Unpack = unpack
+    end)
+  end)
+
   describe("weekly compaction", function()
     it("folds daily points older than DAYS_KEEP into weekly points", function()
       local data = {}

@@ -88,7 +88,7 @@ function Store:decode(packed, fields)
   if hit then
     return hit
   end
-  local cols = Codec.Decode(fields, Codec.Unpack(packed, self.compressor), true)
+  local cols = Codec.Decode(fields, self:unpack(packed), true)
   -- simple FIFO-bounded cache; segments are immutable values keyed by their packed string
   local order = self.cacheOrder
   order[#order + 1] = packed
@@ -97,6 +97,24 @@ function Store:decode(packed, fields)
     self.cache[table.remove(order, 1)] = nil
   end
   return cols
+end
+
+-- Decompressing is most of a market index build (~2.5 s of ~4 s for 30 days of one house), and closed days never
+-- change. KeepTexts(true) keeps the decompressed text of every segment the next build reads (~8 MB per house) and
+-- hands it to the build after that; KeepTexts(false) frees it. Keyed by the packed string, so it can't go stale: a
+-- changed segment is a different string.
+function Store:KeepTexts(on)
+  self.texts = on and { old = self.texts and self.texts.new or {}, new = {} } or nil
+end
+
+function Store:unpack(packed)
+  local texts = self.texts
+  if not texts then
+    return Codec.Unpack(packed, self.compressor)
+  end
+  local text = texts.new[packed] or texts.old[packed] or Codec.Unpack(packed, self.compressor)
+  texts.new[packed] = text
+  return text
 end
 
 function Store:encode(cols, fields)

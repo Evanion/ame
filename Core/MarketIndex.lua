@@ -7,10 +7,16 @@ ns.MarketIndex = MarketIndex
 
 -- returns { day =, days =, count =, items = { [itemID] = summary (see Analytics.Summarize) + itemID } }
 -- outlierFactor: drop days priced more than this many times off the item's neighbouring days (nil = keep all)
-function MarketIndex.Build(store, today, days, checkpoint, outlierFactor)
+-- cached: keep decompressed segments for the next build (Store:KeepTexts) - for the auction house you're at, where
+-- the index is rebuilt after every scan
+function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached)
   local index = { day = today, days = days, count = 0, items = {}, outliers = 0 }
+  if cached then
+    store:KeepTexts(true)
+  end
   for b = 0, ns.Store.BUCKETS - 1 do
-    local series = store:BucketSeries(b, today - days + 1, today)
+    local from = today - days + 1
+    local series = store:BucketSeries(b, from, today)
     for id, points in pairs(series) do
       local clean, dropped = ns.Analytics.Clean(points, outlierFactor)
       index.outliers = index.outliers + dropped
