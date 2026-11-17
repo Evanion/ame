@@ -1,6 +1,7 @@
 # Azeroth Mercantile Exchange (AME): Design Draft
 
-Status: draft v0 (2026-11-16). Working document; expect it to change as spikes land.
+Status: historical design record (draft v0, 2026-11-16). The code, `docs/roadmap.md` and the changelogs describe
+AME as it is now; parts of this draft (libraries, settings, data model) were done differently.
 
 ## Goal
 

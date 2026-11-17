@@ -1,4 +1,5 @@
--- Item tooltip lines from the market index (no history decoding on hover) + Alt-click to open the item chart.
+-- Item tooltip lines from the market index (no history decoding on hover), and the modified click (Settings) that
+-- opens an item's chart.
 local _, ns = ...
 local L = ns.L
 

@@ -11,6 +11,7 @@
 --   data.weeks = { [week] = { [bucket] = packed segment } }    week = floor(day / 7); days older than DAYS_KEEP,
 --                                                              kept WEEKS_KEEP weeks
 --   data.seen  = { [day] = { ["t:src"] = true } }               scans already merged into that day (dedupe)
+--   data.books = { [itemID] = { t =, s = Depth-encoded book } }  latest order book per item, kept RAW_KEEP
 --
 -- Segments hold running SUMS (market, median, qty, auctions), the min, and the scan count per item, so merging a
 -- scan is an incremental add: closed days never need their raw scans again, and late arrivals (sync) merge exactly.

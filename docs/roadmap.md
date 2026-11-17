@@ -3,7 +3,9 @@
 Ship features in vertical slices: pure logic with busted specs, thin WoW glue, one integration spec per feature. Minor
 issues go to GitHub issues, not into the milestone.
 
-## Released (0.1.0 betas, in-game tested by the author)
+## Released
+
+0.1.0 betas: M0-M6b. 0.2.0-beta.1: M7-M12. 0.2.0-beta.2: M14 (translations). In-game tested by the author.
 
 | Milestone | Delivers | Status |
 |---|---|---|
@@ -16,7 +18,7 @@ issues go to GitHub issues, not into the milestone.
 | M6 | Guild + trusted-player sync (relays, all houses, handshake, blocklists, poisoning check) | done |
 | M6b | Watchlists + alerts; cross-AH Arbitrage with real cuts and deposits; AH search from AME | done |
 
-## Next release: what other AH addons don't do
+## 0.2 milestones: what other AH addons don't do
 
 Positioning (see the competitive review in the session notes): every addon shows prices; AME answers the trader's
 questions behind them - can I sell it, how much can I buy before the edge is gone, what is my position worth, how
@@ -33,7 +35,14 @@ much should I trust this number, and what is my guild watching.
 | M13 | **Posting price.** An adaptive queue model instead of 1c undercutting: units ahead at each price, sales rate, undercutting supply and undercut size per item (from consecutive scans, with a 5-band price ladder per scan), hour-of-day and weekday shapes, and calibration from your own posts (sold vs expired); items with little data borrow from their category. Expected value weighs the chance of selling against the deposit (1s minimum per post). Quick / Normal / Patient on the item page and a bar under the AH sell window that fills the price. | built |
 | M14 | **Translations.** AceLocale; deDE, frFR, esES (+esMX), ruRU, ptBR, itIT, koKR, zhCN, zhTW (AI-made, for native review). | built |
 
-Then: bugfix rounds from in-game testing, then release.
+M7-M12 shipped in 0.2.0-beta.1, M14 in 0.2.0-beta.2; M13 is built and not released yet.
+
+## Maintenance (Nov 2026)
+
+Performance and cleanup review: incremental market index rebuilds, smaller scan-storage frame spikes, history
+retention (60 days daily, 52 weeks weekly), O(n) ledger profits, Settings / ItemCache out of UI, Window / Panels /
+Main split per concern, errors reported instead of swallowed. Next: shared UI components (button groups, inputs,
+cards, colours).
 
 ## Later
 

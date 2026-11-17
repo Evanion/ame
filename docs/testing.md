@@ -25,7 +25,7 @@ That's it. Claude reads the results from
   - The **Market** tab is the screener: sortable columns, Buy/Sell filters, click a row to chart it.
   - The **Item** tab shows the chart, stat cards and range buttons. Mouse wheel zooms, drag pans, double-click resets.
 - **Alt-click** an item in your bags, a chat link or the AH to open its chart. Change it to Alt+Shift in `/ame config` if AHDB's Alt-click gets in the way.
-- **Tooltips** show "AME market / 30d avg / supply / signal" once the market index has been built (a few seconds after login or after a scan).
+- **Tooltips** show "AME market / average (7 days by default; Settings) / supply / signal" once the market index has been built (a few seconds after login or after a scan).
 - **Guild sync** is on by default. `/ame status` shows announce/serve/receive counters.
 - Check **BugSack** for errors.
 
@@ -34,6 +34,6 @@ That's it. Claude reads the results from
 See GitHub issues. Notable ones:
 - Cold chart loads take ~3 ms per day of history.
 - Item variants (suffix and item level) share one series.
-- LibDBIcon isn't embedded in dev builds; the minimap button appears only if another addon loaded LibDBIcon.
+- LibDBIcon comes from the WowAce SVN: run `scripts/fetch-libs.sh` in a dev checkout (release builds include it).
 - AME listens to the native auction house APIs, so full scans are picked up whichever addon (or the default UI)
   starts them. Replicate-style scans share the game's one-per-15-minutes limit across addons.

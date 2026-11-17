@@ -1,4 +1,4 @@
--- /ame selftest: one command that checks every M1 piece in game, records timings to AME_DB.selftest (readable from
+-- /ame selftest: one command that checks every part of AME in game, records timings to AME_DB.selftest (readable from
 -- the SavedVariables file outside the game), then offers a Reload button so the results are written to disk.
 local _, ns = ...
 local L = ns.L

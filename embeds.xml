@@ -6,8 +6,8 @@
   <Include file="Libs\Ace3\AceLocale-3.0\AceLocale-3.0.xml"/>
   <Include file="Libs\LibDeflate\lib.xml"/>
   <Script file="Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
-  <!-- LibDBIcon comes from the official WowAce SVN via .pkgmeta (release builds). In development it's used only if
-       Development: scripts/fetch-libs.sh (svn) or copy it from any addon that embeds it. -->
+  <!-- LibDBIcon comes from the official WowAce SVN: .pkgmeta fetches it for release builds; in development run
+       scripts/fetch-libs.sh (svn) or copy it from any addon that embeds it. -->
   <Script file="Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua"/>
   <Include file="LibAMEChart-1.0\lib.xml"/>
 </Ui>
