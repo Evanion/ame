@@ -13,14 +13,14 @@ local HOUSE_NAME = { Alliance = "Alliance AH", Horde = "Horde AH", Neutral = "Go
 local AGES = { { 1, "Seen today/yesterday" }, { 3, "Seen in 3 days" }, { 7, "Seen in 7 days" }, { false, "Any age" } }
 
 local COLUMNS = {
-  { key = "name", label = "Item", width = 186 },
+  { key = "name", label = "Item", width = 180 },
   { key = "buy", label = "Buy at", width = 86, money = true, term = "arbBuy" },
   { key = "sell", label = "Sells for", width = 86, money = true, term = "arbSell" },
-  { key = "fee", label = "AH cut", width = 76, money = true, term = "arbFee" },
   { key = "profit", label = "Profit", width = 86, money = true, term = "arbProfit" },
   { key = "margin", label = "Margin", width = 60, pct = true, term = "arbMargin" },
-  { key = "supply", label = "Supply", width = 70, term = "arbSupply" },
-  { key = "deposit", label = "Deposit", width = 76, money = true, term = "arbDeposit" },
+  { key = "supply", label = "Supply", width = 60, term = "arbSupply" },
+  { key = "deposit", label = "Deposit", width = 70, money = true, term = "arbDeposit" },
+  { key = "depth", label = "Depth", width = 90, term = "arbDepth" },
   { key = "sellRate", label = "Sells/d", width = 58, term = "arbSellRate" },
   { key = "age", label = "Data", width = 48, term = "arbAge" },
 }
@@ -260,6 +260,23 @@ function UI:RefreshArbitrage(keepOffset)
   end)
 end
 
+-- How far the route goes at the buy house, from its latest order book (a search there in the last 6 hours):
+-- "37 +12g" = buy 37 units for 12g profit. "-" until the item has been searched there.
+UI.DEPTH_MAX_AGE = 6 * 3600
+function UI:DepthText(e)
+  local a = self.arb
+  local shard = ns.ShardKey(ns.AME:MarketRealmName(), a.buy)
+  local book = ns.AME:BookFor(shard, e.itemID, UI.DEPTH_MAX_AGE)
+  if not book then
+    return "|cff777777search|r"
+  end
+  local units, _, profit = ns.Depth.Route(book, e.sell * (1 - (self.arbCut or 0)))
+  if units == 0 then
+    return "|cffff61590|r"
+  end
+  return ("%d |cff4dd973+|r%s"):format(units, W.Money(profit, true))
+end
+
 -- standing at the auction house you'd buy from (so a row can be searched there)
 function UI:AtBuyHouse()
   return ns.AME.ahOpen and self.arb and ns.AME:CurrentHouse() == self.arb.buy
@@ -309,6 +326,8 @@ function UI:RenderArbitrage()
           val = W.Percent(e.margin, 0)
         elseif col.key == "supply" then
           val = ("%s / %s"):format(tostring(e.buyQty or "-"), tostring(e.sellQty or "-"))
+        elseif col.key == "depth" then
+          val = UI:DepthText(e)
         elseif col.key == "sellRate" then
           val = W.Rate(e.sellRate)
         elseif col.key == "age" then

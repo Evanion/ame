@@ -50,6 +50,7 @@ function Store.New(data, opts)
   data.days = data.days or {}
   data.weeks = data.weeks or {}
   data.seen = data.seen or {}
+  data.books = data.books or {}
   return setmetatable({
     data = data,
     compressor = opts.compressor,
@@ -324,12 +325,33 @@ function Store:previousFull(pos)
   return nil, 0
 end
 
+-- Order books from searches (latest per item, kept RAW_KEEP): books = { [itemID] = Depth book }
+function Store:SetBooks(books)
+  for itemID, book in pairs(books or {}) do
+    self.data.books[itemID] = { t = book.t, s = ns.Depth.Encode(book) }
+  end
+end
+
+-- the item's latest order book if newer than maxAge seconds (nil otherwise)
+function Store:Book(itemID, maxAge)
+  local b = self.data.books[itemID]
+  if not b or (maxAge and self.now() - b.t > maxAge) then
+    return nil
+  end
+  return ns.Depth.Decode(b.s, b.t)
+end
+
 -- Retention: prune raw scans, fold old days into weeks. Safe to call any time.
 function Store:Rollup()
   local data = self.data
   local now = self.now()
 
   local cutoff = now - Store.RAW_KEEP
+  for itemID, b in pairs(data.books or {}) do
+    if b.t < cutoff then
+      data.books[itemID] = nil
+    end
+  end
   local raw = data.raw
   local keep = 1
   while raw[keep] and raw[keep].t < cutoff do

@@ -233,6 +233,14 @@ function AME:IndexFor(shard, cb)
   end)
 end
 
+-- latest order book for an item at an auction house (from a search there), if fresher than maxAge seconds
+function AME:BookFor(shard, itemID, maxAge)
+  if not self:HistoryLoaded() or not self.history.shards[shard] then
+    return nil
+  end
+  return self:Store(shard):Book(itemID, maxAge)
+end
+
 function AME:InvalidateIndex(shard)
   if shard then
     self.indexes[shard] = nil
@@ -299,7 +307,11 @@ function AME:OnSnapshot(snap, t, kind, info)
   local src = UnitName("player") or "?"
   local started = self.scanRequestedAt
   self:WithStore("store-" .. kind, shard, function(store)
-    return store:AddScan(snap, t, src, kind)
+    local added = store:AddScan(snap, t, src, kind)
+    if info and info.books then
+      store:SetBooks(info.books)
+    end
+    return added
   end, function(ok, added)
     if not ok then
       say("|cffff5555storing %s scan failed:|r %s", kind, tostring(added))

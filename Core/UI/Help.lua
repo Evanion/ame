@@ -86,6 +86,13 @@ Help.TERMS = {
     "Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a "
       .. "day, 100 will take weeks.",
   },
+  arbDepth = {
+    "Depth",
+    "How many units you can buy at the buy auction house before the route stops paying, and the total profit: "
+      .. "every listing priced below what one sells for after the cut. It needs the item's listings, so search "
+      .. "the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that "
+      .. "many still takes time: check Sells/d.",
+  },
   arbAge = {
     "Data",
     "How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both "

@@ -273,13 +273,16 @@ function Ingest:flush()
   local api, t = self.api, self.now()
   local acc = ns.Stats.NewAccumulator()
   local any = false
+  local books = {} -- itemID -> order book (price tiers) from this search
   for itemID, p in pairs(pending) do
+    local tiers = {}
     if p.kind == "commodity" then
       if api.HasFullCommoditySearchResults(itemID) then
         for i = 1, api.GetNumCommoditySearchResults(itemID) do
           local info = api.GetCommoditySearchResultInfo(itemID, i)
           if info and info.unitPrice and info.quantity then
             acc:Add(itemID, info.unitPrice * info.quantity, info.quantity)
+            tiers[#tiers + 1] = { info.unitPrice, info.quantity }
             any = true
           end
         end
@@ -289,11 +292,17 @@ function Ingest:flush()
         for i = 1, api.GetNumItemSearchResults(p.key) do
           local info = api.GetItemSearchResultInfo(p.key, i)
           if info and info.buyoutAmount then
-            acc:Add(itemID, info.buyoutAmount, info.quantity)
+            -- a row groups identical auctions: quantity of them, buyoutAmount of one (Forever, per AHDB's probes)
+            local count = info.quantity or 1
+            acc:Add(itemID, info.buyoutAmount * count, count)
+            tiers[#tiers + 1] = { info.buyoutAmount, count }
             any = true
           end
         end
       end
+    end
+    if #tiers > 0 and ns.Depth then
+      books[itemID] = ns.Depth.Book(tiers, t)
     end
   end
   if any then
@@ -301,7 +310,7 @@ function Ingest:flush()
       return acc:Finish()
     end, function(ok, snap)
       if ok and snap and #snap.ids > 0 then
-        self.onSnapshot(snap, t, "partial", {})
+        self.onSnapshot(snap, t, "partial", { books = books })
       end
     end)
   end

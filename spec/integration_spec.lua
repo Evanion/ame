@@ -503,6 +503,37 @@ describe("addon in a stubbed client", function()
       assert.are.equal("Horde", ns.Widgets.theme)
     end)
 
+    it("shows how many units a route stays profitable for, from a search at the buy house", function()
+      boot()
+      env.npcFaction = nil
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 3000, 10 } }) -- goblin AH: 3s each
+      env:fire("AUCTION_HOUSE_CLOSED")
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan({ { 2589, 1000, 10 } }) -- Horde AH: 1s each
+      -- searching it at the Horde AH shows the listings: 20 at 90c, 30 at 95c, 10 at 4s
+      env.ah.commodities[2589] = { { 90, 20 }, { 95, 30 }, { 400, 10 } }
+      env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
+      env:advance(2)
+      env:advance(4)
+      drainJobs()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("arbitrage")
+      local v = ns.UI.arbView
+      v.scripts.OnShow(v)
+      drainJobs()
+      local e = ns.UI.arbRows[1]
+      assert.are.equal(2589, e.itemID)
+      -- sells for 300c at the goblin AH, 255c after its 15% cut: the 90c and 95c tiers pay, the 4s tier doesn't
+      local units, cost, profit = ns.Depth.Route(ns.AME:BookFor("TestRealm|Horde", 2589), 255)
+      assert.are.equal(50, units)
+      assert.are.equal(20 * 90 + 30 * 95, cost)
+      local text = ns.UI:DepthText(e)
+      assert.truthy(text:find("^50 "), text)
+      assert.are.equal(50 * 255 - cost, profit)
+    end)
+
     it("searches the buy auction house from an arbitrage row, via Auctionator or the default AH", function()
       local searched = {}
       boot({

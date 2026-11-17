@@ -360,6 +360,17 @@ describe("Ingest", function()
       assert.are.equal(500, row(got[1].snap, 2).min)
     end)
 
+    it("reads an item search row as several identical auctions priced each (not one stack)", function()
+      api.items[7] = { { 500, 3 } } -- 3 auctions at 5s each
+      ingest:OnItemResults({ itemID = 7, itemLevel = 10 })
+      fireTimers()
+      drain()
+      local r = row(got[1].snap, 7)
+      assert.are.equal(500, r.min)
+      assert.are.equal(500, r.market)
+      assert.are.equal(3, r.qty)
+    end)
+
     it("skips results that aren't complete yet (only the cheapest page)", function()
       api.commodities[3] = { { 10, 1 } }
       api.full[3] = false
