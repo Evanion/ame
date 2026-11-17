@@ -35,6 +35,15 @@ describe("Ledger", function()
     assert.are.equal(100, basis.unit)
   end)
 
+  it("matches entries by name when only some of them know the item ID", function()
+    l:Add({ t = 100, kind = "buy", name = "Silk", qty = 10, amount = 500 }, "b") -- recorded before the ID was known
+    l:Add(sale(200, 4, 400, 20), "s")
+    assert.are.equal(400 - 20 - 4 * 50, l:Summary(0).profit)
+    local basis = l:CostBasis()[10] -- keyed by the ID the sale knew
+    assert.are.equal(6, basis.units)
+    assert.are.equal(50, basis.unit)
+  end)
+
   it("counts sales of items never bought on the AH fully as profit", function()
     l:Add(sale(200, 2, 300, 15), "s")
     assert.are.equal(285, l:Summary(0).profit)

@@ -1,5 +1,6 @@
 -- Main window: "Item" tab (chart + stats for one item) and "Market" tab (screener over the market index).
 local _, ns = ...
+local L = ns.L
 
 local W = ns.Widgets
 local DAY = 86400
@@ -8,7 +9,7 @@ local UI = {}
 ns.UI = UI
 
 -- 2D plots every recent scan (intraday); the others plot daily history
-local RANGES = { { "2D", 2 }, { "7D", 7 }, { "30D", 30 }, { "90D", 90 }, { "1Y", 365 }, { "All", nil } }
+local RANGES = { { "2D", 2 }, { "7D", 7 }, { "30D", 30 }, { "90D", 90 }, { "1Y", 365 }, { "All", nil, L["All"] } }
 local INTRADAY = "2D"
 
 -- the average period used everywhere (screener column, item card, tooltips): Settings, default 7 days
@@ -50,7 +51,7 @@ function UI:Create()
   self.title = title
   self.shardText = W.Text(f, "GameFontDisableSmall")
   self.shardText:SetPoint("LEFT", title, "RIGHT", 10, 0)
-  local houses = { { "Horde", "Horde AH" }, { "Alliance", "Alliance AH" }, { "Neutral", "Goblin AH" } }
+  local houses = { { "Horde", L["Horde AH"] }, { "Alliance", L["Alliance AH"] }, { "Neutral", L["Goblin AH"] } }
   self.viewSelect = W.Dropdown(f, 110, houses, function(value)
     UI.viewHouse = value
     UI:ViewChanged()
@@ -71,13 +72,13 @@ function UI:Create()
     b:SetPoint("TOPRIGHT", -(34 + x), -8)
     self.tabs[name] = b
   end
-  tab("market", "Market", 420)
-  tab("arbitrage", "Arbitrage", 350)
-  tab("portfolio", "Portfolio", 280)
-  tab("item", "Item", 210)
-  tab("sync", "Sync", 140)
-  tab("settings", "Settings", 70)
-  tab("guide", "Guide", 0)
+  tab("market", L["Market"], 420)
+  tab("arbitrage", L["Arbitrage"], 350)
+  tab("portfolio", L["Portfolio"], 280)
+  tab("item", L["Item"], 210)
+  tab("sync", L["Sync"], 140)
+  tab("settings", L["Settings"], 70)
+  tab("guide", L["Guide"], 0)
 
   self.views = {
     item = self:CreateItemView(f),
@@ -91,7 +92,7 @@ function UI:Create()
   local footer = W.Text(f, "GameFontDisableSmall", "RIGHT")
   footer:SetPoint("BOTTOMRIGHT", -12, 7)
   footer:SetText(
-    ("Azeroth Mercantile Exchange %s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"):format(ns.VERSION)
+    "Azeroth Mercantile Exchange " .. L["%s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"]:format(ns.VERSION)
   )
   footer:SetAlpha(0.7)
   self.footer = footer
@@ -265,7 +266,7 @@ function UI:CreateItemView(parent)
 
   -- search / header
   local box = W.Input(v)
-  box:SetSize(180, 20)
+  box:SetSize(230, 20)
   box:SetPoint("TOPRIGHT", -2, 0)
   box:SetAutoFocus(false)
   box:SetScript("OnEnterPressed", function(self)
@@ -283,7 +284,10 @@ function UI:CreateItemView(parent)
   end)
   box.hint = W.Text(box, "GameFontDisableSmall")
   box.hint:SetPoint("LEFT", 6, 0)
-  box.hint:SetText("Item name, ID, or Shift-click an item")
+  box.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
+  box.hint:SetJustifyH("LEFT")
+  box.hint:SetWordWrap(false)
+  box.hint:SetText(L["Item name, ID, or Shift-click an item"])
   box:SetScript("OnTextChanged", function(self, user)
     local text = self:GetText()
     self.hint:SetShown(text == "")
@@ -313,7 +317,7 @@ function UI:CreateItemView(parent)
   end
 
   -- watch + alerts (second header row, right-aligned under the search box)
-  v.alertSignal = W.Check(v, "on buy/sell signal", function(on)
+  v.alertSignal = W.Check(v, L["on buy/sell signal"], function(on)
     if UI.itemID then
       ns.AME.watch:SetAlert(UI.itemID, { signal = on })
       UI:UpdateWatchControls()
@@ -326,6 +330,9 @@ function UI:CreateItemView(parent)
     input:SetNumeric(true)
     input.hint = W.Text(input, "GameFontDisableSmall")
     input.hint:SetPoint("LEFT", 6, 0)
+    input.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
+    input.hint:SetJustifyH("LEFT")
+    input.hint:SetWordWrap(false)
     input.hint:SetText(hint)
     input:SetScript("OnTextChanged", function(self, user)
       self.hint:SetShown(self:GetText() == "")
@@ -338,14 +345,14 @@ function UI:CreateItemView(parent)
     input:SetScript("OnEnterPressed", input.ClearFocus)
     return input
   end
-  v.alertAbove = goldAlert("above", "above g")
+  v.alertAbove = goldAlert("above", L["above g"])
   v.alertAbove:SetPoint("RIGHT", v.alertSignal, "LEFT", -8, 0)
-  v.alertBelow = goldAlert("below", "below g")
+  v.alertBelow = goldAlert("below", L["below g"])
   v.alertBelow:SetPoint("RIGHT", v.alertAbove, "LEFT", -4, 0)
   v.alertLabel = W.Text(v, "GameFontDisableSmall", "RIGHT")
   v.alertLabel:SetPoint("RIGHT", v.alertBelow, "LEFT", -6, 0)
-  v.alertLabel:SetText("Alert when")
-  v.watch = W.Button(v, "Watch", 84, 18, function(self)
+  v.alertLabel:SetText(L["Alert when"])
+  v.watch = W.Button(v, L["Watch"], 84, 18, function(self)
     UI:WatchMenu(self, UI.itemID)
   end)
   v.watch.star = v.watch:CreateTexture(nil, "OVERLAY")
@@ -366,7 +373,8 @@ function UI:CreateItemView(parent)
 
   -- stat cards
   v.cards = {}
-  local labels = { "Market", "Lowest", "Average", "7d change", "Volatility", "Supply  ·  sells/day", "Signal" }
+  local labels =
+    { L["Market"], L["Lowest"], L["Average"], L["7d change"], L["Volatility"], L["Supply  ·  sells/day"], L["Signal"] }
   local terms = { "market", "min", "avg", "change7", "vol30", "sellRate", "signal" }
   for i, label in ipairs(labels) do
     local c = statCard(v, label)
@@ -384,7 +392,7 @@ function UI:CreateItemView(parent)
   -- range buttons
   v.rangeButtons = {}
   for i, r in ipairs(RANGES) do
-    local b = W.Button(v, r[1], 44, 18, function()
+    local b = W.Button(v, r[3] or r[1], 44, 18, function()
       UI:SetRange(r[2], r[1])
     end)
     if i == 1 then
@@ -395,7 +403,7 @@ function UI:CreateItemView(parent)
     b.key = r[1]
     v.rangeButtons[i] = b
   end
-  v.style = W.Button(v, "Candles", 64, 18, function()
+  v.style = W.Button(v, L["Candles"], 64, 18, function()
     local style = ns.Settings:Get("chartStyle") == "candles" and "line" or "candles"
     ns.Settings:Set("chartStyle", style)
     UI:DrawItemChart()
@@ -433,22 +441,22 @@ function UI:CreateItemView(parent)
           date("%b %d, %Y", x + c.period / 2 - DAY)
         )
       end
-      lines[#lines + 1] = "Open  " .. W.Money(c.open[i])
-      lines[#lines + 1] = "High  " .. W.Money(c.high[i])
-      lines[#lines + 1] = "Low (cheapest)  " .. W.Money(c.low[i])
-      lines[#lines + 1] = "Close  " .. W.Money(c.close[i])
+      lines[#lines + 1] = L["Open"] .. "  " .. W.Money(c.open[i])
+      lines[#lines + 1] = L["High"] .. "  " .. W.Money(c.high[i])
+      lines[#lines + 1] = L["Low (cheapest)"] .. "  " .. W.Money(c.low[i])
+      lines[#lines + 1] = L["Close"] .. "  " .. W.Money(c.close[i])
     end
     if rows.market and rows.market.x == x then
-      lines[#lines + 1] = "Market  " .. W.Money(rows.market.y)
+      lines[#lines + 1] = L["Market"] .. "  " .. W.Money(rows.market.y)
     end
     if rows.min and rows.min.x == x then
-      lines[#lines + 1] = "Lowest  " .. W.Money(rows.min.y)
+      lines[#lines + 1] = L["Lowest"] .. "  " .. W.Money(rows.min.y)
     end
     if rows.sma and rows.sma.x == x then
-      lines[#lines + 1] = "7d avg  " .. W.Money(rows.sma.y)
+      lines[#lines + 1] = L["7d avg"] .. "  " .. W.Money(rows.sma.y)
     end
     if rows.qty and rows.qty.x == x then
-      lines[#lines + 1] = "Supply  " .. rows.qty.y
+      lines[#lines + 1] = L["Supply"] .. "  " .. rows.qty.y
     end
     return lines
   end)
@@ -492,7 +500,7 @@ function UI:LoadIntraday()
     local now = GetServerTime()
     self:DrawItemChart()
     if #(self.intraday or {}) == 0 then
-      self.chart:SetMessage("No scans of this item in the last 2 days. Daily history is on the other ranges.")
+      self.chart:SetMessage(L["No scans of this item in the last 2 days. Daily history is on the other ranges."])
     else
       self.chart:SetMessage(nil)
       self.chart:SetXRange(now - 2 * DAY, now + 3600)
@@ -501,7 +509,7 @@ function UI:LoadIntraday()
   if self.intradayItem == itemID and self.intraday then
     return show()
   end
-  self.chart:SetMessage("Loading recent scans...")
+  self.chart:SetMessage(L["Loading recent scans..."])
   ns.AME:WithStore("intraday-" .. itemID, self:ViewShard(), function(store)
     return store:Intraday(itemID, GetServerTime() - 2 * DAY)
   end, function(ok, points)
@@ -531,7 +539,7 @@ function UI:DrawItemChart()
     return
   end
   local candles = ns.Settings:Get("chartStyle") == "candles"
-  v.style.label:SetText(candles and "Line" or "Candles")
+  v.style.label:SetText(candles and L["Line"] or L["Candles"])
   local xs, market, low, qty, sma = {}, {}, {}, {}, {}
   for i, p in ipairs(series) do
     xs[i] = p.t or (p.day * DAY + (p.res == "week" and 3.5 * DAY or DAY / 2))
@@ -543,6 +551,7 @@ function UI:DrawItemChart()
   local range = chart.range
   chart.range = nil
   chart:ClearSeries()
+  local legend
   chart:SetSeries("qty", { xs = xs, ys = qty, kind = "bars", axis = "volume", color = { 0.53, 0.53, 0.67, 1 } })
   if candles then
     local c
@@ -569,16 +578,14 @@ function UI:DrawItemChart()
       marker = true,
       color = { 0.3, 0.85, 0.45, 1 },
     })
-    v.legend:SetText(
-      W.Swatch(0.3, 0.85, 0.45)
-        .. " up  "
-        .. W.Swatch(1, 0.38, 0.35)
-        .. " down  (wick = cheapest)   "
-        .. W.Swatch(1, 0.67, 0.2)
-        .. " 7d average   "
-        .. W.Swatch(0.53, 0.53, 0.67)
-        .. " supply      wheel: zoom, drag: pan, double-click: reset"
-    )
+    legend = W.Swatch(0.3, 0.85, 0.45)
+      .. " "
+      .. L["up"]
+      .. "  "
+      .. W.Swatch(1, 0.38, 0.35)
+      .. " "
+      .. L["down  (wick = cheapest)"]
+      .. "   "
   else
     self.candles = nil
     chart:SetSeries("market", {
@@ -590,17 +597,28 @@ function UI:DrawItemChart()
       marker = true,
     })
     chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = { 0.4, 0.87, 0.47, 0.9 } })
-    v.legend:SetText(
-      W.Swatch(0.2, 0.8, 1)
-        .. " market   "
-        .. W.Swatch(0.4, 0.87, 0.47)
-        .. " lowest   "
-        .. W.Swatch(1, 0.67, 0.2)
-        .. " 7d average   "
-        .. W.Swatch(0.53, 0.53, 0.67)
-        .. " supply      wheel: zoom, drag: pan, double-click: reset"
-    )
+    legend = W.Swatch(0.2, 0.8, 1)
+      .. " "
+      .. L["market"]
+      .. "   "
+      .. W.Swatch(0.4, 0.87, 0.47)
+      .. " "
+      .. L["lowest"]
+      .. "   "
   end
+  if not intraday then -- a 7-point average of scans isn't a 7-day average
+    legend = legend .. W.Swatch(1, 0.67, 0.2) .. " " .. L["7d average"] .. "   "
+  end
+  legend = legend
+    .. W.Swatch(0.53, 0.53, 0.67)
+    .. " "
+    .. L["supply"]
+    .. "      "
+    .. L["wheel: zoom, drag: pan, double-click: reset"]
+  if intraday then
+    legend = legend .. "   " .. L["(each point is one scan)"]
+  end
+  v.legend:SetText(legend)
   if not intraday then -- a 7-point average of scans isn't a 7-day average
     chart:SetSeries("sma", {
       xs = xs,
@@ -610,9 +628,6 @@ function UI:DrawItemChart()
       color = { 1, 0.67, 0.2, 0.9 },
       width = 1.5,
     })
-  else
-    local text = v.legend:GetText() or ""
-    v.legend:SetText((text:gsub("|T[^|]*|t 7d average   ", "")) .. "   (each point is one scan)")
   end
   chart.range = range
   chart:Refresh()
@@ -639,9 +654,9 @@ function UI:ShowItem(itemID)
   for _, c in ipairs(v.cards) do
     c.value:SetText("...")
   end
-  v.sub:SetText("loading history...")
+  v.sub:SetText(L["loading history..."])
   self.chart:ClearSeries()
-  self.chart:SetMessage("Loading history...")
+  self.chart:SetMessage(L["Loading history..."])
 
   ns.AME:WithStore("chart-" .. itemID, self:ViewShard(), function(store)
     return { series = store:Series(itemID), latest = store:Latest(itemID) }
@@ -650,7 +665,7 @@ function UI:ShowItem(itemID)
       return
     end
     if not ok then
-      self.chart:SetMessage("Could not load history: " .. tostring(res))
+      self.chart:SetMessage(L["Could not load history: %s"]:format(tostring(res)))
       return
     end
     self:FillItem(itemID, res.series, res.latest)
@@ -661,7 +676,7 @@ function UI:FillItem(_, series, latest)
   local v = self.itemView
   if #series == 0 then
     self.series = nil
-    self.chart:SetMessage("No history for this item yet. Search for it at the auction house, or run a full scan.")
+    self.chart:SetMessage(L["No history for this item yet. Search for it at the auction house, or run a full scan."])
     v.sub:SetText(ns.ShardLabel(self:ViewShard()))
     for _, c in ipairs(v.cards) do
       c.value:SetText("-")
@@ -690,7 +705,7 @@ function UI:FillItem(_, series, latest)
   local cards = v.cards
   cards[1].value:SetText(W.Money(latest and latest.market or s.market))
   cards[2].value:SetText(W.Money(latest and latest.min or s.min))
-  cards[3].label:SetText(avgDays() .. "-day average")
+  cards[3].label:SetText(L["%d-day average"]:format(avgDays()))
   cards[3].value:SetText(W.Money(s["avg" .. avgDays()] or s.avg30))
   cards[4].value:SetText(W.Percent(s.change7))
   cards[5].value:SetText(s.vol30 and ("%.1f%%"):format(s.vol30 * 100) or "-")
@@ -700,16 +715,20 @@ function UI:FillItem(_, series, latest)
       .. W.Percent(s.supplyTrend30 and s.supplyTrend30 * 7, 0)
       .. (s.sellRate and ("  |cff999999%s|r"):format(W.Rate(s.sellRate)) or "")
   )
-  cards[7].label:SetText(s.phase and ns.Analytics.PHASE_LABEL[s.phase] or "Signal")
+  cards[7].label:SetText(s.phase and ns.Analytics.PHASE_LABEL[s.phase] or L["Signal"])
   cards[7].value:SetText(W.Signal(s.signal) .. ("  |cff999999%+d|r"):format(s.score or 0))
   v.sub:SetText(
-    ("%s  ·  %d days of history  ·  data %s %s%s%s"):format(
+    L["%s  ·  %d days of history  ·  data %s %s%s%s"]:format(
       ns.ShardLabel(self:ViewShard()),
       #series,
       W.Confidence(ns.Analytics.Confidence(s, math.floor(GetServerTime() / DAY))),
-      ("%d scans in 7 days"):format(s.scans7 or 0),
-      latest and ("  ·  last seen " .. date("%b %d %H:%M", latest.t)) or "",
-      dropped > 0 and ("  ·  |cffffcc00%d outlier price%s ignored|r"):format(dropped, dropped == 1 and "" or "s") or ""
+      L["%d scans in 7 days"]:format(s.scans7 or 0),
+      latest and ("  ·  " .. L["last seen %s"]:format(date("%b %d %H:%M", latest.t))) or "",
+      dropped > 0
+          and ("  ·  |cffffcc00%s|r"):format(
+            (dropped == 1 and L["%d outlier price ignored"] or L["%d outlier prices ignored"]):format(dropped)
+          )
+        or ""
     )
   )
 end
@@ -813,7 +832,7 @@ function UI:WatchMenu(anchor, itemID)
     }
   end
   entries[#entries + 1] = {
-    text = "|cff999999New list...|r",
+    text = "|cff999999" .. L["New list..."] .. "|r",
     func = function()
       UI:PromptNewList(itemID)
     end,
@@ -835,7 +854,7 @@ end
 function UI:PromptNewList(itemID)
   StaticPopupDialogs.AME_NEW_LIST = StaticPopupDialogs.AME_NEW_LIST
     or {
-      text = "Name for the new watchlist:",
+      text = L["Name for the new watchlist:"],
       button1 = ACCEPT or "Accept",
       button2 = CANCEL or "Cancel",
       hasEditBox = true,
@@ -869,7 +888,7 @@ function UI:ListMenu(anchor, i)
   end
   W.Menu(anchor, {
     {
-      text = "Share with guild",
+      text = L["Share with guild"],
       checked = l.shared == true,
       func = function()
         watch:SetShared(i, not l.shared)
@@ -878,7 +897,7 @@ function UI:ListMenu(anchor, i)
       end,
     },
     {
-      text = "Delete list...",
+      text = L["Delete list..."],
       disabled = #watch:Lists() <= 1,
       func = function()
         UI:PromptDeleteList(i)
@@ -894,7 +913,7 @@ function UI:PromptDeleteList(i)
   end
   StaticPopupDialogs.AME_DELETE_LIST = StaticPopupDialogs.AME_DELETE_LIST
     or {
-      text = 'Delete the watchlist "%s"?',
+      text = L['Delete the watchlist "%s"?'],
       button1 = DELETE or "Delete",
       button2 = CANCEL or "Cancel",
       OnAccept = function(_, data)
@@ -954,7 +973,7 @@ function UI:UpdateWatchControls(keepInputs)
   for i in ipairs(watch:Lists()) do
     inList = inList or watch:Has(i, id)
   end
-  v.watch.label:SetText(inList and "Watching" or "Watch")
+  v.watch.label:SetText(inList and L["Watching"] or L["Watch"])
   v.watch:SetSelected(inList)
   W.SetStar(v.watch.star, inList)
   local a = watch:Alert(id) or {}
@@ -969,14 +988,14 @@ end
 -- Market view (screener)
 
 local COLUMNS = {
-  { key = "name", label = "Item", width = 190, item = true, term = "name" },
-  { key = "market", label = "Market", width = 86, format = "money", term = "market" },
+  { key = "name", label = L["Item"], width = 190, item = true, term = "name" },
+  { key = "market", label = L["Market"], width = 86, format = "money", term = "market" },
   {
     key = "avg",
     width = 86,
     term = "avg",
     label = function()
-      return avgDays() .. "d avg"
+      return L["%dd avg"]:format(avgDays())
     end,
     sortKey = function()
       return "avg" .. avgDays()
@@ -985,31 +1004,31 @@ local COLUMNS = {
       return W.Money(s["avg" .. avgDays()], true)
     end,
   },
-  { key = "change7", label = "7d", width = 62, format = "pct", term = "change7" },
-  { key = "vol30", label = "Volatility", width = 70, format = "plainpct", term = "vol30" },
-  { key = "qty", label = "Supply", width = 52, term = "qty" },
-  { key = "sellRate", label = "Sells/d", width = 58, format = "rate", term = "sellRate" },
+  { key = "change7", label = L["7d"], width = 62, format = "pct", term = "change7" },
+  { key = "vol30", label = L["Volatility"], width = 70, format = "plainpct", term = "vol30" },
+  { key = "qty", label = L["Supply"], width = 52, term = "qty" },
+  { key = "sellRate", label = L["Sells/d"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "signal",
-    label = "Signal",
+    label = L["Signal"],
     width = 50,
     format = "signal",
     term = "signal",
     sortKey = "signalRank",
     ascendingFirst = true,
   },
-  { key = "score", label = "Score", width = 50, term = "score" },
+  { key = "score", label = L["Score"], width = 50, term = "score" },
 }
 local ROWS = 17
 local SIDEBAR_W = 170
 local CAT_ROWS = 22
 local CAT_H = 19
 local QUALITIES = {
-  { nil, "Any quality" },
-  { 1, "Common+" },
-  { 2, "Uncommon+" },
-  { 3, "Rare+" },
-  { 4, "Epic+" },
+  { nil, L["Any quality"] },
+  { 1, L["Common+"] },
+  { 2, L["Uncommon+"] },
+  { 3, L["Rare+"] },
+  { 4, L["Epic+"] },
 }
 
 local function itemInfo(itemID)
@@ -1023,6 +1042,9 @@ local function goldBox(parent, hint, onChange)
   box:SetNumeric(true)
   box.hint = W.Text(box, "GameFontDisableSmall")
   box.hint:SetPoint("LEFT", 6, 0)
+  box.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
+  box.hint:SetJustifyH("LEFT")
+  box.hint:SetWordWrap(false)
   box.hint:SetText(hint)
   box:SetScript("OnTextChanged", function(self)
     self.hint:SetShown(self:GetText() == "")
@@ -1078,7 +1100,7 @@ function UI:CreateCategories(v)
       if e.guild and button == "RightButton" then
         W.Menu(self, {
           {
-            text = "Copy to my watchlists",
+            text = L["Copy to my watchlists"],
             func = function()
               ns.AME.watch:CopyGuildList(e.guild)
               UI:WatchChanged()
@@ -1121,20 +1143,20 @@ end
 function UI:RenderCategories()
   local v = self.marketView
   local q = self.mq
-  local entries = { { all = true, label = "All items", count = self.index and self.index.count or 0 } }
+  local entries = { { all = true, label = L["All items"], count = self.index and self.index.count or 0 } }
   local watch = ns.AME.watch
   if watch then
     for i, l in ipairs(watch:Lists()) do
       entries[#entries + 1] = {
         list = i,
-        label = W.StarInline(12) .. " " .. l.name .. (l.shared and " |cff33ccffshared|r" or ""),
+        label = W.StarInline(12) .. " " .. l.name .. (l.shared and (" |cff33ccff%s|r"):format(L["shared"]) or ""),
         count = watch:Count(i),
       }
     end
-    entries[#entries + 1] = { newList = true, label = "|cff999999+ New list|r", count = "" }
+    entries[#entries + 1] = { newList = true, label = "|cff999999+ " .. L["New list"] .. "|r", count = "" }
     local guild = watch:GuildLists()
     if #guild > 0 then
-      entries[#entries + 1] = { header = true, label = "|cff999999Guild watchlists|r", count = "" }
+      entries[#entries + 1] = { header = true, label = "|cff999999" .. L["Guild watchlists"] .. "|r", count = "" }
       for _, g in ipairs(guild) do
         local n = 0
         for _ in pairs(g.items) do
@@ -1211,7 +1233,10 @@ function UI:CreateMarketView(parent)
   search:SetAutoFocus(false)
   search.hint = W.Text(search, "GameFontDisableSmall")
   search.hint:SetPoint("LEFT", 6, 0)
-  search.hint:SetText("Search items...")
+  search.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
+  search.hint:SetJustifyH("LEFT")
+  search.hint:SetWordWrap(false)
+  search.hint:SetText(L["Search items..."])
   search:SetScript("OnTextChanged", function(self)
     self.hint:SetShown(self:GetText() == "")
     UI.mq.text = self:GetText()
@@ -1240,13 +1265,13 @@ function UI:CreateMarketView(parent)
   quality:SetIndex(2)
   v.quality = quality
 
-  local minBox = goldBox(main, "min g", function(g)
+  local minBox = goldBox(main, L["min g"], function(g)
     UI.mq.minPrice = g and g * 10000 or nil
     UI.offset = 0
     UI:RefreshMarket(true)
   end)
   minBox:SetPoint("LEFT", quality, "RIGHT", 10, 0)
-  local maxBox = goldBox(main, "max g", function(g)
+  local maxBox = goldBox(main, L["max g"], function(g)
     UI.mq.maxPrice = g and g * 10000 or nil
     UI.offset = 0
     UI:RefreshMarket(true)
@@ -1254,7 +1279,7 @@ function UI:CreateMarketView(parent)
   maxBox:SetPoint("LEFT", minBox, "RIGHT", 6, 0)
   v.minBox, v.maxBox = minBox, maxBox
 
-  local filters = { { nil, "All" }, { "buy", "Buy" }, { "hold", "Hold" }, { "sell", "Sell" } }
+  local filters = { { nil, L["All"] }, { "buy", L["Buy"] }, { "hold", L["Hold"] }, { "sell", L["Sell"] } }
   v.filterButtons = {}
   for i, fdef in ipairs(filters) do
     local b = W.Button(main, fdef[2], 46, 20, function()
@@ -1270,7 +1295,7 @@ function UI:CreateMarketView(parent)
     end
     v.filterButtons[i] = b
   end
-  local reset = W.Button(main, "Reset", 52, 20, function()
+  local reset = W.Button(main, L["Reset"], 52, 20, function()
     UI:ResetMarketFilters()
   end)
   reset:SetPoint("LEFT", v.filterButtons[#filters], "RIGHT", 10, 0)
@@ -1309,7 +1334,7 @@ function UI:CreateMarketView(parent)
     end,
     tooltip = function(tip)
       if ns.AME.ahOpen then
-        tip:AddLine("Shift-click to search the auction house", 0.6, 0.6, 0.6)
+        tip:AddLine(L["Shift-click to search the auction house"], 0.6, 0.6, 0.6)
       end
     end,
   })
@@ -1358,9 +1383,9 @@ function UI:RefreshMarket(force)
   local index, why = self:ViewIndex()
   if not index then
     self.list = nil
-    local text = ns.AME:HistoryLoaded() and "Building market index..." or "Loading history..."
+    local text = ns.AME:HistoryLoaded() and L["Building market index..."] or L["Loading history..."]
     if why == "empty" then
-      text = ("No price history for the %s yet: scan there (any character on this account counts)."):format(
+      text = L["No price history for the %s yet: scan there (any character on this account counts)."]:format(
         ns.HOUSE_LABEL[self:ViewHouse()] or self:ViewHouse()
       )
     end
@@ -1411,16 +1436,16 @@ function UI:RenderMarket()
   self.offset = t:Offset()
 
   local cache = ns.ItemCache
-  local status = ("%d items  -  showing %d-%d  -  index from %s"):format(
+  local status = L["%d items  -  showing %d-%d  -  index from %s"]:format(
     total,
     math.min(total, self.offset + 1),
     math.min(total, self.offset + ROWS),
     date("%b %d", self.index.day * DAY)
   )
   if cache.warmTotal and cache.warmDone and cache.warmDone < cache.warmTotal then
-    status = status .. ("  -  loading item names %d/%d"):format(cache.warmDone, cache.warmTotal)
+    status = status .. "  -  " .. L["loading item names %d/%d"]:format(cache.warmDone, cache.warmTotal)
   elseif (self.unnamed or 0) > 0 then
-    status = status .. ("  -  %d items not searchable yet (names loading)"):format(self.unnamed)
+    status = status .. "  -  " .. L["%d items not searchable yet (names loading)"]:format(self.unnamed)
   end
   if q.list and q.only then
     local n = 0
@@ -1428,7 +1453,7 @@ function UI:RenderMarket()
       n = n + 1
     end
     if n > total then
-      status = status .. ("  -  %d watched items have no price history here yet"):format(n - total)
+      status = status .. "  -  " .. L["%d watched items have no price history here yet"]:format(n - total)
     end
   end
   v.status:SetText(status)

@@ -2,6 +2,7 @@
 -- name/quality come from GetItemInfo once the client has the item cached. Warm() asks the client to load names for
 -- many items in small batches so name search and quality filters cover the whole market.
 local _, ns = ...
+local L = ns.L
 
 local C = { info = {}, listeners = {} }
 ns.ItemCache = C
@@ -38,12 +39,12 @@ end
 
 function C.ClassName(classID)
   local f = api("GetItemClassInfo")
-  return f and f(classID) or ("Class " .. classID)
+  return f and f(classID) or L["Class %d"]:format(classID)
 end
 
 function C.SubClassName(classID, subClassID)
   local f = api("GetItemSubClassInfo")
-  return f and f(classID, subClassID) or ("Type " .. subClassID)
+  return f and f(classID, subClassID) or L["Type %d"]:format(subClassID)
 end
 
 -- fn() runs (debounced) after names arrive

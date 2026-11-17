@@ -87,8 +87,10 @@ function Ledger:Prune(now)
   end
 end
 
+-- Entries are matched by item name: invoices always carry it, while the item ID is sometimes only known later
+-- (or only on some of an item's entries).
 local function itemKey(e)
-  return e.itemID or e.name
+  return e.name or e.itemID
 end
 
 -- Walk all entries in time order, matching sales to bought lots (FIFO). Returns
@@ -140,8 +142,15 @@ end
 -- per item: units still held from AH purchases and their average unit cost
 function Ledger:CostBasis()
   local lots = match(self.db.entries)
+  local ids = {} -- name -> an item ID seen on any of its entries
+  for _, e in ipairs(self.db.entries) do
+    if e.itemID and e.name then
+      ids[e.name] = e.itemID
+    end
+  end
   local out = {}
-  for key, q in pairs(lots) do
+  for name, q in pairs(lots) do
+    local key = ids[name] or name
     local units, cost = 0, 0
     for _, lot in ipairs(q) do
       units, cost = units + lot.qty, cost + lot.qty * lot.unit

@@ -3,6 +3,14 @@ local _, ns = ...
 
 ns.VERSION = "0.2.0-beta.1"
 
+-- Translated text. Core\Locale.lua sets it up in game; specs that load modules directly get the English key back.
+ns.L = ns.L or setmetatable({}, {
+  __index = function(_, key)
+    return key
+  end,
+})
+local L = ns.L
+
 ns.HOUSES = { Alliance = true, Horde = true, Neutral = true }
 
 -- the addon's icon (also used for the minimap / broker launcher and the window title)
@@ -28,7 +36,7 @@ function ns.MarketRealm(realm, rules)
   return realm
 end
 
-ns.HOUSE_LABEL = { Alliance = "Alliance AH", Horde = "Horde AH", Neutral = "Goblin AH" }
+ns.HOUSE_LABEL = { Alliance = L["Alliance AH"], Horde = L["Horde AH"], Neutral = L["Goblin AH"] }
 
 -- Human-readable market name: "PvP · Goblin AH". Never show raw shard keys: WoW treats "|N" (as in "|Neutral")
 -- and other "|x" pairs in displayed text as escape codes.

@@ -11,6 +11,7 @@
 -- merged with Store:AddScan, whose dedupe makes repeats harmless; announcements repeat, so dropped whispers retry
 -- naturally. Plausible() guards against poisoned data before merging.
 local _, ns = ...
+local L = ns.L
 
 local Codec = ns.Codec
 
@@ -179,7 +180,7 @@ function Sync.Plausible(snap, reference)
     return true
   end
   if off / comparable > Sync.MAX_OFF_SHARE then
-    return false, ("%d of %d known prices differ more than %dx from ours"):format(off, comparable, Sync.OUTLIER_FACTOR)
+    return false, L["%d of %d known prices differ more than %dx from ours"]:format(off, comparable, Sync.OUTLIER_FACTOR)
   end
   return true
 end

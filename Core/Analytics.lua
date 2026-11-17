@@ -18,6 +18,7 @@
 -- Signals are deliberately conservative: they need >= MIN_DAYS of history and a big enough deviation relative to the
 -- item's own volatility.
 local _, ns = ...
+local L = ns.L
 
 local exp, floor, log, max, min, sqrt = math.exp, math.floor, math.log, math.max, math.min, math.sqrt
 
@@ -230,15 +231,15 @@ Analytics.PHASE_SCORE = {
   dumping = -0.2,
 }
 Analytics.PHASE_LABEL = {
-  shortage = "Shortage",
-  demand = "Steady demand",
-  piling = "Sellers piling in",
-  tightening = "Tightening",
-  balanced = "Balanced",
-  pressure = "Pressure building",
-  withdrawing = "Sellers withdrawing",
-  weak = "Weak demand",
-  dumping = "Dumping",
+  shortage = L["Shortage"],
+  demand = L["Steady demand"],
+  piling = L["Sellers piling in"],
+  tightening = L["Tightening"],
+  balanced = L["Balanced"],
+  pressure = L["Pressure building"],
+  withdrawing = L["Sellers withdrawing"],
+  weak = L["Weak demand"],
+  dumping = L["Dumping"],
 }
 
 function Analytics.Phase(series)

@@ -10,6 +10,17 @@
 
 embeds.xml
 
+Locales\enUS.lua
+Locales\deDE.lua
+Locales\frFR.lua
+Locales\esES.lua
+Locales\ruRU.lua
+Locales\ptBR.lua
+Locales\itIT.lua
+Locales\koKR.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+Core\Locale.lua
 Core\Init.lua
 Core\Stats.lua
 Core\Codec.lua

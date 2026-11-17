@@ -1,5 +1,6 @@
 -- Settings (AceConfig, shown in the game's AddOns options) and the minimap / broker launcher.
 local ADDON, ns = ...
+local L = ns.L
 
 local W = ns.Widgets
 
@@ -84,31 +85,30 @@ function Settings:RegisterOptions()
       intro = {
         type = "description",
         order = 1,
-        name = "Records auction house prices from every scan and search you run (native APIs; works with any "
-          .. "scanning addon), per realm and auction house.\n"
-          .. "Open the window with |cff33ccff/ame|r.",
+        name = L["Records auction house prices from every scan and search you run (native APIs; works with any scanning addon), per realm and auction house."]
+          .. "\n"
+          .. L["Open the window with %s."]:format("|cff33ccff/ame|r"),
       },
       display = {
         type = "group",
         inline = true,
         order = 10,
-        name = "Display",
+        name = L["Display"],
         args = {
           tooltip = {
             type = "toggle",
             order = 1,
             width = "full",
-            name = "Show market data in item tooltips",
+            name = L["Show market data in item tooltips"],
             get = get,
             set = set,
           },
           clickModifier = {
             type = "select",
             order = 2,
-            name = "Open an item's chart with",
-            desc = "Modified click on items in bags, chat links and the auction house. Choose Alt+Shift if another "
-              .. "addon (e.g. AHDB) already uses Alt-click.",
-            values = { alt = "Alt-click", altshift = "Alt+Shift-click", none = "Disabled" },
+            name = L["Open an item's chart with"],
+            desc = L["Modified click on items in bags, chat links and the auction house. Choose Alt+Shift if another addon (e.g. AHDB) already uses Alt-click."],
+            values = { alt = L["Alt-click"], altshift = L["Alt+Shift-click"], none = L["Disabled"] },
             get = get,
             set = set,
           },
@@ -116,7 +116,7 @@ function Settings:RegisterOptions()
             type = "toggle",
             order = 3,
             width = "full",
-            name = "Announce recorded full scans in chat",
+            name = L["Announce recorded full scans in chat"],
             get = get,
             set = set,
           },
@@ -124,7 +124,7 @@ function Settings:RegisterOptions()
             type = "toggle",
             order = 3.5,
             width = "full",
-            name = "Play a sound when a watchlist alert fires",
+            name = L["Play a sound when a watchlist alert fires"],
             get = get,
             set = set,
           },
@@ -132,7 +132,7 @@ function Settings:RegisterOptions()
             type = "toggle",
             order = 4,
             width = "full",
-            name = "Show minimap button",
+            name = L["Show minimap button"],
             disabled = function()
               return not LibStub("LibDBIcon-1.0", true)
             end,
@@ -149,16 +149,14 @@ function Settings:RegisterOptions()
         type = "group",
         inline = true,
         order = 15,
-        name = "Sharing",
+        name = L["Sharing"],
         args = {
           syncGuild = {
             type = "toggle",
             order = 1,
             width = "full",
-            name = "Share full scans with guild members who use AME",
-            desc = "Announces your recent full scans to the guild and fetches ones you're missing, paced in the "
-              .. "background so it never disrupts chat or raid addons. Received scans that disagree wildly with "
-              .. "your own prices are rejected.",
+            name = L["Share full scans with guild members who use AME"],
+            desc = L["Announces your recent full scans to the guild and fetches ones you're missing, paced in the background so it never disrupts chat or raid addons. Received scans that disagree wildly with your own prices are rejected."],
             get = get,
             set = set,
           },
@@ -168,13 +166,13 @@ function Settings:RegisterOptions()
         type = "group",
         inline = true,
         order = 20,
-        name = "Data",
+        name = L["Data"],
         args = {
           backfill = {
             type = "execute",
             order = 1,
-            name = "Import history from Auctionator",
-            desc = "If Auctionator is installed: fills days that have no AME data from its recent price history.",
+            name = L["Import history from Auctionator"],
+            desc = L["If Auctionator is installed: fills days that have no AME data from its recent price history."],
             func = function()
               ns.AME:Backfill(true)
             end,
@@ -182,7 +180,7 @@ function Settings:RegisterOptions()
           index = {
             type = "execute",
             order = 2,
-            name = "Rebuild market index",
+            name = L["Rebuild market index"],
             func = function()
               ns.AME:RebuildIndex()
             end,
@@ -190,8 +188,8 @@ function Settings:RegisterOptions()
           selftest = {
             type = "execute",
             order = 3,
-            name = "Run self-test",
-            desc = "Checks every part of the addon, records timings, then reloads the UI.",
+            name = L["Run self-test"],
+            desc = L["Checks every part of the addon, records timings, then reloads the UI."],
             func = function()
               ns.SelfTest.Run(ns.AME)
             end,
@@ -251,17 +249,17 @@ function Settings:CreateLauncher()
       tt:AddLine(ns.ShardLabel(ns.AME:CurrentShard()), 0.7, 0.7, 0.7)
       local last = AME_DB.stats.lastFull
       if last then
-        tt:AddDoubleLine("Last full scan", date("%b %d %H:%M", last.at), 1, 1, 1, 1, 1, 1)
+        tt:AddDoubleLine(L["Last full scan"], date("%b %d %H:%M", last.at), 1, 1, 1, 1, 1, 1)
       end
       local index = ns.AME.index
       if index then
-        tt:AddDoubleLine("Items tracked", tostring(index.count), 1, 1, 1, 1, 1, 1)
+        tt:AddDoubleLine(L["Items tracked"], tostring(index.count), 1, 1, 1, 1, 1, 1)
         local top = ns.MarketIndex.Rank(index, "score", function(s)
           return s.signal == "buy"
         end)
         if #top > 0 then
           tt:AddLine(" ")
-          tt:AddLine("Top buy signals")
+          tt:AddLine(L["Top buy signals"])
           for i = 1, math.min(3, #top) do
             local s = top[i]
             local name = W.ItemInfo(s.itemID) or ("item:" .. s.itemID)
@@ -270,7 +268,7 @@ function Settings:CreateLauncher()
         end
       end
       tt:AddLine(" ")
-      tt:AddLine("|cffaaaaaaLeft-click: window   Right-click: settings|r")
+      tt:AddLine("|cffaaaaaa" .. L["Left-click: window   Right-click: settings"] .. "|r")
     end,
   })
   local icon = LibStub("LibDBIcon-1.0", true)

@@ -21,6 +21,7 @@
 --   })
 --   t:SetData(list); t:Render()
 local _, ns = ...
+local L = ns.L
 
 local W = ns.Widgets
 
@@ -78,8 +79,7 @@ function DataTable.New(parent, opts)
   local x = 0
   for _, col in ipairs(opts.columns) do
     local h = CreateFrame("Button", nil, frame)
-    h:SetSize(col.width, 18)
-    h:SetPoint("TOPLEFT", x, 0)
+    h:SetHeight(18) -- width and position: t:Layout()
     local left = col.item or col.align == "LEFT"
     h.text = W.Text(h, "GameFontNormalSmall", left and "LEFT" or "RIGHT")
     h.text:SetAllPoints()
@@ -107,12 +107,12 @@ function DataTable.New(parent, opts)
     x = x + col.width + GAP
     t.headers[#t.headers + 1] = h
   end
-  t.width = x
+  t.width = x -- the columns' own widths; the table fills its parent and gives the rest to the flexible column
 
   -- rows
   for r = 1, rowsN do
     local row = CreateFrame("Button", nil, frame)
-    row:SetSize(x, rowH)
+    row:SetHeight(rowH)
     row:SetPoint("TOPLEFT", 0, -20 - (r - 1) * rowH)
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     row.bg = row:CreateTexture(nil, "BACKGROUND")
@@ -123,27 +123,27 @@ function DataTable.New(parent, opts)
     row.hl:SetColorTexture(1, 1, 1, 0.06)
     row.cells = {}
     row.star, row.icon, row.conf, row.action = false, false, false, false -- optional parts, set below
-    local cx = 0
     for c, col in ipairs(opts.columns) do
       local left = col.item or col.align == "LEFT"
       local fs = W.Text(row, "GameFontHighlightSmall", left and "LEFT" or "RIGHT")
       fs:SetWordWrap(false)
+      fs:SetHeight(rowH) -- width and position (and of the star, icon, confidence bars): t:Layout()
       if col.item then
-        local nameX = opts.star and NAME_X or (ICON_W + 4)
-        local trailing = opts.confidence and 22 or 0
-        fs:SetSize(col.width - nameX - trailing, rowH)
-        fs:SetPoint("LEFT", cx + nameX, 0)
         if opts.star then
           row.star = CreateFrame("Button", nil, row)
           row.star:SetSize(STAR_W, STAR_W)
-          row.star:SetPoint("LEFT", cx, 0)
           row.star.tex = row.star:CreateTexture(nil, "ARTWORK")
           row.star.tex:SetAllPoints()
           W.SetStar(row.star.tex, false)
           row.star:SetScript("OnEnter", function(self)
             W.SetStar(self.tex, self.watched, true)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(self.watched and "On a watchlist - click to change" or "Add to a watchlist", 1, 1, 1)
+            GameTooltip:SetText(
+              self.watched and L["On a watchlist - click to change"] or L["Add to a watchlist"],
+              1,
+              1,
+              1
+            )
             GameTooltip:Show()
           end)
           row.star:SetScript("OnLeave", function(self)
@@ -158,18 +158,12 @@ function DataTable.New(parent, opts)
         end
         row.icon = row:CreateTexture(nil, "ARTWORK")
         row.icon:SetSize(ICON_W, ICON_W)
-        row.icon:SetPoint("LEFT", cx + (opts.star and STAR_W + 2 or 0), 0)
         if opts.confidence then
           row.conf = W.Text(row, "GameFontHighlightSmall", "RIGHT")
           row.conf:SetSize(20, rowH)
-          row.conf:SetPoint("LEFT", cx + col.width - 20, 0)
         end
-      else
-        fs:SetSize(col.width, rowH)
-        fs:SetPoint("LEFT", cx, 0)
       end
       row.cells[c] = fs
-      cx = cx + col.width + GAP
     end
     if opts.action then
       local a = opts.action
@@ -213,7 +207,7 @@ function DataTable.New(parent, opts)
   -- scrollbar (only shown when there's more than fits)
   local bar = CreateFrame("Slider", nil, frame, "BackdropTemplate")
   bar:SetOrientation("VERTICAL")
-  bar:SetPoint("TOPLEFT", x - 2 + (opts.action and ((opts.action.width or 56) + 8) or 0), -20)
+  bar:SetPoint("TOPRIGHT", 0, -20) -- inside the table's right edge, never past the window
   bar:SetSize(8, rowsN * rowH)
   W.Skin(bar, W.COLORS.panel)
   bar.thumb = bar:CreateTexture(nil, "OVERLAY")
@@ -236,7 +230,81 @@ function DataTable.New(parent, opts)
   frame:SetScript("OnMouseWheel", function(_, delta)
     t:Scroll(delta)
   end)
+  frame:SetScript("OnSizeChanged", function(_, width)
+    t:Layout(width)
+  end)
+  t:Layout(frame:GetWidth())
   return t
+end
+
+-- the column that takes the width left over: opts.flex (a column key), else the item column, else the first
+local function flexIndex(opts)
+  for c, col in ipairs(opts.columns) do
+    if opts.flex and col.key == opts.flex then
+      return c
+    end
+  end
+  for c, col in ipairs(opts.columns) do
+    if col.item then
+      return c
+    end
+  end
+  return 1
+end
+
+DataTable.BAR_SPACE = 14 -- scrollbar (8) and a gap before it
+
+-- Fit the columns to the table's width: rows span it up to the action button and scrollbar, and the flexible
+-- column grows to fill what the fixed columns leave (and gives up some of its own when the table is too narrow).
+function DataTable:Layout(width)
+  local opts, rowH = self.opts, self.opts.rowHeight or 22
+  if type(width) ~= "number" or width <= 0 then
+    return
+  end
+  self.layoutWidth = width
+  local actionW = opts.action and ((opts.action.width or 56) + 8) or 0
+  local flex = flexIndex(opts)
+  -- when space is short the flexible column gives up to 40% of its width (names truncate) before anything overflows
+  local minW = self.width - GAP - math.floor(opts.columns[flex].width * 0.4)
+  local rowW = math.max(minW, width - DataTable.BAR_SPACE - actionW)
+  local extra = rowW - (self.width - GAP)
+  local widths, xs, x = {}, {}, 0
+  for c, col in ipairs(opts.columns) do
+    widths[c] = col.width + (c == flex and extra or 0)
+    xs[c] = x
+    x = x + widths[c] + GAP
+  end
+  for c, h in ipairs(self.headers) do
+    h:SetWidth(widths[c])
+    h:ClearAllPoints()
+    h:SetPoint("TOPLEFT", xs[c], 0)
+  end
+  for _, row in ipairs(self.rows) do
+    row:SetWidth(rowW)
+    for c, col in ipairs(opts.columns) do
+      local fs, cx = row.cells[c], xs[c]
+      fs:ClearAllPoints()
+      if col.item then
+        local nameX = opts.star and NAME_X or (ICON_W + 4)
+        local trailing = opts.confidence and 22 or 0
+        fs:SetSize(widths[c] - nameX - trailing, rowH)
+        fs:SetPoint("LEFT", cx + nameX, 0)
+        if row.star then
+          row.star:ClearAllPoints()
+          row.star:SetPoint("LEFT", cx, 0)
+        end
+        row.icon:ClearAllPoints()
+        row.icon:SetPoint("LEFT", cx + (opts.star and STAR_W + 2 or 0), 0)
+        if row.conf then
+          row.conf:ClearAllPoints()
+          row.conf:SetPoint("LEFT", cx + widths[c] - 20, 0)
+        end
+      else
+        fs:SetSize(widths[c], rowH)
+        fs:SetPoint("LEFT", cx, 0)
+      end
+    end
+  end
 end
 
 function DataTable:Offset()
@@ -358,6 +426,10 @@ local function itemCell(t, row, col, d, itemID)
 end
 
 function DataTable:Render()
+  local width = self.frame:GetWidth()
+  if width ~= self.layoutWidth then -- laid out before the window had a size, or resized since
+    self:Layout(width)
+  end
   local opts = self.opts
   for _, h in ipairs(self.headers) do
     local key = sortKey(h.col)

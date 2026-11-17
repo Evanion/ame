@@ -1,6 +1,8 @@
 -- luacheck config. WoW runs Lua 5.1.
 std = "lua51"
 max_line_length = 120
+max_string_line_length = false -- translatable texts are single L["..."] literals
+max_code_line_length = false -- stylua wraps code at 120; lines like L["long sentence"]:format(n) can't be wrapped
 codes = true
 
 exclude_files = {
@@ -29,7 +31,9 @@ read_globals = {
   "C_AuctionHouse", "C_ChatInfo", "QueryAuctionItems", "GetNumAuctionItems", "GetAuctionItemInfo", "C_AddOns", "LoadAddOn",
   -- unit / realm
   "GetServerTime", "GetNormalizedRealmName", "GetRealmName", "GetAutoCompleteRealms", "UnitName",
-  "UnitFactionGroup", "IsInGuild", "C_FriendList", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "GetInboxNumItems", "GetInboxInvoiceInfo", "GetInboxHeaderInfo", "C_Container", "GetContainerNumSlots", "GetContainerItemInfo", "AuctionHouseFrame", "AuctionHouseFrameDisplayMode", "AuctionFrame", "BrowseName", "AuctionFrameBrowse_Search", "ChatFrameUtil", "ChatEdit_GetActiveWindow", "GetTime", "GetGuildInfoText", "RegionalUniqueNamesEnabled", "C_GameRules",
+  "UnitFactionGroup", "IsInGuild", "C_FriendList", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "GetInboxNumItems", "GetInboxInvoiceInfo",
+  "GetInboxItemLink",
+  "ATTACHMENTS_MAX_RECEIVE", "GetInboxHeaderInfo", "C_Container", "GetContainerNumSlots", "GetContainerItemInfo", "AuctionHouseFrame", "AuctionHouseFrameDisplayMode", "AuctionFrame", "BrowseName", "AuctionFrameBrowse_Search", "ChatFrameUtil", "ChatEdit_GetActiveWindow", "GetTime", "GetGuildInfoText", "RegionalUniqueNamesEnabled", "C_GameRules",
   -- optional integrations
   "Auctionator", "LibStub",
 }

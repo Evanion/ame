@@ -1,6 +1,7 @@
 -- Guild sync glue: announces our full scans, requests ones we lack, serves requests, merges received scans.
 -- Transport is injectable (default: AceComm-3.0 at BULK priority via ChatThrottleLib).
 local _, ns = ...
+local L = ns.L
 
 local Sync = ns.Sync
 
@@ -254,7 +255,7 @@ function Service:OnMessage(msg, distribution, sender)
       self.trust:MarkMutual(sender)
       self.transport:Send(Service.PREFIX, Sync.EncodeAccept(m.shard), "WHISPER", sender)
     elseif self.trust:Request(sender, GetServerTime()) then
-      self.AME.Say("%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve.", sender)
+      self.AME.Say(L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."], sender)
     end
     self:Changed()
     return
@@ -326,7 +327,7 @@ function Service:Merge(m, sender)
       self.stats.lastSyncReceived = { from = sender, at = GetServerTime(), items = #snap.ids }
       self:Changed()
       if ns.Settings:Get("announceScans") then
-        AME.Say("received a full scan from %s via sync (%d items, %s)", m.src, #snap.ids, ns.ShardLabel(m.shard))
+        AME.Say(L["received a full scan from %s via sync (%d items, %s)"], m.src, #snap.ids, ns.ShardLabel(m.shard))
       end
       AME:InvalidateIndex(m.shard)
       if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then

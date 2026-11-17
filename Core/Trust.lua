@@ -11,6 +11,7 @@
 --     blocked  = { [key] = { name, at } },                     personal blocklist (plus the guild's, see IsBlocked)
 --   }
 local _, ns = ...
+local L = ns.L
 
 local Trust = {}
 Trust.__index = Trust
@@ -41,7 +42,7 @@ end
 function Trust:Add(name, now)
   local k = key(name)
   if not k or k == "" then
-    return nil, "enter a character name"
+    return nil, L["enter a character name"]
   end
   local e = self.db.trusted[k]
   if not e then

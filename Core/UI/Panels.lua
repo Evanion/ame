@@ -1,22 +1,23 @@
 -- Sync and Settings tabs of the main window.
 local ADDON, ns = ...
+local L = ns.L
 
 local W = ns.Widgets
 local UI = ns.UI
 
 local function ago(t)
   if not t then
-    return "never"
+    return L["never"]
   end
   local d = math.max(0, GetServerTime() - t)
   if d < 60 then
-    return "just now"
+    return L["just now"]
   elseif d < 3600 then
-    return ("%d min ago"):format(d / 60)
+    return L["%d min ago"]:format(d / 60)
   elseif d < 86400 then
-    return ("%d h ago"):format(d / 3600)
+    return L["%d h ago"]:format(d / 3600)
   end
-  return ("%d days ago"):format(d / 86400)
+  return L["%d days ago"]:format(d / 86400)
 end
 UI.Ago = ago
 
@@ -60,26 +61,24 @@ function UI:CreateSyncView(parent, contentArea)
   self.syncView = v
   local svc = ns.SyncService
 
-  heading(v, "Sharing", 0, 0)
-  v.guild = settingCheck(v, "Share full scans with my guild (members running AME)", "syncGuild", 0, -24)
-  v.trusted = settingCheck(v, "Share with trusted players (below)", "syncTrusted", 0, -46)
+  heading(v, L["Sharing"], 0, 0)
+  v.guild = settingCheck(v, L["Share full scans with my guild (members running AME)"], "syncGuild", 0, -24)
+  v.trusted = settingCheck(v, L["Share with trusted players (below)"], "syncTrusted", 0, -46)
   local alts = W.Text(v, "GameFontDisableSmall")
   alts:SetPoint("TOPLEFT", 0, -72)
   alts:SetWidth(450)
   alts:SetSpacing(2)
   alts:SetText(
-    "Your alts on this Battle.net account already share everything: AME's history is saved account-wide. "
-      .. "Trust players to swap scans with friends, or with your own characters on other accounts. Only your "
-      .. "market and auction house are shared, and scans that disagree wildly with your prices are rejected."
+    L["Your alts on this Battle.net account already share everything: AME's history is saved account-wide. Trust players to swap scans with friends, or with your own characters on other accounts. Only your market and auction house are shared, and scans that disagree wildly with your prices are rejected."]
   )
 
-  heading(v, "Activity", 0, -128)
+  heading(v, L["Activity"], 0, -128)
   v.activity = W.Text(v, "GameFontHighlightSmall")
   v.activity:SetPoint("TOPLEFT", 0, -150)
   v.activity:SetWidth(450)
   v.activity:SetSpacing(3)
 
-  heading(v, "Recently heard from", 0, -236)
+  heading(v, L["Recently heard from"], 0, -236)
   v.peers = {}
   for i = 1, MAX_PEERS do
     local row = CreateFrame("Frame", nil, v)
@@ -88,7 +87,7 @@ function UI:CreateSyncView(parent, contentArea)
     row.text = W.Text(row, "GameFontHighlightSmall")
     row.text:SetPoint("LEFT", 0, 0)
     row.text:SetWidth(390)
-    row.block = W.Button(row, "Block", 50, 16, function()
+    row.block = W.Button(row, L["Block"], 50, 16, function()
       svc:Block(row.name)
       UI:RefreshSync()
     end)
@@ -96,7 +95,7 @@ function UI:CreateSyncView(parent, contentArea)
     v.peers[i] = row
   end
 
-  heading(v, "Blocked", 0, -364)
+  heading(v, L["Blocked"], 0, -364)
   v.guildBlocked = W.Text(v, "GameFontDisableSmall")
   v.guildBlocked:SetPoint("TOPLEFT", 0, -384)
   v.guildBlocked:SetWidth(460)
@@ -107,7 +106,7 @@ function UI:CreateSyncView(parent, contentArea)
     row:SetPoint("TOPLEFT", 0, -400 - (i - 1) * 18)
     row.text = W.Text(row, "GameFontHighlightSmall")
     row.text:SetPoint("LEFT", 0, 0)
-    row.unblock = W.Button(row, "Unblock", 60, 16, function()
+    row.unblock = W.Button(row, L["Unblock"], 60, 16, function()
       svc:Unblock(row.name)
       UI:RefreshSync()
     end)
@@ -116,18 +115,21 @@ function UI:CreateSyncView(parent, contentArea)
   end
 
   -- trusted players
-  heading(v, "Trusted players", COL2, 0)
+  heading(v, L["Trusted players"], COL2, 0)
   local input = W.Input(v)
   input:SetSize(240, 20)
   input:SetPoint("TOPLEFT", COL2, -24)
   input.hint = W.Text(input, "GameFontDisableSmall")
   input.hint:SetPoint("LEFT", 6, 0)
-  input.hint:SetText("Character name, e.g. First Last")
+  input.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
+  input.hint:SetJustifyH("LEFT")
+  input.hint:SetWordWrap(false)
+  input.hint:SetText(L["Character name, e.g. First Last"])
   local function add()
     local e, why = svc:AddTrusted(input:GetText())
     if e then
       input:SetText("")
-      v.addStatus:SetText(("Asked %s to share. They'll see a request in their Sync tab."):format(e.name))
+      v.addStatus:SetText(L["Asked %s to share. They'll see a request in their Sync tab."]:format(e.name))
     else
       v.addStatus:SetText("|cffff6159" .. tostring(why) .. "|r")
     end
@@ -139,13 +141,13 @@ function UI:CreateSyncView(parent, contentArea)
   end)
   input:SetScript("OnEnterPressed", add)
   v.input = input
-  local addButton = W.Button(v, "Add", 60, 20, add)
+  local addButton = W.Button(v, L["Add"], 60, 20, add)
   addButton:SetPoint("LEFT", input, "RIGHT", 6, 0)
   v.addStatus = W.Text(v, "GameFontDisableSmall")
   v.addStatus:SetPoint("TOPLEFT", COL2, -48)
   v.addStatus:SetWidth(460)
 
-  v.pendingHead = heading(v, "Requests", COL2, -70)
+  v.pendingHead = heading(v, L["Requests"], COL2, -70)
   v.pending = {}
   for i = 1, MAX_PENDING do
     local row = CreateFrame("Frame", nil, v)
@@ -153,17 +155,17 @@ function UI:CreateSyncView(parent, contentArea)
     row:SetPoint("TOPLEFT", COL2, -92 - (i - 1) * 22)
     row.text = W.Text(row, "GameFontHighlightSmall")
     row.text:SetPoint("LEFT", 0, 0)
-    row.approve = W.Button(row, "Approve", 64, 18, function()
+    row.approve = W.Button(row, L["Approve"], 64, 18, function()
       svc:Approve(row.name)
       UI:RefreshSync()
     end)
     row.approve:SetPoint("RIGHT", -126, 0)
-    row.decline = W.Button(row, "Decline", 64, 18, function()
+    row.decline = W.Button(row, L["Decline"], 64, 18, function()
       svc:Decline(row.name)
       UI:RefreshSync()
     end)
     row.decline:SetPoint("RIGHT", -56, 0)
-    row.block = W.Button(row, "Block", 50, 18, function()
+    row.block = W.Button(row, L["Block"], 50, 18, function()
       svc:Block(row.name)
       UI:RefreshSync()
     end)
@@ -171,7 +173,7 @@ function UI:CreateSyncView(parent, contentArea)
     v.pending[i] = row
   end
 
-  v.trustedHead = heading(v, "Trusted", COL2, -164)
+  v.trustedHead = heading(v, L["Trusted"], COL2, -164)
   v.trustedRows = {}
   for i = 1, MAX_TRUSTED do
     local row = CreateFrame("Frame", nil, v)
@@ -191,7 +193,7 @@ function UI:CreateSyncView(parent, contentArea)
   end
   v.trustedEmpty = W.Text(v, "GameFontDisableSmall")
   v.trustedEmpty:SetPoint("TOPLEFT", COL2, -186)
-  v.trustedEmpty:SetText("Nobody yet. Add a friend above - they need AME too, and must approve.")
+  v.trustedEmpty:SetText(L["Nobody yet. Add a friend above - they need AME too, and must approve."])
   v.trustedMore = W.Text(v, "GameFontDisableSmall")
   v.trustedMore:SetPoint("TOPLEFT", COL2, -186 - MAX_TRUSTED * 22)
 
@@ -216,23 +218,25 @@ function UI:RefreshSync()
   local s = AME_DB.stats
   local lines = {}
   if not svc.enabled then
-    lines[1] = "|cffff6159Sync is unavailable: the AceComm library didn't load.|r"
+    lines[1] = "|cffff6159" .. L["Sync is unavailable: the AceComm library didn't load."] .. "|r"
   else
     local guild = IsInGuild and IsInGuild()
-    lines[#lines + 1] = ("Guild: %s"):format(
-      not ns.Settings:Get("syncGuild") and "off" or guild and "|cff4dd973on|r" or "on, but you're not in a guild"
+    lines[#lines + 1] = L["Guild: %s"]:format(
+      not ns.Settings:Get("syncGuild") and L["off"]
+        or guild and "|cff4dd973" .. L["on"] .. "|r"
+        or L["on, but you're not in a guild"]
     )
-    lines[#lines + 1] = ("Announced %d times, served %d scans, received %d, rejected %d"):format(
+    lines[#lines + 1] = L["Announced %d times, served %d scans, received %d, rejected %d"]:format(
       s.syncAnnounced or 0,
       s.syncServed or 0,
       s.syncReceived or 0,
       s.syncRejected or 0
     )
     local last = s.lastSyncReceived
-    lines[#lines + 1] = last and ("Last received: %d items from %s, %s"):format(last.items, last.from, ago(last.at))
-      or "Nothing received yet - scans arrive when someone you share with runs a full scan."
+    lines[#lines + 1] = last and L["Last received: %d items from %s, %s"]:format(last.items, last.from, ago(last.at))
+      or L["Nothing received yet - scans arrive when someone you share with runs a full scan."]
     if s.lastSyncRejection then
-      lines[#lines + 1] = "|cffffcc00Last rejected:|r " .. s.lastSyncRejection
+      lines[#lines + 1] = "|cffffcc00" .. L["Last rejected:"] .. "|r " .. s.lastSyncRejection
     end
   end
   v.activity:SetText(table.concat(lines, "\n"))
@@ -245,16 +249,15 @@ function UI:RefreshSync()
     if p then
       local blocked = svc.trust:IsBlocked(p.name)
       row.text:SetText(
-        ("%s  |cff999999via %s, %s%s%s|r"):format(
+        ("%s  |cff999999%s%s%s|r"):format(
           p.name,
-          p.via == "GUILD" and "guild" or "whisper",
-          ago(p.at),
-          (p.received or 0) > 0 and (", %d scans received"):format(p.received) or "",
-          blocked and ", |cffff6159blocked|r" or ""
+          L["via %s, %s"]:format(p.via == "GUILD" and L["guild"] or L["whisper"], ago(p.at)),
+          (p.received or 0) > 0 and L[", %d scans received"]:format(p.received) or "",
+          blocked and ", |cffff6159" .. L["blocked"] .. "|r" or ""
         )
       )
     else
-      row.text:SetText(i == 1 and "|cff999999No one yet.|r" or "")
+      row.text:SetText(i == 1 and "|cff999999" .. L["No one yet."] .. "|r" or "")
     end
   end
 
@@ -264,8 +267,10 @@ function UI:RefreshSync()
   end
   table.sort(guildList)
   v.guildBlocked:SetText(
-    #guildList > 0 and ("By your guild officers: |cffffffff%s|r"):format(table.concat(guildList, ", "))
-      or 'Guild officers can block players for everyone: add a line "AME block: Name, Name" to the guild info.'
+    #guildList > 0 and L["By your guild officers: %s"]:format("|cffffffff" .. table.concat(guildList, ", ") .. "|r")
+      or L['Guild officers can block players for everyone: add a line "%s" to the guild info.']:format(
+        "AME block: Name, Name"
+      )
   )
   local blocked = svc.trust and svc.trust:BlockedList() or {}
   for i, row in ipairs(v.blocked) do
@@ -274,9 +279,9 @@ function UI:RefreshSync()
     row.name = b and b.name
     row.unblock:SetShown(b ~= nil)
     if b then
-      row.text:SetText(("%s  |cff999999blocked %s|r"):format(b.name, ago(b.at)))
+      row.text:SetText(("%s  |cff999999%s|r"):format(b.name, L["blocked %s"]:format(ago(b.at))))
     else
-      row.text:SetText("|cff999999You haven't blocked anyone.|r")
+      row.text:SetText("|cff999999" .. L["You haven't blocked anyone."] .. "|r")
     end
   end
 
@@ -287,7 +292,7 @@ function UI:RefreshSync()
     row:SetShown(p ~= nil)
     if p then
       row.name = p.name
-      row.text:SetText(("%s  |cff999999wants to share, %s|r"):format(p.name, ago(p.at)))
+      row.text:SetText(("%s  |cff999999%s|r"):format(p.name, L["wants to share, %s"]:format(ago(p.at))))
     end
   end
 
@@ -295,7 +300,7 @@ function UI:RefreshSync()
   local top = #pending > 0 and (-92 - math.min(#pending, MAX_PENDING) * 22 - 10) or -70
   v.trustedHead:ClearAllPoints()
   v.trustedHead:SetPoint("TOPLEFT", COL2, top)
-  v.trustedHead:SetText(("Trusted (%d)"):format(#trusted))
+  v.trustedHead:SetText(L["Trusted (%d)"]:format(#trusted))
   v.trustedEmpty:ClearAllPoints()
   v.trustedEmpty:SetPoint("TOPLEFT", COL2, top - 22)
   v.trustedEmpty:SetShown(#trusted == 0)
@@ -310,14 +315,17 @@ function UI:RefreshSync()
       local heard = svc.trust:LastHeard(e.name)
       row.state:SetText(
         e.mutual
-            and ("|cff4dd973sharing|r  |cff999999%s|r"):format(heard and ("heard " .. ago(heard)) or "not heard yet")
-          or "|cff999999waiting for them to approve|r"
+            and ("|cff4dd973%s|r  |cff999999%s|r"):format(
+              L["sharing"],
+              heard and L["heard %s"]:format(ago(heard)) or L["not heard yet"]
+            )
+          or "|cff999999" .. L["waiting for them to approve"] .. "|r"
       )
     end
   end
   v.trustedMore:ClearAllPoints()
   v.trustedMore:SetPoint("TOPLEFT", COL2, top - 22 - MAX_TRUSTED * 22)
-  v.trustedMore:SetText(#trusted > MAX_TRUSTED and ("+ %d more"):format(#trusted - MAX_TRUSTED) or "")
+  v.trustedMore:SetText(#trusted > MAX_TRUSTED and L["+ %d more"]:format(#trusted - MAX_TRUSTED) or "")
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -329,12 +337,17 @@ function UI:CreateSettingsView(parent, contentArea)
   local checks = {}
   v.checks = checks
 
-  heading(v, "Display", 0, 0)
-  checks[#checks + 1] = settingCheck(v, "Show AME prices in item tooltips", "tooltip", 0, -24)
+  heading(v, L["Display"], 0, 0)
+  checks[#checks + 1] = settingCheck(v, L["Show AME prices in item tooltips"], "tooltip", 0, -24)
   local avgLabel = W.Text(v, "GameFontHighlightSmall")
   avgLabel:SetPoint("TOPLEFT", 260, -26)
-  avgLabel:SetText("average period")
-  local avgs = { { 3, "3 days" }, { 7, "7 days" }, { 14, "14 days" }, { 30, "30 days" } }
+  avgLabel:SetText(L["average period"])
+  local avgs = {
+    { 3, L["%d days"]:format(3) },
+    { 7, L["%d days"]:format(7) },
+    { 14, L["%d days"]:format(14) },
+    { 30, L["%d days"]:format(30) },
+  }
   v.avgDays = W.Dropdown(v, 90, avgs, function(value)
     -- one period everywhere: tooltips, the screener's average column and the item page
     ns.Settings:Set("tooltipAvgDays", value)
@@ -348,12 +361,12 @@ function UI:CreateSettingsView(parent, contentArea)
   v.avgDays.values = avgs
   v.avgDays.neutral = true
   checks[#checks + 1] =
-    settingCheck(v, "Always show full tooltip details (otherwise hold Shift)", "tooltipDetail", 0, -48)
+    settingCheck(v, L["Always show full tooltip details (otherwise hold Shift)"], "tooltipDetail", 0, -48)
 
   local styleLabel = W.Text(v, "GameFontHighlightSmall")
   styleLabel:SetPoint("TOPLEFT", 0, -80)
-  styleLabel:SetText("Chart style")
-  local styles = { { "line", "Line" }, { "candles", "Candles" } }
+  styleLabel:SetText(L["Chart style"])
+  local styles = { { "line", L["Line"] }, { "candles", L["Candles"] } }
   v.style = W.Dropdown(v, 120, styles, function(value)
     ns.Settings:Set("chartStyle", value)
     if UI.series then
@@ -366,15 +379,15 @@ function UI:CreateSettingsView(parent, contentArea)
 
   local clickLabel = W.Text(v, "GameFontHighlightSmall")
   clickLabel:SetPoint("TOPLEFT", 0, -106)
-  clickLabel:SetText("Open item charts with")
-  local clicks = { { "alt", "Alt-click" }, { "altshift", "Alt+Shift-click" }, { "none", "Off" } }
+  clickLabel:SetText(L["Open item charts with"])
+  local clicks = { { "alt", L["Alt-click"] }, { "altshift", L["Alt+Shift-click"] }, { "none", L["Off"] } }
   v.click = W.Dropdown(v, 120, clicks, function(value)
     ns.Settings:Set("clickModifier", value)
   end)
   v.click:SetPoint("TOPLEFT", 150, -102)
   v.click.values = clicks
   v.click.neutral = true
-  note(v, clickLabel, "Change this if another addon (e.g. AHDB) also uses Alt-click on items.", 440):SetPoint(
+  note(v, clickLabel, L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."], 440):SetPoint(
     "TOPLEFT",
     clickLabel,
     "BOTTOMLEFT",
@@ -382,19 +395,19 @@ function UI:CreateSettingsView(parent, contentArea)
     -14
   )
 
-  v.minimap = W.Check(v, "Show minimap button", function(on)
+  v.minimap = W.Check(v, L["Show minimap button"], function(on)
     ns.Settings:SetMinimap(on)
   end)
   v.minimap:SetPoint("TOPLEFT", 0, -150)
 
   local themeLabel = W.Text(v, "GameFontHighlightSmall")
   themeLabel:SetPoint("TOPLEFT", 260, -152)
-  themeLabel:SetText("Window colours")
+  themeLabel:SetText(L["Window colours"])
   local themes = {
-    { "auto", "Follow market" },
-    { "Horde", "Horde red" },
-    { "Alliance", "Alliance blue" },
-    { "Neutral", "Goblin gold" },
+    { "auto", L["Follow market"] },
+    { "Horde", L["Horde red"] },
+    { "Alliance", L["Alliance blue"] },
+    { "Neutral", L["Goblin gold"] },
   }
   v.theme = W.Dropdown(v, 110, themes, function(value)
     ns.Settings:Set("theme", value)
@@ -404,20 +417,20 @@ function UI:CreateSettingsView(parent, contentArea)
   v.theme.values = themes
   v.theme.neutral = true
 
-  heading(v, "Notifications", 0, -182)
-  checks[#checks + 1] = settingCheck(v, "Announce recorded full scans in chat", "announceScans", 0, -204)
-  checks[#checks + 1] = settingCheck(v, "Play a sound when a watchlist alert fires", "alertSound", 0, -226)
+  heading(v, L["Notifications"], 0, -182)
+  checks[#checks + 1] = settingCheck(v, L["Announce recorded full scans in chat"], "announceScans", 0, -204)
+  checks[#checks + 1] = settingCheck(v, L["Play a sound when a watchlist alert fires"], "alertSound", 0, -226)
 
-  heading(v, "Data quality", 0, -258)
+  heading(v, L["Data quality"], 0, -258)
   local outlierLabel = W.Text(v, "GameFontHighlightSmall")
   outlierLabel:SetPoint("TOPLEFT", 0, -284)
-  outlierLabel:SetText("Ignore outrageous prices")
+  outlierLabel:SetText(L["Ignore outrageous prices"])
   local factors = {
-    { false, "Off" },
-    { 3, "3x off usual" },
-    { 4, "4x off usual" },
-    { 6, "6x off usual" },
-    { 10, "10x off usual" },
+    { false, L["Off"] },
+    { 3, L["%dx off usual"]:format(3) },
+    { 4, L["%dx off usual"]:format(4) },
+    { 6, L["%dx off usual"]:format(6) },
+    { 10, L["%dx off usual"]:format(10) },
   }
   v.outliers = W.Dropdown(v, 120, factors, function(value)
     ns.Settings:Set("outlierFactor", value)
@@ -435,36 +448,33 @@ function UI:CreateSettingsView(parent, contentArea)
   why:SetWidth(440)
   why:SetSpacing(2)
   why:SetText(
-    "Days where an item's price is this many times above (or below) its neighbouring days are left out of "
-      .. "the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. "
-      .. "Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the "
-      .. "supply."
+    L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."]
   )
 
   -- data
-  heading(v, "Data", COL2, 0)
+  heading(v, L["Data"], COL2, 0)
   v.storage = W.Text(v, "GameFontHighlightSmall")
   v.storage:SetPoint("TOPLEFT", COL2, -24)
   v.storage:SetWidth(460)
   v.storage:SetSpacing(3)
   local actions = {
     {
-      "Import history from Auctionator",
-      "If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH).",
+      L["Import history from Auctionator"],
+      L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."],
       function()
         ns.AME:Backfill(true)
       end,
     },
     {
-      "Rebuild market index",
-      "Recomputes the 30-day summaries behind the screener, tooltips and alerts.",
+      L["Rebuild market index"],
+      L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."],
       function()
         ns.AME:RebuildIndex()
       end,
     },
     {
-      "Run self-test",
-      "Checks every part of AME and offers a reload so the results are saved.",
+      L["Run self-test"],
+      L["Checks every part of AME and offers a reload so the results are saved."],
       function()
         ns.SelfTest.Run(ns.AME)
       end,
@@ -478,7 +488,7 @@ function UI:CreateSettingsView(parent, contentArea)
     t:SetWidth(440)
     t:SetText(a[2])
   end
-  heading(v, "Auction house cut", COL2, -258)
+  heading(v, L["Auction house cut"], COL2, -258)
   local function cutInput(key, label, y)
     local t = W.Text(v, "GameFontHighlightSmall")
     t:SetPoint("TOPLEFT", COL2, y)
@@ -500,12 +510,16 @@ function UI:CreateSettingsView(parent, contentArea)
     input.key = key
     return input
   end
-  v.cutFaction = cutInput("cutFaction", "Faction auction houses", -284)
-  v.cutNeutral = cutInput("cutNeutral", "Goblin auction houses", -310)
+  v.cutFaction = cutInput("cutFaction", L["Faction auction houses"], -284)
+  v.cutNeutral = cutInput("cutNeutral", L["Goblin auction houses"], -310)
   local hoursLabel = W.Text(v, "GameFontHighlightSmall")
   hoursLabel:SetPoint("TOPLEFT", COL2 + 250, -284)
-  hoursLabel:SetText("Deposits for")
-  local hours = { { 2, "2 h listings" }, { 8, "8 h listings" }, { 24, "24 h listings" } }
+  hoursLabel:SetText(L["Deposits for"])
+  local hours = {
+    { 2, L["%d h listings"]:format(2) },
+    { 8, L["%d h listings"]:format(8) },
+    { 24, L["%d h listings"]:format(24) },
+  }
   v.hours = W.Dropdown(v, 110, hours, function(value)
     ns.Settings:Set("listingHours", value)
     if UI.RenderArbitrage then
@@ -519,7 +533,7 @@ function UI:CreateSettingsView(parent, contentArea)
   local more = W.Text(v, "GameFontDisableSmall")
   more:SetPoint("TOPLEFT", COL2, -340)
   more:SetWidth(440)
-  more:SetText("Sharing settings are on the Sync tab. These options are also in the game's AddOns settings.")
+  more:SetText(L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."])
 
   v:SetScript("OnShow", function()
     UI:RefreshSettings()
@@ -555,11 +569,12 @@ function UI:RefreshSettings()
   local hasIcon = ns.Settings:HasMinimapLibrary()
   v.minimap:SetChecked(hasIcon and not AME_DB.settings.minimap.hide)
   v.minimap.label:SetText(
-    hasIcon and "Show minimap button" or "Show minimap button |cff999999(needs LibDBIcon; included in releases)|r"
+    hasIcon and L["Show minimap button"]
+      or L["Show minimap button"] .. " |cff999999" .. L["(needs LibDBIcon; included in releases)"] .. "|r"
   )
 
   local AME = ns.AME
-  local lines = { ("Market: |cffffffff%s|r"):format(ns.ShardLabel(AME:CurrentShard())) }
+  local lines = { L["Market: %s"]:format("|cffffffff" .. ns.ShardLabel(AME:CurrentShard()) .. "|r") }
   if AME:HistoryLoaded() then
     local shards, days, bytes = 0, 0, 0
     for _, data in pairs(AME.history.shards) do
@@ -576,16 +591,17 @@ function UI:RefreshSettings()
     for _ in pairs(here and here.days or {}) do
       hereDays = hereDays + 1
     end
-    lines[#lines + 1] = ("This market: %d days of history, %d recent scans kept in full"):format(
+    lines[#lines + 1] = L["This market: %d days of history, %d recent scans kept in full"]:format(
       hereDays,
       here and #(here.raw or {}) or 0
     )
-    lines[#lines + 1] = ("All markets: %d, %.0f KB of compressed daily history"):format(shards, bytes / 1024)
+    lines[#lines + 1] = L["All markets: %d, %.0f KB of compressed daily history"]:format(shards, bytes / 1024)
   else
-    lines[#lines + 1] = "History not loaded yet."
+    lines[#lines + 1] = L["History not loaded yet."]
   end
   local f = AME_DB.stats.lastFull
-  lines[#lines + 1] = f and ("Last full scan: %d items, %s"):format(f.items, ago(f.at)) or "No full scan recorded yet."
+  lines[#lines + 1] = f and L["Last full scan: %d items, %s"]:format(f.items, ago(f.at))
+    or L["No full scan recorded yet."]
   v.storage:SetText(table.concat(lines, "\n"))
 end
 

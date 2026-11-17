@@ -1,6 +1,7 @@
 -- WoW glue: events, scan hooks, load-on-demand history, background jobs, slash commands. Logic lives in the pure
 -- modules (Stats, Codec, Store, Ingest, Backfill); this file only wires them to the client.
 local ADDON, ns = ...
+local L = ns.L
 
 local AME = {}
 ns.AME = AME
@@ -54,7 +55,7 @@ function AME:LoadHistory()
   local t0 = debugprofilestop()
   local loaded, reason = load(HISTORY_ADDON)
   if not loaded then
-    say("could not load %s: %s", HISTORY_ADDON, tostring(reason))
+    say(L["could not load %s: %s"], HISTORY_ADDON, tostring(reason))
     return false
   end
   AME_HistoryDB = AME_HistoryDB or {}
@@ -168,10 +169,10 @@ end
 
 -- Watchlist alerts: checked against each fresh market index (after scans, sync merges and at login).
 local ALERT_TEXT = {
-  below = "dropped to %s (alert at %s)",
-  above = "rose to %s (alert at %s)",
-  buy = "BUY signal at %s",
-  sell = "SELL signal at %s",
+  below = L["dropped to %s (alert at %s)"],
+  above = L["rose to %s (alert at %s)"],
+  buy = L["BUY signal at %s"],
+  sell = L["SELL signal at %s"],
 }
 
 function AME:CheckAlerts(index)
@@ -183,9 +184,9 @@ function AME:CheckAlerts(index)
     local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
     local _, link = getInfo(a.itemID)
     local what = ALERT_TEXT[a.kind]:format(money(a.market), a.threshold and money(a.threshold) or "")
-    say("|cffffcc00Alert:|r %s %s", link or ("item:" .. a.itemID), what)
+    say("|cffffcc00" .. L["Alert:"] .. "|r %s %s", link or ("item:" .. a.itemID), what)
     if UIErrorsFrame then
-      UIErrorsFrame:AddMessage(("AME alert: %s %s"):format(link or a.itemID, what), 1, 0.82, 0)
+      UIErrorsFrame:AddMessage(L["AME alert: %s %s"]:format(link or a.itemID, what), 1, 0.82, 0)
     end
   end
   if #fired > 0 and ns.Settings:Get("alertSound") and PlaySound and SOUNDKIT then
@@ -294,7 +295,7 @@ function AME:RebuildIndex()
         ns.UI:RefreshMarket()
       end
     elseif not ok then
-      say("|cffff5555market index failed:|r %s", tostring(index))
+      say("|cffff5555" .. L["market index failed:"] .. "|r %s", tostring(index))
     end
     if self.indexPending then
       self.indexPending = false
@@ -318,7 +319,7 @@ function AME:OnSnapshot(snap, t, kind, info)
     d.readDoneAt, d.readItems = GetServerTime(), #snap.ids
   end
   if kind == "error" then
-    say("|cffff5555scan read failed:|r %s", tostring(info and info.error))
+    say("|cffff5555" .. L["scan read failed:"] .. "|r %s", tostring(info and info.error))
     return
   end
   local shard = self:CurrentShard()
@@ -332,7 +333,7 @@ function AME:OnSnapshot(snap, t, kind, info)
     return added
   end, function(ok, added)
     if not ok then
-      say("|cffff5555storing %s scan failed:|r %s", kind, tostring(added))
+      say("|cffff5555%s|r %s", L["storing %s scan failed:"]:format(kind), tostring(added))
       return
     end
     self:InvalidateIndex(shard)
@@ -352,7 +353,7 @@ function AME:OnSnapshot(snap, t, kind, info)
       }
       if ns.Settings:Get("announceScans") then
         say(
-          "recorded full scan: %d items from %d listings (%s)",
+          L["recorded full scan: %d items from %d listings (%s)"],
           #snap.ids,
           info and info.rows or 0,
           ns.ShardLabel(shard)
@@ -380,7 +381,7 @@ AME.ingest = ns.Ingest.New({
     local d = AME:ScanDiag()
     d.readStartedAt, d.readRows = GetServerTime(), rows
     if ns.Settings:Get("announceScans") then
-      say("reading full scan (%d listings) in the background...", rows or 0)
+      say(L["reading full scan (%d listings) in the background..."], rows or 0)
     end
   end,
   -- legacy AH globals, looked up at call time (only used after a QueryAuctionItems hook fires)
@@ -399,13 +400,13 @@ AME.ingest = ns.Ingest.New({
 -- installed (its public API), otherwise the default auction house window. Returns true when a search started.
 function AME:SearchAuctionHouse(itemID)
   if not self.ahOpen then
-    say("open the auction house first")
+    say(L["open the auction house first"])
     return false
   end
   local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
   local name = getInfo(itemID)
   if not name then
-    say("item not loaded yet - try again in a moment")
+    say(L["item not loaded yet - try again in a moment"])
     return false
   end
   local api = Auctionator and Auctionator.API and Auctionator.API.v1
@@ -429,7 +430,7 @@ function AME:SearchAuctionHouse(itemID)
     BrowseName:SetText(name)
     return pcall(AuctionFrameBrowse_Search)
   end
-  say("couldn't start an auction house search for %s", name)
+  say(L["couldn't start an auction house search for %s"], name)
   return false
 end
 
@@ -445,7 +446,9 @@ function AME:Backfill(force)
   -- faction AH only, so the goblin AH's history stays clean for cross-AH comparisons.
   if self:CurrentHouse() == "Neutral" then
     if force then
-      say("history import from Auctionator is only done at your faction's auction house (its data mixes all houses).")
+      say(
+        L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."]
+      )
     end
     return
   end
@@ -457,7 +460,7 @@ function AME:Backfill(force)
   end
   local ok, days = pcall(ns.Backfill.FromAuctionator, db, day0)
   if not ok then
-    say("history import from Auctionator skipped: %s", tostring(days))
+    say(L["history import from Auctionator skipped: %s"], tostring(days))
     return
   end
   self:WithStore("backfill", shard, function(store, job)
@@ -473,11 +476,11 @@ function AME:Backfill(force)
     if okDone then
       AME_DB.backfilled[shard] = GetServerTime()
       if (n or 0) > 0 then
-        say("imported %d days of price history from Auctionator into %s", n, ns.ShardLabel(shard))
+        say(L["imported %d days of price history from Auctionator into %s"], n, ns.ShardLabel(shard))
         self:RebuildIndex()
       end
     else
-      say("history import from Auctionator failed: %s", tostring(n))
+      say(L["history import from Auctionator failed: %s"], tostring(n))
     end
   end)
 end
@@ -633,8 +636,10 @@ function handlers.AUCTION_HOUSE_CLOSED()
     local d = AME:ScanDiag()
     d.aborted = (d.aborted or 0) + 1
     say(
-      "|cffffcc00the AH closed before AME finished reading the full scan; it wasn't recorded.|r Keep the AH open "
-        .. 'until AME says "recorded full scan".'
+      "|cffffcc00"
+        .. L["the AH closed before AME finished reading the full scan; it wasn't recorded."]
+        .. "|r "
+        .. L['Keep the AH open until AME says "recorded full scan".']
     )
   end
   AME.ingest:OnAuctionHouseClosed()
@@ -686,7 +691,7 @@ AME.ItemIDFrom = itemIDFrom
 local function cmdItem(arg)
   local id = itemIDFrom(arg)
   if not id then
-    say("usage: /ame item <item link or itemID>")
+    say(L["usage: /ame item <item link or itemID>"])
     return
   end
   local store = AME:Store()
@@ -696,7 +701,7 @@ local function cmdItem(arg)
   local l = store:Latest(id)
   if l then
     say(
-      "%s latest (%s): min %s, market %s, %d units in %d auctions",
+      L["%s latest (%s): min %s, market %s, %d units in %d auctions"],
       arg,
       date("%H:%M", l.t),
       money(l.min),
@@ -707,13 +712,13 @@ local function cmdItem(arg)
   end
   local series = store:Series(id)
   if #series == 0 then
-    say("no history for %s in %s", arg, ns.ShardLabel(AME:CurrentShard()))
+    say(L["no history for %s in %s"], arg, ns.ShardLabel(AME:CurrentShard()))
     return
   end
   for k = math.max(1, #series - 13), #series do
     local p = series[k]
     say(
-      "  %s %s: min %s, market %s, qty %d (%d samples)",
+      "  " .. L["%s %s: min %s, market %s, qty %d (%d samples)"],
       p.res,
       date("!%Y-%m-%d", p.day * 86400),
       money(p.min),
@@ -726,16 +731,16 @@ end
 
 local function cmdStatus()
   local shard = AME:CurrentShard()
-  say("market %s, history %s", ns.ShardLabel(shard), AME:HistoryLoaded() and "loaded" or "not loaded")
+  say(L["market %s, history %s"], ns.ShardLabel(shard), AME:HistoryLoaded() and L["loaded"] or L["not loaded"])
   local s = AME_DB.stats
   if s.lastFull then
     say(
-      "last full scan: %d items, %s ago",
+      L["last full scan: %d items, %s ago"],
       s.lastFull.items,
       SecondsToTime and SecondsToTime(GetServerTime() - s.lastFull.at) or "?"
     )
   else
-    say("no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)")
+    say(L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"])
   end
   if AME:HistoryLoaded() then
     local data = AME.history.shards[shard]
@@ -747,17 +752,16 @@ local function cmdStatus()
           bytes = bytes + #p
         end
       end
-      say("history: %d raw scans, %d days, %.0f KB", #(data.raw or {}), days, bytes / 1024)
+      say(L["history: %d raw scans, %d days, %.0f KB"], #(data.raw or {}), days, bytes / 1024)
     end
   end
   local d = AME:ScanDiag()
   say(
-    "scan pipeline: %d requests, %d events (%d since last request), read %s, aborted %d; ingest requested=%s "
-      .. "reading=%s",
+    L["scan pipeline: %d requests, %d events (%d since last request), read %s, aborted %d; ingest requested=%s reading=%s"],
     d.requests or 0,
     d.events or 0,
     d.eventsSinceRequest or 0,
-    d.readItems and (d.readItems .. " items") or "none",
+    d.readItems and L["%d items"]:format(d.readItems) or L["none"],
     d.aborted or 0,
     tostring(AME.ingest.requested),
     tostring(AME.ingest.reading)
@@ -766,10 +770,10 @@ local function cmdStatus()
   for _, job in ipairs(AME.jobs.queue) do
     names[#names + 1] = job.name
   end
-  say("background jobs: %s", #names > 0 and table.concat(names, ", ") or "idle")
+  say(L["background jobs: %s"], #names > 0 and table.concat(names, ", ") or L["idle"])
   say(
-    "guild sync: %s, announced %d, served %d, received %d, rejected %d",
-    ns.SyncService:Active() and "on" or "off",
+    L["guild sync: %s, announced %d, served %d, received %d, rejected %d"],
+    ns.SyncService:Active() and L["on"] or L["off"],
     s.syncAnnounced or 0,
     s.syncServed or 0,
     s.syncReceived or 0,
@@ -794,11 +798,11 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
   elseif cmd == "" then
     ns.UI:Toggle()
   elseif cmd == "help" then
-    say("/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it")
-    say("/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config")
+    say(L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"])
+    say(L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"])
   elseif itemIDFrom(msg) then
     ns.UI:ShowItem(itemIDFrom(msg))
   else
-    say("unknown command, try /ame help")
+    say(L["unknown command, try /ame help"])
   end
 end

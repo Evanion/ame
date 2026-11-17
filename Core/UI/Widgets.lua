@@ -1,5 +1,6 @@
 -- Small flat-style widget helpers shared by AME windows.
 local _, ns = ...
+local L = ns.L
 
 local W = {}
 ns.Widgets = W
@@ -118,12 +119,19 @@ function W.Money(copper, short)
   copper = math.floor(copper + 0.5)
   local g, s, c = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
   local G, S, C = "|cffffd100g|r", "|cffc7c7cfs|r", "|cffeda55fc|r"
-  if g > 0 then
-    if short or g >= 1000 then
+  -- short (narrow columns): whole gold from 100g up, rounded; below that silver still matters (2g 98s, not 2g).
+  -- Zero lower units are left out: "18s", not "18s 0c".
+  if g >= 1000 or (short and g >= 100) then
+    return commas(math.floor(copper / 10000 + 0.5)) .. G
+  elseif g > 0 then
+    if s == 0 then
       return commas(g) .. G
     end
     return ("%s%s %d%s"):format(commas(g), G, s, S)
   elseif s > 0 then
+    if c == 0 then
+      return ("%d%s"):format(s, S)
+    end
     return ("%d%s %d%s"):format(s, S, c, C)
   end
   return ("%d%s"):format(c, C)
@@ -139,13 +147,13 @@ end
 
 function W.Signal(signal)
   if signal == "buy" then
-    return "|cff4dd973BUY|r"
+    return "|cff4dd973" .. L["BUY"] .. "|r"
   elseif signal == "sell" then
-    return "|cffff6159SELL|r"
+    return "|cffff6159" .. L["SELL"] .. "|r"
   elseif signal == "hold" then
-    return "|cffffcc33HOLD|r"
+    return "|cffffcc33" .. L["HOLD"] .. "|r"
   elseif signal == "wait" then
-    return "|cff8fa3b8WAIT|r"
+    return "|cff8fa3b8" .. L["WAIT"] .. "|r"
   end
   return "|cff777777-|r"
 end
@@ -547,7 +555,7 @@ function W.Rate(perDay)
   if not perDay then
     return "|cff777777-|r"
   end
-  if perDay >= 10 then
+  if perDay >= 10 or perDay < 0.05 then -- "~0/d", not "~0.0/d": nothing measurably sells
     return ("~%d/d"):format(math.floor(perDay + 0.5))
   end
   return ("~%.1f/d"):format(perDay)
@@ -574,4 +582,4 @@ function W.Confidence(level)
   return table.concat(out, " ")
 end
 
-W.CONFIDENCE_LABEL = { high = "high", medium = "medium", low = "low" }
+W.CONFIDENCE_LABEL = { high = L["high"], medium = L["medium"], low = L["low"] }

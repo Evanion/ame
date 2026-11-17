@@ -8,6 +8,7 @@
 -- Alerts fire once when their condition becomes true and re-arm when it stops being true (with a little hysteresis
 -- on price levels), so a price hovering around a threshold doesn't spam.
 local _, ns = ...
+local L = ns.L
 
 local Watch = {}
 Watch.__index = Watch
@@ -36,11 +37,11 @@ end
 function Watch:AddList(name)
   name = (name or ""):gsub("^%s+", ""):gsub("%s+$", "")
   if name == "" then
-    return nil, "a list needs a name"
+    return nil, L["a list needs a name"]
   end
   for _, l in ipairs(self.db.lists) do
     if l.name:lower() == name:lower() then
-      return nil, "a list with that name already exists"
+      return nil, L["a list with that name already exists"]
     end
   end
   local list = { name = name, items = {} }

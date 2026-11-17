@@ -5,6 +5,7 @@
   <Include file="Libs\Ace3\AceGUI-3.0\AceGUI-3.0.xml"/>
   <Include file="Libs\Ace3\AceConfig-3.0\AceConfig-3.0.xml"/>
   <Include file="Libs\Ace3\AceComm-3.0\AceComm-3.0.xml"/>
+  <Include file="Libs\Ace3\AceLocale-3.0\AceLocale-3.0.xml"/>
   <Include file="Libs\LibDeflate\lib.xml"/>
   <Script file="Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
   <!-- LibDBIcon comes from the official WowAce SVN via .pkgmeta (release builds). In development it's used only if

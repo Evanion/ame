@@ -1,5 +1,6 @@
 -- Item tooltip lines from the market index (no history decoding on hover) + Alt-click to open the item chart.
 local _, ns = ...
+local L = ns.L
 
 local W = ns.Widgets
 
@@ -14,11 +15,11 @@ local function ago(day, today)
   end
   local d = today - day
   if d <= 0 then
-    return "today"
+    return L["today"]
   elseif d == 1 then
-    return "yesterday"
+    return L["yesterday"]
   end
-  return d .. " days ago"
+  return L["%d days ago"]:format(d)
 end
 
 local DIM = "|cff999999"
@@ -33,42 +34,45 @@ function Tooltip.Lines(s, opts)
   local function row(left, right)
     rows[#rows + 1] = { "|cff33ccffAME|r " .. left, right }
   end
-  local change = s.change7 and ("  " .. W.Percent(s.change7) .. DIM .. " 7d|r") or ""
-  row("market", W.Money(s.market) .. change)
+  local change = s.change7 and ("  " .. W.Percent(s.change7) .. DIM .. " " .. L["7d"] .. "|r") or ""
+  row(L["market"], W.Money(s.market) .. change)
   local days = opts.avgDays or 7
   local avg = s["avg" .. days] or s.avg30
   if avg then
-    row(days .. "-day average", W.Money(avg))
+    row(L["%d-day average"]:format(days), W.Money(avg))
   end
   local phase = s.phase and ns.Analytics and ns.Analytics.PHASE_LABEL[s.phase]
   if s.signal and s.signal ~= "none" then
     row(
-      "signal",
+      L["signal"],
       W.Signal(s.signal)
         .. (phase and (DIM .. "  " .. phase:lower() .. "|r") or "")
-        .. (opts.detail and (DIM .. "  score %+d|r"):format(s.score or 0) or "")
+        .. (opts.detail and (DIM .. "  " .. L["score %+d"] .. "|r"):format(s.score or 0) or "")
     )
   end
   if not opts.detail then
-    rows[#rows + 1] = { DIM .. "Hold Shift for more AME data|r" }
+    rows[#rows + 1] = { DIM .. L["Hold Shift for more AME data"] .. "|r" }
     return rows
   end
-  row("lowest", W.Money(s.min))
-  local trend = s.supplyTrend30 and ("  " .. W.Percent(s.supplyTrend30 * 7, 0) .. DIM .. "/week|r") or ""
-  row("supply", tostring(s.qty or 0) .. DIM .. " listed|r" .. trend)
+  row(L["lowest"], W.Money(s.min))
+  local trend = s.supplyTrend30 and ("  " .. W.Percent(s.supplyTrend30 * 7, 0) .. DIM .. L["/week"] .. "|r") or ""
+  row(L["supply"], tostring(s.qty or 0) .. DIM .. " " .. L["listed"] .. "|r" .. trend)
   if s.sellRate then
-    row("sells", W.Rate(s.sellRate) .. DIM .. " (est.)|r")
+    row(L["sells"], W.Rate(s.sellRate) .. DIM .. " " .. L["(est.)"] .. "|r")
   end
   if s.vol30 then
-    row("volatility", ("%.1f%%"):format(s.vol30 * 100))
+    row(L["volatility"], ("%.1f%%"):format(s.vol30 * 100))
   end
   if s.signal == "none" or not s.signal then
-    row("score", ("%+d"):format(s.score or 0))
+    row(L["score"], ("%+d"):format(s.score or 0))
   end
   local seen = ago(s.day, opts.today)
   if seen then
     local level = ns.Analytics and ns.Analytics.Confidence(s, opts.today) or nil
-    row("data", ("%s%s|r  %d scans/7d, %s"):format(DIM, level and W.Confidence(level) or "", s.scans7 or 0, seen))
+    row(
+      L["data"],
+      ("%s%s|r  %s"):format(DIM, level and W.Confidence(level) or "", L["%d scans/7d, %s"]:format(s.scans7 or 0, seen))
+    )
   end
   return rows
 end

@@ -1,0 +1,497 @@
+-- Korean. Keys are the English texts (Locales/enUS.lua);
+-- anything not translated here falls back to English.
+-- Translations are AI-made: native speakers, please review (CurseForge's translation tool, or a pull request).
+local ADDON = ...
+local AceLocale = LibStub and LibStub("AceLocale-3.0", true)
+local L = AceLocale and AceLocale:NewLocale(ADDON, "koKR")
+if not L then
+  return
+end
+L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
+  "최근 90일간 경매장 판매 및 구매 %d건. AME는 경매 우편에서 이를 기록합니다: 우편함을 열면 새 거래가 기록됩니다."
+L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
+  "캐릭터들의 진행 중인 경매 %d건 (각 캐릭터가 마지막으로 경매장을 열었을 때 기준). 판매는 거래 장부에 바로 표시되며 경매 우편이 도착하면 정산됩니다."
+L["%d auctions"] = "경매 %d건"
+L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
+  "최근 90일간 구매자 %d명, 당신에게 쓴 골드 순 (경매 우편 기준)."
+L["%d days"] = "%d일"
+L["%d days ago"] = "%d일 전"
+L["%d h ago"] = "%d시간 전"
+L["%d h listings"] = "%d시간 등록"
+L["%d items  -  showing %d-%d  -  index from %s"] = "아이템 %d개  -  %d-%d 표시 중  -  인덱스 기준 %s"
+L["%d items from %s listings, stored %s ms after the scan request"] =
+  "아이템 %d개 (등록 %s건), 검색 요청 후 %s ms에 저장됨"
+L["%d items not searchable yet (names loading)"] = "아이템 %d개 아직 검색 불가 (이름 불러오는 중)"
+L["%d items summarized"] = "아이템 %d개 요약됨"
+L["%d items summarized in %s ms wall"] = "아이템 %d개 요약 완료 (%s ms 소요)"
+L["%d min ago"] = "%d분 전"
+L["%d of %d known prices differ more than %dx from ours"] =
+  "알려진 가격 중 %d/%d개가 우리 가격과 %d배 이상 차이남"
+L["%d passed, %d warnings, %d failed"] = "통과 %d, 경고 %d, 실패 %d"
+L["%d positions on %d character. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
+  "보유 종목 %d개, 캐릭터 %d명. 가방은 플레이 중 갱신됩니다. 은행과 경매장을 열면 은행 아이템과 진행 중인 경매도 포함됩니다."
+L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
+  "보유 종목 %d개, 캐릭터 %d명. 가방은 플레이 중 갱신됩니다. 은행과 경매장을 열면 은행 아이템과 진행 중인 경매도 포함됩니다."
+L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
+  "경로 %d개  -  구매: %s, 판매: %s: 수수료 %d%%, %d시간 등록 기준 보증금"
+L["%d scans in 7 days"] = "7일간 스캔 %d회"
+L["%d scans/7d, %s"] = "스캔 %d회/7일, %s"
+L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =
+  "최근 90일간 판매자 %d명, 당신이 쓴 골드 순 (경매 우편 기준)."
+L["%d watched items have no price history here yet"] =
+  "관심 아이템 %d개는 아직 이곳 가격 기록이 없습니다"
+L["%d-day average"] = "%d일 평균"
+L["%dd avg"] = "%d일 평균"
+L["%dx off usual"] = "평소보다 %d배 차이"
+L["%s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"] =
+  "%s  -  제작: Tyken Evanion  -  PvP 호드, WoW Forever"
+L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  기록 %d일  ·  데이터 %s %s%s%s"
+L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s: 최저 %s, 시장가 %s, 수량 %d (표본 %d개)"
+L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
+  "%s 최신 (%s): 최저 %s, 시장가 %s, %d개 / 경매 %d건"
+L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] =
+  "%s 님이 경매 가격을 공유하려 합니다. |cffffffff/ame|r > 동기화에서 승인하세요."
+L["(each point is one scan)"] = "(각 점은 스캔 1회)"
+L["+ %d more"] = "+ %d개 더"
+L[", %d scans received"] = ", 스캔 %d회 수신"
+L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"] =
+  "/ame - 창 열기  ·  /ame <아이템 링크> - 아이템 차트  ·  아이템 Alt-클릭 - 차트 보기"
+L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
+  "/ame - 창 열기.   /ame <아이템 링크> - 아이템 차트.   /ame status - 데이터 및 동기화 상태.   /ame config - 설정.   /ame selftest - 정상 작동 확인."
+L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
+  "/ame item <링크> - 기록 출력  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
+L["/week"] = "/주"
+L["1 day"] = "1일"
+L["30 days: sold / bought"] = "30일: 판매 / 구매"
+L["7-day change"] = "7일 변동"
+L["7d"] = "7일"
+L["7d average"] = "7일 평균"
+L["7d avg"] = "7일 평균"
+L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."] =
+  "기록이 있는 모든 아이템을 보는 스크리너입니다. 왼쪽에서 분류나 관심 목록을 고르고, 이름으로 검색하고, 등급·가격 범위·신호로 필터링하고, 열을 클릭해 정렬하세요. 열 제목에 마우스를 올리면 설명이 나옵니다. 행을 클릭하면 차트가 열리고, 별을 클릭하면 관심 목록에 추가됩니다."
+L["AH cut"] = "수수료"
+L["AME alert: %s %s"] = "AME 알림: %s %s"
+L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] =
+  "AME는 게임 자체의 경매장 API를 감지하므로, 당신이 실행하는 모든 스캔과 검색이 기록됩니다 - 기본 경매장 창이든 어떤 스캔 애드온이든 상관없습니다 (Auctionator 같은 애드온과 잘 작동합니다). 추가로 스캔하지는 않습니다. 기록은 시장(서버 또는 Forever 규칙 세트)과 경매장별로 보관되며, AME를 사용하는 길드원은 전체 스캔을 자동으로 공유합니다."
+L["AceComm not available: sync disabled"] = "AceComm 사용 불가: 동기화 비활성화됨"
+L["Activity"] = "활동"
+L["Add"] = "추가"
+L["Alert when"] = "알림 조건"
+L["Alert:"] = "알림:"
+L["All"] = "전체"
+L["All items"] = "모든 아이템"
+L["All markets: %d, %.0f KB of compressed daily history"] = "모든 시장: %d개, 압축된 일별 기록 %.0f KB"
+L["Alliance AH"] = "얼라이언스 경매장"
+L["Alliance blue"] = "얼라이언스 파랑"
+L["Always show full tooltip details (otherwise hold Shift)"] =
+  "툴팁 상세 정보 항상 표시 (아니면 Shift 누르기)"
+L["An opportunity ranking from -100 to +100. Higher means the item is further below its usual price, on a stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. Sort by it to find bargains quickly."] =
+  "-100부터 +100까지의 기회 점수입니다. 높을수록 평소 가격보다 많이 싸고, 안정적이며, 상승 추세인 아이템입니다. 0 근처는 평소 가격, 음수는 평소보다 비싸다는 뜻입니다. 이 값으로 정렬하면 싼 매물을 빨리 찾을 수 있습니다."
+L["Announce recorded full scans in chat"] = "기록된 전체 스캔을 대화창에 알림"
+L["Announced %d times, served %d scans, received %d, rejected %d"] =
+  "알림 %d회, 스캔 제공 %d회, 수신 %d회, 거부 %d회"
+L["Announces your recent full scans to the guild and fetches ones you're missing, paced in the background so it never disrupts chat or raid addons. Received scans that disagree wildly with your own prices are rejected."] =
+  "최근 전체 스캔을 길드에 알리고 빠진 스캔을 가져옵니다. 백그라운드에서 속도를 조절하므로 대화나 공격대 애드온을 방해하지 않습니다. 당신의 가격과 크게 다른 수신 스캔은 거부됩니다."
+L["Any age"] = "모든 기간"
+L["Any quality"] = "모든 등급"
+L["Approve"] = "승인"
+L["Arbitrage"] = "차익거래"
+L["Arbitrage tab"] = "차익거래 탭"
+L["Asked %s to share. They'll see a request in their Sync tab."] =
+  "%s 님에게 공유를 요청했습니다. 상대의 동기화 탭에 요청이 표시됩니다."
+L["Asking prices"] = "호가"
+L["At market price"] = "시장가 기준"
+L["Auction house"] = "경매장"
+L["Auction house cut"] = "경매장 수수료"
+L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
+  "Auctionator 미설치: 가져올 내용 없음 (스캔은 어쨌든 게임에서 기록됩니다)"
+L["Auctions"] = "경매"
+L["Average"] = "평균"
+L["Average cost"] = "평균 단가"
+L["Avg cost"] = "평균 단가"
+L["BUY"] = "매수"
+L["BUY signal at %s"] = "%s에 매수 신호"
+L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] =
+  "매수: 오늘 가격이 이 아이템치고 이례적으로 낮습니다 - 자체 30일 평균보다 표준편차 1.5배 이상 낮음. 매도: 같은 기준으로 이례적으로 높음. 보유: 정상 범위 - 갖고 있다면 보유하고, 살 이점은 없음. 관망: 싸지만 판매자들이 투매 중 - 바닥을 기다리세요. 7일 이상의 기록이 필요합니다 (그전엔 '-'). 시장 국면은 한 주의 가격 변동을 공급과 비교해 읽습니다: 품귀, 꾸준한 수요, 판매자 몰림, 공급 축소, 균형, 압력 누적, 판매자 철수, 약한 수요, 투매. 아이템을 자기 자신과 비교하는 참고 지표일 뿐, 투자 조언이 아닙니다."
+L["Balanced"] = "균형"
+L["Block"] = "차단"
+L["Blocked"] = "차단됨"
+L["Buy at"] = "구매처"
+L["By your guild officers: %s"] = "길드 관리자가 차단: %s"
+L["Cancel"] = "취소"
+L["Candles"] = "캔들"
+L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."] =
+  "다른 애드온(예: AHDB)도 아이템 Alt-클릭을 사용한다면 변경하세요."
+L["Character"] = "캐릭터"
+L["Character name, e.g. First Last"] = "캐릭터 이름, 예: First Last"
+L["Chart style"] = "차트 형식"
+L["Checks every part of AME and offers a reload so the results are saved."] =
+  "AME의 모든 부분을 검사하고, 결과 저장을 위해 UI 재시작을 제안합니다."
+L["Checks every part of the addon, records timings, then reloads the UI."] =
+  "애드온의 모든 부분을 검사하고 소요 시간을 기록한 뒤 UI를 재시작합니다."
+L["Class %d"] = "분류 %d"
+L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] =
+  "행을 클릭하면 가격 차트가 열립니다. 별을 클릭하면 관심 목록에 추가됩니다. 이름 뒤 막대는 수치의 신뢰도입니다: 초록 3개 = 최근 스캔 충분, 주황 2개 = 약간, 빨강 1개 = 적거나 오래됨."
+L["Close"] = "닫기"
+L["Commands"] = "명령어"
+L["Common+"] = "일반+"
+L["Copy to my watchlists"] = "내 관심 목록에 복사"
+L["Could not load history: %s"] = "기록을 불러올 수 없음: %s"
+L["Customers"] = "구매자"
+L["Data"] = "데이터"
+L["Data quality"] = "데이터 품질"
+L["Days to sell"] = "판매 소요일"
+L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
+  "아이템 가격이 인접한 날보다 이만큼 배 높거나 낮은 날은 스크리너, 신호, 알림, 차트에서 제외됩니다 - 보통 거래가 적은 시장에서 1000% 비싸게 올린 매물 하나 때문입니다. 전체 스캔 안에서는 AME가 이미 비싼 매물을 무시합니다: 시장가는 공급 중 가장 싼 부분을 사용합니다."
+L["Decline"] = "거절"
+L["Delete list..."] = "목록 삭제..."
+L['Delete the watchlist "%s"?'] = "관심 목록 '%s'을(를) 삭제할까요?"
+L["Deposit"] = "보증금"
+L["Deposits for"] = "보증금 기준"
+L["Depth"] = "깊이"
+L["Disabled"] = "비활성화됨"
+L["Display"] = "표시"
+L["Dumping"] = "투매"
+L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
+  "각 캔들은 하루 이상을 나타냅니다. 이전 캔들의 종가에서 시작해 시장가로 마감하며, 초록은 상승 마감, 빨강은 하락 마감입니다. 가는 꼬리는 확인된 최저 매물가까지 내려갑니다."
+L["Epic+"] = "영웅+"
+L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."] =
+  "판매할 곳에서 하루에 팔리는 예상 수량입니다. 살 수량과 비교하세요: 하루 5개 팔리는데 100개를 사면 몇 주가 걸립니다."
+L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."] =
+  "캐릭터들이 가진 모든 것 - 가방, 은행, 진행 중인 경매 - 을 진영 경매장 시장가로 평가합니다. 은행 아이템과 경매는 마지막으로 은행/경매장을 열었을 때 기준입니다."
+L["Faction auction houses"] = "진영 경매장"
+L["Follow market"] = "시장 따라가기"
+L["For units you bought on the auction house: what they're worth now at market price minus what you paid. It becomes real profit when you sell."] =
+  "경매장에서 산 물량: 현재 시장가 가치에서 지불한 금액을 뺀 값입니다. 판매해야 실제 수익이 됩니다."
+L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
+  "경매 판매에서: 경매장 수수료를 뗀 수령액에서 그 물량의 구매가를 뺀 값입니다 (먼저 산 것부터). 획득하거나 제작한 아이템의 판매는 전액 수익입니다."
+L["Goblin AH"] = "고블린 경매장"
+L["Goblin auction houses"] = "고블린 경매장"
+L["Goblin gold"] = "고블린 금색"
+L["Gold received from auction sales (after the cut) and gold spent on auction purchases in the last 30 days."] =
+  "최근 30일간 경매 판매로 받은 골드(수수료 차감 후)와 경매 구매에 쓴 골드."
+L["Guide"] = "안내서"
+L['Guild officers can block players for everyone: add a line "%s" to the guild info.'] =
+  '길드 관리자는 모두를 대상으로 플레이어를 차단할 수 있습니다: 길드 정보에 "%s" 줄을 추가하세요.'
+L["Guild watchlists"] = "길드 관심 목록"
+L["Guild: %s"] = "길드: %s"
+L["HOLD"] = "보유"
+L["Held"] = "보유량"
+L["High"] = "고가"
+L["History not loaded yet."] = "기록이 아직 불러와지지 않았습니다."
+L["Hold Shift for more AME data"] = "Shift를 누르면 AME 데이터 더 보기"
+L["Holdings value"] = "보유 자산 가치"
+L["Horde AH"] = "호드 경매장"
+L["Horde red"] = "호드 빨강"
+L["How fast the item moves: units that disappeared between consecutive full scans of this auction house, per day, over the last week. It counts sold, cancelled and expired listings, and new listings hide some sales, so treat it as a rough guide. A cheap item that never sells is a trap; a high number means you can sell a stack quickly. Needs a few full scans on the same day to show."] =
+  "아이템 회전 속도: 이 경매장의 연속된 전체 스캔 사이에 사라진 수량을 지난 한 주 동안 하루 단위로 계산합니다. 판매, 취소, 만료된 매물이 모두 포함되고 새 매물이 일부 판매를 가리므로 대략적인 지표로 보세요. 싸지만 안 팔리는 아이템은 함정이고, 수치가 높으면 한 묶음을 빨리 팔 수 있습니다. 같은 날 전체 스캔이 몇 번 있어야 표시됩니다."
+L["How long selling everything you hold would take at the item's current sell rate (estimate)."] =
+  "현재 판매 속도로 보유량을 모두 파는 데 걸리는 시간 (추정)."
+L["How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: falling supply often comes before rising prices."] =
+  "최신 데이터에 등록된 수량입니다. 아이템 페이지에서 옆의 % 값은 주간 공급 추세입니다: 공급 감소는 종종 가격 상승에 앞섭니다."
+L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sells/d."] =
+  "경로가 수익을 내는 동안 구매 경매장에서 살 수 있는 수량과 총 수익입니다: 수수료를 뗀 1개 판매가보다 싸게 등록된 모든 매물. 아이템의 매물 정보가 필요하므로 먼저 구매 경매장에서 아이템을 검색하세요 (검색 버튼이 해줍니다) - 이후 6시간 동안 유지됩니다. 그만큼 파는 데도 시간이 걸리니 일 판매량을 확인하세요."
+L["How much the market price moved compared with 7 days of data ago. Green is up, red is down."] =
+  "7일치 데이터 이전과 비교한 시장가 변동입니다. 초록은 상승, 빨강은 하락."
+L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
+  "가격이 하루하루 얼마나 튀는지 (30일간 일별 % 변동의 분산). 낮으면 안정적이고 예측 가능한 아이템, 높으면 위험한 변동 - 그리고 더 큰 기회입니다."
+L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =
+  "두 가격 중 오래된 쪽의 경과 시간입니다. 양쪽 데이터가 최신이어야 경로를 믿을 수 있습니다 - 사기 전에 두 경매장을 모두 스캔하세요 (이 계정의 부캐릭터도 됩니다)."
+L["If Auctionator is installed: fills days that have no AME data from its recent price history."] =
+  "Auctionator가 설치되어 있으면: AME 데이터가 없는 날을 그 최근 가격 기록으로 채웁니다."
+L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."] =
+  "Auctionator가 설치되어 있으면: AME 데이터가 없는 날의 최근 일별 가격을 가져옵니다 (진영 경매장)."
+L["Ignore outrageous prices"] = "터무니없는 가격 무시"
+L["Import history from Auctionator"] = "Auctionator에서 기록 가져오기"
+L["Item"] = "아이템"
+L["Item name, ID, or Shift-click an item"] = "아이템 이름, ID, 또는 아이템 Shift-클릭"
+L["Item tab"] = "아이템 탭"
+L["Items"] = "아이템"
+L["Items tracked"] = "추적 아이템"
+L["Items you can buy at one auction house and sell at another for a profit after the AH cut - e.g. your faction's AH and the goblin AH (cross-faction). Each auction house keeps its own history, so scan both (alts on this account count). Hover the columns for details."] =
+  "한 경매장에서 사서 다른 경매장에 팔아 수수료를 떼고도 수익이 나는 아이템 - 예: 진영 경매장과 고블린 경매장(진영 공용). 경매장마다 기록이 따로 있으니 양쪽을 모두 스캔하세요 (이 계정의 부캐릭터도 됩니다). 열에 마우스를 올리면 자세히 나옵니다."
+L['Keep the AH open until AME says "recorded full scan".'] =
+  'AME가 "전체 스캔 기록됨"이라고 할 때까지 경매장을 열어 두세요.'
+L["Last"] = "최근"
+L["Last full scan"] = "마지막 전체 스캔"
+L["Last full scan: %d items, %s"] = "마지막 전체 스캔: 아이템 %d개, %s"
+L["Last received: %d items from %s, %s"] = "마지막 수신: 아이템 %d개, %s에게서, %s"
+L["Last rejected:"] = "마지막 거부:"
+L["Ledger"] = "거래 장부"
+L["Left-click: window   Right-click: settings"] = "왼쪽 클릭: 창   오른쪽 클릭: 설정"
+L["LibAMEChart-1.0 not loaded"] = "LibAMEChart-1.0 불러오지 못함"
+L["LibDeflate not loaded"] = "LibDeflate 불러오지 못함"
+L["Listed at the buy house / at the sell house. Plenty to buy and little to compete with where you sell is ideal; a big gap on one listing at the buy house may be gone fast."] =
+  "구매처 / 판매처의 등록 수량입니다. 살 물량은 많고 팔 곳의 경쟁은 적은 게 이상적입니다. 구매처의 매물 하나에 걸린 큰 차익은 금방 사라질 수 있습니다."
+L["Listed on the AH now"] = "현재 경매장 등록 수량"
+L["Listed on the auction house now"] = "현재 경매장 등록 수량"
+L["Loading history..."] = "기록 불러오는 중..."
+L["Loading market data..."] = "시장 데이터 불러오는 중..."
+L["Loading recent scans..."] = "최근 스캔 불러오는 중..."
+L["Low (cheapest)"] = "저가 (최저)"
+L["Lowest"] = "최저가"
+L["Margin"] = "마진"
+L["Market"] = "시장가"
+L["Market price"] = "시장가"
+L["Market tab"] = "시장 탭"
+L["Market: %s"] = "시장: %s"
+L["Modified click on items in bags, chat links and the auction house. Choose Alt+Shift if another addon (e.g. AHDB) already uses Alt-click."] =
+  "가방, 대화 링크, 경매장에서 아이템을 조합키 클릭합니다. 다른 애드온(예: AHDB)이 이미 Alt-클릭을 쓰면 Alt+Shift를 고르세요."
+L["Mostly"] = "주요 품목"
+L["Name for the new watchlist:"] = "새 관심 목록 이름:"
+L["New list"] = "새 목록"
+L["New list..."] = "새 목록..."
+L["No full scan recorded yet."] = "아직 기록된 전체 스캔이 없습니다."
+L["No history for this item yet. Search for it at the auction house, or run a full scan."] =
+  "이 아이템의 기록이 아직 없습니다. 경매장에서 검색하거나 전체 스캔을 실행하세요."
+L["No market data for your faction's auction house yet - scan there to value your holdings."] =
+  "진영 경매장의 시장 데이터가 아직 없습니다 - 보유 자산을 평가하려면 그곳에서 스캔하세요."
+L["No one yet."] = "아직 없음."
+L["No price history for the %s yet: scan there (any character on this account counts) to compare."] =
+  "%s의 가격 기록이 아직 없습니다: 비교하려면 그곳에서 스캔하세요 (이 계정의 어느 캐릭터든 됩니다)."
+L["No price history for the %s yet: scan there (any character on this account counts)."] =
+  "%s의 가격 기록이 아직 없습니다: 그곳에서 스캔하세요 (이 계정의 어느 캐릭터든 됩니다)."
+L["No scans of this item in the last 2 days. Daily history is on the other ranges."] =
+  "최근 2일간 이 아이템의 스캔이 없습니다. 일별 기록은 다른 기간에 있습니다."
+L["Nobody yet. Add a friend above - they need AME too, and must approve."] =
+  "아직 아무도 없습니다. 위에서 친구를 추가하세요 - 상대도 AME가 있어야 하고 승인해야 합니다."
+L["Nothing received yet - scans arrive when someone you share with runs a full scan."] =
+  "아직 받은 것이 없습니다 - 공유 상대가 전체 스캔을 실행하면 스캔이 도착합니다."
+L["Notifications"] = "알림"
+L["Off"] = "끄기"
+L["Open"] = "시가"
+L["Open an item's chart with"] = "아이템 차트 여는 방법"
+L["Open item charts with"] = "아이템 차트 여는 방법"
+L["Open the window with %s."] = "%s(으)로 창을 엽니다."
+L["Pick two different auction houses."] = "서로 다른 경매장 두 곳을 고르세요."
+L["Play a sound when a watchlist alert fires"] = "관심 목록 알림 시 소리 재생"
+L["Player"] = "플레이어"
+L["Portfolio"] = "포트폴리오"
+L["Portfolio tab"] = "포트폴리오 탭"
+L["Positions"] = "보유 종목"
+L["Pressure building"] = "압력 누적"
+L["Price"] = "가격"
+L["Price each"] = "개당 가격"
+L["Profit"] = "수익"
+L["Qty"] = "수량"
+L["Rare+"] = "희귀+"
+L["Reading the numbers"] = "수치 읽는 법"
+L["Realized profit"] = "실현 수익"
+L["Realized profit, 7 days"] = "실현 수익, 7일"
+L["Rebuild market index"] = "시장 인덱스 재구축"
+L["Recently heard from"] = "최근 연락"
+L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."] =
+  "스크리너, 툴팁, 알림에 쓰이는 30일 요약을 다시 계산합니다."
+L["Records auction house prices from every scan and search you run (native APIs; works with any scanning addon), per realm and auction house."] =
+  "당신이 실행하는 모든 스캔과 검색에서 경매장 가격을 기록합니다 (기본 API, 어떤 스캔 애드온과도 작동), 서버와 경매장별로."
+L["Reload UI"] = "UI 재시작"
+L["Requests"] = "요청"
+L["Reset"] = "초기화"
+L["Run self-test"] = "자가 진단 실행"
+L["SELL"] = "매도"
+L["SELL signal at %s"] = "%s에 매도 신호"
+L["Score"] = "점수"
+L["Search"] = "검색"
+L["Search items..."] = "아이템 검색..."
+L["Seen in 3 days"] = "3일 내 확인"
+L["Seen in 7 days"] = "7일 내 확인"
+L["Seen today/yesterday"] = "오늘/어제 확인"
+L["Sell at"] = "판매처"
+L["Sellers piling in"] = "판매자 몰림"
+L["Sellers withdrawing"] = "판매자 철수"
+L["Sells for"] = "판매가"
+L["Sells per day (estimate)"] = "일 판매량 (추정)"
+L["Sells per day at the sell house"] = "판매처 일 판매량"
+L["Sells/d"] = "일 판매"
+L["Settings"] = "설정"
+L["Share full scans with guild members who use AME"] = "AME를 쓰는 길드원과 전체 스캔 공유"
+L["Share full scans with my guild (members running AME)"] = "내 길드와 전체 스캔 공유 (AME 사용 길드원)"
+L["Share with guild"] = "길드와 공유"
+L["Share with trusted players (below)"] = "신뢰하는 플레이어와 공유 (아래)"
+L["Sharing"] = "공유"
+L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."] =
+  "공유 설정은 동기화 탭에 있습니다. 이 옵션은 게임의 애드온 설정에도 있습니다."
+L["Shift-click to search the auction house"] = "Shift-클릭으로 경매장 검색"
+L["Shortage"] = "품귀"
+L["Show AME prices in item tooltips"] = "아이템 툴팁에 AME 가격 표시"
+L["Show market data in item tooltips"] = "아이템 툴팁에 시장 데이터 표시"
+L["Show minimap button"] = "미니맵 버튼 표시"
+L["Signal"] = "신호"
+L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] =
+  "신호와 점수는 아이템을 자체 기록과 비교하므로 일주일 이상의 데이터가 있어야 의미가 있습니다. 싸면서 안정적인(변동성 낮은) 아이템이 가장 높은 점수를 받습니다. 가격은 그대로인데 공급이 줄면 좋은 초기 신호인 경우가 많습니다. 어느 것도 조언이 아닙니다 - 시장은 한동안 이상하게 움직일 수 있습니다."
+L["Sold / bought"] = "판매 / 구매"
+L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price in gold, or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."] =
+  '아이템에 별을 표시해 관심 목록에 넣으세요. 사이드바의 "+ 새 목록"으로 목록을 더 만들 수 있습니다 (목록을 오른쪽 클릭하면 길드와 공유하거나 삭제; 길드원이 공유한 목록은 내 목록 아래에 표시). 아이템 페이지에서 알림을 설정하세요: 골드 가격 이하/이상, 또는 매수/매도 신호가 나타날 때. 알림은 스캔할 때마다 확인되며 소리와 함께 대화창에 표시됩니다.'
+L["Steady demand"] = "꾸준한 수요"
+L["Suppliers"] = "판매자"
+L["Supply"] = "공급"
+L["Swap"] = "교환"
+L["Sync"] = "동기화"
+L["Sync is unavailable: the AceComm library didn't load."] =
+  "동기화 사용 불가: AceComm 라이브러리를 불러오지 못했습니다."
+L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
+  "선택한 기간의 일별 평균 시장가입니다 (설정 > 평균 기간, 기본 7일). 오늘 시장가와 비교해 지금 싼지 비싼지 확인하세요."
+L["The cheapest listing at the auction house you buy from - what the first units cost you."] =
+  "구매할 경매장의 최저 매물 - 첫 물량의 가격입니다."
+L["The market price at the auction house you sell at: what the item typically sells for there."] =
+  "판매할 경매장의 시장가: 그곳에서 보통 팔리는 가격입니다."
+L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
+  "가격 차트: 시장가, 최저 매물, 7일 평균, 공급량. 캔들로 바꾸면 트레이딩 화면이 됩니다. 마우스 휠로 확대, 끌어서 이동, 더블 클릭으로 초기화. 게임에서 아무 아이템이나 Alt-클릭하면 (가방, 대화, 경매장) 여기서 열립니다."
+L["The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones (WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the item sells."] =
+  "판매 경매장이 판매액에서 떼는 수수료: 진영 경매장 5%, 고블린 경매장 15% (WoW Forever 기준, 설정에서 조정 가능). 보증금은 빼지 않습니다 - 아이템이 팔리면 돌려받습니다."
+L["This market: %d days of history, %d recent scans kept in full"] =
+  "이 시장: 기록 %d일, 최근 스캔 %d회 전체 보관"
+L["Tightening"] = "공급 축소"
+L["Time left"] = "남은 시간"
+L["Top buy signals"] = "상위 매수 신호"
+L["Total"] = "합계"
+L["Trusted"] = "신뢰함"
+L["Trusted (%d)"] = "신뢰함 (%d)"
+L["Trusted players"] = "신뢰하는 플레이어"
+L["Type %d"] = "유형 %d"
+L["Unblock"] = "차단 해제"
+L["Uncommon+"] = "고급+"
+L["Unrealized"] = "미실현"
+L["Unrealized profit"] = "미실현 수익"
+L["Value"] = "가치"
+L["Volatility"] = "변동성"
+L["WAIT"] = "관망"
+L["Watch"] = "관심"
+L["Watchlists and alerts"] = "관심 목록 및 알림"
+L["Weak demand"] = "약한 수요"
+L["What all your characters hold, valued at your faction's market, with cost and unrealized profit for what you bought on the AH, the Buy/Hold/Sell signal and how long it would take to sell. The ledger lists your AH sales and purchases - recorded from auction mail when you open your mailbox."] =
+  "모든 캐릭터가 가진 것을 진영 시장가로 평가하고, 경매장에서 산 것의 단가와 미실현 수익, 매수/보유/매도 신호, 판매 소요 시간을 보여줍니다. 거래 장부는 경매장 판매와 구매를 보여주며, 우편함을 열 때 경매 우편에서 기록됩니다."
+L["What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and lose it if it doesn't - so a high deposit on a slow seller is real risk."] =
+  "판매처에 하나 등록할 때 선지급하는 비용: 아이템 상점 판매가의 일정 비율 (진영 경매장 2/8/24시간에 5/20/60%, 고블린 경매장은 그 다섯 배), 최소 1실버. 팔리면 돌려받고 안 팔리면 잃습니다 - 그러니 느리게 팔리는 아이템의 높은 보증금은 실제 위험입니다."
+L["What the item typically sells for right now. From full listing data it's the average of the cheapest 15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the lowest price."] =
+  "지금 이 아이템이 보통 팔리는 가격입니다. 전체 매물 데이터에서는 경매장 공급 중 가장 싼 15-30% 의 평균이며, 몇몇 싸거나 터무니없는 매물은 무시합니다. 둘러보기 요약(많은 스캐너의 기본값)에서는 최저 매물만 알 수 있으므로 그때는 최저가입니다."
+L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."] =
+  "경매장에서 산 물량의 개당 지불 가격입니다 (먼저 산 것부터 판매). 획득하거나 제작한 아이템은 비용이 없습니다."
+L["When"] = "시간"
+L["Where the data comes from"] = "데이터 출처"
+L["Window colours"] = "창 색상"
+L["You haven't blocked anyone."] = "아직 차단한 사람이 없습니다."
+L["You'd receive (after the cut)"] = "받을 금액 (수수료 차감 후)"
+L["Your active auctions on all characters, as of the last time each opened the auction house."] =
+  "모든 캐릭터의 진행 중인 경매 (각 캐릭터가 마지막으로 경매장을 열었을 때 기준)."
+L["Your alts on this Battle.net account already share everything: AME's history is saved account-wide. Trust players to swap scans with friends, or with your own characters on other accounts. Only your market and auction house are shared, and scans that disagree wildly with your prices are rejected."] =
+  "이 배틀넷 계정의 부캐릭터는 이미 모든 것을 공유합니다: AME 기록은 계정 전체에 저장됩니다. 플레이어를 신뢰하면 친구 또는 다른 계정의 내 캐릭터와 스캔을 교환할 수 있습니다. 시장과 경매장만 공유되며, 당신의 가격과 크게 다른 스캔은 거부됩니다."
+L["Your auction mail doesn't name the other player on this client (the auction house keeps them anonymous), so there's no one to list."] =
+  "이 클라이언트의 경매 우편에는 상대 플레이어 이름이 없어서 (경매장은 익명) 표시할 사람이 없습니다."
+L["a list needs a name"] = "목록 이름이 필요합니다"
+L["a list with that name already exists"] = "같은 이름의 목록이 이미 있습니다"
+L["above g"] = "이상(골드)"
+L["announced %d, served %d, received %d, rejected %d"] = "알림 %d, 제공 %d, 수신 %d, 거부 %d"
+L["auctionator history import"] = "Auctionator 기록 가져오기"
+L["average period"] = "평균 기간"
+L["awaiting mail"] = "우편 대기 중"
+L["backfill"] = "기록 보충"
+L["below g"] = "이하(골드)"
+L["blocked"] = "차단됨"
+L["blocked %s"] = "%s 차단함"
+L["bought"] = "구매"
+L["chart library + window"] = "차트 라이브러리 + 창"
+L["codec+compress 6.4k items"] = "코덱+압축 6.4k 아이템"
+L["could not load %s: %s"] = "%s 불러오기 실패: %s"
+L["could not load history addon"] = "기록 애드온을 불러올 수 없음"
+L["couldn't start an auction house search for %s"] = "%s의 경매장 검색을 시작할 수 없음"
+L["data"] = "데이터"
+L["done %s"] = "완료 %s"
+L["down  (wick = cheapest)"] = "하락  (꼬리 = 최저가)"
+L["dropped to %s (alert at %s)"] = "%s(으)로 하락 (알림 기준 %s)"
+L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
+  "인코딩 %.0f ms, 압축 %.0f ms, 해제+디코딩 %.0f ms, %d KB -> %d KB"
+L["ended?"] = "종료?"
+L["enter a character name"] = "캐릭터 이름을 입력하세요"
+L["guild sync"] = "길드 동기화"
+L["guild sync: %s, announced %d, served %d, received %d, rejected %d"] =
+  "길드 동기화: %s, 알림 %d, 제공 %d, 수신 %d, 거부 %d"
+L["history addon"] = "기록 애드온"
+L["history import from Auctionator failed: %s"] = "Auctionator 기록 가져오기 실패: %s"
+L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
+  "Auctionator 기록 가져오기는 진영 경매장에서만 합니다 (그 데이터는 모든 경매장이 섞여 있음)."
+L["history import from Auctionator skipped: %s"] = "Auctionator 기록 가져오기 건너뜀: %s"
+L["history lookup (cold)"] = "기록 조회 (콜드)"
+L["history: %d raw scans, %d days, %.0f KB"] = "기록: 원본 스캔 %d회, %d일, %.0f KB"
+L["imported %d days of price history from Auctionator into %s"] =
+  "Auctionator에서 가격 기록 %d일치를 %s(으)로 가져왔습니다"
+L["item %d: %d points in %.1f ms"] = "아이템 %d: 데이터 %d개, %.1f ms"
+L["item from latest scan has no daily points"] = "최신 스캔의 아이템에 일별 데이터가 없음"
+L["item not loaded yet - try again in a moment"] =
+  "아이템이 아직 로드되지 않음 - 잠시 후 다시 시도하세요"
+L["just now"] = "방금"
+L["last full scan"] = "마지막 전체 스캔"
+L["last full scan: %d items, %s ago"] = "마지막 전체 스캔: 아이템 %d개, %s 전"
+L["last seen %s"] = "마지막 확인 %s"
+L["libraries"] = "라이브러리"
+L["loaded in %s ms, %d shard(s), %.0f KB of daily history"] = "%s ms에 로드됨, 샤드 %d개, 일별 기록 %.0f KB"
+L["loading history..."] = "기록 불러오는 중..."
+L["loading item names %d/%d"] = "아이템 이름 불러오는 중 %d/%d"
+L["low"] = "낮음"
+L["lowest"] = "최저"
+L["margin %"] = "마진 %"
+L["market"] = "시장가"
+L["market index"] = "시장 인덱스"
+L["market index failed:"] = "시장 인덱스 실패:"
+L["max g"] = "최대(골드)"
+L["min g"] = "최소(골드)"
+L["never"] = "없음"
+L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"] =
+  "아직 기록된 전체 스캔 없음: 경매장을 열고 전체 스캔을 실행하세요 (스캔 애드온 또는 게임 기본 기능)"
+L["no history for %s in %s"] = "%s의 기록이 %s에 없음"
+L["no scans in this shard yet"] = "이 샤드에 아직 스캔 없음"
+L["none"] = "없음"
+L["none yet: open the AH and run a full scan, then rerun /ame selftest"] =
+  "아직 없음: 경매장을 열고 전체 스캔을 실행한 뒤 /ame selftest를 다시 실행하세요"
+L["not in a guild"] = "길드에 속해 있지 않음"
+L["not loaded"] = "불러오지 않음"
+L["nothing imported here (only with Auctionator data, at your faction's auction house)"] =
+  "여기서는 가져온 것이 없음 (Auctionator 데이터, 진영 경매장에서만)"
+L["off"] = "끔"
+L["on"] = "켬"
+L["on buy/sell signal"] = "매수/매도 신호 시"
+L["on, but you're not in a guild"] = "켜짐, 하지만 길드에 속해 있지 않음"
+L["open the auction house first"] = "먼저 경매장을 여세요"
+L["profit g"] = "수익(골드)"
+L["reading full scan (%d listings) in the background..."] =
+  "백그라운드에서 전체 스캔 읽는 중 (등록 %d건)..."
+L["received a full scan from %s via sync (%d items, %s)"] =
+  "동기화로 %s에게서 전체 스캔 수신 (아이템 %d개, %s)"
+L["recorded full scan: %d items from %d listings (%s)"] = "전체 스캔 기록됨: 아이템 %d개, 등록 %d건 (%s)"
+L["rose to %s (alert at %s)"] = "%s(으)로 상승 (알림 기준 %s)"
+L["round trip mismatch"] = "왕복 결과 불일치"
+L["scan pipeline: %d requests, %d events (%d since last request), read %s, aborted %d; ingest requested=%s reading=%s"] =
+  "스캔 파이프라인: 요청 %d, 이벤트 %d (마지막 요청 후 %d), 읽기 %s, 중단 %d; 수집 requested=%s reading=%s"
+L["scan read failed:"] = "스캔 읽기 실패:"
+L["score"] = "점수"
+L["score %+d"] = "점수 %+d"
+L["search"] = "검색"
+L["selftest finished:\n%s\n\nReload the UI now to save the results?"] =
+  "자가 진단 완료:\n%s\n\n결과를 저장하려면 지금 UI를 재시작할까요?"
+L["selftest starting (this may pause the game for a moment)"] =
+  "자가 진단 시작 (게임이 잠시 멈출 수 있음)"
+L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
+  "자가 진단: 통과 %d, 경고 %d, 실패 %d. 결과를 저장하려면 재시작하세요 (/reload)."
+L["shard"] = "샤드"
+L["shared"] = "공유됨"
+L["sharing"] = "공유"
+L["signal"] = "신호"
+L["sold"] = "판매"
+L["storing %s scan failed:"] = "%s 스캔 저장 실패:"
+L["supply"] = "공급"
+L["the AH closed before AME finished reading the full scan; it wasn't recorded."] =
+  "AME가 전체 스캔을 다 읽기 전에 경매장이 닫혀 기록되지 않았습니다."
+L["today"] = "오늘"
+L["turned off in settings"] = "설정에서 꺼짐"
+L["unknown command, try /ame help"] = "알 수 없는 명령어, /ame help를 입력해 보세요"
+L["up"] = "상승"
+L["usage: /ame item <item link or itemID>"] = "사용법: /ame item <아이템 링크 또는 itemID>"
+L["volatility"] = "변동성"
+L["waiting for them to approve"] = "상대의 승인 대기 중"
+L["wants to share, %s"] = "공유 희망, %s"
+L["wheel: zoom, drag: pan, double-click: reset"] = "휠: 확대, 끌기: 이동, 더블 클릭: 초기화"
+L["whisper"] = "귓속말"
+L["window created, market tab rendered"] = "창 생성됨, 시장 탭 렌더링됨"
+L["yesterday"] = "어제"
+L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
+  "구매 경매장에 있습니다: 검색(또는 행 Shift-클릭)으로 구매하세요"

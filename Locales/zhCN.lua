@@ -1,0 +1,493 @@
+-- Simplified Chinese. Keys are the English texts (Locales/enUS.lua);
+-- anything not translated here falls back to English.
+-- Translations are AI-made: native speakers, please review (CurseForge's translation tool, or a pull request).
+local ADDON = ...
+local AceLocale = LibStub and LibStub("AceLocale-3.0", true)
+local L = AceLocale and AceLocale:NewLocale(ADDON, "zhCN")
+if not L then
+  return
+end
+L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
+  "过去90天内共有 %d 笔拍卖行买卖。AME 通过拍卖邮件记录它们：打开邮箱即可记录新的交易。"
+L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
+  "你的角色共有 %d 个进行中的拍卖（以各角色上次打开拍卖行时为准）。售出会立即显示在账本中，并在收到拍卖邮件时结算。"
+L["%d auctions"] = "%d 个拍卖"
+L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
+  "过去90天内的 %d 位买家，按在你这里花费的金币排序（来自拍卖邮件）。"
+L["%d days"] = "%d 天"
+L["%d days ago"] = "%d 天前"
+L["%d h ago"] = "%d 小时前"
+L["%d h listings"] = "%d 小时挂单"
+L["%d items  -  showing %d-%d  -  index from %s"] = "%d 件物品  -  显示 %d-%d  -  索引来自 %s"
+L["%d items from %s listings, stored %s ms after the scan request"] =
+  "%d 件物品，来自 %s 条挂单，扫描请求后 %s 毫秒存储"
+L["%d items not searchable yet (names loading)"] = "%d 件物品暂时无法搜索（名称加载中）"
+L["%d items summarized"] = "已汇总 %d 件物品"
+L["%d items summarized in %s ms wall"] = "已汇总 %d 件物品，耗时 %s 毫秒"
+L["%d min ago"] = "%d 分钟前"
+L["%d of %d known prices differ more than %dx from ours"] = "%d/%d 个已知价格与我们的相差超过 %d 倍"
+L["%d passed, %d warnings, %d failed"] = "%d 项通过，%d 项警告，%d 项失败"
+L["%d positions on %d character. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
+  "%d 个持仓，分布在 %d 个角色上。背包会随游戏实时更新；打开银行和拍卖行即可计入银行物品和进行中的拍卖。"
+L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
+  "%d 个持仓，分布在 %d 个角色上。背包会随游戏实时更新；打开银行和拍卖行即可计入银行物品和进行中的拍卖。"
+L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
+  "%d 条路线  -  在%s买入，在%s卖出：%d%% 手续费，按 %d 小时挂单计算保管费"
+L["%d scans in 7 days"] = "7天内扫描 %d 次"
+L["%d scans/7d, %s"] = "%d 次扫描/7天，%s"
+L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =
+  "过去90天内的 %d 位卖家，按你在他们那里花费的金币排序（来自拍卖邮件）。"
+L["%d watched items have no price history here yet"] = "%d 件自选物品在此尚无价格历史"
+L["%d-day average"] = "%d 日均价"
+L["%dd avg"] = "%d日均"
+L["%dx off usual"] = "偏离常价 %d 倍"
+L["%s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"] =
+  "%s  -  作者 Tyken Evanion  -  PvP 部落，WoW Forever"
+L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  %d 天历史  ·  数据 %s %s%s%s"
+L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s：最低 %s，市场价 %s，数量 %d（%d 个样本）"
+L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
+  "%s 最新（%s）：最低 %s，市场价 %s，%d 件，共 %d 个拍卖"
+L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] =
+  "%s 想与你共享拍卖价格。打开 |cffffffff/ame|r > 同步 进行批准。"
+L["(each point is one scan)"] = "（每个点代表一次扫描）"
+L["+ %d more"] = "+ 另外 %d 个"
+L[", %d scans received"] = "，已接收 %d 次扫描"
+L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"] =
+  "/ame - 打开窗口  ·  /ame <物品链接> - 查看物品图表  ·  Alt-点击物品 - 查看其图表"
+L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
+  "/ame - 打开窗口。   /ame <物品链接> - 查看物品图表。   /ame status - 数据与同步状态。   /ame config - 设置。   /ame selftest - 检查一切是否正常。"
+L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
+  "/ame item <链接> - 输出历史  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
+L["/week"] = "/周"
+L["1 day"] = "1 天"
+L["30 days: sold / bought"] = "30天：卖出 / 买入"
+L["7-day change"] = "7日涨跌"
+L["7d"] = "7天"
+L["7d average"] = "7日均价"
+L["7d avg"] = "7日均"
+L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."] =
+  "一个覆盖所有有历史数据物品的筛选器。在左侧选择分类或自选列表，按名称搜索，按品质、价格区间或信号筛选，点击列标题排序。鼠标悬停在列标题上可查看说明。点击某行打开其图表；点击星标将其加入自选。"
+L["AH cut"] = "手续费"
+L["AME alert: %s %s"] = "AME 提醒：%s %s"
+L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] =
+  "AME 监听游戏自身的拍卖行接口，因此你进行的每次扫描和搜索都会被记录——无论来自默认拍卖行窗口还是任何扫描插件（与 Auctionator 等插件配合良好）。不会进行额外扫描。历史按市场（服务器或 Forever 规则集）和拍卖行分别保存，运行 AME 的公会成员会自动共享他们的全面扫描。"
+L["AceComm not available: sync disabled"] = "AceComm 不可用：同步已禁用"
+L["Activity"] = "活动"
+L["Add"] = "添加"
+L["Alert when"] = "提醒条件"
+L["Alert:"] = "提醒："
+L["All"] = "全部"
+L["All items"] = "所有物品"
+L["All markets: %d, %.0f KB of compressed daily history"] = "所有市场：%d 个，%.0f KB 压缩日历史"
+L["Alliance AH"] = "联盟拍卖行"
+L["Alliance blue"] = "联盟蓝"
+L["Always show full tooltip details (otherwise hold Shift)"] =
+  "始终显示完整的鼠标提示详情（否则需按住 Shift）"
+L["An opportunity ranking from -100 to +100. Higher means the item is further below its usual price, on a stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. Sort by it to find bargains quickly."] =
+  "从 -100 到 +100 的机会评分。越高表示物品价格比平时越低、走势越稳定且趋势向上。0 左右表示价格正常；负数表示比平时贵。按此排序可快速找到便宜货。"
+L["Announce recorded full scans in chat"] = "在聊天中通告已记录的全面扫描"
+L["Announced %d times, served %d scans, received %d, rejected %d"] =
+  "已通告 %d 次，提供 %d 次扫描，接收 %d 次，拒绝 %d 次"
+L["Announces your recent full scans to the guild and fetches ones you're missing, paced in the background so it never disrupts chat or raid addons. Received scans that disagree wildly with your own prices are rejected."] =
+  "向公会通告你最近的全面扫描，并获取你缺少的扫描。在后台限速进行，绝不会干扰聊天或团队插件。与你自己的价格差异过大的扫描会被拒绝。"
+L["Any age"] = "任意时间"
+L["Any quality"] = "任意品质"
+L["Approve"] = "批准"
+L["Arbitrage"] = "套利"
+L["Arbitrage tab"] = "套利标签页"
+L["Asked %s to share. They'll see a request in their Sync tab."] =
+  "已请求 %s 共享。对方会在同步标签页看到请求。"
+L["Asking prices"] = "挂单价"
+L["At market price"] = "按市场价"
+L["Auction house"] = "拍卖行"
+L["Auction house cut"] = "拍卖行手续费"
+L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
+  "未安装 Auctionator：无可导入内容（扫描始终会从游戏中记录）"
+L["Auctions"] = "拍卖"
+L["Average"] = "均价"
+L["Average cost"] = "平均成本"
+L["Avg cost"] = "均成本"
+L["BUY"] = "买入"
+L["BUY signal at %s"] = "%s 出现买入信号"
+L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] =
+  "买入：今日价格对该物品而言异常低——至少比其自身30日均价低 1.5 个标准差。卖出：按同一标准异常高。持有：处于正常区间——已持有可继续持有，买入无优势。观望：便宜，但卖家正在抛售——等待见底。需要 7 天以上历史（之前显示“-”）。市场阶段将本周价格变动与供应量对照解读：短缺、需求稳定、卖家涌入、收紧、平衡、压力积聚、卖家撤出、需求疲软或抛售。它只将物品与其自身比较，仅供参考，不构成投资建议。"
+L["Balanced"] = "平衡"
+L["Block"] = "屏蔽"
+L["Blocked"] = "已屏蔽"
+L["Buy at"] = "买入地"
+L["By your guild officers: %s"] = "被公会官员屏蔽：%s"
+L["Cancel"] = "取消"
+L["Candles"] = "K线"
+L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."] =
+  "如果其他插件（如 AHDB）也使用 Alt-点击物品，请修改此项。"
+L["Character"] = "角色"
+L["Character name, e.g. First Last"] = "角色名称，例如 First Last"
+L["Chart style"] = "图表样式"
+L["Checks every part of AME and offers a reload so the results are saved."] =
+  "检查 AME 的各个部分，并提供重载界面以保存结果。"
+L["Checks every part of the addon, records timings, then reloads the UI."] =
+  "检查插件的各个部分，记录耗时，然后重载界面。"
+L["Class %d"] = "类别 %d"
+L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] =
+  "点击某行打开其价格图表。点击星标将其加入自选列表。名称后的条形表示数据的可信度：3 绿 = 近期扫描充足，2 黄 = 有一些，1 红 = 很少或过旧。"
+L["Close"] = "关闭"
+L["Commands"] = "命令"
+L["Common+"] = "普通+"
+L["Copy to my watchlists"] = "复制到我的自选列表"
+L["Could not load history: %s"] = "无法加载历史：%s"
+L["Customers"] = "买家"
+L["Data"] = "数据"
+L["Data quality"] = "数据质量"
+L["Days to sell"] = "售完天数"
+L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
+  "如果某天的物品价格比相邻几天高（或低）这么多倍，该天将不计入筛选器、信号、提醒和图表——通常是冷门市场里一条加价 1000% 的挂单。在全面扫描中，AME 已经会忽略高价挂单：市场价只使用供应中最便宜的部分。"
+L["Decline"] = "拒绝"
+L["Delete list..."] = "删除列表..."
+L['Delete the watchlist "%s"?'] = "删除自选列表“%s”？"
+L["Deposit"] = "保管费"
+L["Deposits for"] = "保管费按"
+L["Depth"] = "深度"
+L["Disabled"] = "已禁用"
+L["Display"] = "显示"
+L["Dumping"] = "抛售"
+L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
+  "每根K线覆盖一天或多天。开盘价为前一根K线的收盘价，收盘价为市场价；绿色表示收高，红色表示收低。细影线向下延伸至所见的最低挂单价。"
+L["Epic+"] = "史诗+"
+L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."] =
+  "在你出售的拍卖行每天预计售出的数量。与你计划买入的数量比较：如果每天卖 5 个，100 个就要卖好几周。"
+L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."] =
+  "你的角色持有的所有物品——背包、银行和进行中的拍卖——按你阵营拍卖行的市场价计算。银行物品和拍卖以你上次打开银行/拍卖行时为准。"
+L["Faction auction houses"] = "阵营拍卖行"
+L["Follow market"] = "跟随市场"
+L["For units you bought on the auction house: what they're worth now at market price minus what you paid. It becomes real profit when you sell."] =
+  "对于你在拍卖行买入的物品：当前市场价值减去你支付的价格。卖出后才成为实际利润。"
+L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
+  "来自你的拍卖销售：扣除拍卖行手续费后的收入，减去这些物品的买入成本（先买先卖）。拾取或制造的物品售出时全额计入。"
+L["Goblin AH"] = "地精拍卖行"
+L["Goblin auction houses"] = "地精拍卖行"
+L["Goblin gold"] = "地精金"
+L["Gold received from auction sales (after the cut) and gold spent on auction purchases in the last 30 days."] =
+  "过去30天内拍卖销售收到的金币（扣除手续费后）以及拍卖购买花费的金币。"
+L["Guide"] = "指南"
+L['Guild officers can block players for everyone: add a line "%s" to the guild info.'] =
+  "公会官员可以为所有人屏蔽玩家：在公会信息中添加一行“%s”。"
+L["Guild watchlists"] = "公会自选列表"
+L["Guild: %s"] = "公会：%s"
+L["HOLD"] = "持有"
+L["Held"] = "持有"
+L["High"] = "最高"
+L["History not loaded yet."] = "历史尚未加载。"
+L["Hold Shift for more AME data"] = "按住 Shift 查看更多 AME 数据"
+L["Holdings value"] = "持仓价值"
+L["Horde AH"] = "部落拍卖行"
+L["Horde red"] = "部落红"
+L["How fast the item moves: units that disappeared between consecutive full scans of this auction house, per day, over the last week. It counts sold, cancelled and expired listings, and new listings hide some sales, so treat it as a rough guide. A cheap item that never sells is a trap; a high number means you can sell a stack quickly. Needs a few full scans on the same day to show."] =
+  "物品的流转速度：本拍卖行连续全面扫描之间消失的数量，按天计算，统计最近一周。它包括售出、取消和过期的挂单，而新挂单会掩盖部分销售，因此仅作粗略参考。一直卖不掉的便宜物品是陷阱；数值高说明你能快速卖出一组。需要同一天内有几次全面扫描才会显示。"
+L["How long selling everything you hold would take at the item's current sell rate (estimate)."] =
+  "按物品当前的销售速度，卖完你持有的全部物品所需的时间（估计）。"
+L["How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: falling supply often comes before rising prices."] =
+  "最新数据中的挂单数量。在物品页面上，旁边的 % 是每周供应趋势：供应下降往往先于价格上涨。"
+L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sells/d."] =
+  "在买入拍卖行最多可买入多少件而路线仍有利可图，以及总利润：即所有价格低于单件扣除手续费后售价的挂单。这需要该物品的挂单数据，所以请先在买入拍卖行搜索该物品（搜索按钮可代劳），数据随后保留 6 小时。卖出这么多仍需时间：请查看日销。"
+L["How much the market price moved compared with 7 days of data ago. Green is up, red is down."] =
+  "市场价与 7 天数据之前相比的变化。绿色为上涨，红色为下跌。"
+L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
+  "价格每天的跳动幅度（30天内每日涨跌 % 的离散程度）。数值低表示物品稳定、可预测；数值高表示波动剧烈——风险更大，机会也更大。"
+L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =
+  "两个价格中较旧那个的时效。两边数据都新鲜，路线才可信——买入前请扫描两个拍卖行（本账号的小号也算）。"
+L["If Auctionator is installed: fills days that have no AME data from its recent price history."] =
+  "如果安装了 Auctionator：用其近期价格历史填补没有 AME 数据的日期。"
+L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."] =
+  "如果安装了 Auctionator：为 AME 没有数据的日期导入其近期每日价格（阵营拍卖行）。"
+L["Ignore outrageous prices"] = "忽略离谱价格"
+L["Import history from Auctionator"] = "从 Auctionator 导入历史"
+L["Item"] = "物品"
+L["Item name, ID, or Shift-click an item"] = "物品名称、ID，或 Shift-点击物品"
+L["Item tab"] = "物品标签页"
+L["Items"] = "物品"
+L["Items tracked"] = "追踪物品数"
+L["Items you can buy at one auction house and sell at another for a profit after the AH cut - e.g. your faction's AH and the goblin AH (cross-faction). Each auction house keeps its own history, so scan both (alts on this account count). Hover the columns for details."] =
+  "可以在一个拍卖行买入、在另一个拍卖行卖出并在扣除手续费后获利的物品——例如你的阵营拍卖行和地精拍卖行（跨阵营）。每个拍卖行各自保存历史，所以请扫描两边（本账号的小号也算）。鼠标悬停在列上查看详情。"
+L['Keep the AH open until AME says "recorded full scan".'] =
+  "请保持拍卖行打开，直到 AME 显示“已记录全面扫描”。"
+L["Last"] = "最近"
+L["Last full scan"] = "上次全面扫描"
+L["Last full scan: %d items, %s"] = "上次全面扫描：%d 件物品，%s"
+L["Last received: %d items from %s, %s"] = "上次接收：%d 件物品，来自 %s，%s"
+L["Last rejected:"] = "上次拒绝："
+L["Ledger"] = "账本"
+L["Left-click: window   Right-click: settings"] = "左键：窗口   右键：设置"
+L["LibAMEChart-1.0 not loaded"] = "LibAMEChart-1.0 未加载"
+L["LibDeflate not loaded"] = "LibDeflate 未加载"
+L["Listed at the buy house / at the sell house. Plenty to buy and little to compete with where you sell is ideal; a big gap on one listing at the buy house may be gone fast."] =
+  "买入拍卖行 / 卖出拍卖行的挂单数。买入处货源充足、卖出处竞争少最为理想；买入处单条挂单的大价差可能很快就没了。"
+L["Listed on the AH now"] = "当前拍卖行挂单"
+L["Listed on the auction house now"] = "当前拍卖行挂单"
+L["Loading history..."] = "正在加载历史..."
+L["Loading market data..."] = "正在加载市场数据..."
+L["Loading recent scans..."] = "正在加载最近扫描..."
+L["Low (cheapest)"] = "最低（最便宜）"
+L["Lowest"] = "最低价"
+L["Margin"] = "利润率"
+L["Market"] = "市场价"
+L["Market price"] = "市场价"
+L["Market tab"] = "市场标签页"
+L["Market: %s"] = "市场：%s"
+L["Modified click on items in bags, chat links and the auction house. Choose Alt+Shift if another addon (e.g. AHDB) already uses Alt-click."] =
+  "在背包、聊天链接和拍卖行中对物品的组合键点击。如果其他插件（如 AHDB）已使用 Alt-点击，请选择 Alt+Shift。"
+L["Mostly"] = "最常交易"
+L["Name for the new watchlist:"] = "新自选列表的名称："
+L["New list"] = "新列表"
+L["New list..."] = "新列表..."
+L["No full scan recorded yet."] = "尚未记录全面扫描。"
+L["No history for this item yet. Search for it at the auction house, or run a full scan."] =
+  "此物品尚无历史。请在拍卖行搜索它，或进行一次全面扫描。"
+L["No market data for your faction's auction house yet - scan there to value your holdings."] =
+  "你的阵营拍卖行尚无市场数据——请在那里扫描以评估你的持仓。"
+L["No one yet."] = "暂无。"
+L["No price history for the %s yet: scan there (any character on this account counts) to compare."] =
+  "%s尚无价格历史：请在那里扫描（本账号的任何角色都算）以进行比较。"
+L["No price history for the %s yet: scan there (any character on this account counts)."] =
+  "%s尚无价格历史：请在那里扫描（本账号的任何角色都算）。"
+L["No scans of this item in the last 2 days. Daily history is on the other ranges."] =
+  "最近 2 天没有此物品的扫描。其他时间范围有每日历史。"
+L["Nobody yet. Add a friend above - they need AME too, and must approve."] =
+  "还没有人。在上方添加好友——对方也需要安装 AME，并且必须批准。"
+L["Nothing received yet - scans arrive when someone you share with runs a full scan."] =
+  "尚未接收到任何内容——与你共享的人进行全面扫描时，扫描就会到达。"
+L["Notifications"] = "通知"
+L["Off"] = "关闭"
+L["Open"] = "开盘"
+L["Open an item's chart with"] = "打开物品图表的方式"
+L["Open item charts with"] = "打开物品图表的方式"
+L["Open the window with %s."] = "使用 %s 打开窗口。"
+L["Pick two different auction houses."] = "请选择两个不同的拍卖行。"
+L["Play a sound when a watchlist alert fires"] = "自选提醒触发时播放声音"
+L["Player"] = "玩家"
+L["Portfolio"] = "投资组合"
+L["Portfolio tab"] = "投资组合标签页"
+L["Positions"] = "持仓"
+L["Pressure building"] = "压力积聚"
+L["Price"] = "价格"
+L["Price each"] = "单价"
+L["Profit"] = "利润"
+L["Qty"] = "数量"
+L["Rare+"] = "精良+"
+L["Reading the numbers"] = "解读数据"
+L["Realized profit"] = "已实现利润"
+L["Realized profit, 7 days"] = "已实现利润（7天）"
+L["Rebuild market index"] = "重建市场索引"
+L["Recently heard from"] = "最近联系"
+L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."] =
+  "重新计算筛选器、鼠标提示和提醒所依据的30日汇总。"
+L["Records auction house prices from every scan and search you run (native APIs; works with any scanning addon), per realm and auction house."] =
+  "记录你进行的每次扫描和搜索中的拍卖行价格（原生接口；适用于任何扫描插件），按服务器和拍卖行分别保存。"
+L["Reload UI"] = "重载界面"
+L["Requests"] = "请求"
+L["Reset"] = "重置"
+L["Run self-test"] = "运行自检"
+L["SELL"] = "卖出"
+L["SELL signal at %s"] = "%s 出现卖出信号"
+L["Score"] = "评分"
+L["Search"] = "搜索"
+L["Search items..."] = "搜索物品..."
+L["Seen in 3 days"] = "3天内出现"
+L["Seen in 7 days"] = "7天内出现"
+L["Seen today/yesterday"] = "今天/昨天出现"
+L["Sell at"] = "卖出地"
+L["Sellers piling in"] = "卖家涌入"
+L["Sellers withdrawing"] = "卖家撤出"
+L["Sells for"] = "售价"
+L["Sells per day (estimate)"] = "日销量（估计）"
+L["Sells per day at the sell house"] = "卖出拍卖行的日销量"
+L["Sells/d"] = "日销"
+L["Settings"] = "设置"
+L["Share full scans with guild members who use AME"] = "与使用 AME 的公会成员共享全面扫描"
+L["Share full scans with my guild (members running AME)"] =
+  "与我的公会共享全面扫描（运行 AME 的成员）"
+L["Share with guild"] = "与公会共享"
+L["Share with trusted players (below)"] = "与信任的玩家共享（见下方）"
+L["Sharing"] = "共享"
+L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."] =
+  "共享设置位于同步标签页。这些选项也可在游戏的插件设置中找到。"
+L["Shift-click to search the auction house"] = "Shift-点击以搜索拍卖行"
+L["Shortage"] = "短缺"
+L["Show AME prices in item tooltips"] = "在物品鼠标提示中显示 AME 价格"
+L["Show market data in item tooltips"] = "在物品鼠标提示中显示市场数据"
+L["Show minimap button"] = "显示小地图按钮"
+L["Signal"] = "信号"
+L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] =
+  "信号和评分将物品与其自身历史比较，因此需要一周或更长时间的数据才有意义。既便宜又稳定（波动率低）的物品评分最高。价格持平而供应下降通常是好的早期信号。以上均不构成建议——市场可能会反常一段时间。"
+L["Sold / bought"] = "卖出 / 买入"
+L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price in gold, or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."] =
+  "给物品加星标即可放入自选列表；在侧边栏用“+ 新列表”创建更多列表（右键点击列表可与公会共享或删除；公会成员共享的列表显示在你的列表下方）。在物品页面设置提醒：低于或高于某个金币价格，或出现买入/卖出信号时。每次扫描后都会检查提醒，并在聊天中发布并播放声音。"
+L["Steady demand"] = "需求稳定"
+L["Suppliers"] = "卖家"
+L["Supply"] = "供应"
+L["Swap"] = "互换"
+L["Sync"] = "同步"
+L["Sync is unavailable: the AceComm library didn't load."] = "同步不可用：AceComm 库未加载。"
+L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
+  "所选周期内的每日市场均价（设置 > 均价周期，默认 7 天）。与今日市场价比较，可判断物品当前是便宜还是昂贵。"
+L["The cheapest listing at the auction house you buy from - what the first units cost you."] =
+  "你买入的拍卖行中最便宜的挂单——即最先买到的那几件的价格。"
+L["The market price at the auction house you sell at: what the item typically sells for there."] =
+  "你卖出的拍卖行的市场价：该物品在那里的一般售价。"
+L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
+  "价格图表：市场价、最低挂单、7日均价和供应量。切换到K线可获得交易视图。鼠标滚轮缩放，拖动平移，双击重置。在游戏中 Alt-点击任何物品（背包、聊天、拍卖行）即可在此打开。"
+L["The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones (WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the item sells."] =
+  "卖出拍卖行从成交额中收取的手续费：阵营拍卖行 5%，地精拍卖行 15%（WoW Forever 的费率；可在设置中调整）。保管费不扣除——物品售出时会退还给你。"
+L["This market: %d days of history, %d recent scans kept in full"] =
+  "当前市场：%d 天历史，完整保留 %d 次最近扫描"
+L["Tightening"] = "收紧"
+L["Time left"] = "剩余时间"
+L["Top buy signals"] = "热门买入信号"
+L["Total"] = "总计"
+L["Trusted"] = "已信任"
+L["Trusted (%d)"] = "已信任（%d）"
+L["Trusted players"] = "信任的玩家"
+L["Type %d"] = "类型 %d"
+L["Unblock"] = "取消屏蔽"
+L["Uncommon+"] = "优秀+"
+L["Unrealized"] = "未实现"
+L["Unrealized profit"] = "未实现利润"
+L["Value"] = "价值"
+L["Volatility"] = "波动率"
+L["WAIT"] = "观望"
+L["Watch"] = "自选"
+L["Watchlists and alerts"] = "自选列表与提醒"
+L["Weak demand"] = "需求疲软"
+L["What all your characters hold, valued at your faction's market, with cost and unrealized profit for what you bought on the AH, the Buy/Hold/Sell signal and how long it would take to sell. The ledger lists your AH sales and purchases - recorded from auction mail when you open your mailbox."] =
+  "你所有角色持有的物品，按你阵营的市场估值，并显示在拍卖行买入物品的成本和未实现利润、买入/持有/卖出信号以及卖完所需时间。账本列出你的拍卖行销售和购买——在你打开邮箱时从拍卖邮件中记录。"
+L["What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and lose it if it doesn't - so a high deposit on a slow seller is real risk."] =
+  "在卖出拍卖行挂一件需要预付的费用：物品商店售价的一定比例（阵营拍卖行 2/8/24 小时分别为 5/20/60%，地精拍卖行为其五倍），至少 1 银币。售出时退还，未售出则损失——所以对于卖得慢的物品，高保管费是实实在在的风险。"
+L["What the item typically sells for right now. From full listing data it's the average of the cheapest 15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the lowest price."] =
+  "该物品当前的一般售价。根据完整挂单数据，它是拍卖行供应中最便宜的 15-30% 的平均价，从而忽略少数过低或离谱的挂单。根据浏览汇总（许多扫描插件的默认方式）只能得知最便宜的挂单，此时它就是最低价。"
+L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."] =
+  "你在拍卖行买入的物品的单件成本（最早买入的先卖出）。拾取或制造的物品没有成本。"
+L["When"] = "时间"
+L["Where the data comes from"] = "数据来源"
+L["Window colours"] = "窗口颜色"
+L["You haven't blocked anyone."] = "你还没有屏蔽任何人。"
+L["You'd receive (after the cut)"] = "你将收到（扣除手续费后）"
+L["Your active auctions on all characters, as of the last time each opened the auction house."] =
+  "你所有角色上进行中的拍卖，以各角色上次打开拍卖行时为准。"
+L["Your alts on this Battle.net account already share everything: AME's history is saved account-wide. Trust players to swap scans with friends, or with your own characters on other accounts. Only your market and auction house are shared, and scans that disagree wildly with your prices are rejected."] =
+  "你在此战网账号上的小号已经共享所有数据：AME 的历史是全账号保存的。信任玩家可与好友交换扫描，或与你其他账号上的角色交换。只会共享你的市场和拍卖行，与你的价格差异过大的扫描会被拒绝。"
+L["Your auction mail doesn't name the other player on this client (the auction house keeps them anonymous), so there's no one to list."] =
+  "在此客户端上，拍卖邮件不会显示对方玩家的名字（拍卖行保持匿名），因此无人可列出。"
+L["a list needs a name"] = "列表需要一个名称"
+L["a list with that name already exists"] = "已存在同名列表"
+L["above g"] = "高于(金)"
+L["announced %d, served %d, received %d, rejected %d"] = "已通告 %d，提供 %d，接收 %d，拒绝 %d"
+L["auctionator history import"] = "Auctionator 历史导入"
+L["average period"] = "均价周期"
+L["awaiting mail"] = "等待邮件"
+L["backfill"] = "历史回填"
+L["below g"] = "低于(金)"
+L["blocked"] = "已屏蔽"
+L["blocked %s"] = "已屏蔽 %s"
+L["bought"] = "买入"
+L["chart library + window"] = "图表库 + 窗口"
+L["codec+compress 6.4k items"] = "编解码+压缩 6.4k 件物品"
+L["could not load %s: %s"] = "无法加载 %s：%s"
+L["could not load history addon"] = "无法加载历史插件"
+L["couldn't start an auction house search for %s"] = "无法为 %s 发起拍卖行搜索"
+L["data"] = "数据"
+L["done %s"] = "完成 %s"
+L["down  (wick = cheapest)"] = "跌  （影线 = 最低价）"
+L["dropped to %s (alert at %s)"] = "跌至 %s（提醒价 %s）"
+L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
+  "编码 %.0f 毫秒，压缩 %.0f 毫秒，解包+解码 %.0f 毫秒，%d KB -> %d KB"
+L["ended?"] = "已结束？"
+L["enter a character name"] = "请输入角色名称"
+L["guild sync"] = "公会同步"
+L["guild sync: %s, announced %d, served %d, received %d, rejected %d"] =
+  "公会同步：%s，已通告 %d，提供 %d，接收 %d，拒绝 %d"
+L["history addon"] = "历史插件"
+L["history import from Auctionator failed: %s"] = "从 Auctionator 导入历史失败：%s"
+L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
+  "从 Auctionator 导入历史仅在你的阵营拍卖行进行（其数据混合了所有拍卖行）。"
+L["history import from Auctionator skipped: %s"] = "已跳过从 Auctionator 导入历史：%s"
+L["history lookup (cold)"] = "历史查询（冷启动）"
+L["history: %d raw scans, %d days, %.0f KB"] = "历史：%d 次原始扫描，%d 天，%.0f KB"
+L["imported %d days of price history from Auctionator into %s"] = "已从 Auctionator 导入 %d 天的价格历史到%s"
+L["item %d: %d points in %.1f ms"] = "物品 %d：%d 个数据点，耗时 %.1f 毫秒"
+L["item from latest scan has no daily points"] = "最新扫描中的物品没有每日数据点"
+L["item not loaded yet - try again in a moment"] = "物品尚未加载——请稍后再试"
+L["just now"] = "刚刚"
+L["last full scan"] = "上次全面扫描"
+L["last full scan: %d items, %s ago"] = "上次全面扫描：%d 件物品，%s前"
+L["last seen %s"] = "最后出现 %s"
+L["libraries"] = "库"
+L["loaded in %s ms, %d shard(s), %.0f KB of daily history"] =
+  "加载耗时 %s 毫秒，%d 个分片，%.0f KB 每日历史"
+L["loading history..."] = "正在加载历史..."
+L["loading item names %d/%d"] = "正在加载物品名称 %d/%d"
+L["low"] = "低"
+L["lowest"] = "最低"
+L["margin %"] = "利润率 %"
+L["market"] = "市场价"
+L["market index"] = "市场索引"
+L["market index failed:"] = "市场索引失败："
+L["max g"] = "最高(金)"
+L["min g"] = "最低(金)"
+L["never"] = "从未"
+L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"] =
+  "尚未记录全面扫描：请打开拍卖行并进行一次全面扫描（使用扫描插件或游戏自带功能）"
+L["no history for %s in %s"] = "%s 在 %s 中没有历史"
+L["no scans in this shard yet"] = "此分片尚无扫描"
+L["none"] = "无"
+L["none yet: open the AH and run a full scan, then rerun /ame selftest"] =
+  "暂无：请打开拍卖行进行一次全面扫描，然后重新运行 /ame selftest"
+L["not in a guild"] = "不在公会中"
+L["not loaded"] = "未加载"
+L["nothing imported here (only with Auctionator data, at your faction's auction house)"] =
+  "此处未导入任何内容（仅限 Auctionator 数据，且在你的阵营拍卖行）"
+L["off"] = "关"
+L["on"] = "开"
+L["on buy/sell signal"] = "出现买入/卖出信号时"
+L["on, but you're not in a guild"] = "已开启，但你不在公会中"
+L["open the auction house first"] = "请先打开拍卖行"
+L["profit g"] = "利润(金)"
+L["reading full scan (%d listings) in the background..."] = "正在后台读取全面扫描（%d 条挂单）..."
+L["received a full scan from %s via sync (%d items, %s)"] =
+  "通过同步收到来自 %s 的全面扫描（%d 件物品，%s）"
+L["recorded full scan: %d items from %d listings (%s)"] =
+  "已记录全面扫描：%d 件物品，来自 %d 条挂单（%s）"
+L["rose to %s (alert at %s)"] = "涨至 %s（提醒价 %s）"
+L["round trip mismatch"] = "往返结果不一致"
+L["scan pipeline: %d requests, %d events (%d since last request), read %s, aborted %d; ingest requested=%s reading=%s"] =
+  "扫描流程：%d 次请求，%d 个事件（上次请求后 %d 个），读取 %s，中止 %d；导入 requested=%s reading=%s"
+L["scan read failed:"] = "扫描读取失败："
+L["score"] = "评分"
+L["score %+d"] = "评分 %+d"
+L["search"] = "搜索"
+L["selftest finished:\n%s\n\nReload the UI now to save the results?"] =
+  "自检完成：\n%s\n\n现在重载界面以保存结果吗？"
+L["selftest starting (this may pause the game for a moment)"] = "自检开始（游戏可能会短暂卡顿）"
+L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
+  "自检：%d 项通过，%d 项警告，%d 项失败。重载以保存结果（/reload）。"
+L["shard"] = "分片"
+L["shared"] = "已共享"
+L["sharing"] = "共享"
+L["signal"] = "信号"
+L["sold"] = "卖出"
+L["storing %s scan failed:"] = "存储%s扫描失败："
+L["supply"] = "供应"
+L["the AH closed before AME finished reading the full scan; it wasn't recorded."] =
+  "AME 完成读取全面扫描前拍卖行已关闭；本次扫描未被记录。"
+L["today"] = "今天"
+L["turned off in settings"] = "已在设置中关闭"
+L["unknown command, try /ame help"] = "未知命令，请尝试 /ame help"
+L["up"] = "涨"
+L["usage: /ame item <item link or itemID>"] = "用法：/ame item <物品链接或物品ID>"
+L["volatility"] = "波动率"
+L["waiting for them to approve"] = "等待对方批准"
+L["wants to share, %s"] = "想要共享，%s"
+L["wheel: zoom, drag: pan, double-click: reset"] = "滚轮：缩放，拖动：平移，双击：重置"
+L["whisper"] = "密语"
+L["window created, market tab rendered"] = "窗口已创建，市场标签页已渲染"
+L["yesterday"] = "昨天"
+L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
+  "你在买入拍卖行：点击搜索（或 Shift-点击某行）即可购买"

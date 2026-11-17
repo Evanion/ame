@@ -1,6 +1,7 @@
 -- Portfolio tab: what you hold (all characters, bags + bank + auctions) valued at your faction's market, cost basis
 -- and unrealized profit from your AH purchases, and the ledger of AH sales and purchases from auction mail.
 local _, ns = ...
+local L = ns.L
 
 local W = ns.Widgets
 local UI = ns.UI
@@ -36,14 +37,14 @@ local function days(v)
 end
 
 local POSITION_COLS = {
-  { key = "name", label = "Item", width = 210, item = true, ascendingFirst = true },
-  { key = "qty", label = "Held", width = 50 },
-  { key = "market", label = "Market", width = 84, format = "money" },
-  { key = "value", label = "Value", width = 92, format = "money" },
-  { key = "unitCost", label = "Avg cost", width = 84, format = "money", term = "pfCost" },
+  { key = "name", label = L["Item"], width = 210, item = true, ascendingFirst = true },
+  { key = "qty", label = L["Held"], width = 50 },
+  { key = "market", label = L["Market"], width = 84, format = "money" },
+  { key = "value", label = L["Value"], width = 92, format = "money" },
+  { key = "unitCost", label = L["Avg cost"], width = 84, format = "money", term = "pfCost" },
   {
     key = "unrealized",
-    label = "Unrealized",
+    label = L["Unrealized"],
     width = 92,
     term = "pfUnrealized",
     text = function(e)
@@ -52,17 +53,17 @@ local POSITION_COLS = {
   },
   {
     key = "signal",
-    label = "Signal",
+    label = L["Signal"],
     width = 50,
     format = "signal",
     term = "signal",
     sortKey = "signalRank",
     ascendingFirst = true,
   },
-  { key = "sellRate", label = "Sells/d", width = 58, format = "rate", term = "sellRate" },
+  { key = "sellRate", label = L["Sells/d"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "daysToSell",
-    label = "Days to sell",
+    label = L["Days to sell"],
     width = 74,
     term = "pfDays",
     text = function(e)
@@ -75,7 +76,7 @@ local function timeLeft(a)
   if a.timeLeft then
     local left = a.timeLeft - (GetServerTime() - (a.seen or GetServerTime()))
     if left <= 0 then
-      return "|cff999999ended?|r"
+      return "|cff999999" .. L["ended?"] .. "|r"
     end
     return left >= 3600 and ("%dh"):format(left / 3600) or ("%dm"):format(left / 60)
   end
@@ -84,13 +85,13 @@ local function timeLeft(a)
 end
 
 local AUCTION_COLS = {
-  { key = "name", label = "Item", width = 230, item = true, ascendingFirst = true },
-  { key = "qty", label = "Qty", width = 50 },
-  { key = "unit", label = "Price each", width = 92, format = "money" },
-  { key = "total", label = "Total", width = 96, format = "money" },
+  { key = "name", label = L["Item"], width = 230, item = true, ascendingFirst = true },
+  { key = "qty", label = L["Qty"], width = 50 },
+  { key = "unit", label = L["Price each"], width = 92, format = "money" },
+  { key = "total", label = L["Total"], width = 96, format = "money" },
   {
     key = "timeLeft",
-    label = "Time left",
+    label = L["Time left"],
     width = 70,
     text = function(a)
       return timeLeft(a)
@@ -98,7 +99,7 @@ local AUCTION_COLS = {
   },
   {
     key = "char",
-    label = "Character",
+    label = L["Character"],
     width = 150,
     align = "LEFT",
     ascendingFirst = true,
@@ -108,7 +109,7 @@ local AUCTION_COLS = {
   },
   {
     key = "house",
-    label = "Auction house",
+    label = L["Auction house"],
     width = 100,
     align = "LEFT",
     ascendingFirst = true,
@@ -120,13 +121,13 @@ local AUCTION_COLS = {
 
 local function counterpartyCols(amountLabel, tradesLabel)
   return {
-    { key = "name", label = "Player", width = 180, align = "LEFT", ascendingFirst = true },
+    { key = "name", label = L["Player"], width = 180, align = "LEFT", ascendingFirst = true },
     { key = "amount", label = amountLabel, width = 110, format = "money" },
     { key = "trades", label = tradesLabel, width = 70 },
-    { key = "units", label = "Items", width = 60 },
+    { key = "units", label = L["Items"], width = 60 },
     {
       key = "favourite",
-      label = "Mostly",
+      label = L["Mostly"],
       width = 230,
       align = "LEFT",
       ascendingFirst = true,
@@ -136,7 +137,7 @@ local function counterpartyCols(amountLabel, tradesLabel)
     },
     {
       key = "last",
-      label = "Last",
+      label = L["Last"],
       width = 96,
       text = function(c)
         return c.last > 0 and date("%b %d %H:%M", c.last) or ""
@@ -148,7 +149,7 @@ end
 local LEDGER_COLS = {
   {
     key = "when",
-    label = "When",
+    label = L["When"],
     width = 96,
     align = "LEFT",
     sortKey = "t",
@@ -161,12 +162,13 @@ local LEDGER_COLS = {
     label = "",
     width = 44,
     text = function(e)
-      return (e.kind == "sale" or e.kind == "pending") and "|cff4dd973sold|r" or "|cffffcc33bought|r"
+      return (e.kind == "sale" or e.kind == "pending") and "|cff4dd973" .. L["sold"] .. "|r"
+        or "|cffffcc33" .. L["bought"] .. "|r"
     end,
   },
   {
     key = "name",
-    label = "Item",
+    label = L["Item"],
     width = 230,
     item = true,
     fallback = function(e)
@@ -175,7 +177,7 @@ local LEDGER_COLS = {
   },
   {
     key = "qty",
-    label = "Qty",
+    label = L["Qty"],
     width = 44,
     text = function(e)
       return e.qty and tostring(e.qty) or "|cff999999?|r"
@@ -183,18 +185,18 @@ local LEDGER_COLS = {
   },
   {
     key = "amount",
-    label = "Price",
+    label = L["Price"],
     width = 92,
     text = function(e)
       if e.kind == "pending" then
-        return "|cff999999awaiting mail|r"
+        return "|cff999999" .. L["awaiting mail"] .. "|r"
       end
       return W.Money(e.amount, true)
     end,
   },
   {
     key = "cut",
-    label = "AH cut",
+    label = L["AH cut"],
     width = 76,
     text = function(e)
       return e.cut and W.Money(e.cut, true) or ""
@@ -202,7 +204,7 @@ local LEDGER_COLS = {
   },
   {
     key = "profit",
-    label = "Profit",
+    label = L["Profit"],
     width = 92,
     term = "pfProfit",
     sortKey = false, -- computed per sale at render time
@@ -212,7 +214,7 @@ local LEDGER_COLS = {
   },
   {
     key = "char",
-    label = "Character",
+    label = L["Character"],
     width = 150,
     align = "LEFT",
     text = function(e)
@@ -226,11 +228,11 @@ function UI:CreatePortfolioView(parent, contentArea)
   self.pfView = v
   self.pfMode = "positions"
   v.cards = {
-    card(v, "Holdings value", 0),
-    card(v, "Listed on the AH now", 192),
-    card(v, "Unrealized profit", 384),
-    card(v, "Realized profit, 7 days", 576),
-    card(v, "30 days: sold / bought", 768),
+    card(v, L["Holdings value"], 0),
+    card(v, L["Listed on the AH now"], 192),
+    card(v, L["Unrealized profit"], 384),
+    card(v, L["Realized profit, 7 days"], 576),
+    card(v, L["30 days: sold / bought"], 768),
   }
   for i, term in ipairs({ "pfValue", false, "pfUnrealized", "pfProfit", "pfFlow" }) do
     v.cards[i]:EnableMouse(true)
@@ -242,9 +244,9 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.cards[2]:SetScript("OnEnter", function(self)
     local l = UI.pfListed
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-    GameTooltip:SetText("Listed on the auction house now", 1, 1, 1)
+    GameTooltip:SetText(L["Listed on the auction house now"], 1, 1, 1)
     GameTooltip:AddLine(
-      "Your active auctions on all characters, as of the last time each opened the auction house.",
+      L["Your active auctions on all characters, as of the last time each opened the auction house."],
       nil,
       nil,
       nil,
@@ -252,9 +254,9 @@ function UI:CreatePortfolioView(parent, contentArea)
     )
     if l and l.count > 0 then
       GameTooltip:AddLine(" ")
-      GameTooltip:AddDoubleLine("Asking prices", W.Money(l.value), 0.8, 0.8, 0.8, 1, 1, 1)
-      GameTooltip:AddDoubleLine("You'd receive (after the cut)", W.Money(l.net), 0.8, 0.8, 0.8, 1, 1, 1)
-      GameTooltip:AddDoubleLine("At market price", W.Money(l.market), 0.8, 0.8, 0.8, 1, 1, 1)
+      GameTooltip:AddDoubleLine(L["Asking prices"], W.Money(l.value), 0.8, 0.8, 0.8, 1, 1, 1)
+      GameTooltip:AddDoubleLine(L["You'd receive (after the cut)"], W.Money(l.net), 0.8, 0.8, 0.8, 1, 1, 1)
+      GameTooltip:AddDoubleLine(L["At market price"], W.Money(l.market), 0.8, 0.8, 0.8, 1, 1, 1)
       GameTooltip:AddLine(" ")
       for char, c in pairs(l.chars) do
         GameTooltip:AddDoubleLine(
@@ -274,27 +276,27 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.cards[2]:SetScript("OnLeave", function()
     GameTooltip:Hide()
   end)
-  v.positionsButton = W.Button(v, "Positions", 80, 20, function()
+  v.positionsButton = W.Button(v, L["Positions"], 80, 20, function()
     UI.pfMode, UI.pfOffset = "positions", 0
     UI:RefreshPortfolio()
   end)
   v.positionsButton:SetPoint("TOPLEFT", 0, -54)
-  v.ledgerButton = W.Button(v, "Ledger", 80, 20, function()
+  v.ledgerButton = W.Button(v, L["Ledger"], 80, 20, function()
     UI.pfMode, UI.pfOffset = "ledger", 0
     UI:RefreshPortfolio()
   end)
   v.ledgerButton:SetPoint("LEFT", v.positionsButton, "RIGHT", 4, 0)
-  v.auctionsButton = W.Button(v, "Auctions", 80, 20, function()
+  v.auctionsButton = W.Button(v, L["Auctions"], 80, 20, function()
     UI.pfMode, UI.pfOffset = "auctions", 0
     UI:RefreshPortfolio()
   end)
   v.auctionsButton:SetPoint("LEFT", v.ledgerButton, "RIGHT", 4, 0)
-  v.customersButton = W.Button(v, "Customers", 80, 20, function()
+  v.customersButton = W.Button(v, L["Customers"], 80, 20, function()
     UI.pfMode, UI.pfOffset = "customers", 0
     UI:RefreshPortfolio()
   end)
   v.customersButton:SetPoint("LEFT", v.auctionsButton, "RIGHT", 4, 0)
-  v.suppliersButton = W.Button(v, "Suppliers", 80, 20, function()
+  v.suppliersButton = W.Button(v, L["Suppliers"], 80, 20, function()
     UI.pfMode, UI.pfOffset = "suppliers", 0
     UI:RefreshPortfolio()
   end)
@@ -333,13 +335,13 @@ function UI:CreatePortfolioView(parent, contentArea)
     sort = { key = "total", ascending = false },
   })
   v.customers = ns.DataTable.New(v, {
-    columns = counterpartyCols("Spent with you", "Purchases"),
+    columns = counterpartyCols(L["Spent with you"], L["Purchases"]),
     rows = ROWS,
     top = -82,
     sort = { key = "amount", ascending = false },
   })
   v.suppliers = ns.DataTable.New(v, {
-    columns = counterpartyCols("You spent", "Purchases"),
+    columns = counterpartyCols(L["You spent"], L["Purchases"]),
     rows = ROWS,
     top = -82,
     sort = { key = "amount", ascending = false },
@@ -376,6 +378,7 @@ function UI:RefreshPortfolio()
   end
   local AME = ns.AME
   local index = AME:FactionIndex()
+  ns.Trading:ResolveLedger() -- entries recorded before their item was known: icons and average cost need the ID
   local basis = AME.ledger and AME.ledger:CostBasis() or {}
   self.pfRows, self.pfTotals = ns.Portfolio.Build(ns.Trading:Holdings(), basis, index and index.items or {})
   self.pfListed = ns.Portfolio.Listed(ns.Trading:Holdings(), function(house)
@@ -409,7 +412,8 @@ function UI:RenderPortfolio()
   local l = self.pfListed
   v.cards[1].value:SetText(W.Money(t.value, true))
   v.cards[2].value:SetText(
-    l.count > 0 and ("%s  |cff999999%d auctions|r"):format(W.Money(l.value, true), l.count) or "|cff777777none|r"
+    l.count > 0 and ("%s  |cff999999%s|r"):format(W.Money(l.value, true), L["%d auctions"]:format(l.count))
+      or "|cff777777" .. L["none"] .. "|r"
   )
   v.cards[3].value:SetText(signedMoney(t.unrealized))
   v.cards[4].value:SetText(signedMoney(w.profit))
@@ -453,30 +457,39 @@ function UI:RenderPortfolio()
   local status
   if customersMode or suppliersMode then
     if not self.pfNamesSeen and #self.pfLedger > 0 then
-      status = "Your auction mail doesn't name the other player on this client (the auction house keeps them "
-        .. "anonymous), so there's no one to list."
+      status =
+        L["Your auction mail doesn't name the other player on this client (the auction house keeps them anonymous), so there's no one to list."]
     else
       status = customersMode
-          and ("%d customers in the last 90 days, by gold spent with you (from auction mail)."):format(#list)
-        or ("%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."):format(#list)
+          and L["%d customers in the last 90 days, by gold spent with you (from auction mail)."]:format(#list)
+        or L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."]:format(#list)
     end
   elseif auctionsMode then
-    status = (
-      "%d active auctions on your characters, as of the last time each opened the auction house. Sales show up "
-      .. "in the ledger right away and are settled when the auction mail arrives."
-    ):format(#list)
+    status =
+      L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."]:format(
+        #list
+      )
   elseif ledgerMode then
-    status = (
-      "%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your "
-      .. "mailbox to catch new ones."
-    ):format(#list)
+    status =
+      L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."]:format(
+        #list
+      )
   else
-    status = (
-      "%d positions on %d character%s. Bags update as you play; open your bank and the auction house to "
-      .. "include bank items and active auctions."
-    ):format(#list, chars, chars == 1 and "" or "s")
+    if chars == 1 then
+      status =
+        L["%d positions on %d character. Bags update as you play; open your bank and the auction house to include bank items and active auctions."]:format(
+          #list,
+          chars
+        )
+    else
+      status =
+        L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."]:format(
+          #list,
+          chars
+        )
+    end
     if self.pfIndexMissing then
-      status = "No market data for your faction's auction house yet - scan there to value your holdings."
+      status = L["No market data for your faction's auction house yet - scan there to value your holdings."]
     end
   end
   v.status:SetText(status)

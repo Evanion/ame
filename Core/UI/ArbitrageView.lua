@@ -1,16 +1,22 @@
 -- Arbitrage tab: items to buy at one auction house and sell at another, after the selling house's cut.
 local _, ns = ...
+local L = ns.L
 
 local W = ns.Widgets
 local UI = ns.UI
 
 local HOUSES = {
-  { "Alliance", "Alliance AH" },
-  { "Horde", "Horde AH" },
-  { "Neutral", "Goblin AH" },
+  { "Alliance", L["Alliance AH"] },
+  { "Horde", L["Horde AH"] },
+  { "Neutral", L["Goblin AH"] },
 }
-local HOUSE_NAME = { Alliance = "Alliance AH", Horde = "Horde AH", Neutral = "Goblin AH" }
-local AGES = { { 1, "Seen today/yesterday" }, { 3, "Seen in 3 days" }, { 7, "Seen in 7 days" }, { false, "Any age" } }
+local HOUSE_NAME = { Alliance = L["Alliance AH"], Horde = L["Horde AH"], Neutral = L["Goblin AH"] }
+local AGES = {
+  { 1, L["Seen today/yesterday"] },
+  { 3, L["Seen in 3 days"] },
+  { 7, L["Seen in 7 days"] },
+  { false, L["Any age"] },
+}
 
 local function indexOf(values, value)
   for i, o in ipairs(values) do
@@ -23,20 +29,20 @@ end
 
 local function ageText(days)
   if not days or days <= 0 then
-    return "today"
+    return L["today"]
   elseif days == 1 then
-    return "1 day"
+    return L["1 day"]
   end
-  return days .. " days"
+  return L["%d days"]:format(days)
 end
 
 local COLUMNS = {
-  { key = "name", label = "Item", width = 180, item = true, sortKey = false },
-  { key = "buy", label = "Buy at", width = 86, format = "money", term = "arbBuy" },
-  { key = "sell", label = "Sells for", width = 86, format = "money", term = "arbSell" },
+  { key = "name", label = L["Item"], width = 180, item = true, sortKey = false },
+  { key = "buy", label = L["Buy at"], width = 86, format = "money", term = "arbBuy" },
+  { key = "sell", label = L["Sells for"], width = 86, format = "money", term = "arbSell" },
   {
     key = "profit",
-    label = "Profit",
+    label = L["Profit"],
     width = 86,
     term = "arbProfit",
     text = function(e)
@@ -45,7 +51,7 @@ local COLUMNS = {
   },
   {
     key = "margin",
-    label = "Margin",
+    label = L["Margin"],
     width = 60,
     term = "arbMargin",
     text = function(e)
@@ -54,7 +60,7 @@ local COLUMNS = {
   },
   {
     key = "supply",
-    label = "Supply",
+    label = L["Supply"],
     width = 60,
     term = "arbSupply",
     sortKey = "sellQty",
@@ -64,7 +70,7 @@ local COLUMNS = {
   },
   {
     key = "deposit",
-    label = "Deposit",
+    label = L["Deposit"],
     width = 70,
     term = "arbDeposit",
     sortKey = false,
@@ -81,7 +87,7 @@ local COLUMNS = {
   },
   {
     key = "depth",
-    label = "Depth",
+    label = L["Depth"],
     width = 90,
     term = "arbDepth",
     sortKey = false,
@@ -89,10 +95,10 @@ local COLUMNS = {
       return UI:DepthText(e)
     end,
   },
-  { key = "sellRate", label = "Sells/d", width = 58, format = "rate", term = "arbSellRate" },
+  { key = "sellRate", label = L["Sells/d"], width = 58, format = "rate", term = "arbSellRate" },
   {
     key = "age",
-    label = "Data",
+    label = L["Data"],
     width = 48,
     term = "arbAge",
     text = function(e)
@@ -125,19 +131,19 @@ function UI:CreateArbitrageView(parent, contentArea)
 
   local buyLabel = W.Text(v, "GameFontHighlightSmall")
   buyLabel:SetPoint("TOPLEFT", 0, -4)
-  buyLabel:SetText("Buy at")
+  buyLabel:SetText(L["Buy at"])
   v.buy = W.Dropdown(v, 104, HOUSES, function(value)
     UI.arb.buy = value
     UI:RefreshArbitrage()
   end)
   v.buy.neutral = true
   v.buy:SetPoint("LEFT", buyLabel, "RIGHT", 6, 0)
-  v.swap = W.Button(v, "Swap", 50, 20, function()
+  v.swap = W.Button(v, L["Swap"], 50, 20, function()
     UI.arb.buy, UI.arb.sell = UI.arb.sell, UI.arb.buy
     UI:RefreshArbitrage()
   end)
   v.swap:SetPoint("LEFT", v.buy, "RIGHT", 6, 0)
-  local sellLabel = label("Sell at", v.swap)
+  local sellLabel = label(L["Sell at"], v.swap)
   v.sell = W.Dropdown(v, 104, HOUSES, function(value)
     UI.arb.sell = value
     UI:RefreshArbitrage()
@@ -151,6 +157,9 @@ function UI:CreateArbitrageView(parent, contentArea)
     input:SetNumeric(true)
     input.hint = W.Text(input, "GameFontDisableSmall")
     input.hint:SetPoint("LEFT", 6, 0)
+    input.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
+    input.hint:SetJustifyH("LEFT")
+    input.hint:SetWordWrap(false)
     input.hint:SetText(hint)
     input:SetScript("OnTextChanged", function(self)
       self.hint:SetShown(self:GetText() == "")
@@ -159,12 +168,12 @@ function UI:CreateArbitrageView(parent, contentArea)
     input:SetScript("OnEnterPressed", input.ClearFocus)
     return input
   end
-  v.minProfit = goldInput("profit g", function(g)
+  v.minProfit = goldInput(L["profit g"], function(g)
     UI.arb.minProfit = g and g * 10000 or 1
     UI:RefreshArbitrage(true)
   end)
   v.minProfit:SetPoint("LEFT", v.sell, "RIGHT", 16, 0)
-  v.minMargin = goldInput("margin %", function(p)
+  v.minMargin = goldInput(L["margin %"], function(p)
     UI.arb.minMargin = (p or 10) / 100
     UI:RefreshArbitrage(true)
   end)
@@ -199,7 +208,7 @@ function UI:CreateArbitrageView(parent, contentArea)
     },
     -- Search: shown while you're at the buy auction house
     action = {
-      label = "Search",
+      label = L["Search"],
       width = 56,
       shown = function()
         return UI:AtBuyHouse()
@@ -249,7 +258,7 @@ function UI:RefreshArbitrage(keepOffset)
   if not keepOffset then
     self.arbRows = nil -- a new comparison: show "loading"; a refresh keeps the rows until the new ones are in
   end
-  v.status:SetText("Loading market data...")
+  v.status:SetText(L["Loading market data..."])
   self:RenderArbitrage()
   local token = {}
   self.arbToken = token
@@ -283,7 +292,7 @@ function UI:DepthText(e)
   local shard = ns.ShardKey(ns.AME:MarketRealmName(), a.buy)
   local book = ns.AME:BookFor(shard, e.itemID, UI.DEPTH_MAX_AGE)
   if not book then
-    return "|cff777777search|r"
+    return "|cff777777" .. L["search"] .. "|r"
   end
   local units, _, profit = ns.Depth.Route(book, e.sell * (1 - (self.arbCut or 0)))
   if units == 0 then
@@ -312,13 +321,13 @@ function UI:RenderArbitrage()
   t:Render()
   local status
   if not self.arbRows then
-    status = "Loading market data..."
+    status = L["Loading market data..."]
   elseif self.arbMissing then
-    status = ("No price history for the %s yet: scan there (any character on this account counts) to compare."):format(
+    status = L["No price history for the %s yet: scan there (any character on this account counts) to compare."]:format(
       self.arbMissing
     )
   else
-    status = ("%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"):format(
+    status = L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"]:format(
       total,
       HOUSE_NAME[a.buy],
       HOUSE_NAME[a.sell],
@@ -327,9 +336,9 @@ function UI:RenderArbitrage()
     )
   end
   if a.buy == a.sell then
-    status = "Pick two different auction houses."
+    status = L["Pick two different auction houses."]
   elseif canSearch and self.arbRows and #self.arbRows > 0 then
-    status = status .. "  -  you're at the buy AH: Search (or Shift-click a row) to buy"
+    status = status .. "  -  " .. L["you're at the buy AH: Search (or Shift-click a row) to buy"]
   end
   v.status:SetText(status)
 end

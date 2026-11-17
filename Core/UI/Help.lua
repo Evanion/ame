@@ -1,5 +1,6 @@
 -- Plain-language explanations: hover text for columns and stat cards, and the Guide tab.
 local _, ns = ...
+local L = ns.L
 
 local W = ns.Widgets
 local Help = {}
@@ -7,135 +8,103 @@ ns.Help = Help
 
 Help.TERMS = {
   name = {
-    "Item",
-    "Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show "
-      .. "how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old.",
+    L["Item"],
+    L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."],
   },
   market = {
-    "Market price",
-    "What the item typically sells for right now. From full listing data it's the average of the cheapest "
-      .. "15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a "
-      .. "browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the "
-      .. "lowest price.",
+    L["Market price"],
+    L["What the item typically sells for right now. From full listing data it's the average of the cheapest 15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the lowest price."],
   },
-  min = { "Lowest", "The cheapest single listing seen in the latest data." },
+  min = { L["Lowest"], L["The cheapest single listing seen in the latest data."] },
   avg = {
-    "Average",
-    "The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare "
-      .. "it with today's market price to see if the item is cheap or expensive right now.",
+    L["Average"],
+    L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."],
   },
   change7 = {
-    "7-day change",
-    "How much the market price moved compared with 7 days of data ago. Green is up, red is down.",
+    L["7-day change"],
+    L["How much the market price moved compared with 7 days of data ago. Green is up, red is down."],
   },
   vol30 = {
-    "Volatility",
-    "How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a "
-      .. "stable, predictable item; high numbers mean risky swings - and bigger opportunities.",
+    L["Volatility"],
+    L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."],
   },
   qty = {
-    "Supply",
-    "How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: "
-      .. "falling supply often comes before rising prices.",
+    L["Supply"],
+    L["How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: falling supply often comes before rising prices."],
   },
   sellRate = {
-    "Sells per day (estimate)",
-    "How fast the item moves: units that disappeared between consecutive full scans of this auction house, per "
-      .. "day, over the last week. It counts sold, cancelled and expired listings, and new listings hide some "
-      .. "sales, so treat it as a rough guide. A cheap item that never sells is a trap; a high number means you "
-      .. "can sell a stack quickly. Needs a few full scans on the same day to show.",
+    L["Sells per day (estimate)"],
+    L["How fast the item moves: units that disappeared between consecutive full scans of this auction house, per day, over the last week. It counts sold, cancelled and expired listings, and new listings hide some sales, so treat it as a rough guide. A cheap item that never sells is a trap; a high number means you can sell a stack quickly. Needs a few full scans on the same day to show."],
   },
   signal = {
-    "Signal",
-    "BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own "
-      .. "30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you "
-      .. "own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of "
-      .. 'history ("-" until then). The market phase reads the week\'s price move against supply: shortage, '
-      .. "steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak "
-      .. "demand or dumping. It compares the item with itself, and it's a hint, not financial advice.",
+    L["Signal"],
+    L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."],
   },
   score = {
-    "Score",
-    "An opportunity ranking from -100 to +100. Higher means the item is further below its usual price, on a "
-      .. "stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. "
-      .. "Sort by it to find bargains quickly.",
+    L["Score"],
+    L["An opportunity ranking from -100 to +100. Higher means the item is further below its usual price, on a stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. Sort by it to find bargains quickly."],
   },
   arbBuy = {
-    "Buy at",
-    "The cheapest listing at the auction house you buy from - what the first units cost you.",
+    L["Buy at"],
+    L["The cheapest listing at the auction house you buy from - what the first units cost you."],
   },
   arbSell = {
-    "Sells for",
-    "The market price at the auction house you sell at: what the item typically sells for there.",
+    L["Sells for"],
+    L["The market price at the auction house you sell at: what the item typically sells for there."],
   },
   arbFee = {
-    "AH cut",
-    "The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones "
-      .. "(WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the "
-      .. "item sells.",
+    L["AH cut"],
+    L["The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones (WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the item sells."],
   },
-  arbProfit = { "Profit", "Per item: what it sells for, minus the AH cut, minus what you paid." },
-  arbMargin = { "Margin", "Profit as a share of what you paid. 50% means every 10g spent comes back as 15g." },
+  arbProfit = { L["Profit"], L["Per item: what it sells for, minus the AH cut, minus what you paid."] },
+  arbMargin = { L["Margin"], L["Profit as a share of what you paid. 50% means every 10g spent comes back as 15g."] },
   arbSupply = {
-    "Supply",
-    "Listed at the buy house / at the sell house. Plenty to buy and little to compete with where you sell is ideal; "
-      .. "a big gap on one listing at the buy house may be gone fast.",
+    L["Supply"],
+    L["Listed at the buy house / at the sell house. Plenty to buy and little to compete with where you sell is ideal; a big gap on one listing at the buy house may be gone fast."],
   },
   arbDeposit = {
-    "Deposit",
-    "What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% "
-      .. "for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and "
-      .. "lose it if it doesn't - so a high deposit on a slow seller is real risk.",
+    L["Deposit"],
+    L["What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and lose it if it doesn't - so a high deposit on a slow seller is real risk."],
   },
   arbSellRate = {
-    "Sells per day at the sell house",
-    "Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a "
-      .. "day, 100 will take weeks.",
+    L["Sells per day at the sell house"],
+    L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."],
   },
   arbDepth = {
-    "Depth",
-    "How many units you can buy at the buy auction house before the route stops paying, and the total profit: "
-      .. "every listing priced below what one sells for after the cut. It needs the item's listings, so search "
-      .. "the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that "
-      .. "many still takes time: check Sells/d.",
+    L["Depth"],
+    L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sells/d."],
   },
   arbAge = {
-    "Data",
-    "How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both "
-      .. "auction houses (alts on this account count) before buying.",
+    L["Data"],
+    L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."],
   },
   pfValue = {
-    "Holdings value",
-    "Everything your characters hold - bags, bank and active auctions - at your faction auction house's market "
-      .. "price. Bank items and auctions are counted as of the last time you opened the bank / auction house.",
+    L["Holdings value"],
+    L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
   },
   pfCost = {
-    "Average cost",
-    "What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). "
-      .. "Items you looted or crafted have no cost.",
+    L["Average cost"],
+    L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."],
   },
   pfUnrealized = {
-    "Unrealized profit",
-    "For units you bought on the auction house: what they're worth now at market price minus what you paid. It "
-      .. "becomes real profit when you sell.",
+    L["Unrealized profit"],
+    L["For units you bought on the auction house: what they're worth now at market price minus what you paid. It becomes real profit when you sell."],
   },
   pfProfit = {
-    "Realized profit",
-    "From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest "
-      .. "purchases first). Sales of looted or crafted items count fully.",
+    L["Realized profit"],
+    L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."],
   },
   pfFlow = {
-    "Sold / bought",
-    "Gold received from auction sales (after the cut) and gold spent on auction purchases in the last 30 days.",
+    L["Sold / bought"],
+    L["Gold received from auction sales (after the cut) and gold spent on auction purchases in the last 30 days."],
   },
   pfDays = {
-    "Days to sell",
-    "How long selling everything you hold would take at the item's current sell rate (estimate).",
+    L["Days to sell"],
+    L["How long selling everything you hold would take at the item's current sell rate (estimate)."],
   },
   candles = {
-    "Candles",
-    "Each candle covers one or more days. It opens at the previous candle's close and closes at the market "
-      .. "price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen.",
+    L["Candles"],
+    L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."],
   },
 }
 
@@ -158,53 +127,36 @@ end
 
 Help.GUIDE = {
   {
-    "Where the data comes from",
-    "AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the "
-      .. "default auction house window or any scanning addon (it works well with addons like Auctionator). "
-      .. "Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and "
-      .. "guild members running AME share their full scans automatically.",
+    L["Where the data comes from"],
+    L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."],
   },
   {
-    "Market tab",
-    "A screener over every item with history. Pick a category or watchlist on the left, search by name, filter "
-      .. "by quality, price range or signal, and click a column to sort. Hover a column header for what it means. "
-      .. "Click a row to open its chart; click the star to watch it.",
+    L["Market tab"],
+    L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."],
   },
   {
-    "Arbitrage tab",
-    "Items you can buy at one auction house and sell at another for a profit after the AH cut - e.g. your "
-      .. "faction's AH and the goblin AH (cross-faction). Each auction house keeps its own history, so scan both "
-      .. "(alts on this account count). Hover the columns for details.",
+    L["Arbitrage tab"],
+    L["Items you can buy at one auction house and sell at another for a profit after the AH cut - e.g. your faction's AH and the goblin AH (cross-faction). Each auction house keeps its own history, so scan both (alts on this account count). Hover the columns for details."],
   },
   {
-    "Portfolio tab",
-    "What all your characters hold, valued at your faction's market, with cost and unrealized profit for what "
-      .. "you bought on the AH, the Buy/Hold/Sell signal and how long it would take to sell. The ledger lists "
-      .. "your AH sales and purchases - recorded from auction mail when you open your mailbox.",
+    L["Portfolio tab"],
+    L["What all your characters hold, valued at your faction's market, with cost and unrealized profit for what you bought on the AH, the Buy/Hold/Sell signal and how long it would take to sell. The ledger lists your AH sales and purchases - recorded from auction mail when you open your mailbox."],
   },
   {
-    "Item tab",
-    "The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading "
-      .. "view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, "
-      .. "the AH) to open it here.",
+    L["Item tab"],
+    L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."],
   },
   {
-    "Watchlists and alerts",
-    'Star items to put them on a watchlist; make more lists with "+ New list" in the sidebar (right-click a '
-      .. "list to share it with your guild or delete it; guild members' shared lists appear below yours). On an "
-      .. "item's page set an alert: below or above a price in gold, or when a buy/sell "
-      .. "signal appears. Alerts are checked after every scan and posted in chat with a sound.",
+    L["Watchlists and alerts"],
+    L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price in gold, or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."],
   },
   {
-    "Reading the numbers",
-    "Signals and score compare an item with its own history, so they need a week or more of data to mean "
-      .. "anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the "
-      .. "price is flat is often a good early sign. None of this is advice - markets can stay weird for a while.",
+    L["Reading the numbers"],
+    L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."],
   },
   {
-    "Commands",
-    "/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   "
-      .. "/ame config - settings.   /ame selftest - check everything is working.",
+    L["Commands"],
+    L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."],
   },
 }
 

@@ -207,16 +207,66 @@ function Trading:QueryAuctions()
   end
 end
 
--- item ID from an invoice's item name (when the client knows the item)
+-- Item ID from an invoice's item name. Invoices only carry the name, and GetItemInfoInstant(name) only works for
+-- items the client has cached, so also look through what your characters hold and list (a bought item is usually
+-- still in your bags, a sold one was in your auction list).
 local function idFromName(name)
+  if not name then
+    return nil
+  end
   local instant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
-  if name and instant then
+  if instant then
     local ok, id = pcall(instant, name)
     if ok and type(id) == "number" then
       return id
     end
   end
+  for _, h in pairs(AME_DB.holdings or {}) do
+    for _, place in ipairs({ "bags", "bank", "auctions" }) do
+      for itemID in pairs(h[place] or {}) do
+        if W_ItemName(itemID) == name then
+          return itemID
+        end
+      end
+    end
+    for _, a in ipairs(h.auctionList or {}) do
+      if a.itemID and W_ItemName(a.itemID) == name then
+        return a.itemID
+      end
+    end
+  end
   return nil
+end
+Trading.IDFromName = idFromName
+
+-- the item a mail carries (a purchase mail has the bought item attached)
+local function mailItemID(i)
+  if not GetInboxItemLink then
+    return nil
+  end
+  for slot = 1, (ATTACHMENTS_MAX_RECEIVE or 16) do
+    local link = GetInboxItemLink(i, slot)
+    local id = type(link) == "string" and tonumber(link:match("item:(%d+)"))
+    if id then
+      return id
+    end
+  end
+  return nil
+end
+
+-- Ledger entries recorded before their item was known get their ID once it can be found (needed to match purchases
+-- against holdings for the average cost, and to show icons). Returns how many were filled in.
+function Trading:ResolveLedger()
+  local n = 0
+  for _, e in ipairs(AME_DB.ledger and AME_DB.ledger.entries or {}) do
+    if not e.itemID and e.name then
+      e.itemID = idFromName(e.name)
+      if e.itemID then
+        n = n + 1
+      end
+    end
+  end
+  return n
 end
 
 -- Record AH invoices in the inbox (sold: "seller", bought: "buyer"); each mail once.
@@ -234,7 +284,7 @@ function Trading:ScanMail()
       local entry = {
         t = t,
         kind = invoiceType == "seller" and "sale" or "buy",
-        itemID = idFromName(itemName),
+        itemID = (invoiceType == "buyer" and mailItemID(i)) or idFromName(itemName),
         name = itemName,
         qty = count or 1,
         amount = bid,
@@ -249,7 +299,7 @@ function Trading:ScanMail()
       end
     end
   end
-  if added > 0 and ns.UI and ns.UI.RefreshPortfolio then
+  if (added > 0 or self:ResolveLedger() > 0) and ns.UI and ns.UI.RefreshPortfolio then
     ns.UI:RefreshPortfolio()
   end
   return added

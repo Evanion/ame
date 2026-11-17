@@ -15,14 +15,14 @@ mkdir -p "$CORE" "$HIST" dist
 
 # addon
 cp AzerothMercantileExchange.toc embeds.xml COPYING COPYING.LESSER "$CORE/"
-cp -r Core LibAMEChart-1.0 media "$CORE/"
+cp -r Core Locales LibAMEChart-1.0 media "$CORE/"
 cp AzerothMercantileExchange_History/AzerothMercantileExchange_History.toc AzerothMercantileExchange_History/History.lua \
   "$HIST/"
 
 # embedded libraries: only what embeds.xml loads (plus licences)
 need() { [ -e "$1" ] || { echo "missing $1 - run scripts/fetch-libs.sh (LibDBIcon: see that script)" >&2; exit 1; }; }
 mkdir -p "$CORE/Libs/Ace3" "$CORE/Libs/LibDeflate"
-for m in LibStub CallbackHandler-1.0 AceGUI-3.0 AceConfig-3.0 AceComm-3.0; do
+for m in LibStub CallbackHandler-1.0 AceGUI-3.0 AceConfig-3.0 AceComm-3.0 AceLocale-3.0; do
   need "Libs/Ace3/$m"
   cp -r "Libs/Ace3/$m" "$CORE/Libs/Ace3/"
 done
