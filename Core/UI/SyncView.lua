@@ -37,40 +37,41 @@ function UI:CreateSyncView(parent, contentArea)
   v.activity:SetSpacing(3)
 
   heading(v, L["Recently heard from"], 0, -236)
-  v.peers = {}
-  for i = 1, MAX_PEERS do
-    local row = CreateFrame("Frame", nil, v)
-    row:SetSize(460, 18)
-    row:SetPoint("TOPLEFT", 0, -258 - (i - 1) * 20)
-    row.text = W.Text(row, "GameFontHighlightSmall")
-    row.text:SetPoint("LEFT", 0, 0)
-    row.text:SetWidth(390)
-    row.block = W.Button(row, L["Block"], 50, 16, function()
-      svc:Block(row.name)
+  local function act(method)
+    return function(item)
+      svc[method](svc, item.name)
       UI:RefreshSync()
-    end)
-    row.block:SetPoint("RIGHT", 0, 0)
-    v.peers[i] = row
+    end
   end
+  v.peerList = W.RowList(v, {
+    rows = MAX_PEERS,
+    buttons = {
+      {
+        key = "block",
+        label = L["Block"],
+        width = 50,
+        onClick = act("Block"),
+        shown = function(p)
+          return not svc.trust:IsBlocked(p.name)
+        end,
+      },
+    },
+    empty = L["No one yet."],
+  })
+  v.peerList:SetPoint("TOPLEFT", 0, -258)
+  v.peers = v.peerList.rows
 
   heading(v, L["Blocked"], 0, -364)
   v.guildBlocked = W.Text(v, "GameFontDisableSmall")
   v.guildBlocked:SetPoint("TOPLEFT", 0, -384)
   v.guildBlocked:SetWidth(460)
-  v.blocked = {}
-  for i = 1, MAX_BLOCKED do
-    local row = CreateFrame("Frame", nil, v)
-    row:SetSize(460, 18)
-    row:SetPoint("TOPLEFT", 0, -400 - (i - 1) * 18)
-    row.text = W.Text(row, "GameFontHighlightSmall")
-    row.text:SetPoint("LEFT", 0, 0)
-    row.unblock = W.Button(row, L["Unblock"], 60, 16, function()
-      svc:Unblock(row.name)
-      UI:RefreshSync()
-    end)
-    row.unblock:SetPoint("RIGHT", 0, 0)
-    v.blocked[i] = row
-  end
+  v.blockedList = W.RowList(v, {
+    rows = MAX_BLOCKED,
+    buttons = { { key = "unblock", label = L["Unblock"], width = 60, onClick = act("Unblock") } },
+    empty = L["You haven't blocked anyone."],
+  })
+  v.blockedList:SetPoint("TOPLEFT", 0, -400)
+  v.blocked = v.blockedList.rows
 
   -- trusted players
   heading(v, L["Trusted players"], COL2, 0)
@@ -96,54 +97,28 @@ function UI:CreateSyncView(parent, contentArea)
   v.addStatus:SetWidth(460)
 
   v.pendingHead = heading(v, L["Requests"], COL2, -70)
-  v.pending = {}
-  for i = 1, MAX_PENDING do
-    local row = CreateFrame("Frame", nil, v)
-    row:SetSize(460, 20)
-    row:SetPoint("TOPLEFT", COL2, -92 - (i - 1) * 22)
-    row.text = W.Text(row, "GameFontHighlightSmall")
-    row.text:SetPoint("LEFT", 0, 0)
-    row.approve = W.Button(row, L["Approve"], 64, 18, function()
-      svc:Approve(row.name)
-      UI:RefreshSync()
-    end)
-    row.approve:SetPoint("RIGHT", -126, 0)
-    row.decline = W.Button(row, L["Decline"], 64, 18, function()
-      svc:Decline(row.name)
-      UI:RefreshSync()
-    end)
-    row.decline:SetPoint("RIGHT", -56, 0)
-    row.block = W.Button(row, L["Block"], 50, 18, function()
-      svc:Block(row.name)
-      UI:RefreshSync()
-    end)
-    row.block:SetPoint("RIGHT", 0, 0)
-    v.pending[i] = row
-  end
+  v.pendingList = W.RowList(v, {
+    rows = MAX_PENDING,
+    rowHeight = 22,
+    buttons = {
+      { key = "approve", label = L["Approve"], width = 64, onClick = act("Approve") },
+      { key = "decline", label = L["Decline"], width = 64, onClick = act("Decline") },
+      { key = "block", label = L["Block"], width = 50, onClick = act("Block") },
+    },
+  })
+  v.pendingList:SetPoint("TOPLEFT", COL2, -92)
+  v.pending = v.pendingList.rows
 
   v.trustedHead = heading(v, L["Trusted"], COL2, -164)
-  v.trustedRows = {}
-  for i = 1, MAX_TRUSTED do
-    local row = CreateFrame("Frame", nil, v)
-    row:SetSize(460, 20)
-    row:SetPoint("TOPLEFT", COL2, -186 - (i - 1) * 22)
-    row.text = W.Text(row, "GameFontHighlightSmall")
-    row.text:SetPoint("LEFT", 0, 0)
-    row.state = W.Text(row, "GameFontDisableSmall", "RIGHT")
-    row.state:SetPoint("RIGHT", -30, 0)
-    row.remove = W.CloseButton(row, function()
-      svc:RemoveTrusted(row.name)
-      UI:RefreshSync()
-    end)
-    row.remove:SetSize(18, 18)
-    row.remove:SetPoint("RIGHT", 0, 0)
-    v.trustedRows[i] = row
-  end
-  v.trustedEmpty = W.Text(v, "GameFontDisableSmall")
-  v.trustedEmpty:SetPoint("TOPLEFT", COL2, -186)
-  v.trustedEmpty:SetText(L["Nobody yet. Add a friend above - they need AME too, and must approve."])
-  v.trustedMore = W.Text(v, "GameFontDisableSmall")
-  v.trustedMore:SetPoint("TOPLEFT", COL2, -186 - MAX_TRUSTED * 22)
+  v.trustedList = W.RowList(v, {
+    rows = MAX_TRUSTED,
+    rowHeight = 22,
+    buttons = { { key = "remove", close = true, onClick = act("RemoveTrusted") } },
+    state = true,
+    empty = L["Nobody yet. Add a friend above - they need AME too, and must approve."],
+    more = L["+ %d more"],
+  })
+  v.trustedRows = v.trustedList.rows
 
   v:SetScript("OnShow", function()
     UI:RefreshSync()
@@ -189,26 +164,18 @@ function UI:RefreshSync()
   end
   v.activity:SetText(table.concat(lines, "\n"))
 
-  local peers = svc.trust and svc.trust:PeerList() or {}
-  for i, row in ipairs(v.peers) do
-    local p = peers[i]
-    row.name = p and p.name
-    row.block:SetShown(p ~= nil and not svc.trust:IsBlocked(p.name))
-    if p then
-      local blocked = svc.trust:IsBlocked(p.name)
-      row.text:SetText(
-        p.name
-          .. "  "
-          .. W.Dim(
-            L["via %s, %s"]:format(p.via == "GUILD" and L["guild"] or L["whisper"], ago(p.at))
-              .. ((p.received or 0) > 0 and L[", %d scans received"]:format(p.received) or "")
-              .. (blocked and ", " .. W.Color("bad", L["blocked"]) or "")
-          )
-      )
-    else
-      row.text:SetText(i == 1 and W.Dim(L["No one yet."]) or "")
-    end
-  end
+  v.peerList:SetItems(svc.trust and svc.trust:PeerList() or {}, function(row, p)
+    local blocked = svc.trust:IsBlocked(p.name)
+    row.text:SetText(
+      p.name
+        .. "  "
+        .. W.Dim(
+          L["via %s, %s"]:format(p.via == "GUILD" and L["guild"] or L["whisper"], ago(p.at))
+            .. ((p.received or 0) > 0 and L[", %d scans received"]:format(p.received) or "")
+            .. (blocked and ", " .. W.Color("bad", L["blocked"]) or "")
+        )
+    )
+  end)
 
   local guildList = {}
   for _, name in pairs(svc.trust and svc.trust.guildBlocked or {}) do
@@ -221,57 +188,32 @@ function UI:RefreshSync()
         "AME block: Name, Name"
       )
   )
-  local blocked = svc.trust and svc.trust:BlockedList() or {}
-  for i, row in ipairs(v.blocked) do
-    local b = blocked[i]
-    row:SetShown(b ~= nil or (i == 1 and #blocked == 0))
-    row.name = b and b.name
-    row.unblock:SetShown(b ~= nil)
-    if b then
-      row.text:SetText(b.name .. "  " .. W.Dim(L["blocked %s"]:format(ago(b.at))))
-    else
-      row.text:SetText(W.Dim(L["You haven't blocked anyone."]))
-    end
-  end
+  v.blockedList:SetItems(svc.trust and svc.trust:BlockedList() or {}, function(row, b)
+    row.text:SetText(b.name .. "  " .. W.Dim(L["blocked %s"]:format(ago(b.at))))
+  end)
 
   local pending = svc.trust and svc.trust:PendingList() or {}
   v.pendingHead:SetShown(#pending > 0)
-  for i, row in ipairs(v.pending) do
-    local p = pending[i]
-    row:SetShown(p ~= nil)
-    if p then
-      row.name = p.name
-      row.text:SetText(p.name .. "  " .. W.Dim(L["wants to share, %s"]:format(ago(p.at))))
-    end
-  end
+  v.pendingList:SetItems(pending, function(row, p)
+    row.text:SetText(p.name .. "  " .. W.Dim(L["wants to share, %s"]:format(ago(p.at))))
+  end)
 
   local trusted = svc.trust and svc.trust:TrustedList() or {}
   local top = #pending > 0 and (-92 - math.min(#pending, MAX_PENDING) * 22 - 10) or -70
   v.trustedHead:ClearAllPoints()
   v.trustedHead:SetPoint("TOPLEFT", COL2, top)
   v.trustedHead:SetText(L["Trusted (%d)"]:format(#trusted))
-  v.trustedEmpty:ClearAllPoints()
-  v.trustedEmpty:SetPoint("TOPLEFT", COL2, top - 22)
-  v.trustedEmpty:SetShown(#trusted == 0)
-  for i, row in ipairs(v.trustedRows) do
-    local e = trusted[i]
-    row:ClearAllPoints()
-    row:SetPoint("TOPLEFT", COL2, top - 22 - (i - 1) * 22)
-    row:SetShown(e ~= nil)
-    if e then
-      row.name = e.name
-      row.text:SetText(e.name)
-      local heard = svc.trust:LastHeard(e.name)
-      row.state:SetText(
-        e.mutual
-            and W.Color("good", L["sharing"]) .. "  " .. W.Dim(
-              heard and L["heard %s"]:format(ago(heard)) or L["not heard yet"]
-            )
-          or W.Dim(L["waiting for them to approve"])
-      )
-    end
-  end
-  v.trustedMore:ClearAllPoints()
-  v.trustedMore:SetPoint("TOPLEFT", COL2, top - 22 - MAX_TRUSTED * 22)
-  v.trustedMore:SetText(#trusted > MAX_TRUSTED and L["+ %d more"]:format(#trusted - MAX_TRUSTED) or "")
+  v.trustedList:ClearAllPoints()
+  v.trustedList:SetPoint("TOPLEFT", COL2, top - 22)
+  v.trustedList:SetItems(trusted, function(row, e)
+    row.text:SetText(e.name)
+    local heard = svc.trust:LastHeard(e.name)
+    row.state:SetText(
+      e.mutual
+          and W.Color("good", L["sharing"]) .. "  " .. W.Dim(
+            heard and L["heard %s"]:format(ago(heard)) or L["not heard yet"]
+          )
+        or W.Dim(L["waiting for them to approve"])
+    )
+  end)
 end

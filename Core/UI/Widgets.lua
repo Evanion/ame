@@ -842,6 +842,94 @@ function W.Heading(parent, text, x, y)
   return h
 end
 
+-- A short fixed list of text rows with buttons on the right (people, requests). Anchor the returned frame.
+--   local list = W.RowList(parent, {
+--     rows = 5, rowHeight = 20, width = 460,
+--     buttons = { { key = "block", label = "Block", width = 50, onClick = function(item, row) end,
+--                   shown = function(item) return true end }, ... },   -- left to right; key = "remove",
+--                                                                       -- close = true: a small X instead
+--     state = true,       -- row.state: dim right-aligned text before the buttons
+--     empty = "No one",   -- dim text in the first row when the list is empty (else nothing shows)
+--     more = "+ %d more", -- a line under the rows when items don't fit
+--   })
+--   list:SetItems(items, function(row, item) row.text:SetText(item.name) end)
+-- list.rows[i] has .text, .item, .name (item.name) and each button under its key.
+function W.RowList(parent, opts)
+  local n, h, width = opts.rows or 5, opts.rowHeight or 20, opts.width or 460
+  local list = CreateFrame("Frame", nil, parent)
+  list:SetSize(width, n * h)
+  list.rows = {}
+  local defs = opts.buttons or {}
+  for i = 1, n do
+    local row = CreateFrame("Frame", nil, list)
+    row:SetSize(width, h)
+    row:SetPoint("TOPLEFT", 0, -(i - 1) * h)
+    row.item, row.name, row.state = false, false, false
+    row.buttons = {}
+    local right -- the leftmost button so far (buttons are placed right to left)
+    for k = #defs, 1, -1 do
+      local d = defs[k]
+      local function click()
+        if row.item then
+          d.onClick(row.item, row)
+        end
+      end
+      local b
+      if d.close then
+        b = W.CloseButton(row, click)
+        b:SetSize(18, 18)
+      else
+        b = W.Button(row, d.label, d.width or 60, 18, click)
+      end
+      if right then
+        b:SetPoint("RIGHT", right, "LEFT", -6, 0)
+      else
+        b:SetPoint("RIGHT", 0, 0)
+      end
+      right = b
+      row[d.key], row.buttons[k] = b, b
+    end
+    row.text = W.Text(row, "GameFontHighlightSmall")
+    row.text:SetPoint("LEFT", 0, 0)
+    row.text:SetWordWrap(false)
+    if opts.state then
+      row.state = W.Text(row, "GameFontDisableSmall", "RIGHT")
+      if right then
+        row.state:SetPoint("RIGHT", right, "LEFT", -12, 0)
+      else
+        row.state:SetPoint("RIGHT", 0, 0)
+      end
+    elseif right then
+      row.text:SetPoint("RIGHT", right, "LEFT", -6, 0)
+    end
+    list.rows[i] = row
+  end
+  list.more = W.Text(list, "GameFontDisableSmall")
+  list.more:SetPoint("TOPLEFT", 0, -n * h)
+
+  function list:SetItems(items, fill)
+    for i, row in ipairs(self.rows) do
+      local item = items[i]
+      row.item, row.name = item or false, item and item.name or false
+      local empty = i == 1 and #items == 0 and opts.empty
+      row:SetShown(item ~= nil or empty and true or false)
+      for k, d in ipairs(defs) do
+        row.buttons[k]:SetShown(item ~= nil and (not d.shown or d.shown(item)))
+      end
+      if row.state then
+        row.state:SetText("")
+      end
+      if item then
+        fill(row, item)
+      elseif empty then
+        row.text:SetText(W.Dim(opts.empty))
+      end
+    end
+    self.more:SetText(opts.more and #items > n and opts.more:format(#items - n) or "")
+  end
+  return list
+end
+
 -- The status line along the bottom of a tab (counts, hints); join its parts with W.SEP.
 W.SEP = "  ·  "
 function W.StatusLine(parent)
