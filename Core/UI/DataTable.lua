@@ -137,18 +137,12 @@ function DataTable.New(parent, opts)
           W.SetStar(row.star.tex, false)
           row.star:SetScript("OnEnter", function(self)
             W.SetStar(self.tex, self.watched, true)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(
-              self.watched and L["On a watchlist - click to change"] or L["Add to a watchlist"],
-              1,
-              1,
-              1
-            )
-            GameTooltip:Show()
           end)
           row.star:SetScript("OnLeave", function(self)
             W.SetStar(self.tex, self.watched)
-            GameTooltip:Hide()
+          end)
+          W.Tooltip(row.star, function(tip, self)
+            W.TipText(tip, self.watched and L["On a watchlist - click to change"] or L["Add to a watchlist"])
           end)
           row.star:SetScript("OnClick", function(self)
             if row.itemID and ns.UI.StarClicked then
@@ -185,21 +179,16 @@ function DataTable.New(parent, opts)
         ns.UI:ShowItem(self.itemID)
       end
     end)
-    row:SetScript("OnEnter", function(self)
+    W.Tooltip(row, function(tip, self)
       if not self.data then
-        return
+        return false
       end
-      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
       if self.itemID then
-        GameTooltip:SetItemByID(self.itemID)
+        tip:SetItemByID(self.itemID)
       end
       if opts.tooltip then
-        opts.tooltip(GameTooltip, self.data)
+        opts.tooltip(tip, self.data)
       end
-      GameTooltip:Show()
-    end)
-    row:SetScript("OnLeave", function()
-      GameTooltip:Hide()
     end)
     t.rows[r] = row
   end

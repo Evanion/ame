@@ -87,11 +87,11 @@ function Launcher:CreateLauncher()
       tt:AddLine(ns.ShardLabel(ns.AME:CurrentShard()), 0.7, 0.7, 0.7)
       local last = AME_DB.stats.lastFull
       if last then
-        tt:AddDoubleLine(L["Last full scan"], date("%b %d %H:%M", last.at), 1, 1, 1, 1, 1, 1)
+        W.TipPair(tt, L["Last full scan"], date("%b %d %H:%M", last.at))
       end
       local index = ns.AME.index
       if index then
-        tt:AddDoubleLine(L["Items tracked"], tostring(index.count), 1, 1, 1, 1, 1, 1)
+        W.TipPair(tt, L["Items tracked"], tostring(index.count))
         local top = ns.MarketIndex.Rank(index, "score", function(s)
           return s.signal == "buy"
         end)
@@ -101,7 +101,7 @@ function Launcher:CreateLauncher()
           for i = 1, math.min(3, #top) do
             local s = top[i]
             local name = W.ItemInfo(s.itemID) or ("item:" .. s.itemID)
-            tt:AddDoubleLine(name, W.Money(s.market) .. "  " .. W.Percent(s.change7), 1, 1, 1, 1, 1, 1)
+            W.TipPair(tt, name, W.Money(s.market) .. "  " .. W.Percent(s.change7))
           end
         end
       end

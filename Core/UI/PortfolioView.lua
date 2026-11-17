@@ -217,41 +217,28 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.cardRow:SetPoint("RIGHT", 0, 0)
   v.cards = v.cardRow.cards
   -- listed: per-character breakdown on hover
-  v.cards[2]:SetScript("OnEnter", function(self)
+  W.Tooltip(v.cards[2], function(tip)
     local l = UI.pfListed
-    GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-    GameTooltip:SetText(L["Listed on the auction house now"], 1, 1, 1)
-    GameTooltip:AddLine(
-      L["Your active auctions on all characters, as of the last time each opened the auction house."],
-      nil,
-      nil,
-      nil,
-      true
+    W.TipText(
+      tip,
+      L["Listed on the auction house now"],
+      L["Your active auctions on all characters, as of the last time each opened the auction house."]
     )
     if l and l.count > 0 then
-      GameTooltip:AddLine(" ")
-      GameTooltip:AddDoubleLine(L["Asking prices"], W.Money(l.value), 0.8, 0.8, 0.8, 1, 1, 1)
-      GameTooltip:AddDoubleLine(L["You'd receive (after the cut)"], W.Money(l.net), 0.8, 0.8, 0.8, 1, 1, 1)
-      GameTooltip:AddDoubleLine(L["At market price"], W.Money(l.market), 0.8, 0.8, 0.8, 1, 1, 1)
-      GameTooltip:AddLine(" ")
+      tip:AddLine(" ")
+      W.TipPair(tip, L["Asking prices"], W.Money(l.value))
+      W.TipPair(tip, L["You'd receive (after the cut)"], W.Money(l.net))
+      W.TipPair(tip, L["At market price"], W.Money(l.market))
+      tip:AddLine(" ")
       for char, c in pairs(l.chars) do
-        GameTooltip:AddDoubleLine(
+        W.TipPair(
+          tip,
           ("%s (%s)"):format(char:gsub("^[^:]*:", ""), ns.HOUSE_LABEL[c.house] or c.house or "?"),
-          ("%d  ·  %s"):format(c.count, W.Money(c.value, true)),
-          0.7,
-          0.7,
-          0.7,
-          1,
-          1,
-          1
+          ("%d  ·  %s"):format(c.count, W.Money(c.value, true))
         )
       end
     end
-    GameTooltip:Show()
-  end)
-  v.cards[2]:SetScript("OnLeave", function()
-    GameTooltip:Hide()
-  end)
+  end, "ANCHOR_BOTTOM")
   v.modes = W.Segmented(v, {
     { "positions", L["Positions"] },
     { "ledger", L["Ledger"] },
@@ -288,7 +275,7 @@ function UI:CreatePortfolioView(parent, contentArea)
       if e.chars then
         tip:AddLine(" ")
         for char, qty in pairs(e.chars) do
-          tip:AddDoubleLine(char:gsub("^[^:]*:", ""), qty, 0.7, 0.7, 0.7, 1, 1, 1)
+          W.TipPair(tip, (char:gsub("^[^:]*:", "")), qty)
         end
       end
     end,

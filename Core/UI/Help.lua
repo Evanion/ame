@@ -114,15 +114,9 @@ function Help.Explain(frame, key)
   if not term then
     return
   end
-  frame:HookScript("OnEnter", function(self)
-    GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    GameTooltip:SetText(term[1], 1, 1, 1)
-    GameTooltip:AddLine(term[2], nil, nil, nil, true)
-    GameTooltip:Show()
-  end)
-  frame:HookScript("OnLeave", function()
-    GameTooltip:Hide()
-  end)
+  W.Tooltip(frame, function(tip)
+    W.TipText(tip, term[1], term[2])
+  end, "ANCHOR_TOP")
 end
 
 Help.GUIDE = {

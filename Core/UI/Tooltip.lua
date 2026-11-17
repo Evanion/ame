@@ -89,7 +89,7 @@ local function addLines(tooltip, itemID)
   })
   for _, r in ipairs(rows) do
     if r[2] then
-      tooltip:AddDoubleLine(r[1], r[2], 0.9, 0.9, 0.9, 1, 1, 1)
+      W.TipPair(tooltip, r[1], r[2])
     else
       tooltip:AddLine(r[1])
     end

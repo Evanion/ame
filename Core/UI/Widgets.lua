@@ -179,6 +179,38 @@ function W.Segmented(parent, items, opts)
   return seg
 end
 
+-- Hover tooltip: build(tip, frame) fills GameTooltip (return false to show nothing). Hooks OnEnter / OnLeave, so the
+-- frame's own hover scripts keep working. anchor: "ANCHOR_RIGHT" by default.
+function W.Tooltip(frame, build, anchor)
+  frame:HookScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, anchor or "ANCHOR_RIGHT")
+    if build(GameTooltip, self) == false then
+      GameTooltip:Hide()
+      return
+    end
+    GameTooltip:Show()
+  end)
+  frame:HookScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+end
+
+W.TIP_LABEL = { 0.8, 0.8, 0.8 } -- left side of label / value tooltip lines (values are white)
+
+-- a tooltip's white title and a wrapped explanation under it
+function W.TipText(tip, title, text)
+  tip:SetText(title, 1, 1, 1)
+  if text then
+    tip:AddLine(text, nil, nil, nil, true)
+  end
+end
+
+-- a label / value line in a tooltip
+function W.TipPair(tip, label, value)
+  local c = W.TIP_LABEL
+  tip:AddDoubleLine(label, value, c[1], c[2], c[3], 1, 1, 1)
+end
+
 -- Stat card: a small panel with a dim label over a value (c.label, c.value). opts.term: hover explanation (Help).
 function W.StatCard(parent, label, opts)
   local c = CreateFrame("Frame", nil, parent, "BackdropTemplate")
