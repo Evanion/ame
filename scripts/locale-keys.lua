@@ -20,18 +20,43 @@ for line in io.lines("AzerothMercantileExchange.toc") do
   end
 end
 
+-- Every L["..."] / L['...'] string literal in src, as source text (escapes kept). Scanned character by character:
+-- a Lua pattern can't tell where a string with escapes ends, and with several keys on one line it ran past the first
+-- closing quote and swallowed the next key.
+local function literals(src)
+  local out, pos = {}, 1
+  while true do
+    local _, e, quote = src:find("%f[%w_]L%[%s*([\"'])", pos)
+    if not e then
+      return out
+    end
+    local i, parts = e + 1, { quote }
+    while true do
+      local c = src:sub(i, i)
+      if c == "" or c == "\n" then
+        parts = nil -- unterminated on this line: not a key
+        break
+      elseif c == "\\" then
+        parts[#parts + 1] = src:sub(i, i + 1)
+        i = i + 2
+      else
+        parts[#parts + 1] = c
+        i = i + 1
+        if c == quote then
+          break
+        end
+      end
+    end
+    if parts and src:find("^%s*%]", i) then
+      out[#out + 1] = table.concat(parts)
+    end
+    pos = i
+  end
+end
+
 local keys, seen = {}, {}
 for _, path in ipairs(files) do
-  local src = readAll(path)
-  -- L["..."] or L['...'] with backslash escapes
-  for literal in src:gmatch('%f[%w_]L%[%s*("[^"\\]*[^\n]-[^\\]")%s*%]') do
-    local ok, value = pcall(loadstring("return " .. literal))
-    if ok and type(value) == "string" and not seen[value] then
-      seen[value] = true
-      keys[#keys + 1] = value
-    end
-  end
-  for literal in src:gmatch("%f[%w_]L%[%s*('[^'\\]*[^\n]-[^\\]')%s*%]") do
+  for _, literal in ipairs(literals(readAll(path))) do
     local ok, value = pcall(loadstring("return " .. literal))
     if ok and type(value) == "string" and not seen[value] then
       seen[value] = true
