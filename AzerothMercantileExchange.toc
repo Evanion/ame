@@ -35,6 +35,7 @@ Core\SelfTest.lua
 Core\UI\Widgets.lua
 Core\UI\ItemCache.lua
 Core\UI\Help.lua
+Core\UI\DataTable.lua
 Core\UI\Window.lua
 Core\UI\Panels.lua
 Core\UI\ArbitrageView.lua

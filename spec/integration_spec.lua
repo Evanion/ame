@@ -779,6 +779,38 @@ describe("addon in a stubbed client", function()
       _G.C_Item.GetItemInfoInstant = instant
     end)
 
+    it("fills in item names in every table once the client loads them (no 'item:<id>' left behind)", function()
+      seeded()
+      -- the client doesn't know Linen yet
+      local getInfo = C_Item.GetItemInfo
+      local known = false
+      _G.C_Item.GetItemInfo = function(id)
+        if id == 2589 and not known then
+          return nil
+        end
+        return getInfo(id)
+      end
+      _G.C_Container = {
+        GetContainerNumSlots = function(bag)
+          return bag == 0 and 1 or 0
+        end,
+        GetContainerItemInfo = function()
+          return { itemID = 2589, stackCount = 5 }
+        end,
+      }
+      env:fire("BAG_UPDATE_DELAYED")
+      ns.UI:Toggle()
+      ns.UI:ShowTab("portfolio")
+      local v = ns.UI.pfView
+      v.scripts.OnShow(v)
+      local cell = v.positions.rows[1].cells[1]
+      assert.truthy(cell.text:find("item:2589", 1, true))
+      known = true -- the client finishes loading the item
+      env:advance(0.1)
+      assert.truthy(cell.text:find("Item 2589", 1, true), cell.text)
+      _G.C_Item.GetItemInfo, _G.C_Container = getInfo, nil
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)

@@ -12,20 +12,6 @@ local HOUSES = {
 local HOUSE_NAME = { Alliance = "Alliance AH", Horde = "Horde AH", Neutral = "Goblin AH" }
 local AGES = { { 1, "Seen today/yesterday" }, { 3, "Seen in 3 days" }, { 7, "Seen in 7 days" }, { false, "Any age" } }
 
-local COLUMNS = {
-  { key = "name", label = "Item", width = 180 },
-  { key = "buy", label = "Buy at", width = 86, money = true, term = "arbBuy" },
-  { key = "sell", label = "Sells for", width = 86, money = true, term = "arbSell" },
-  { key = "profit", label = "Profit", width = 86, money = true, term = "arbProfit" },
-  { key = "margin", label = "Margin", width = 60, pct = true, term = "arbMargin" },
-  { key = "supply", label = "Supply", width = 60, term = "arbSupply" },
-  { key = "deposit", label = "Deposit", width = 70, money = true, term = "arbDeposit" },
-  { key = "depth", label = "Depth", width = 90, term = "arbDepth" },
-  { key = "sellRate", label = "Sells/d", width = 58, term = "arbSellRate" },
-  { key = "age", label = "Data", width = 48, term = "arbAge" },
-}
-local ROWS, ROW_H = 16, 22
-
 local function indexOf(values, value)
   for i, o in ipairs(values) do
     if o[1] == value then
@@ -43,6 +29,78 @@ local function ageText(days)
   end
   return days .. " days"
 end
+
+local COLUMNS = {
+  { key = "name", label = "Item", width = 180, item = true, sortKey = false },
+  { key = "buy", label = "Buy at", width = 86, format = "money", term = "arbBuy" },
+  { key = "sell", label = "Sells for", width = 86, format = "money", term = "arbSell" },
+  {
+    key = "profit",
+    label = "Profit",
+    width = 86,
+    term = "arbProfit",
+    text = function(e)
+      return "|cff4dd973+|r" .. W.Money(e.profit, true)
+    end,
+  },
+  {
+    key = "margin",
+    label = "Margin",
+    width = 60,
+    term = "arbMargin",
+    text = function(e)
+      return W.Percent(e.margin, 0)
+    end,
+  },
+  {
+    key = "supply",
+    label = "Supply",
+    width = 60,
+    term = "arbSupply",
+    sortKey = "sellQty",
+    text = function(e)
+      return ("%s / %s"):format(tostring(e.buyQty or "-"), tostring(e.sellQty or "-"))
+    end,
+  },
+  {
+    key = "deposit",
+    label = "Deposit",
+    width = 70,
+    term = "arbDeposit",
+    sortKey = false,
+    text = function(e)
+      local info = ns.ItemCache.Get(e.itemID)
+      local dep = ns.Arbitrage.Deposit(
+        info.sellPrice,
+        UI.arb.sell,
+        ns.Settings:Get("listingHours"),
+        ns.Settings:Get("minDeposit")
+      )
+      return dep and W.Money(dep, true) or "-"
+    end,
+  },
+  {
+    key = "depth",
+    label = "Depth",
+    width = 90,
+    term = "arbDepth",
+    sortKey = false,
+    text = function(e)
+      return UI:DepthText(e)
+    end,
+  },
+  { key = "sellRate", label = "Sells/d", width = 58, format = "rate", term = "arbSellRate" },
+  {
+    key = "age",
+    label = "Data",
+    width = 48,
+    term = "arbAge",
+    text = function(e)
+      return ageText(e.age)
+    end,
+  },
+}
+local ROWS = 16
 
 function UI:CreateArbitrageView(parent, contentArea)
   local v = contentArea(parent)
@@ -118,95 +176,50 @@ function UI:CreateArbitrageView(parent, contentArea)
   v.age.neutral = true
   v.age:SetPoint("LEFT", v.minMargin, "RIGHT", 6, 0)
 
-  -- header
-  local x = 0
-  v.headers = {}
-  for _, col in ipairs(COLUMNS) do
-    local h = CreateFrame("Button", nil, v)
-    h:SetSize(col.width, 18)
-    h:SetPoint("TOPLEFT", x, -32)
-    h.text = W.Text(h, "GameFontNormalSmall", col.key == "name" and "LEFT" or "RIGHT")
-    h.text:SetAllPoints()
-    if col.term then
-      ns.Help.Explain(h, col.term)
-    end
-    h:SetScript("OnClick", function()
-      local a = UI.arb
-      local key = col.key == "supply" and "sellQty" or col.key
-      if key == "name" then
-        return
-      end
-      if a.sortKey == key then
-        a.ascending = not a.ascending
-      else
-        a.sortKey, a.ascending = key, false
-      end
+  -- the list (shared DataTable component)
+  v.table = ns.DataTable.New(v, {
+    columns = COLUMNS,
+    rows = ROWS,
+    top = -32,
+    itemID = function(e)
+      return e.itemID
+    end,
+    sort = { key = self.arb.sortKey, ascending = self.arb.ascending },
+    onSort = function(key, ascending)
+      UI.arb.sortKey, UI.arb.ascending = key, ascending
       UI:RefreshArbitrage(true)
-    end)
-    h.key = col.key == "supply" and "sellQty" or col.key
-    x = x + col.width + 8
-    v.headers[#v.headers + 1] = h
-  end
-
-  v.rows = {}
-  for r = 1, ROWS do
-    local row = CreateFrame("Button", nil, v)
-    row:SetSize(x, ROW_H)
-    row:SetPoint("TOPLEFT", 0, -52 - (r - 1) * ROW_H)
-    row.bg = row:CreateTexture(nil, "BACKGROUND")
-    row.bg:SetAllPoints()
-    row.bg:SetColorTexture(1, 1, 1, r % 2 == 0 and 0.025 or 0)
-    row.hl = row:CreateTexture(nil, "HIGHLIGHT")
-    row.hl:SetAllPoints()
-    row.hl:SetColorTexture(1, 1, 1, 0.06)
-    row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetSize(18, 18)
-    row.icon:SetPoint("LEFT", 0, 0)
-    row.cells = {}
-    local cx = 0
-    for c, col in ipairs(COLUMNS) do
-      local fs = W.Text(row, "GameFontHighlightSmall", col.key == "name" and "LEFT" or "RIGHT")
-      fs:SetSize(col.key == "name" and col.width - 22 or col.width, ROW_H)
-      fs:SetPoint("LEFT", col.key == "name" and cx + 22 or cx, 0)
-      fs:SetWordWrap(false)
-      row.cells[c] = fs
-      cx = cx + col.width + 8
-    end
-    -- Search button: shown when you're at the buy auction house
-    row.search = W.Button(row, "Search", 56, 18, function()
-      if row.itemID then
-        ns.AME:SearchAuctionHouse(row.itemID)
-      end
-    end)
-    row.search:SetPoint("LEFT", row, "RIGHT", 4, 0)
-    row.search:Hide()
-    row:SetScript("OnClick", function(self)
-      if not self.itemID then
-        return
-      end
+    end,
+    offset = {
+      get = function()
+        return UI.arbOffset
+      end,
+      set = function(n)
+        UI.arbOffset = n
+      end,
+    },
+    -- Search: shown while you're at the buy auction house
+    action = {
+      label = "Search",
+      width = 56,
+      shown = function()
+        return UI:AtBuyHouse()
+      end,
+      onClick = function(e)
+        ns.AME:SearchAuctionHouse(e.itemID)
+      end,
+    },
+    onClick = function(e)
       if IsShiftKeyDown() and UI:AtBuyHouse() then
-        ns.AME:SearchAuctionHouse(self.itemID)
+        ns.AME:SearchAuctionHouse(e.itemID)
       else
-        UI:ShowItem(self.itemID)
+        UI:ShowItem(e.itemID)
       end
-    end)
-    row:SetScript("OnEnter", function(self)
-      if self.itemID then
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetItemByID(self.itemID)
-        GameTooltip:Show()
-      end
-    end)
-    row:SetScript("OnLeave", function()
-      GameTooltip:Hide()
-    end)
-    v.rows[r] = row
+    end,
+  })
+  v.headers, v.rows = v.table.headers, v.table.rows
+  for _, row in ipairs(v.rows) do
+    row.search = row.action
   end
-  v:EnableMouseWheel(true)
-  v:SetScript("OnMouseWheel", function(_, delta)
-    UI.arbOffset = math.max(0, (UI.arbOffset or 0) - delta * 3)
-    UI:RenderArbitrage()
-  end)
   v.status = W.Text(v, "GameFontDisableSmall", "LEFT")
   v.status:SetPoint("BOTTOMLEFT", 0, 0)
   v.status:SetWidth(940)
@@ -289,54 +302,12 @@ function UI:RenderArbitrage()
   end
   local a = self.arb
   local canSearch = self:AtBuyHouse()
-  for i, h in ipairs(v.headers) do
-    local col = COLUMNS[i]
-    local arrow = (a.sortKey == h.key) and (a.ascending and W.ARROW_UP or W.ARROW_DOWN) or ""
-    h.text:SetText(col.label .. arrow)
-  end
   local rows = self.arbRows or {}
   local total = #rows
-  self.arbOffset = math.min(self.arbOffset or 0, math.max(0, total - ROWS))
-  for r, row in ipairs(v.rows) do
-    local e = rows[self.arbOffset + r]
-    row.itemID = e and e.itemID
-    row:SetShown(e ~= nil)
-    row.search:SetShown(e ~= nil and canSearch)
-    if e then
-      local name, _, quality, icon = W.ItemInfo(e.itemID)
-      row.icon:SetTexture(icon or 134400)
-      if not name then
-        self:RenderWhenLoaded(e.itemID)
-      end
-      local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
-      for c, col in ipairs(COLUMNS) do
-        local val
-        if col.key == "name" then
-          val = (color and color.hex or "|cffffffff") .. (name or ("item:" .. e.itemID)) .. "|r"
-        elseif col.key == "deposit" then
-          local info = ns.ItemCache.Get(e.itemID)
-          local dep =
-            ns.Arbitrage.Deposit(info.sellPrice, a.sell, ns.Settings:Get("listingHours"), ns.Settings:Get("minDeposit"))
-          val = dep and W.Money(dep, true) or "-"
-        elseif col.key == "profit" then
-          val = "|cff4dd973+|r" .. W.Money(e.profit, true)
-        elseif col.money then
-          val = W.Money(e[col.key], true)
-        elseif col.pct then
-          val = W.Percent(e.margin, 0)
-        elseif col.key == "supply" then
-          val = ("%s / %s"):format(tostring(e.buyQty or "-"), tostring(e.sellQty or "-"))
-        elseif col.key == "depth" then
-          val = UI:DepthText(e)
-        elseif col.key == "sellRate" then
-          val = W.Rate(e.sellRate)
-        elseif col.key == "age" then
-          val = ageText(e.age)
-        end
-        row.cells[c]:SetText(val or "")
-      end
-    end
-  end
+  local t = v.table
+  t.sort.key, t.sort.ascending = a.sortKey, a.ascending
+  t:SetData(rows)
+  t:Render()
   local status
   if not self.arbRows then
     status = "Loading market data..."

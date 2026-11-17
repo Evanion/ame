@@ -965,18 +965,30 @@ end
 -- Market view (screener)
 
 local COLUMNS = {
-  { key = "name", label = "Item", width = 190 },
-  { key = "market", label = "Market", width = 86, money = true },
-  { key = "avg", label = "avg", width = 86, money = true }, -- period from Settings
-  { key = "change7", label = "7d", width = 62, pct = true },
-  { key = "vol30", label = "Volatility", width = 70, pct = true, plain = true },
-  { key = "qty", label = "Supply", width = 52 },
-  { key = "sellRate", label = "Sells/d", width = 58, rate = true },
-  { key = "signal", label = "Signal", width = 50 },
-  { key = "score", label = "Score", width = 50 },
+  { key = "name", label = "Item", width = 190, item = true, term = "name" },
+  { key = "market", label = "Market", width = 86, format = "money", term = "market" },
+  {
+    key = "avg",
+    width = 86,
+    term = "avg",
+    label = function()
+      return avgDays() .. "d avg"
+    end,
+    sortKey = function()
+      return "avg" .. avgDays()
+    end,
+    text = function(s)
+      return W.Money(s["avg" .. avgDays()], true)
+    end,
+  },
+  { key = "change7", label = "7d", width = 62, format = "pct", term = "change7" },
+  { key = "vol30", label = "Volatility", width = 70, format = "plainpct", term = "vol30" },
+  { key = "qty", label = "Supply", width = 52, term = "qty" },
+  { key = "sellRate", label = "Sells/d", width = 58, format = "rate", term = "sellRate" },
+  { key = "signal", label = "Signal", width = 50, format = "signal", term = "signal" },
+  { key = "score", label = "Score", width = 50, term = "score" },
 }
 local ROWS = 17
-local ROW_H = 22
 local SIDEBAR_W = 170
 local CAT_ROWS = 22
 local CAT_H = 19
@@ -1251,137 +1263,52 @@ function UI:CreateMarketView(parent)
   end)
   reset:SetPoint("LEFT", v.filterButtons[#filters], "RIGHT", 10, 0)
 
-  -- header
-  local x = 0
-  v.headers = {}
-  for _, col in ipairs(COLUMNS) do
-    local h = CreateFrame("Button", nil, main)
-    h:SetSize(col.width, 18)
-    h:SetPoint("TOPLEFT", x, -28)
-    h.text = W.Text(h, "GameFontNormalSmall", col.key == "name" and "LEFT" or "RIGHT")
-    h.text:SetAllPoints()
-    h.text:SetText(col.label)
-    ns.Help.Explain(h, col.key)
-    h:SetScript("OnClick", function()
-      local q = UI.mq
-      local key = col.key == "avg" and ("avg" .. avgDays()) or col.key
-      if q.sortKey == key then
-        q.ascending = not q.ascending
-      else
-        q.sortKey, q.ascending = key, false
-      end
+  -- the list (shared DataTable component)
+  v.table = ns.DataTable.New(main, {
+    columns = COLUMNS,
+    rows = ROWS,
+    top = -28,
+    itemID = function(s)
+      return s.itemID
+    end,
+    star = true,
+    confidence = function(s)
+      return ns.Analytics.Confidence(s, UI.index and UI.index.day)
+    end,
+    sort = { key = UI.mq.sortKey, ascending = UI.mq.ascending },
+    onSort = function(key, ascending)
+      UI.mq.sortKey, UI.mq.ascending = key, ascending
       UI:RefreshMarket(true)
-    end)
-    x = x + col.width + 8
-    v.headers[#v.headers + 1] = h
-  end
-
-  -- rows: a fixed pool, scrolling only re-renders them
-  v.rows = {}
-  for r = 1, ROWS do
-    local row = CreateFrame("Button", nil, main)
-    row:SetSize(x, ROW_H)
-    row:SetPoint("TOPLEFT", 0, -48 - (r - 1) * ROW_H)
-    row.bg = row:CreateTexture(nil, "BACKGROUND")
-    row.bg:SetAllPoints()
-    row.bg:SetColorTexture(1, 1, 1, r % 2 == 0 and 0.025 or 0)
-    row.hl = row:CreateTexture(nil, "HIGHLIGHT")
-    row.hl:SetAllPoints()
-    row.hl:SetColorTexture(1, 1, 1, 0.06)
-    row.star = CreateFrame("Button", nil, row)
-    row.star:SetSize(16, 16)
-    row.star:SetPoint("LEFT", 0, 0)
-    row.star.tex = row.star:CreateTexture(nil, "ARTWORK")
-    row.star.tex:SetAllPoints()
-    W.SetStar(row.star.tex, false)
-    row.star:SetScript("OnEnter", function(self)
-      W.SetStar(self.tex, self.watched, true)
-      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-      GameTooltip:SetText(self.watched and "On a watchlist - click to change" or "Add to a watchlist", 1, 1, 1)
-      GameTooltip:Show()
-    end)
-    row.star:SetScript("OnLeave", function(self)
-      W.SetStar(self.tex, self.watched)
-      GameTooltip:Hide()
-    end)
-    row.star:SetScript("OnClick", function(self)
-      if row.itemID then
-        UI:StarClicked(self, row.itemID)
-      end
-    end)
-    row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetSize(18, 18)
-    row.icon:SetPoint("LEFT", 18, 0)
-    row.cells = {}
-    local cx = 0
-    for c, col in ipairs(COLUMNS) do
-      local fs = W.Text(row, "GameFontHighlightSmall", col.key == "name" and "LEFT" or "RIGHT")
-      fs:SetSize(col.key == "name" and col.width - 62 or col.width, ROW_H)
-      fs:SetPoint("LEFT", col.key == "name" and cx + 40 or cx, 0)
-      if col.key == "name" then
-        row.conf = W.Text(row, "GameFontHighlightSmall", "RIGHT")
-        row.conf:SetSize(20, ROW_H)
-        row.conf:SetPoint("LEFT", cx + col.width - 20, 0)
-      end
-      fs:SetWordWrap(false)
-      row.cells[c] = fs
-      cx = cx + col.width + 8
-    end
-    row:SetScript("OnClick", function(self)
-      if not self.itemID then
-        return
-      end
+    end,
+    offset = {
+      get = function()
+        return UI.offset
+      end,
+      set = function(n)
+        UI.offset = n
+      end,
+    },
+    onClick = function(s)
       if IsShiftKeyDown() and ns.AME.ahOpen then
-        ns.AME:SearchAuctionHouse(self.itemID)
+        ns.AME:SearchAuctionHouse(s.itemID)
       else
-        UI:ShowItem(self.itemID)
+        UI:ShowItem(s.itemID)
       end
-    end)
-    row:SetScript("OnEnter", function(self)
-      if self.itemID then
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetItemByID(self.itemID)
-        if ns.AME.ahOpen then
-          GameTooltip:AddLine("Shift-click to search the auction house", 0.6, 0.6, 0.6)
-        end
-        GameTooltip:Show()
+    end,
+    tooltip = function(tip)
+      if ns.AME.ahOpen then
+        tip:AddLine("Shift-click to search the auction house", 0.6, 0.6, 0.6)
       end
-    end)
-    row:SetScript("OnLeave", function()
-      GameTooltip:Hide()
-    end)
-    v.rows[r] = row
-  end
-
-  -- scrollbar
-  local bar = CreateFrame("Slider", nil, main, "BackdropTemplate")
-  bar:SetOrientation("VERTICAL")
-  bar:SetPoint("TOPLEFT", x - 2, -48)
-  bar:SetSize(8, ROWS * ROW_H)
-  W.Skin(bar, W.COLORS.panel)
-  bar.thumb = bar:CreateTexture(nil, "OVERLAY")
-  bar.thumb:SetColorTexture(1, 1, 1, 0.25)
-  bar.thumb:SetSize(8, 40)
-  bar:SetThumbTexture(bar.thumb)
-  bar:SetMinMaxValues(0, 0)
-  bar:SetValueStep(1)
-  bar:SetObeyStepOnDrag(true)
-  bar:SetScript("OnValueChanged", function(_, value)
-    if UI.syncingBar then
-      return
-    end
-    UI.offset = math.floor(value + 0.5)
-    UI:RenderMarket()
-  end)
-  v.bar = bar
+    end,
+  })
+  v.headers, v.rows, v.bar = v.table.headers, v.table.rows, v.table.bar
 
   v.status = W.Text(main, "GameFontDisableSmall", "LEFT")
   v.status:SetPoint("BOTTOMLEFT", 2, 0)
 
   main:EnableMouseWheel(true)
   main:SetScript("OnMouseWheel", function(_, delta)
-    UI.offset = math.max(0, (UI.offset or 0) - delta * 3)
-    UI:RenderMarket()
+    v.table:Scroll(delta)
   end)
 
   ns.ItemCache.OnNamesChanged(function()
@@ -1452,28 +1379,6 @@ function UI:RefreshMarket(force)
   self:RenderMarket()
 end
 
--- An item shown without a name (not cached yet): re-render the rows once it loads, batching many loads into one.
-function UI:RenderWhenLoaded(itemID)
-  self.waitingNames = self.waitingNames or {}
-  if self.waitingNames[itemID] then
-    return
-  end
-  self.waitingNames[itemID] = true
-  W.OnItemLoaded(itemID, function()
-    self.waitingNames[itemID] = nil
-    if not self.renderQueued then
-      self.renderQueued = true
-      C_Timer.After(0.05, function()
-        self.renderQueued = false
-        self:RenderMarket()
-        if self.RenderArbitrage then
-          self:RenderArbitrage()
-        end
-      end)
-    end
-  end)
-end
-
 -- Draw the visible rows from the cached list: cheap, so scrolling stays smooth.
 function UI:RenderMarket()
   local v = self.marketView
@@ -1486,22 +1391,12 @@ function UI:RenderMarket()
     b:SetSelected(b.key == (q.signal or "all"))
   end
   v.quality:SetIndex(v.quality.index)
-  for i, h in ipairs(v.headers) do
-    local col = COLUMNS[i]
-    local key = col.key == "avg" and ("avg" .. avgDays()) or col.key
-    local label = col.key == "avg" and (avgDays() .. "d avg") or col.label
-    local arrow = (q.sortKey == key) and (q.ascending and W.ARROW_UP or W.ARROW_DOWN) or ""
-    h.text:SetText(label .. arrow)
-  end
-
   local total = #list
-  local maxOffset = math.max(0, total - ROWS)
-  self.offset = math.min(self.offset or 0, maxOffset)
-  self.syncingBar = true
-  v.bar:SetMinMaxValues(0, maxOffset)
-  v.bar:SetValue(self.offset)
-  v.bar:SetShown(maxOffset > 0)
-  self.syncingBar = false
+  local t = v.table
+  t.sort.key, t.sort.ascending = q.sortKey, q.ascending
+  t:SetData(list)
+  t:Render()
+  self.offset = t:Offset()
 
   local cache = ns.ItemCache
   local status = ("%d items  -  showing %d-%d  -  index from %s"):format(
@@ -1525,44 +1420,4 @@ function UI:RenderMarket()
     end
   end
   v.status:SetText(status)
-
-  for r, row in ipairs(v.rows) do
-    local s = list[self.offset + r]
-    if not s then
-      row:Hide()
-      row.itemID = nil
-    else
-      row:Show()
-      row.itemID = s.itemID
-      local name, _, quality, icon = W.ItemInfo(s.itemID)
-      row.icon:SetTexture(icon or 134400)
-      local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
-      if not name then
-        self:RenderWhenLoaded(s.itemID)
-      end
-      row.conf:SetText(W.Confidence(ns.Analytics.Confidence(s, self.index and self.index.day)))
-      local watched = ns.AME.watch and ns.AME.watch:Watched(s.itemID)
-      row.star.watched = watched
-      W.SetStar(row.star.tex, watched)
-      for c, col in ipairs(COLUMNS) do
-        local val
-        if col.key == "name" then
-          val = (color and color.hex or "|cffffffff") .. (name or ("item:" .. s.itemID)) .. "|r"
-        elseif col.money then
-          val = W.Money(s[col.key == "avg" and ("avg" .. avgDays()) or col.key], true)
-        elseif col.plain then
-          val = s[col.key] and ("%.1f%%"):format(s[col.key] * 100) or "-"
-        elseif col.rate then
-          val = W.Rate(s.sellRate)
-        elseif col.pct then
-          val = W.Percent(s[col.key])
-        elseif col.key == "signal" then
-          val = W.Signal(s.signal)
-        else
-          val = tostring(s[col.key] or "-")
-        end
-        row.cells[c]:SetText(val)
-      end
-    end
-  end
 end
