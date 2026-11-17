@@ -64,7 +64,7 @@ describe("Ledger", function()
   end)
 
   it("ranks your customers and suppliers by gold, from the names on auction mail", function()
-    local function sale(t, who, item, amount, qty)
+    local function soldTo(t, who, item, amount, qty)
       return { t = t, kind = "sale", name = item, qty = qty, amount = amount, cut = 0, counterparty = who }
     end
     l:Add(soldTo(1, "Ada", "Silk", 300, 3), "1")
