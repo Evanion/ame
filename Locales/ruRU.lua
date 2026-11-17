@@ -20,8 +20,8 @@ L["%d days"] = "%d дн."
 L["%d days ago"] = "%d дн. назад"
 L["%d h ago"] = "%d ч назад"
 L["%d h listings"] = "лоты на %d ч"
-L["%d items  -  showing %d-%d  -  index from %s"] =
-  "Предметов: %d  -  показаны %d-%d  -  индекс от %s"
+L["%d items  ·  showing %d-%d  ·  index from %s"] =
+  "Предметов: %d  ·  показаны %d-%d  ·  индекс от %s"
 L["%d items from %s listings, stored %s ms after the scan request"] =
   "%d предметов из %s лотов, сохранено через %s мс после запроса сканирования"
 L["%d items not searchable yet (names loading)"] =
@@ -37,8 +37,8 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
-L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
-  "Маршрутов: %d  -  покупка: %s, продажа: %s: комиссия %d%%, залог за лоты на %d ч"
+L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
+  "Маршрутов: %d  ·  покупка: %s, продажа: %s: комиссия %d%%, залог за лоты на %d ч"
 L["%d scans in 7 days"] = "%d сканирований за 7 дней"
 L["%d scans/7d, %s"] = "%d скан./7д, %s"
 L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =

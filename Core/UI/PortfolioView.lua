@@ -314,9 +314,7 @@ function UI:CreatePortfolioView(parent, contentArea)
       end,
     },
   })
-  v.status = W.Text(v, "GameFontDisableSmall", "LEFT")
-  v.status:SetPoint("BOTTOMLEFT", 0, 0)
-  v.status:SetWidth(940)
+  v.status = W.StatusLine(v) -- one for all five tables
   v:SetScript("OnShow", function()
     ns.Trading:ScanBags()
     UI:RefreshPortfolio()
@@ -398,10 +396,10 @@ function UI:RenderPortfolio()
   for _ in pairs(h) do
     chars = chars + 1
   end
-  local status
+  local status, message
   if customersMode or suppliersMode then
     if not self.pfNamesSeen and #self.pfLedger > 0 then
-      status =
+      message =
         L["Your auction mail doesn't name the other player on this client (the auction house keeps them anonymous), so there's no one to list."]
     else
       status = customersMode
@@ -436,5 +434,6 @@ function UI:RenderPortfolio()
       status = L["No market data for your faction's auction house yet - scan there to value your holdings."]
     end
   end
-  v.status:SetText(status)
+  tbl:SetMessage(message)
+  v.status:SetText(status or "")
 end

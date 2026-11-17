@@ -20,7 +20,7 @@ L["%d days"] = "%d 天"
 L["%d days ago"] = "%d 天前"
 L["%d h ago"] = "%d 小時前"
 L["%d h listings"] = "%d 小時上架"
-L["%d items  -  showing %d-%d  -  index from %s"] = "%d 件物品  -  顯示 %d-%d  -  索引來自 %s"
+L["%d items  ·  showing %d-%d  ·  index from %s"] = "%d 件物品  ·  顯示 %d-%d  ·  索引來自 %s"
 L["%d items from %s listings, stored %s ms after the scan request"] =
   "%d 件物品，來自 %s 筆上架，掃描請求後 %s 毫秒儲存"
 L["%d items not searchable yet (names loading)"] = "%d 件物品暫時無法搜尋（名稱載入中）"
@@ -33,8 +33,8 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "%d 個部位，分布在 %d 個角色上。背包會隨遊戲即時更新；打開銀行和拍賣場即可計入銀行物品和進行中的拍賣。"
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "%d 個部位，分布在 %d 個角色上。背包會隨遊戲即時更新；打開銀行和拍賣場即可計入銀行物品和進行中的拍賣。"
-L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
-  "%d 條路線  -  在%s買進，在%s賣出：%d%% 手續費，以 %d 小時上架計算保證金"
+L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
+  "%d 條路線  ·  在%s買進，在%s賣出：%d%% 手續費，以 %d 小時上架計算保證金"
 L["%d scans in 7 days"] = "7天內掃描 %d 次"
 L["%d scans/7d, %s"] = "%d 次掃描/7天，%s"
 L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =

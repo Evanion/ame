@@ -459,7 +459,7 @@ describe("addon in a stubbed client", function()
       env:fire("AUCTION_HOUSE_SHOW")
       ns.UI:ShowTab("market")
       assert.are.equal("Alliance", ns.UI:ViewHouse())
-      assert.truthy(ns.UI.marketView.status.text:find("No price history for the Alliance AH"))
+      assert.truthy(ns.UI.marketView.table.message.text:find("No price history for the Alliance AH"))
       assert.are.equal(3, #ns.UI.viewSelect.values)
       -- no raw shard keys ("|N" is an escape code in WoW text) anywhere in chat
       for _, line in ipairs(env.chat) do

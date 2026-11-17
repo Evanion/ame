@@ -19,7 +19,7 @@ L["%d days"] = "%d días"
 L["%d days ago"] = "hace %d días"
 L["%d h ago"] = "hace %d h"
 L["%d h listings"] = "subastas de %d h"
-L["%d items  -  showing %d-%d  -  index from %s"] = "%d objetos  -  mostrando %d-%d  -  índice de %s"
+L["%d items  ·  showing %d-%d  ·  index from %s"] = "%d objetos  ·  mostrando %d-%d  ·  índice de %s"
 L["%d items from %s listings, stored %s ms after the scan request"] =
   "%d objetos de %s anuncios, guardados %s ms tras la petición de escaneo"
 L["%d items not searchable yet (names loading)"] = "%d objetos aún no se pueden buscar (cargando nombres)"
@@ -33,8 +33,8 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "%d posiciones en %d personaje. Las bolsas se actualizan mientras juegas; abre tu banco y la casa de subastas para incluir los objetos del banco y las subastas activas."
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "%d posiciones en %d personajes. Las bolsas se actualizan mientras juegas; abre tu banco y la casa de subastas para incluir los objetos del banco y las subastas activas."
-L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
-  "%d rutas  -  compra en %s, vende en %s: %d%% de comisión, depósitos de subastas de %dh"
+L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
+  "%d rutas  ·  compra en %s, vende en %s: %d%% de comisión, depósitos de subastas de %dh"
 L["%d scans in 7 days"] = "%d escaneos en 7 días"
 L["%d scans/7d, %s"] = "%d escaneos/7d, %s"
 L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =

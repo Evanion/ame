@@ -18,8 +18,10 @@
 --                                                   -- otherwise the table sorts its rows itself on header clicks
 --     offset = { get = fn, set = fn },              -- optional: owner keeps the scroll position
 --     onClick = function(d, button) end, tooltip = function(tip, d) end,
+--     status = true,                                -- t.status: the status line at the bottom of parent
 --   })
 --   t:SetData(list); t:Render()
+--   t:SetMessage("Loading...")                      -- centred over the rows (empty / loading); nil hides it
 local _, ns = ...
 local L = ns.L
 
@@ -223,7 +225,21 @@ function DataTable.New(parent, opts)
     t:Layout(width)
   end)
   t:Layout(frame:GetWidth())
+  if opts.status then
+    t.status = W.StatusLine(parent)
+  end
   return t
+end
+
+-- a message centred over the rows (nothing to show, loading); nil hides it
+function DataTable:SetMessage(text)
+  if not self.message then
+    self.message = W.Text(self.frame, "GameFontDisableSmall", "CENTER")
+    self.message:SetPoint("LEFT", 20, -10) -- below the header
+    self.message:SetPoint("RIGHT", -20, -10)
+  end
+  self.message:SetText(text or "")
+  self.message:SetShown(text ~= nil)
 end
 
 -- the column that takes the width left over: opts.flex (a column key), else the item column, else the first

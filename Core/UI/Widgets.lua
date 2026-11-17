@@ -842,6 +842,15 @@ function W.Heading(parent, text, x, y)
   return h
 end
 
+-- The status line along the bottom of a tab (counts, hints); join its parts with W.SEP.
+W.SEP = "  ·  "
+function W.StatusLine(parent)
+  local s = W.Text(parent, "GameFontDisableSmall", "LEFT")
+  s:SetPoint("BOTTOMLEFT", 0, 0)
+  s:SetPoint("BOTTOMRIGHT", 0, 0)
+  return s
+end
+
 -- explanatory paragraph: dim, wrapped at width (440 by default); position it yourself
 function W.Paragraph(parent, text, width)
   local t = W.Text(parent, "GameFontDisableSmall")

@@ -178,11 +178,9 @@ function UI:CreateArbitrageView(parent, contentArea)
         UI:ShowItem(e.itemID)
       end
     end,
+    status = true,
   })
-  v.headers, v.rows = v.table.headers, v.table.rows
-  v.status = W.Text(v, "GameFontDisableSmall", "LEFT")
-  v.status:SetPoint("BOTTOMLEFT", 0, 0)
-  v.status:SetWidth(940)
+  v.headers, v.rows, v.status = v.table.headers, v.table.rows, v.table.status
 
   v:SetScript("OnShow", function()
     UI:RefreshArbitrage(true) -- coming back (e.g. from an item chart): keep the scroll position
@@ -209,7 +207,6 @@ function UI:RefreshArbitrage(keepOffset)
   if not keepOffset then
     self.arbRows = nil -- a new comparison: show "loading"; a refresh keeps the rows until the new ones are in
   end
-  v.status:SetText(L["Loading market data..."])
   self:RenderArbitrage()
   local token = {}
   self.arbToken = token
@@ -263,33 +260,33 @@ function UI:RenderArbitrage()
     return
   end
   local a = self.arb
-  local canSearch = self:AtBuyHouse()
   local rows = self.arbRows or {}
-  local total = #rows
-  local t = v.table
-  t.sort.key, t.sort.ascending = a.sortKey, a.ascending
-  t:SetData(rows)
-  t:Render()
-  local status
-  if not self.arbRows then
-    status = L["Loading market data..."]
+  local message, status
+  if a.buy == a.sell then
+    message = L["Pick two different auction houses."]
+  elseif not self.arbRows then
+    message = L["Loading market data..."]
   elseif self.arbMissing then
-    status = L["No price history for the %s yet: scan there (any character on this account counts) to compare."]:format(
-      self.arbMissing
-    )
+    message =
+      L["No price history for the %s yet: scan there (any character on this account counts) to compare."]:format(
+        self.arbMissing
+      )
   else
-    status = L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"]:format(
-      total,
+    status = L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"]:format(
+      #rows,
       ns.HOUSE_LABEL[a.buy],
       ns.HOUSE_LABEL[a.sell],
       math.floor((self.arbCut or 0) * 100 + 0.5),
       ns.Settings:Get("listingHours")
     )
+    if self:AtBuyHouse() and #rows > 0 then
+      status = status .. W.SEP .. L["you're at the buy AH: Search (or Shift-click a row) to buy"]
+    end
   end
-  if a.buy == a.sell then
-    status = L["Pick two different auction houses."]
-  elseif canSearch and self.arbRows and #self.arbRows > 0 then
-    status = status .. "  -  " .. L["you're at the buy AH: Search (or Shift-click a row) to buy"]
-  end
-  v.status:SetText(status)
+  local t = v.table
+  t.sort.key, t.sort.ascending = a.sortKey, a.ascending
+  t:SetData(message and {} or rows)
+  t:Render()
+  t:SetMessage(message)
+  v.status:SetText(status or "")
 end

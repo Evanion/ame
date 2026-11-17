@@ -20,7 +20,7 @@ L["%d days"] = "%d dias"
 L["%d days ago"] = "há %d dias"
 L["%d h ago"] = "há %d h"
 L["%d h listings"] = "leilões de %d h"
-L["%d items  -  showing %d-%d  -  index from %s"] = "%d itens  -  mostrando %d-%d  -  índice de %s"
+L["%d items  ·  showing %d-%d  ·  index from %s"] = "%d itens  ·  mostrando %d-%d  ·  índice de %s"
 L["%d items from %s listings, stored %s ms after the scan request"] =
   "%d itens de %s anúncios, armazenados %s ms após a solicitação de varredura"
 L["%d items not searchable yet (names loading)"] = "%d itens ainda não pesquisáveis (carregando nomes)"
@@ -33,8 +33,8 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "%d posições em %d personagem. As bolsas se atualizam enquanto você joga; abra seu banco e a casa de leilões para incluir itens do banco e leilões ativos."
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "%d posições em %d personagens. As bolsas se atualizam enquanto você joga; abra seu banco e a casa de leilões para incluir itens do banco e leilões ativos."
-L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
-  "%d rotas  -  compre em %s, venda em %s: %d%% de taxa, depósitos de leilões de %dh"
+L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
+  "%d rotas  ·  compre em %s, venda em %s: %d%% de taxa, depósitos de leilões de %dh"
 L["%d scans in 7 days"] = "%d varreduras em 7 dias"
 L["%d scans/7d, %s"] = "%d varreduras/7d, %s"
 L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =

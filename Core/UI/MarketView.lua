@@ -326,11 +326,9 @@ function UI:CreateMarketView(parent)
         tip:AddLine(L["Shift-click to search the auction house"], 0.6, 0.6, 0.6)
       end
     end,
+    status = true,
   })
-  v.headers, v.rows, v.bar = v.table.headers, v.table.rows, v.table.bar
-
-  v.status = W.Text(main, "GameFontDisableSmall", "LEFT")
-  v.status:SetPoint("BOTTOMLEFT", 2, 0)
+  v.headers, v.rows, v.bar, v.status = v.table.headers, v.table.rows, v.table.bar, v.table.status
 
   main:EnableMouseWheel(true)
   main:SetScript("OnMouseWheel", function(_, delta)
@@ -378,7 +376,8 @@ function UI:RefreshMarket(force)
         ns.HOUSE_LABEL[self:ViewHouse()] or self:ViewHouse()
       )
     end
-    v.status:SetText(text)
+    v.table:SetMessage(text)
+    v.status:SetText("")
     for _, row in ipairs(v.rows) do
       row:Hide()
     end
@@ -420,19 +419,20 @@ function UI:RenderMarket()
   t.sort.key, t.sort.ascending = q.sortKey, q.ascending
   t:SetData(list)
   t:Render()
+  t:SetMessage(nil)
   self.offset = t:Offset()
 
   local cache = ns.ItemCache
-  local status = L["%d items  -  showing %d-%d  -  index from %s"]:format(
+  local status = L["%d items  ·  showing %d-%d  ·  index from %s"]:format(
     total,
     math.min(total, self.offset + 1),
     math.min(total, self.offset + ROWS),
     date("%b %d", self.index.day * DAY)
   )
   if cache.warmTotal and cache.warmDone and cache.warmDone < cache.warmTotal then
-    status = status .. "  -  " .. L["loading item names %d/%d"]:format(cache.warmDone, cache.warmTotal)
+    status = status .. W.SEP .. L["loading item names %d/%d"]:format(cache.warmDone, cache.warmTotal)
   elseif (self.unnamed or 0) > 0 then
-    status = status .. "  -  " .. L["%d items not searchable yet (names loading)"]:format(self.unnamed)
+    status = status .. W.SEP .. L["%d items not searchable yet (names loading)"]:format(self.unnamed)
   end
   if q.list and q.only then
     local n = 0
@@ -440,7 +440,7 @@ function UI:RenderMarket()
       n = n + 1
     end
     if n > total then
-      status = status .. "  -  " .. L["%d watched items have no price history here yet"]:format(n - total)
+      status = status .. W.SEP .. L["%d watched items have no price history here yet"]:format(n - total)
     end
   end
   v.status:SetText(status)
