@@ -11,10 +11,8 @@ local function api(name)
   return (C_Container and C_Container[name]) or _G[name]
 end
 
--- item name for an ID when the client knows it
-local function W_ItemName(itemID)
-  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-  return getInfo and getInfo(itemID) or nil
+local function nameOf(itemID)
+  return ns.ItemCache.Name(itemID)
 end
 
 local function charKey()
@@ -174,7 +172,7 @@ local function listedUnit(name)
   local h = AME_DB.holdings[charKey()]
   local unit
   for _, a in ipairs(h and h.auctionList or {}) do
-    local n = W_ItemName and W_ItemName(a.itemID)
+    local n = nameOf(a.itemID)
     if n == name and a.unit then
       if unit and unit ~= a.unit then
         return nil
@@ -258,7 +256,7 @@ end
 function Trading.HeldByName()
   local out = {}
   local function add(itemID)
-    local name = itemID and W_ItemName(itemID)
+    local name = nameOf(itemID)
     if name and not out[name] then
       out[name] = itemID
     end

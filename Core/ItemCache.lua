@@ -1,6 +1,6 @@
--- Item facts for filtering the market screener: class/subclass come from GetItemInfoInstant (always available);
--- name/quality come from GetItemInfo once the client has the item cached. Warm() asks the client to load names for
--- many items in small batches so name search and quality filters cover the whole market.
+-- Item facts for every module: class/subclass come from GetItemInfoInstant (always available); name, link and
+-- quality from GetItemInfo once the client has the item cached. Warm() asks the client to load names for many items
+-- in small batches so name search and quality filters cover the whole market.
 local _, ns = ...
 local L = ns.L
 
@@ -35,6 +35,21 @@ function C.Get(itemID)
     end
   end
   return e
+end
+
+-- name / link straight from the client: nil until it has the item cached (one lookup for every module)
+function C.Name(itemID)
+  local f = api("GetItemInfo")
+  return f and itemID and (f(itemID)) or nil
+end
+
+function C.Link(itemID)
+  local f = api("GetItemInfo")
+  if f and itemID then
+    local _, link = f(itemID)
+    return link
+  end
+  return nil
 end
 
 function C.ClassName(classID)

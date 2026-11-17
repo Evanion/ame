@@ -191,8 +191,7 @@ function AME:CheckAlerts(index)
   end
   local fired = self.watch:Check(index.items)
   for _, a in ipairs(fired) do
-    local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-    local _, link = getInfo(a.itemID)
+    local link = ns.ItemCache.Link(a.itemID)
     local what = ALERT_TEXT[a.kind]:format(money(a.market), a.threshold and money(a.threshold) or "")
     say("|cffffcc00" .. L["Alert:"] .. "|r %s %s", link or ("item:" .. a.itemID), what)
     if UIErrorsFrame then
@@ -429,8 +428,7 @@ function AME:SearchAuctionHouse(itemID)
     say(L["open the auction house first"])
     return false
   end
-  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-  local name = getInfo(itemID)
+  local name = ns.ItemCache.Name(itemID)
   if not name then
     say(L["item not loaded yet - try again in a moment"])
     return false

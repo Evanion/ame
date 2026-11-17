@@ -14,8 +14,7 @@ Posting.PRIOR_AGE = 600 -- category behaviour is recomputed at most this often
 Posting.KEEP = 30 * 86400 -- profiles of items not seen for this long are dropped
 
 local function itemName(itemID)
-  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-  return getInfo and getInfo(itemID) or nil
+  return ns.ItemCache.Name(itemID)
 end
 
 local function now()
