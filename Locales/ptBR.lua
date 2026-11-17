@@ -412,7 +412,6 @@ L["history addon"] = "addon de histórico"
 L["history import from Auctionator failed: %s"] = "falha ao importar histórico do Auctionator: %s"
 L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
   "a importação de histórico do Auctionator só é feita na casa de leilões da sua facção (os dados dele misturam todas as casas)."
-L["history import from Auctionator skipped: %s"] = "importação de histórico do Auctionator ignorada: %s"
 L["history lookup (cold)"] = "consulta de histórico (a frio)"
 L["history: %d raw scans, %d days, %.0f KB"] = "histórico: %d varreduras brutas, %d dias, %.0f KB"
 L["imported %d days of price history from Auctionator into %s"] =

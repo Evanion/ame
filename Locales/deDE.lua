@@ -411,7 +411,6 @@ L["history addon"] = "Verlaufs-Addon"
 L["history import from Auctionator failed: %s"] = "Verlaufsimport aus Auctionator fehlgeschlagen: %s"
 L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
   "Verlaufsimport aus Auctionator erfolgt nur im Auktionshaus deiner Fraktion (seine Daten mischen alle Häuser)."
-L["history import from Auctionator skipped: %s"] = "Verlaufsimport aus Auctionator übersprungen: %s"
 L["history lookup (cold)"] = "Verlaufsabfrage (kalt)"
 L["history: %d raw scans, %d days, %.0f KB"] = "Verlauf: %d Roh-Scans, %d Tage, %.0f KB"
 L["imported %d days of price history from Auctionator into %s"] =

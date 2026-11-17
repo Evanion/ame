@@ -408,7 +408,6 @@ L["history addon"] = "歷史插件"
 L["history import from Auctionator failed: %s"] = "從 Auctionator 匯入歷史失敗：%s"
 L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
   "從 Auctionator 匯入歷史僅在你的陣營拍賣場進行（其資料混合了所有拍賣場）。"
-L["history import from Auctionator skipped: %s"] = "已略過從 Auctionator 匯入歷史：%s"
 L["history lookup (cold)"] = "歷史查詢（冷啟動）"
 L["history: %d raw scans, %d days, %.0f KB"] = "歷史：%d 次原始掃描，%d 天，%.0f KB"
 L["imported %d days of price history from Auctionator into %s"] = "已從 Auctionator 匯入 %d 天的價格歷史到%s"

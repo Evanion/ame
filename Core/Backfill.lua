@@ -15,12 +15,20 @@ ns.Backfill = Backfill
 local DAY = 86400
 
 -- returns { [ourDay] = { { id, min, market, median, qty, auctions, scans }, ... } }
-function Backfill.FromAuctionator(db, scanDay0)
+-- checkpoint (optional): called every CHUNK items, so a background job can spread a big database over frames
+Backfill.CHUNK = 200
+
+function Backfill.FromAuctionator(db, scanDay0, checkpoint)
   local out = {}
   if type(db) ~= "table" or type(scanDay0) ~= "number" then
     return out
   end
+  local n = 0
   for key, entry in pairs(db) do
+    n = n + 1
+    if checkpoint and n % Backfill.CHUNK == 0 then
+      checkpoint()
+    end
     local id = tonumber(key)
     if id and type(entry) == "table" and type(entry.h) == "table" then
       local lows = type(entry.l) == "table" and entry.l or {}

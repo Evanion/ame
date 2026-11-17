@@ -342,7 +342,6 @@ L["guild sync: %s, announced %d, served %d, received %d, rejected %d"] = true
 L["history addon"] = true
 L["history import from Auctionator failed: %s"] = true
 L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] = true
-L["history import from Auctionator skipped: %s"] = true
 L["history lookup (cold)"] = true
 L["history: %d raw scans, %d days, %.0f KB"] = true
 L["imported %d days of price history from Auctionator into %s"] = true

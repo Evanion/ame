@@ -425,7 +425,6 @@ L["history addon"] = "аддон истории"
 L["history import from Auctionator failed: %s"] = "импорт истории из Auctionator не удался: %s"
 L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
   "импорт истории из Auctionator выполняется только на аукционе вашей фракции (его данные смешивают все аукционы)."
-L["history import from Auctionator skipped: %s"] = "импорт истории из Auctionator пропущен: %s"
 L["history lookup (cold)"] = "запрос истории (холодный)"
 L["history: %d raw scans, %d days, %.0f KB"] =
   "история: %d сырых сканирований, %d дн., %.0f КБ"

@@ -473,12 +473,12 @@ function AME:Backfill(force)
   if type(db) ~= "table" or type(day0) ~= "number" then
     return
   end
-  local ok, days = pcall(ns.Backfill.FromAuctionator, db, day0)
-  if not ok then
-    say(L["history import from Auctionator skipped: %s"], tostring(days))
-    return
-  end
+  -- read in the job, a few hundred items per frame (a big Auctionator database took ~0.4 s in one frame). No pcall
+  -- in there (no yielding across it); errors end the job and are reported below.
   self:WithStore("backfill", shard, function(store, job)
+    local days = ns.Backfill.FromAuctionator(db, day0, function()
+      job:Checkpoint()
+    end)
     local n = 0
     for day, rows in pairs(days) do
       if store:ImportDay(day, rows, "auctionator") then

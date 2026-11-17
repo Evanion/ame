@@ -410,7 +410,6 @@ L["history addon"] = "기록 애드온"
 L["history import from Auctionator failed: %s"] = "Auctionator 기록 가져오기 실패: %s"
 L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
   "Auctionator 기록 가져오기는 진영 경매장에서만 합니다 (그 데이터는 모든 경매장이 섞여 있음)."
-L["history import from Auctionator skipped: %s"] = "Auctionator 기록 가져오기 건너뜀: %s"
 L["history lookup (cold)"] = "기록 조회 (콜드)"
 L["history: %d raw scans, %d days, %.0f KB"] = "기록: 원본 스캔 %d회, %d일, %.0f KB"
 L["imported %d days of price history from Auctionator into %s"] =
