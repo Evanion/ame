@@ -20,6 +20,7 @@ L["%d days"] = "%d дн."
 L["%d days ago"] = "%d дн. назад"
 L["%d h ago"] = "%d ч назад"
 L["%d h listings"] = "лоты на %d ч"
+L["%d items"] = "%d предметов"
 L["%d items  ·  showing %d-%d  ·  index from %s"] =
   "Предметов: %d  ·  показаны %d-%d  ·  индекс от %s"
 L["%d items from %s listings, stored %s ms after the scan request"] =
@@ -32,6 +33,8 @@ L["%d items summarized in %s ms wall"] =
 L["%d min ago"] = "%d мин назад"
 L["%d of %d known prices differ more than %dx from ours"] =
   "%d из %d известных цен отличаются от наших более чем в %d раз"
+L["%d outlier price ignored"] = "%d выброс цены проигнорирован"
+L["%d outlier prices ignored"] = "проигнорировано выбросов цены: %d"
 L["%d passed, %d warnings, %d failed"] = "Пройдено: %d, предупреждений: %d, ошибок: %d"
 L["%d positions on %d character. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
@@ -58,6 +61,8 @@ L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
 L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] =
   "%s хочет делиться с вами ценами аукциона. Откройте |cffffffff/ame|r > Синхронизация, чтобы одобрить."
 L["(each point is one scan)"] = "(каждая точка - одно сканирование)"
+L["(est.)"] = "(оценка)"
+L["(needs LibDBIcon; included in releases)"] = "(нужен LibDBIcon; входит в релизы)"
 L["+ %d more"] = "+ ещё %d"
 L[", %d scans received"] = ", получено сканирований: %d"
 L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"] =
@@ -73,6 +78,7 @@ L["7-day change"] = "Изменение за 7 дней"
 L["7d"] = "7д"
 L["7d average"] = "Среднее за 7 дней"
 L["7d avg"] = "Ср. 7д"
+L["7d change"] = "Изм. 7д"
 L["<1h"] = "<1 ч"
 L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."] =
   "Скринер всех предметов с историей. Выберите категорию или список наблюдения слева, ищите по названию, фильтруйте по качеству, диапазону цен или сигналу и щёлкните по столбцу для сортировки. Наведите курсор на заголовок столбца, чтобы узнать его смысл. Щёлкните по строке, чтобы открыть график; щёлкните по звезде, чтобы отслеживать предмет."
@@ -80,18 +86,27 @@ L["AH cut"] = "Комиссия аук."
 L["AME alert: %s %s"] = "Оповещение AME: %s %s"
 L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] =
   "AME слушает собственные API аукциона в игре, поэтому записывается каждое ваше сканирование и поиск - из стандартного окна аукциона или любого аддона-сканера (хорошо работает с аддонами вроде Auctionator). Ничего лишнего не сканируется. История хранится отдельно для каждого рынка (игровой мир или правила Forever) и аукциона, а члены гильдии с AME автоматически делятся полными сканированиями."
+L["API + database found"] = "API и база данных найдены"
+L["API found, database not readable (no backfill)"] =
+  "API найден, база данных не читается (без дозаполнения истории)"
+L["Accept"] = "Принять"
 L["AceComm not available: sync disabled"] =
   "AceComm недоступен: синхронизация отключена"
 L["Activity"] = "Активность"
 L["Add"] = "Добавить"
+L["Add to a watchlist"] = "Добавить в список наблюдения"
 L["Alert when"] = "Оповещать, когда"
 L["Alert:"] = "Оповещение:"
 L["All"] = "Все"
 L["All items"] = "Все предметы"
 L["All markets: %d, %.0f KB of compressed daily history"] =
   "Все рынки: %d, %.0f КБ сжатой дневной истории"
+L["All of AME's settings are in its own window: %s, Settings tab."] =
+  "Все настройки AME находятся в его собственном окне: %s, вкладка «Настройки»."
 L["Alliance AH"] = "Аукцион Альянса"
 L["Alliance blue"] = "Синий Альянса"
+L["Alt+Shift-click"] = "Alt+Shift-клик"
+L["Alt-click"] = "Alt-клик"
 L["Always show full tooltip details (otherwise hold Shift)"] =
   "Всегда показывать все данные в подсказке (иначе удерживайте Shift)"
 L["An opportunity ranking from -100 to +100. Higher means the item is further below its usual price, on a stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. Sort by it to find bargains quickly."] =
@@ -124,6 +139,8 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
 L["Balanced"] = "Равновесие"
 L["Block"] = "Блокировать"
 L["Blocked"] = "Заблокированы"
+L["Building market index..."] = "Построение рыночного индекса..."
+L["Buy"] = "Купить"
 L["Buy at"] = "Купить в"
 L["By your guild officers: %s"] = "Офицерами вашей гильдии: %s"
 L["Cancel"] = "Отмена"
@@ -150,6 +167,7 @@ L["Days to sell"] = "Дней на продажу"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "Дни, когда цена предмета во столько раз выше (или ниже) соседних дней, исключаются из скринера, сигналов, оповещений и графиков - обычно это один лот с наценкой 1000% на вялом рынке. В полном сканировании AME и так игнорирует дорогие лоты: рыночная цена берётся из самой дешёвой части предложения."
 L["Decline"] = "Отклонить"
+L["Delete"] = "Удалить"
 L["Delete list..."] = "Удалить список..."
 L['Delete the watchlist "%s"?'] = 'Удалить список наблюдения "%s"?'
 L["Deposit"] = "Залог"
@@ -184,6 +202,7 @@ L["HOLD"] = "ДЕРЖАТЬ"
 L["Held"] = "На руках"
 L["High"] = "Максимум"
 L["History not loaded yet."] = "История ещё не загружена."
+L["Hold"] = "Держать"
 L["Hold Shift for more AME data"] = "Удерживайте Shift для доп. данных AME"
 L["Holdings value"] = "Стоимость позиций"
 L["Horde AH"] = "Аукцион Орды"
@@ -226,6 +245,7 @@ L["Ledger"] = "Журнал"
 L["Left-click: window   Right-click: settings"] = "ЛКМ: окно   ПКМ: настройки"
 L["LibAMEChart-1.0 not loaded"] = "LibAMEChart-1.0 не загружена"
 L["LibDeflate not loaded"] = "LibDeflate не загружена"
+L["Line"] = "Линия"
 L["Listed at the buy house / at the sell house. Plenty to buy and little to compete with where you sell is ideal; a big gap on one listing at the buy house may be gone fast."] =
   "Выставлено на аукционе покупки / на аукционе продажи. Идеально, когда купить можно много, а конкурентов там, где продаёте, мало; большой разрыв из-за одного лота на аукционе покупки может быстро исчезнуть."
 L["Listed on the AH now"] = "Сейчас на аукционе"
@@ -263,9 +283,14 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
   "Пока ничего не получено - сканирования приходят, когда кто-то, с кем вы делитесь, выполняет полное сканирование."
 L["Notifications"] = "Уведомления"
 L["Off"] = "Выкл."
+L["On a watchlist - click to change"] =
+  "В списке наблюдения - щёлкните, чтобы изменить"
 L["Open"] = "Открытие"
+L["Open AME settings"] = "Открыть настройки AME"
 L["Open item charts with"] = "Открывать графики предметов по"
 L["Patient %s"] = "Терпеливо %s"
+L["Per item: what it sells for, minus the AH cut, minus what you paid."] =
+  "За предмет: цена продажи минус комиссия аукциона минус ваша цена покупки."
 L["Pick two different auction houses."] = "Выберите два разных аукциона."
 L["Play a sound when a watchlist alert fires"] =
   "Звук при срабатывании оповещения списка"
@@ -281,6 +306,9 @@ L["Pressure building"] = "Нарастающее давление"
 L["Price"] = "Цена"
 L["Price each"] = "Цена за шт."
 L["Profit"] = "Прибыль"
+L["Profit as a share of what you paid. 50% means every 10g spent comes back as 15g."] =
+  "Прибыль как доля от уплаченного. 50% значит, что каждые потраченные 10 з возвращаются как 15 з."
+L["Purchases"] = "Покупки"
 L["Qty"] = "Кол-во"
 L["Quick %s"] = "Быстро %s"
 L["Rare+"] = "Редкое+"
@@ -305,6 +333,7 @@ L["Search items..."] = "Поиск предметов..."
 L["Seen in 3 days"] = "Видели за 3 дня"
 L["Seen in 7 days"] = "Видели за 7 дней"
 L["Seen today/yesterday"] = "Видели сегодня/вчера"
+L["Sell"] = "Продать"
 L["Sell at"] = "Продать в"
 L["Sellers piling in"] = "Наплыв продавцов"
 L["Sellers withdrawing"] = "Уход продавцов"
@@ -328,11 +357,13 @@ L["Signal"] = "Сигнал"
 L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] =
   "Сигналы и оценка сравнивают предмет с его собственной историей, поэтому для осмысленного результата нужна неделя данных или больше. Выше всех оцениваются дешёвые И стабильные (низкая волатильность) предметы. Падение предложения при неизменной цене часто бывает хорошим ранним признаком. Всё это не совет - рынки могут вести себя странно довольно долго."
 L["Sold / bought"] = "Продано / куплено"
+L["Spent with you"] = "Потрачено у вас"
 L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price in gold, or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."] =
   'Отмечайте предметы звездой, чтобы добавить их в список наблюдения; создавайте новые списки кнопкой "+ Новый список" на боковой панели (ПКМ по списку - поделиться им с гильдией или удалить; общие списки членов гильдии отображаются под вашими). На странице предмета задайте оповещение: ниже или выше цены в золоте или при появлении сигнала покупки/продажи. Оповещения проверяются после каждого сканирования и выводятся в чат со звуком.'
 L["Steady demand"] = "Устойчивый спрос"
 L["Suppliers"] = "Поставщики"
 L["Supply"] = "Предложение"
+L["Supply  ·  sells/day"] = "Предложение  ·  прод./день"
 L["Swap"] = "Поменять"
 L["Sync"] = "Синхронизация"
 L["Sync is unavailable: the AceComm library didn't load."] =
@@ -341,6 +372,8 @@ L["The average daily market price over the chosen period (Settings > Average per
   "Средняя дневная рыночная цена за выбранный период (Настройки > Период усреднения, по умолчанию 7 дней). Сравните её с сегодняшней рыночной ценой, чтобы понять, дёшев предмет сейчас или дорог."
 L["The cheapest listing at the auction house you buy from - what the first units cost you."] =
   "Самый дешёвый лот на аукционе, где вы покупаете, - столько стоят первые штуки."
+L["The cheapest single listing seen in the latest data."] =
+  "Самый дешёвый отдельный лот в последних данных."
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "Рыночная цена на аукционе, где вы продаёте: за сколько предмет обычно там продаётся."
 L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
@@ -363,6 +396,7 @@ L["Value"] = "Стоимость"
 L["Volatility"] = "Волатильность"
 L["WAIT"] = "ЖДАТЬ"
 L["Watch"] = "Следить"
+L["Watching"] = "Слежу"
 L["Watchlists and alerts"] = "Списки наблюдения и оповещения"
 L["Weak demand"] = "Слабый спрос"
 L["What all your characters hold, valued at your faction's market, with cost and unrealized profit for what you bought on the AH, the Buy/Hold/Sell signal and how long it would take to sell. The ledger lists your AH sales and purchases - recorded from auction mail when you open your mailbox."] =
@@ -379,6 +413,7 @@ L["When"] = "Когда"
 L["Where the data comes from"] = "Откуда берутся данные"
 L["Window colours"] = "Цвета окна"
 L["You haven't blocked anyone."] = "Вы никого не заблокировали."
+L["You spent"] = "Ваши траты"
 L["You'd receive (after the cut)"] = "Вы получите (после комиссии)"
 L["Your active auctions on all characters, as of the last time each opened the auction house."] =
   "Ваши активные аукционы на всех персонажах (на момент, когда каждый из них последний раз открывал аукцион)."
@@ -396,6 +431,7 @@ L["auctionator history import"] = "импорт истории из Auctionator"
 L["average period"] = "период усреднения"
 L["awaiting mail"] = "ждёт письма"
 L["backfill"] = "дозаполнение истории"
+L["background jobs: %s"] = "фоновые задачи: %s"
 L["below g"] = "ниже g"
 L["blocked"] = "заблокирован"
 L["blocked %s"] = "%s заблокирован"
@@ -415,9 +451,11 @@ L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
   "кодирование %.0f мс, сжатие %.0f мс, распаковка+декодирование %.0f мс, %d КБ -> %d КБ"
 L["ended?"] = "завершён?"
 L["enter a character name"] = "введите имя персонажа"
+L["guild"] = "гильдию"
 L["guild sync"] = "синхронизация гильдии"
 L["guild sync: %s, announced %d, served %d, received %d, rejected %d"] =
   "синхронизация гильдии: %s, объявлено %d, отдано %d, получено %d, отклонено %d"
+L["heard %s"] = "на связи %s"
 L["history addon"] = "аддон истории"
 L["history import from Auctionator failed: %s"] = "импорт истории из Auctionator не удался: %s"
 L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
@@ -425,6 +463,7 @@ L["history import from Auctionator is only done at your faction's auction house 
 L["history lookup (cold)"] = "запрос истории (холодный)"
 L["history: %d raw scans, %d days, %.0f KB"] =
   "история: %d сырых сканирований, %d дн., %.0f КБ"
+L["idle"] = "нет"
 L["imported %d days of price history from Auctionator into %s"] =
   "импортировано %d дн. истории цен из Auctionator в %s"
 L["item %d: %d points in %.1f ms"] = "предмет %d: %d точек за %.1f мс"
@@ -433,11 +472,14 @@ L["item from latest scan has no daily points"] =
 L["item not loaded yet - try again in a moment"] =
   "предмет ещё не загружен - попробуйте чуть позже"
 L["just now"] = "только что"
+L["last error (%s, %s): %s"] = "последняя ошибка (%s, %s): %s"
 L["last full scan"] = "последнее полное сканирование"
 L["last full scan: %d items, %s ago"] =
   "последнее полное сканирование: %d предметов, %s назад"
 L["last seen %s"] = "последний раз %s"
 L["libraries"] = "библиотеки"
+L["listed"] = "в продаже"
+L["loaded"] = "загружено"
 L["loaded in %s ms, %d shard(s), %.0f KB of daily history"] =
   "загружено за %s мс, фрагментов: %d, %.0f КБ дневной истории"
 L["loading history..."] = "загрузка истории..."
@@ -445,6 +487,7 @@ L["loading item names %d/%d"] = "загрузка названий предме�
 L["lowest"] = "минимум"
 L["margin %"] = "маржа %"
 L["market"] = "рынок"
+L["market %s, history %s"] = "рынок %s, история %s"
 L["market index"] = "рыночный индекс"
 L["market index failed:"] = "ошибка рыночного индекса:"
 L["max g"] = "макс. g"
@@ -457,6 +500,8 @@ L["no scans in this shard yet"] = "в этом фрагменте ещё нет 
 L["none"] = "нет"
 L["none yet: open the AH and run a full scan, then rerun /ame selftest"] =
   "пока нет: откройте аукцион и выполните полное сканирование, затем снова запустите /ame selftest"
+L["not built yet (needs history)"] = "ещё не построен (нужна история)"
+L["not heard yet"] = "ещё не на связи"
 L["not in a guild"] = "вы не в гильдии"
 L["not loaded"] = "не загружено"
 L["nothing imported here (only with Auctionator data, at your faction's auction house)"] =
@@ -487,13 +532,16 @@ L["selftest starting (this may pause the game for a moment)"] =
   "запуск самопроверки (игра может ненадолго замереть)"
 L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
   "самопроверка: пройдено %d, предупреждений %d, ошибок %d. Перезагрузитесь, чтобы сохранить результаты (/reload)."
+L["sells"] = "продажи"
 L["shard"] = "фрагмент"
 L["shared"] = "общий"
 L["sharing"] = "обмен"
 L["signal"] = "сигнал"
 L["sold"] = "продано"
+L["still building in the background"] = "ещё строится в фоне"
 L["storing %s scan failed:"] = "не удалось сохранить сканирование (%s):"
 L["supply"] = "предложение"
+L["sync errors: %d (last: %s)"] = "ошибки синхронизации: %d (последняя: %s)"
 L["the AH closed before AME finished reading the full scan; it wasn't recorded."] =
   "аукцион закрылся до того, как AME дочитал полное сканирование; оно не записано."
 L["today"] = "сегодня"
@@ -504,6 +552,7 @@ L["unlikely to sell soon: consider holding"] =
 L["up"] = "рост"
 L["usage: /ame item <item link or itemID>"] =
   "использование: /ame item <ссылка на предмет или itemID>"
+L["via %s, %s"] = "через %s, %s"
 L["volatility"] = "волатильность"
 L["waiting for them to approve"] = "ждём их одобрения"
 L["wants to share, %s"] = "хочет делиться, %s"

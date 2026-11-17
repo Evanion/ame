@@ -115,7 +115,7 @@ else
         stale = stale + 1
       end
     end
-    if stale > 0 then
+    do -- always rewritten: enUS order in every locale, whatever was appended
       local head = src:match("^(.-\nif not L then\n  return\nend\n)")
       assert(head, path .. ": header not found")
       local lines = { head }
@@ -128,7 +128,9 @@ else
       local file = assert(io.open(path, "wb"))
       file:write(table.concat(lines, "\n") .. "\n")
       file:close()
-      print(("%s: dropped %d unused translations"):format(code, stale))
+      if stale > 0 then
+        print(("%s: dropped %d unused translations"):format(code, stale))
+      end
     end
   end
 end
