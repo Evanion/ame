@@ -282,10 +282,8 @@ function UI:CreateMarketView(parent)
     UI.mq.minQuality = value
     UI.offset = 0
     UI:RefreshMarket(true)
-  end)
+  end, { default = 1 }) -- Common+
   quality:SetPoint("LEFT", search, "RIGHT", 8, 0)
-  quality.defaultIndex = 2
-  quality:SetIndex(2)
   v.quality = quality
 
   local minBox = goldBox(main, L["min g"], function(g)
@@ -388,7 +386,7 @@ end
 function UI:ResetMarketFilters()
   local v = self.marketView
   self.mq = { sortKey = self.mq.sortKey, ascending = self.mq.ascending, minQuality = 1 }
-  v.quality:SetIndex(v.quality.defaultIndex)
+  v.quality:Reset()
   v.search:SetText("")
   v.minBox:SetText("")
   v.maxBox:SetText("")
@@ -450,7 +448,7 @@ function UI:RenderMarket()
   for _, b in ipairs(v.filterButtons) do
     b:SetSelected(b.key == (q.signal or "all"))
   end
-  v.quality:SetIndex(v.quality.index)
+  v.quality:SetValue(q.minQuality)
   local total = #list
   local t = v.table
   t.sort.key, t.sort.ascending = q.sortKey, q.ascending

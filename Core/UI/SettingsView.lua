@@ -39,10 +39,8 @@ function UI:CreateSettingsView(parent, contentArea)
       q.sortKey = "avg" .. value
     end
     UI.list = nil
-  end)
+  end, { neutral = true })
   v.avgDays:SetPoint("TOPLEFT", 340, -22)
-  v.avgDays.values = avgs
-  v.avgDays.neutral = true
   checks[#checks + 1] =
     settingCheck(v, L["Always show full tooltip details (otherwise hold Shift)"], "tooltipDetail", 0, -48)
 
@@ -55,10 +53,8 @@ function UI:CreateSettingsView(parent, contentArea)
     if UI.series then
       UI:DrawItemChart()
     end
-  end)
+  end, { neutral = true })
   v.style:SetPoint("TOPLEFT", 150, -76)
-  v.style.values = styles
-  v.style.neutral = true
 
   local clickLabel = W.Text(v, "GameFontHighlightSmall")
   clickLabel:SetPoint("TOPLEFT", 0, -106)
@@ -66,10 +62,8 @@ function UI:CreateSettingsView(parent, contentArea)
   local clicks = { { "alt", L["Alt-click"] }, { "altshift", L["Alt+Shift-click"] }, { "none", L["Off"] } }
   v.click = W.Dropdown(v, 120, clicks, function(value)
     ns.Settings:Set("clickModifier", value)
-  end)
+  end, { neutral = true })
   v.click:SetPoint("TOPLEFT", 150, -102)
-  v.click.values = clicks
-  v.click.neutral = true
   note(v, clickLabel, L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."], 440):SetPoint(
     "TOPLEFT",
     clickLabel,
@@ -95,10 +89,8 @@ function UI:CreateSettingsView(parent, contentArea)
   v.theme = W.Dropdown(v, 110, themes, function(value)
     ns.Settings:Set("theme", value)
     UI:ApplyTheme()
-  end)
+  end, { neutral = true })
   v.theme:SetPoint("TOPLEFT", 350, -148)
-  v.theme.values = themes
-  v.theme.neutral = true
 
   heading(v, L["Notifications"], 0, -182)
   checks[#checks + 1] = settingCheck(v, L["Announce recorded full scans in chat"], "announceScans", 0, -204)
@@ -122,10 +114,8 @@ function UI:CreateSettingsView(parent, contentArea)
     if UI.itemID and UI.current == "item" then
       UI:ShowItem(UI.itemID)
     end
-  end)
+  end, { neutral = true })
   v.outliers:SetPoint("TOPLEFT", 150, -280)
-  v.outliers.values = factors
-  v.outliers.neutral = true
   local why = W.Text(v, "GameFontDisableSmall")
   why:SetPoint("TOPLEFT", 0, -306)
   why:SetWidth(440)
@@ -208,9 +198,7 @@ function UI:CreateSettingsView(parent, contentArea)
     if UI.RenderArbitrage then
       UI:RenderArbitrage()
     end
-  end)
-  v.hours.neutral = true
-  v.hours.values = hours
+  end, { neutral = true })
   v.hours:SetPoint("TOPLEFT", COL2 + 330, -280)
 
   local more = W.Text(v, "GameFontDisableSmall")
@@ -224,15 +212,6 @@ function UI:CreateSettingsView(parent, contentArea)
   return v
 end
 
-local function indexOf(values, value)
-  for i, o in ipairs(values) do
-    if o[1] == value then
-      return i
-    end
-  end
-  return 1
-end
-
 function UI:RefreshSettings()
   local v = self.settingsView
   if not (v and v:IsShown()) then
@@ -241,14 +220,14 @@ function UI:RefreshSettings()
   for _, c in ipairs(v.checks) do
     c:SetChecked(ns.Settings:Get(c.key))
   end
-  v.style:SetIndex(indexOf(v.style.values, ns.Settings:Get("chartStyle")))
-  v.click:SetIndex(indexOf(v.click.values, ns.Settings:Get("clickModifier")))
-  v.outliers:SetIndex(indexOf(v.outliers.values, ns.Settings:Get("outlierFactor")))
-  v.avgDays:SetIndex(indexOf(v.avgDays.values, ns.Settings:Get("tooltipAvgDays")))
-  v.theme:SetIndex(indexOf(v.theme.values, ns.Settings:Get("theme")))
+  v.style:SetValue(ns.Settings:Get("chartStyle"))
+  v.click:SetValue(ns.Settings:Get("clickModifier"))
+  v.outliers:SetValue(ns.Settings:Get("outlierFactor"))
+  v.avgDays:SetValue(ns.Settings:Get("tooltipAvgDays"))
+  v.theme:SetValue(ns.Settings:Get("theme"))
   v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
   v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))
-  v.hours:SetIndex(indexOf(v.hours.values, ns.Settings:Get("listingHours")))
+  v.hours:SetValue(ns.Settings:Get("listingHours"))
   local hasIcon = ns.Launcher:HasMinimapLibrary()
   v.minimap:SetChecked(hasIcon and not AME_DB.settings.minimap.hide)
   v.minimap.label:SetText(

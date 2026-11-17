@@ -53,9 +53,7 @@ function UI:Create()
   self.viewSelect = W.Dropdown(f, 110, houses, function(value)
     UI.viewHouse = value
     UI:ViewChanged()
-  end)
-  self.viewSelect.neutral = true
-  self.viewSelect.values = houses
+  end, { neutral = true })
   self.viewSelect:SetPoint("LEFT", self.shardText, "RIGHT", 8, 0)
 
   local close = W.CloseButton(f)

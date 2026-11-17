@@ -274,9 +274,15 @@ function W.TintInnerGlow(frame, color)
 end
 
 -- Flat dropdown selector. options = { { value, label, colorHex? }, ... }; onSelect(value, option).
--- The button shows the current choice and is highlighted when a non-default (index > 1) option is picked.
-function W.Dropdown(parent, width, options, onSelect)
+-- The button shows the current choice and is highlighted when another option than the default is picked (a filter
+-- that is on). opts: neutral = never highlighted (a plain choice), default = the default option's value (first
+-- option otherwise; also the initial choice). Set the choice with b:SetValue(value); b:Reset() goes back to the
+-- default; b.values is the option list.
+function W.Dropdown(parent, width, options, onSelect, opts)
+  opts = opts or {}
   local b = W.Button(parent, "", width, 20)
+  b.neutral = opts.neutral or false
+  b.values = options
   b.label:ClearAllPoints()
   b.label:SetPoint("LEFT", 8, 0)
   b.label:SetPoint("RIGHT", -18, 0)
@@ -352,29 +358,40 @@ function W.Dropdown(parent, width, options, onSelect)
     menu:SetShown(not menu:IsShown())
   end)
 
+  -- index of the option whose value is `value` (nil if none)
+  local function find(value)
+    for i, o in ipairs(options) do
+      if o[1] == value then
+        return i
+      end
+    end
+  end
+
   function b:SetOptions(newOptions)
     options = newOptions
     self.values = newOptions
+    self.defaultIndex = opts.default ~= nil and find(opts.default) or 1
     build()
   end
 
   -- select the option whose value is `value` (first option if none)
   function b:SetValue(value)
-    for i, o in ipairs(options) do
-      if o[1] == value then
-        return self:SetIndex(i)
-      end
-    end
-    self:SetIndex(1)
+    self:SetIndex(find(value) or 1)
+  end
+
+  -- back to the default option
+  function b:Reset()
+    self:SetIndex(self.defaultIndex)
   end
 
   function b:SetIndex(i)
     self.index = i
     self.label:SetText(options[i] and text(options[i]) or "")
-    self:SetSelected(not self.neutral and i ~= (self.defaultIndex or 1))
+    self:SetSelected(not self.neutral and i ~= self.defaultIndex)
   end
   b.menu = menu
-  b:SetIndex(1)
+  b.defaultIndex = opts.default ~= nil and find(opts.default) or 1
+  b:Reset()
   return b
 end
 

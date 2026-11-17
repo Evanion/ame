@@ -17,15 +17,6 @@ local AGES = {
   { false, L["Any age"] },
 }
 
-local function indexOf(values, value)
-  for i, o in ipairs(values) do
-    if o[1] == value then
-      return i
-    end
-  end
-  return 1
-end
-
 local function ageText(days)
   if not days or days <= 0 then
     return L["today"]
@@ -129,8 +120,7 @@ function UI:CreateArbitrageView(parent, contentArea)
   v.buy = W.Dropdown(v, 104, HOUSES, function(value)
     UI.arb.buy = value
     UI:RefreshArbitrage()
-  end)
-  v.buy.neutral = true
+  end, { neutral = true })
   v.buy:SetPoint("LEFT", buyLabel, "RIGHT", 6, 0)
   v.swap = W.Button(v, L["Swap"], 50, 20, function()
     UI.arb.buy, UI.arb.sell = UI.arb.sell, UI.arb.buy
@@ -141,8 +131,7 @@ function UI:CreateArbitrageView(parent, contentArea)
   v.sell = W.Dropdown(v, 104, HOUSES, function(value)
     UI.arb.sell = value
     UI:RefreshArbitrage()
-  end)
-  v.sell.neutral = true
+  end, { neutral = true })
   v.sell:SetPoint("LEFT", sellLabel, "RIGHT", 6, 0)
 
   local function goldInput(hint, onChange)
@@ -175,8 +164,7 @@ function UI:CreateArbitrageView(parent, contentArea)
   v.age = W.Dropdown(v, 140, AGES, function(value)
     UI.arb.maxAge = value
     UI:RefreshArbitrage(true)
-  end)
-  v.age.neutral = true
+  end, { neutral = true })
   v.age:SetPoint("LEFT", v.minMargin, "RIGHT", 6, 0)
 
   -- the list (shared DataTable component)
@@ -237,9 +225,9 @@ function UI:RefreshArbitrage(keepOffset)
     return
   end
   local a = self.arb
-  v.buy:SetIndex(indexOf(HOUSES, a.buy))
-  v.sell:SetIndex(indexOf(HOUSES, a.sell))
-  v.age:SetIndex(indexOf(AGES, a.maxAge))
+  v.buy:SetValue(a.buy)
+  v.sell:SetValue(a.sell)
+  v.age:SetValue(a.maxAge)
   if not keepOffset then
     self.arbOffset = 0
   end
