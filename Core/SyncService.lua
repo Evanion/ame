@@ -315,7 +315,7 @@ function Service:Merge(m, sender)
     snap = decoded
     store.yield()
     -- compare with our own prices for that same auction house (goblin AH scans against goblin AH prices)
-    local ref = (AME.index and AME.indexShard == m.shard) and AME.index or (AME.indexes and AME.indexes[m.shard])
+    local ref = AME:CachedIndex(m.shard)
     local plausible, why = Sync.Plausible(snap, ref and ref.items or {})
     if not plausible then
       return { rejected = why }

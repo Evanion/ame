@@ -117,11 +117,9 @@ end
 -- market index for the viewed house: nil + "loading" (built in the background, refreshes when ready) or "empty"
 function UI:ViewIndex()
   local AME, shard = ns.AME, self:ViewShard()
-  if shard == AME.indexShard and AME.index then
-    return AME.index
-  end
-  if AME.indexes[shard] then
-    return AME.indexes[shard]
+  local cached = AME:CachedIndex(shard)
+  if cached then
+    return cached
   end
   if AME:HistoryLoaded() and not AME:HasData(shard) then
     return nil, "empty"

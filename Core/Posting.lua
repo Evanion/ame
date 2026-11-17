@@ -127,7 +127,7 @@ end
 
 local function summaryFor(shard, itemID)
   local AME = ns.AME
-  local index = (AME.indexShard == shard and AME.index) or (AME.indexes and AME.indexes[shard])
+  local index = AME:CachedIndex(shard)
   if not index and AME.IndexFor then
     AME:IndexFor(shard, function() end) -- build it for next time
   end

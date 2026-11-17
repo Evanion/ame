@@ -228,12 +228,19 @@ end
 -- dropped when that shard gets new data. cb(index or nil).
 AME.indexes = {}
 AME.indexWaiters = {}
-function AME:IndexFor(shard, cb)
+
+-- a shard's market index if it's built (nil otherwise; nothing is started)
+function AME:CachedIndex(shard)
   if shard == self.indexShard and self.index then
-    return cb(self.index)
+    return self.index
   end
-  if self.indexes[shard] then
-    return cb(self.indexes[shard])
+  return self.indexes[shard]
+end
+
+function AME:IndexFor(shard, cb)
+  local cached = self:CachedIndex(shard)
+  if cached then
+    return cb(cached)
   end
   if not self:LoadHistory() or not self.history.shards[shard] then
     return cb(nil)
@@ -268,10 +275,7 @@ function AME:FactionIndex()
     house = self:CurrentHouse()
   end
   local shard = ns.ShardKey(self:MarketRealmName(), house)
-  if self.indexShard == shard and self.index then
-    return self.index
-  end
-  local cached = self.indexes and self.indexes[shard]
+  local cached = self:CachedIndex(shard)
   if not cached and self:HistoryLoaded() and self:HasData(shard) then
     self:IndexFor(shard, function() end)
   end
