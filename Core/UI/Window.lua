@@ -696,6 +696,7 @@ function UI:FillItem(_, series, latest)
       .. W.Percent(s.supplyTrend30 and s.supplyTrend30 * 7, 0)
       .. (s.sellRate and ("  |cff999999%s|r"):format(W.Rate(s.sellRate)) or "")
   )
+  cards[7].label:SetText(s.phase and ns.Analytics.PHASE_LABEL[s.phase] or "Signal")
   cards[7].value:SetText(W.Signal(s.signal) .. ("  |cff999999%+d|r"):format(s.score or 0))
   v.sub:SetText(
     ("%s  ·  %d days of history  ·  data %s %s%s%s"):format(

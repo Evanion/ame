@@ -144,6 +144,8 @@ function W.Signal(signal)
     return "|cffff6159SELL|r"
   elseif signal == "hold" then
     return "|cffffcc33HOLD|r"
+  elseif signal == "wait" then
+    return "|cff8fa3b8WAIT|r"
   end
   return "|cff777777-|r"
 end

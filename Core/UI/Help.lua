@@ -49,8 +49,10 @@ Help.TERMS = {
     "Signal",
     "BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own "
       .. "30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you "
-      .. 'own it, no edge to buy. Needs 7+ days of history ("-" until then). It compares the item with itself, '
-      .. "not with other items, and it's a hint, not financial advice.",
+      .. "own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of "
+      .. 'history ("-" until then). The market phase reads the week\'s price move against supply: shortage, '
+      .. "steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak "
+      .. "demand or dumping. It compares the item with itself, and it's a hint, not financial advice.",
   },
   score = {
     "Score",

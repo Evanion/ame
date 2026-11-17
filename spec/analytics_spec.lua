@@ -248,3 +248,59 @@ describe("Analytics.Confidence", function()
     assert.are.equal("medium", A.Confidence(A.Summarize({ { day = 1, market = 100, scans = 3 } }), 1))
   end)
 end)
+
+describe("Analytics market phase", function()
+  local A
+  before_each(function()
+    A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+  end)
+
+  -- 7 days moving price and supply linearly by the given fractions
+  local function week(priceMove, supplyMove)
+    local s = {}
+    for k = 1, 7 do
+      local f = (k - 1) / 6
+      s[k] = { day = k, market = math.floor(1000 * (1 + priceMove * f)), qty = math.floor(1000 * (1 + supplyMove * f)) }
+    end
+    return s
+  end
+
+  it("reads the week's price move against supply", function()
+    local cases = {
+      { 0.2, -0.3, "shortage" },
+      { 0.2, 0, "demand" },
+      { 0.2, 0.3, "piling" },
+      { 0, -0.3, "tightening" },
+      { 0, 0, "balanced" },
+      { 0, 0.3, "pressure" },
+      { -0.2, -0.3, "withdrawing" },
+      { -0.2, 0, "weak" },
+      { -0.2, 0.3, "dumping" },
+    }
+    for _, c in ipairs(cases) do
+      assert.are.equal(c[3], A.Phase(week(c[1], c[2])), ("price %+.0f%% supply %+.0f%%"):format(c[1] * 100, c[2] * 100))
+    end
+    assert.is_nil(A.Phase(week(0.2, 0.3)[1] and { { day = 1, market = 1 } }))
+  end)
+
+  it("turns a buy into wait while sellers are dumping", function()
+    local series = {}
+    for d = 1, 20 do
+      series[d] = { day = d, market = 1000, qty = 100 }
+    end
+    for d = 21, 27 do -- price crashing while supply floods in
+      series[d] = { day = d, market = 1000 - (d - 20) * 60, qty = 100 + (d - 20) * 40 }
+    end
+    local s = A.Summarize(series)
+    assert.are.equal("dumping", s.phase)
+    assert.are.equal("wait", s.signal)
+  end)
+
+  it("nudges the score up when sellers withdraw and down when they pile in", function()
+    local base = A.Summarize(week(0, 0))
+    local withdrawing = A.Summarize(week(-0.2, -0.3))
+    local dumping = A.Summarize(week(-0.2, 0.3))
+    assert.is_true(withdrawing.score > dumping.score)
+    assert.are.equal("balanced", base.phase)
+  end)
+end)

@@ -40,8 +40,14 @@ function Tooltip.Lines(s, opts)
   if avg then
     row(days .. "-day average", W.Money(avg))
   end
+  local phase = s.phase and ns.Analytics and ns.Analytics.PHASE_LABEL[s.phase]
   if s.signal and s.signal ~= "none" then
-    row("signal", W.Signal(s.signal) .. (opts.detail and (DIM .. "  score %+d|r"):format(s.score or 0) or ""))
+    row(
+      "signal",
+      W.Signal(s.signal)
+        .. (phase and (DIM .. "  " .. phase:lower() .. "|r") or "")
+        .. (opts.detail and (DIM .. "  score %+d|r"):format(s.score or 0) or "")
+    )
   end
   if not opts.detail then
     rows[#rows + 1] = { DIM .. "Hold Shift for more AME data|r" }

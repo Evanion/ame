@@ -12,7 +12,8 @@
 --   scans7                      scans feeding the last 7 points (see Analytics.Confidence)
 --   days                        number of points
 --   score, signal               opportunity score (higher = cheaper than usual on a stable item) and
---                               "buy" | "hold" | "sell" | "none" (not enough history yet)
+--                               "buy" | "hold" | "sell" | "wait" (cheap but dumping) | "none" (not enough history)
+--   phase                       price x supply reading (see Analytics.Phase)
 -- }
 -- Signals are deliberately conservative: they need >= MIN_DAYS of history and a big enough deviation relative to the
 -- item's own volatility.
@@ -179,7 +180,8 @@ function Analytics.Summarize(series)
   local volPenalty = 1 / (1 + 10 * (s.vol30 or 0))
   -- the trend only nudges (capped), so an item far above its usual price never scores as a bargain
   local trendTerm = math.max(-0.25, math.min(0.25, 5 * (s.trend30 or 0)))
-  local raw = -z * volPenalty + trendTerm
+  s.phase = Analytics.Phase(series)
+  local raw = -z * volPenalty + trendTerm + (Analytics.PHASE_SCORE[s.phase] or 0)
   s.score = round(100 * (2 / (1 + exp(-raw)) - 1))
 
   -- buy: unusually cheap for this item; sell: unusually expensive; hold: within its normal range (keep it if you
@@ -193,8 +195,68 @@ function Analytics.Summarize(series)
     else
       s.signal = "hold"
     end
+    -- cheap but sellers are dumping: wait for the bottom instead of catching a falling knife
+    if s.signal == "buy" and s.phase == "dumping" then
+      s.signal = "wait"
+    end
   end
   return s
+end
+
+-- Market phase: the price trend read against the supply trend over the last week of data.
+--                 supply shrinking      flat              growing
+--   price up      shortage              demand            piling   (sellers piling in at high prices)
+--   price flat    tightening            balanced          pressure (supply building up)
+--   price down    withdrawing           weak              dumping
+-- nil with too little data. Price moves count beyond +-5% a week, supply beyond +-10%.
+Analytics.PRICE_MOVE = 0.05
+Analytics.SUPPLY_MOVE = 0.10
+Analytics.PHASES = {
+  up = { down = "shortage", flat = "demand", up = "piling" },
+  flat = { down = "tightening", flat = "balanced", up = "pressure" },
+  down = { down = "withdrawing", flat = "weak", up = "dumping" },
+}
+-- nudges to the opportunity score (raw, before squashing)
+Analytics.PHASE_SCORE = {
+  withdrawing = 0.15,
+  tightening = 0.1,
+  shortage = 0.1,
+  piling = -0.15,
+  pressure = -0.1,
+  dumping = -0.2,
+}
+Analytics.PHASE_LABEL = {
+  shortage = "Shortage",
+  demand = "Steady demand",
+  piling = "Sellers piling in",
+  tightening = "Tightening",
+  balanced = "Balanced",
+  pressure = "Pressure building",
+  withdrawing = "Sellers withdrawing",
+  weak = "Weak demand",
+  dumping = "Dumping",
+}
+
+function Analytics.Phase(series)
+  local n = #series
+  if n < 4 then
+    return nil
+  end
+  local from = math.max(1, n - 6)
+  local markets, qtys = {}, {}
+  for k = from, n do
+    markets[#markets + 1] = series[k].market
+    qtys[#qtys + 1] = series[k].qty or 0
+  end
+  local price = Analytics.Change(markets[1], markets[#markets])
+  local supply = (Analytics.Trend(qtys) or 0) * #qtys
+  if not price then
+    return nil
+  end
+  local function dir(x, band)
+    return x > band and "up" or x < -band and "down" or "flat"
+  end
+  return Analytics.PHASES[dir(price, Analytics.PRICE_MOVE)][dir(supply, Analytics.SUPPLY_MOVE)]
 end
 
 -- Candles from the daily/weekly series, grouping periodDays days per candle. The store keeps daily aggregates, not
