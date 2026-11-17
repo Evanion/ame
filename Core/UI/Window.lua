@@ -1,5 +1,5 @@
 -- Main window shell: frame, header, tabs, which auction house is viewed, and theme. The tabs live in ItemView,
--- MarketView, ArbitrageView, PortfolioView, Watchlists and Panels (Sync, Settings).
+-- MarketView, ArbitrageView, PortfolioView, Watchlists, SyncView and SettingsView.
 local _, ns = ...
 local L = ns.L
 
@@ -10,6 +10,7 @@ ns.UI = UI
 
 -- the average period used everywhere (screener column, item card, tooltips): Settings, default 7 days
 UI.WIDTH, UI.HEIGHT = 980, 500 -- the main window; content is inset 10 px on each side
+UI.COLUMN2 = 490 -- x of the second column on the Sync and Settings tabs
 
 function UI.AvgDays()
   return ns.Settings:Get("tooltipAvgDays") or 7

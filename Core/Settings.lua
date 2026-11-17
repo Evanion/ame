@@ -1,5 +1,5 @@
 -- Settings: defaults and saved values (AME_DB.settings). Not UI: the scan pipeline, pricing and sync read them too.
--- The Settings tab (UI/Panels.lua) edits them; UI/Launcher.lua has the minimap button and the game options page.
+-- The Settings tab (UI/SettingsView.lua) edits them; UI/Launcher.lua has the minimap button and the game options page.
 local _, ns = ...
 
 local Settings = {}

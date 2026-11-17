@@ -560,6 +560,37 @@ function W.Rate(perDay)
   return ("~%.1f/d"):format(perDay)
 end
 
+-- section heading at a position in a panel
+function W.Heading(parent, text, x, y)
+  local h = W.Text(parent, "GameFontNormal")
+  h:SetPoint("TOPLEFT", x, y)
+  h:SetText(text)
+  return h
+end
+
+-- explanatory paragraph under an anchor
+function W.Note(parent, anchor, text, width)
+  local t = W.Text(parent, "GameFontDisableSmall")
+  t:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -6)
+  t:SetWidth(width or 440)
+  t:SetSpacing(2)
+  t:SetText(text)
+  return t
+end
+
+-- a check bound to a setting
+function W.SettingCheck(parent, label, key, x, y, onChange)
+  local c = W.Check(parent, label, function(on)
+    ns.Settings:Set(key, on)
+    if onChange then
+      onChange(on)
+    end
+  end)
+  c:SetPoint("TOPLEFT", x, y)
+  c.key = key
+  return c
+end
+
 -- how long ago a server time was: "just now", "5 min ago", "3 h ago", "2 days ago"; "never" without one
 function W.Ago(t, now)
   if not t then
