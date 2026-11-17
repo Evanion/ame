@@ -8,7 +8,7 @@ local W = ns.Widgets
 local Tooltip = {}
 ns.Tooltip = Tooltip
 
-local DIM = "|cff999999"
+local Dim = W.Dim
 
 -- Pure: tooltip rows for an item summary.
 --   s       market summary (index item)
@@ -18,9 +18,9 @@ function Tooltip.Lines(s, opts)
   opts = opts or {}
   local rows = {}
   local function row(left, right)
-    rows[#rows + 1] = { "|cff33ccffAME|r " .. left, right }
+    rows[#rows + 1] = { W.Color("brand", "AME") .. " " .. left, right }
   end
-  local change = s.change7 and ("  " .. W.Percent(s.change7) .. DIM .. " " .. L["7d"] .. "|r") or ""
+  local change = s.change7 and ("  " .. W.Percent(s.change7) .. Dim(" " .. L["7d"])) or ""
   row(L["market"], W.Money(s.market) .. change)
   local days = opts.avgDays or 7
   local avg = s["avg" .. days] or s.avg30
@@ -32,19 +32,19 @@ function Tooltip.Lines(s, opts)
     row(
       L["signal"],
       W.Signal(s.signal)
-        .. (phase and (DIM .. "  " .. phase:lower() .. "|r") or "")
-        .. (opts.detail and (DIM .. "  " .. L["score %+d"] .. "|r"):format(s.score or 0) or "")
+        .. (phase and Dim("  " .. phase:lower()) or "")
+        .. (opts.detail and Dim("  " .. L["score %+d"]:format(s.score or 0)) or "")
     )
   end
   if not opts.detail then
-    rows[#rows + 1] = { DIM .. L["Hold Shift for more AME data"] .. "|r" }
+    rows[#rows + 1] = { Dim(L["Hold Shift for more AME data"]) }
     return rows
   end
   row(L["lowest"], W.Money(s.min))
-  local trend = s.supplyTrend30 and ("  " .. W.Percent(s.supplyTrend30 * 7, 0) .. DIM .. L["/week"] .. "|r") or ""
-  row(L["supply"], tostring(s.qty or 0) .. DIM .. " " .. L["listed"] .. "|r" .. trend)
+  local trend = s.supplyTrend30 and ("  " .. W.Percent(s.supplyTrend30 * 7, 0) .. Dim(L["/week"])) or ""
+  row(L["supply"], tostring(s.qty or 0) .. Dim(" " .. L["listed"]) .. trend)
   if s.sellRate then
-    row(L["sells"], W.Rate(s.sellRate) .. DIM .. " " .. L["(est.)"] .. "|r")
+    row(L["sells"], W.Rate(s.sellRate) .. Dim(" " .. L["(est.)"]))
   end
   if s.vol30 then
     row(L["volatility"], ("%.1f%%"):format(s.vol30 * 100))
@@ -55,10 +55,8 @@ function Tooltip.Lines(s, opts)
   local seen = ns.Widgets.DaysAgo(s.day, opts.today)
   if seen then
     local level = ns.Analytics and ns.Analytics.Confidence(s, opts.today) or nil
-    row(
-      L["data"],
-      ("%s%s|r  %s"):format(DIM, level and W.Confidence(level) or "", L["%d scans/7d, %s"]:format(s.scans7 or 0, seen))
-    )
+    local scans = L["%d scans/7d, %s"]:format(s.scans7 or 0, seen)
+    row(L["data"], Dim(level and W.Confidence(level) or "") .. "  " .. scans)
   end
   return rows
 end

@@ -44,8 +44,8 @@ function SelfTest.Run(AME)
     else
       failed = failed + 1
     end
-    local color = r.status == "PASS" and "55ff55" or r.status == "WARN" and "ffcc00" or "ff5555"
-    say("|cff%s%s|r %s %s", color, r.status, name, r.detail and ("- " .. tostring(r.detail)) or "")
+    local color = r.status == "PASS" and "good" or r.status == "WARN" and "warn" or "bad"
+    say("%s %s %s", ns.Color(color, r.status), name, r.detail and ("- " .. tostring(r.detail)) or "")
   end
 
   say(L["selftest starting (this may pause the game for a moment)"])

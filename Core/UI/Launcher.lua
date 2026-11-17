@@ -8,7 +8,7 @@ local W = ns.Widgets
 local Launcher = {}
 ns.Launcher = Launcher
 
-local TITLE = "|cff33ccffAzeroth|r Mercantile Exchange"
+local TITLE = W.Color("brand", "Azeroth") .. " Mercantile Exchange"
 
 function Launcher:Init()
   self:RegisterOptionsPage()
@@ -28,7 +28,7 @@ function Launcher:RegisterOptionsPage()
   intro:SetText(
     L["Records auction house prices from every scan and search you run (native APIs; works with any scanning addon), per realm and auction house."]
       .. "\n\n"
-      .. L["All of AME's settings are in its own window: %s, Settings tab."]:format("|cff33ccff/ame|r")
+      .. L["All of AME's settings are in its own window: %s, Settings tab."]:format(W.Color("brand", "/ame"))
   )
   local open = W.Button(page, L["Open AME settings"], 200, 24, function()
     -- close the game's options first (both the current and the older options window)
@@ -106,7 +106,7 @@ function Launcher:CreateLauncher()
         end
       end
       tt:AddLine(" ")
-      tt:AddLine("|cffaaaaaa" .. L["Left-click: window   Right-click: settings"] .. "|r")
+      tt:AddLine(W.Dim(L["Left-click: window   Right-click: settings"]))
     end,
   })
   local icon = LibStub("LibDBIcon-1.0", true)

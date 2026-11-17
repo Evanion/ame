@@ -14,9 +14,24 @@ W.COLORS = {
   dim = { 0.6, 0.62, 0.66, 1 },
   up = { 0.3, 0.85, 0.45, 1 },
   down = { 1, 0.38, 0.35, 1 },
-  hover = { 1, 1, 1, 0.06 },
+  panelHover = { 0.14, 0.15, 0.18, 1 }, -- buttons and inputs under the mouse
+  rowHover = { 1, 1, 1, 0.08 }, -- list, menu and sidebar rows under the mouse
+  rowSelected = { 0.2, 0.8, 1, 0.2 }, -- the picked row (accent; follows the theme)
   selected = { 0.2, 0.8, 1, 0.18 },
 }
+
+-- Text colours by role ("RRGGBB"), and helpers for |c escapes (defined in Init.lua so chat lines can use them too)
+W.HEX = ns.HEX
+W.Color = ns.Color
+function W.Dim(text)
+  return ns.Color("dim", text)
+end
+W.NONE = ns.Color("none", "-") -- a missing value
+
+-- fill a texture with a colour table
+function W.Fill(tex, c)
+  tex:SetColorTexture(c[1], c[2], c[3], c[4] or 1)
+end
 
 -- Faction themes for window chrome (title, selected buttons, panel glow). Data colours in charts stay fixed.
 W.THEMES = {
@@ -30,6 +45,7 @@ function W.SetTheme(house)
   W.theme = W.THEMES[house] and house or "Neutral" -- the applied theme
   W.COLORS.accent = { c[1], c[2], c[3], 1 }
   W.COLORS.selected = { c[1], c[2], c[3], 0.22 }
+  W.COLORS.rowSelected = { c[1], c[2], c[3], 0.2 }
 end
 
 -- "ffRRGGBB" for |c escapes
@@ -72,7 +88,8 @@ function W.Button(parent, label, width, height, onClick)
   b.label:SetText(label)
   b:SetScript("OnEnter", function(self)
     if not self.selected then
-      self:SetBackdropColor(0.14, 0.15, 0.18, 1)
+      local c = W.COLORS.panelHover
+      self:SetBackdropColor(c[1], c[2], c[3], c[4])
     end
   end)
   b:SetScript("OnLeave", function(self)
@@ -100,8 +117,11 @@ end
 W.ARROW_UP = " |TInterface\\Buttons\\Arrow-Up-Up:12:12:0:-2|t"
 W.ARROW_DOWN = " |TInterface\\Buttons\\Arrow-Down-Up:12:12:0:2|t"
 
--- small tinted colour square for legends
+-- small tinted colour square for legends: W.Swatch(r, g, b) or W.Swatch(colorTable)
 function W.Swatch(r, g, b)
+  if type(r) == "table" then
+    r, g, b = r[1], r[2], r[3]
+  end
   return ("|TInterface\\Buttons\\WHITE8x8:8:8:0:0:8:8:0:8:0:8:%d:%d:%d|t"):format(r * 255, g * 255, b * 255)
 end
 
@@ -114,11 +134,11 @@ end
 
 function W.Money(copper, short)
   if not copper then
-    return "|cff777777-|r"
+    return W.NONE
   end
   copper = math.floor(copper + 0.5)
   local g, s, c = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
-  local G, S, C = "|cffffd100g|r", "|cffc7c7cfs|r", "|cffeda55fc|r"
+  local G, S, C = W.Color("gold", "g"), "|cffc7c7cfs|r", "|cffeda55fc|r"
   -- short (narrow columns): whole gold from 100g up, rounded; below that silver still matters (2g 98s, not 2g).
   -- Zero lower units are left out: "18s", not "18s 0c".
   if g >= 1000 or (short and g >= 100) then
@@ -137,25 +157,34 @@ function W.Money(copper, short)
   return ("%d%s"):format(c, C)
 end
 
+-- profit / loss: green "+12g", red "-3g 5s", "-" for nothing
+function W.SignedMoney(v)
+  if not v then
+    return W.NONE
+  end
+  if v < 0 then
+    return W.Color("bad", "-") .. W.Money(-v, true)
+  end
+  return W.Color("good", "+") .. W.Money(v, true)
+end
+
 function W.Percent(x, decimals)
   if not x then
-    return "|cff777777-|r"
+    return W.NONE
   end
   local c = x > 0.0005 and W.COLORS.up or x < -0.0005 and W.COLORS.down or W.COLORS.dim
   return ("|cff%02x%02x%02x%+." .. (decimals or 1) .. "f%%|r"):format(c[1] * 255, c[2] * 255, c[3] * 255, x * 100)
 end
 
+local SIGNALS = {
+  buy = { "good", L["BUY"] },
+  sell = { "bad", L["SELL"] },
+  hold = { "hold", L["HOLD"] },
+  wait = { "wait", L["WAIT"] },
+}
 function W.Signal(signal)
-  if signal == "buy" then
-    return "|cff4dd973" .. L["BUY"] .. "|r"
-  elseif signal == "sell" then
-    return "|cffff6159" .. L["SELL"] .. "|r"
-  elseif signal == "hold" then
-    return "|cffffcc33" .. L["HOLD"] .. "|r"
-  elseif signal == "wait" then
-    return "|cff8fa3b8" .. L["WAIT"] .. "|r"
-  end
-  return "|cff777777-|r"
+  local s = SIGNALS[signal]
+  return s and W.Color(s[1], s[2]) or W.NONE
 end
 
 -- item name/icon/quality colour; may be nil until the client has cached the item (call again after load)
@@ -166,6 +195,12 @@ function W.ItemInfo(itemID)
     icon = C_Item.GetItemIconByID(itemID)
   end
   return name, link, quality, icon
+end
+
+-- text in an item quality's colour (white without one)
+function W.QualityText(quality, text)
+  local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
+  return (color and color.hex or "|cffffffff") .. text .. "|r"
 end
 
 -- run fn once item data is cached
@@ -273,7 +308,7 @@ function W.Dropdown(parent, width, options, onSelect)
         it:SetPoint("TOPLEFT", 3, -3 - (i - 1) * ROW)
         it.hl = it:CreateTexture(nil, "HIGHLIGHT")
         it.hl:SetAllPoints()
-        it.hl:SetColorTexture(1, 1, 1, 0.08)
+        W.Fill(it.hl, W.COLORS.rowHover)
         it.sel = it:CreateTexture(nil, "BACKGROUND")
         it.sel:SetAllPoints()
         it.text = W.Text(it, "GameFontHighlightSmall")
@@ -296,12 +331,12 @@ function W.Dropdown(parent, width, options, onSelect)
   build()
   -- close when clicking anywhere else
   menu:SetScript("OnShow", function(self)
-    local a = W.COLORS.accent
+    local a = W.COLORS.rowSelected
     for i, it in ipairs(self.items) do
       if i > #options then
         break
       end
-      it.sel:SetColorTexture(a[1], a[2], a[3], i == b.index and 0.2 or 0)
+      it.sel:SetColorTexture(a[1], a[2], a[3], i == b.index and a[4] or 0)
     end
     pcall(self.RegisterEvent, self, "GLOBAL_MOUSE_DOWN")
   end)
@@ -400,7 +435,8 @@ function W.Input(parent)
   end)
   box:HookScript("OnEnter", function(self)
     if not self:HasFocus() then
-      self:SetBackdropColor(0.14, 0.15, 0.18, 1)
+      local c = W.COLORS.panelHover
+      self:SetBackdropColor(c[1], c[2], c[3], c[4])
     end
   end)
   box:HookScript("OnLeave", function(self)
@@ -479,7 +515,7 @@ function W.Menu(anchor, entries, opts)
       it:SetPoint("RIGHT", -3, 0)
       it.hl = it:CreateTexture(nil, "HIGHLIGHT")
       it.hl:SetAllPoints()
-      it.hl:SetColorTexture(1, 1, 1, 0.08)
+      W.Fill(it.hl, W.COLORS.rowHover)
       it.check = it:CreateTexture(nil, "ARTWORK")
       it.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
       it.check:SetSize(14, 14)
@@ -552,7 +588,7 @@ end
 -- estimated units sold per day: "~350/d", "~4.5/d", "-"
 function W.Rate(perDay)
   if not perDay then
-    return "|cff777777-|r"
+    return W.NONE
   end
   if perDay >= 10 or perDay < 0.05 then -- "~0/d", not "~0.0/d": nothing measurably sells
     return ("~%d/d"):format(math.floor(perDay + 0.5))
@@ -635,16 +671,16 @@ end
 
 -- one posting suggestion (Pricing.Suggest's quick / normal / patient): "12s 5c (~3h)"
 function W.PostChoice(choice)
-  return ("%s |cff999999(%s)|r"):format(W.Money(choice.price), W.Hours(choice.hours))
+  return W.Money(choice.price) .. " " .. W.Dim("(" .. W.Hours(choice.hours) .. ")")
 end
 
 -- the whole suggestion on one line
 function W.PostAdvice(advice)
   if not advice then
-    return "|cff999999" .. L["Posting price: not enough data on this item yet."] .. "|r"
+    return W.Dim(L["Posting price: not enough data on this item yet."])
   end
   local parts = {
-    W.Confidence(advice.confidence) .. " |cffffd100" .. L["Post at"] .. "|r",
+    W.Confidence(advice.confidence) .. " " .. W.Color("gold", L["Post at"]),
     L["Quick %s"]:format(W.PostChoice(advice.quick)),
     L["Normal %s"]:format(W.PostChoice(advice.normal)),
     L["Patient %s"]:format(W.PostChoice(advice.patient)),
@@ -652,18 +688,18 @@ function W.PostAdvice(advice)
   }
   local text = table.concat(parts, "   ")
   if advice.hold then
-    text = text .. "   |cffff6159" .. L["unlikely to sell soon: consider holding"] .. "|r"
+    text = text .. "   " .. W.Color("bad", L["unlikely to sell soon: consider holding"])
   elseif advice.cheap then
-    text = text .. "   |cffffcc00" .. L["well below its usual price"] .. "|r"
+    text = text .. "   " .. W.Color("warn", L["well below its usual price"])
   end
   return text
 end
 
 -- data confidence as three small bars (textures, not font glyphs): high = 3 green, medium = 2 amber, low = 1 red
 local CONFIDENCE = {
-  high = { 3, { 0.3, 0.85, 0.45 } },
+  high = { 3, W.COLORS.up },
   medium = { 2, { 1, 0.8, 0.2 } },
-  low = { 1, { 1, 0.38, 0.35 } },
+  low = { 1, W.COLORS.down },
 }
 function W.Confidence(level)
   local c = CONFIDENCE[level] or CONFIDENCE.low

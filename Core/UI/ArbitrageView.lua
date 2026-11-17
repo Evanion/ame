@@ -45,7 +45,7 @@ local COLUMNS = {
     width = 86,
     term = "arbProfit",
     text = function(e)
-      return "|cff4dd973+|r" .. W.Money(e.profit, true)
+      return W.SignedMoney(e.profit)
     end,
   },
   {
@@ -283,13 +283,13 @@ function UI:DepthText(e)
   local shard = ns.ShardKey(ns.AME:MarketRealmName(), a.buy)
   local book = ns.AME:BookFor(shard, e.itemID, UI.DEPTH_MAX_AGE)
   if not book then
-    return "|cff777777" .. L["search"] .. "|r"
+    return W.Color("none", L["search"])
   end
   local units, _, profit = ns.Depth.Route(book, e.sell * (1 - (self.arbCut or 0)))
   if units == 0 then
-    return "|cffff61590|r"
+    return W.Color("bad", "0")
   end
-  return ("%d |cff4dd973+|r%s"):format(units, W.Money(profit, true))
+  return units .. " " .. W.SignedMoney(profit)
 end
 
 -- standing at the auction house you'd buy from (so a row can be searched there)

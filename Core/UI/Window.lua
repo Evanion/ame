@@ -203,7 +203,7 @@ function UI:ApplyTheme()
   local mv = self.marketView
   if mv then
     for _, line in ipairs(mv.side.lines) do
-      line.sel:SetColorTexture(a[1], a[2], a[3], 0.2)
+      W.Fill(line.sel, W.COLORS.rowSelected)
     end
     self:RenderMarket()
   end

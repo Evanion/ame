@@ -149,7 +149,7 @@ function Sell:Refresh()
   end
   advice = ok and advice or nil
   self.advice = advice
-  bar.title:SetText(W.Confidence(advice and advice.confidence or "low") .. " |cffffd100" .. L["Post at"] .. "|r")
+  bar.title:SetText(W.Confidence(advice and advice.confidence or "low") .. " " .. W.Color("gold", L["Post at"]))
   for _, b in ipairs(bar.buttons) do
     b:SetShown(advice ~= nil)
     if advice then
@@ -163,7 +163,7 @@ function Sell:Refresh()
       .. "  ·  "
       .. L["deposit %s"]:format(W.Money(advice.deposit))
     if advice.hold then
-      info = info .. "  ·  |cffff6159" .. L["unlikely to sell soon: consider holding"] .. "|r"
+      info = info .. "  ·  " .. W.Color("bad", L["unlikely to sell soon: consider holding"])
     end
     bar.info:SetText(info)
   end

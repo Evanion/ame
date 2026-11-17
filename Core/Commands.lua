@@ -96,11 +96,11 @@ local function cmdStatus()
     s.syncRejected or 0
   )
   if (s.syncErrors or 0) > 0 then
-    say("|cffff5555" .. L["sync errors: %d (last: %s)"] .. "|r", s.syncErrors, tostring(s.lastSyncError))
+    say(ns.Color("bad", L["sync errors: %d (last: %s)"]), s.syncErrors, tostring(s.lastSyncError))
   end
   local err = AME_DB.stats.lastError
   if err then
-    say("|cffff5555" .. L["last error (%s, %s): %s"] .. "|r", err.context, date("%b %d %H:%M", err.at), err.error)
+    say(ns.Color("bad", L["last error (%s, %s): %s"]), err.context, date("%b %d %H:%M", err.at), err.error)
   end
 end
 

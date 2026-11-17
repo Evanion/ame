@@ -14,6 +14,25 @@ local L = ns.L
 ns.HOUSES = { Alliance = true, Horde = true, Neutral = true }
 ns.HOUSE_ORDER = { "Alliance", "Horde", "Neutral" }
 
+-- Text colours by role ("RRGGBB" for |c escapes), shared by the window (ns.Widgets.HEX) and chat lines.
+ns.HEX = {
+  dim = "999999", -- secondary text
+  none = "777777", -- missing values ("-")
+  bad = "ff6159", -- losses, errors, SELL
+  good = "4dd973", -- gains, on, BUY
+  warn = "ffcc00", -- warnings
+  hold = "ffcc33", -- HOLD, purchases
+  wait = "8fa3b8", -- WAIT
+  brand = "33ccff", -- "AME" / "Azeroth" in chat and titles
+  gold = "ffd100", -- the gold unit, "Post at"
+  white = "ffffff",
+}
+
+-- text in a role's colour: ns.Color("bad", "failed") -> "|cffff6159failed|r"
+function ns.Color(key, text)
+  return "|cff" .. (ns.HEX[key] or key) .. tostring(text) .. "|r"
+end
+
 ns.DAY = 86400
 -- day number of a server time (UTC days, as history is stored)
 function ns.Today(t)

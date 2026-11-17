@@ -91,7 +91,7 @@ function UI:CreateSyncView(parent, contentArea)
       input:SetText("")
       v.addStatus:SetText(L["Asked %s to share. They'll see a request in their Sync tab."]:format(e.name))
     else
-      v.addStatus:SetText("|cffff6159" .. tostring(why) .. "|r")
+      v.addStatus:SetText(W.Color("bad", why))
     end
     input:ClearFocus()
     UI:RefreshSync()
@@ -178,12 +178,12 @@ function UI:RefreshSync()
   local s = AME_DB.stats
   local lines = {}
   if not svc.enabled then
-    lines[1] = "|cffff6159" .. L["Sync is unavailable: the AceComm library didn't load."] .. "|r"
+    lines[1] = W.Color("bad", L["Sync is unavailable: the AceComm library didn't load."])
   else
     local guild = IsInGuild and IsInGuild()
     lines[#lines + 1] = L["Guild: %s"]:format(
       not ns.Settings:Get("syncGuild") and L["off"]
-        or guild and "|cff4dd973" .. L["on"] .. "|r"
+        or guild and W.Color("good", L["on"])
         or L["on, but you're not in a guild"]
     )
     lines[#lines + 1] = L["Announced %d times, served %d scans, received %d, rejected %d"]:format(
@@ -196,7 +196,7 @@ function UI:RefreshSync()
     lines[#lines + 1] = last and L["Last received: %d items from %s, %s"]:format(last.items, last.from, ago(last.at))
       or L["Nothing received yet - scans arrive when someone you share with runs a full scan."]
     if s.lastSyncRejection then
-      lines[#lines + 1] = "|cffffcc00" .. L["Last rejected:"] .. "|r " .. s.lastSyncRejection
+      lines[#lines + 1] = W.Color("warn", L["Last rejected:"]) .. " " .. s.lastSyncRejection
     end
   end
   v.activity:SetText(table.concat(lines, "\n"))
@@ -209,15 +209,16 @@ function UI:RefreshSync()
     if p then
       local blocked = svc.trust:IsBlocked(p.name)
       row.text:SetText(
-        ("%s  |cff999999%s%s%s|r"):format(
-          p.name,
-          L["via %s, %s"]:format(p.via == "GUILD" and L["guild"] or L["whisper"], ago(p.at)),
-          (p.received or 0) > 0 and L[", %d scans received"]:format(p.received) or "",
-          blocked and ", |cffff6159" .. L["blocked"] .. "|r" or ""
-        )
+        p.name
+          .. "  "
+          .. W.Dim(
+            L["via %s, %s"]:format(p.via == "GUILD" and L["guild"] or L["whisper"], ago(p.at))
+              .. ((p.received or 0) > 0 and L[", %d scans received"]:format(p.received) or "")
+              .. (blocked and ", " .. W.Color("bad", L["blocked"]) or "")
+          )
       )
     else
-      row.text:SetText(i == 1 and "|cff999999" .. L["No one yet."] .. "|r" or "")
+      row.text:SetText(i == 1 and W.Dim(L["No one yet."]) or "")
     end
   end
 
@@ -227,7 +228,7 @@ function UI:RefreshSync()
   end
   table.sort(guildList)
   v.guildBlocked:SetText(
-    #guildList > 0 and L["By your guild officers: %s"]:format("|cffffffff" .. table.concat(guildList, ", ") .. "|r")
+    #guildList > 0 and L["By your guild officers: %s"]:format(W.Color("white", table.concat(guildList, ", ")))
       or L['Guild officers can block players for everyone: add a line "%s" to the guild info.']:format(
         "AME block: Name, Name"
       )
@@ -239,9 +240,9 @@ function UI:RefreshSync()
     row.name = b and b.name
     row.unblock:SetShown(b ~= nil)
     if b then
-      row.text:SetText(("%s  |cff999999%s|r"):format(b.name, L["blocked %s"]:format(ago(b.at))))
+      row.text:SetText(b.name .. "  " .. W.Dim(L["blocked %s"]:format(ago(b.at))))
     else
-      row.text:SetText("|cff999999" .. L["You haven't blocked anyone."] .. "|r")
+      row.text:SetText(W.Dim(L["You haven't blocked anyone."]))
     end
   end
 
@@ -252,7 +253,7 @@ function UI:RefreshSync()
     row:SetShown(p ~= nil)
     if p then
       row.name = p.name
-      row.text:SetText(("%s  |cff999999%s|r"):format(p.name, L["wants to share, %s"]:format(ago(p.at))))
+      row.text:SetText(p.name .. "  " .. W.Dim(L["wants to share, %s"]:format(ago(p.at))))
     end
   end
 
@@ -275,11 +276,10 @@ function UI:RefreshSync()
       local heard = svc.trust:LastHeard(e.name)
       row.state:SetText(
         e.mutual
-            and ("|cff4dd973%s|r  |cff999999%s|r"):format(
-              L["sharing"],
+            and W.Color("good", L["sharing"]) .. "  " .. W.Dim(
               heard and L["heard %s"]:format(ago(heard)) or L["not heard yet"]
             )
-          or "|cff999999" .. L["waiting for them to approve"] .. "|r"
+          or W.Dim(L["waiting for them to approve"])
       )
     end
   end

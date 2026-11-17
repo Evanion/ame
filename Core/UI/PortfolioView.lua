@@ -9,16 +9,6 @@ local DAY = 86400
 
 local ROWS = 13
 
-local function signedMoney(v)
-  if not v then
-    return "|cff777777-|r"
-  end
-  if v < 0 then
-    return "|cffff6159-|r" .. W.Money(-v, true)
-  end
-  return "|cff4dd973+|r" .. W.Money(v, true)
-end
-
 local function card(parent, label, x)
   local c = CreateFrame("Frame", nil, parent, "BackdropTemplate")
   W.Skin(c, W.COLORS.panel)
@@ -33,7 +23,7 @@ local function card(parent, label, x)
 end
 
 local function days(v)
-  return v and (v < 1 and "<1" or ("%.0f"):format(v)) or "|cff777777-|r"
+  return v and (v < 1 and "<1" or ("%.0f"):format(v)) or W.NONE
 end
 
 local POSITION_COLS = {
@@ -48,7 +38,7 @@ local POSITION_COLS = {
     width = 92,
     term = "pfUnrealized",
     text = function(e)
-      return signedMoney(e.unrealized)
+      return W.SignedMoney(e.unrealized)
     end,
   },
   {
@@ -76,12 +66,12 @@ local function timeLeft(a)
   if a.timeLeft then
     local left = a.timeLeft - (GetServerTime() - (a.seen or GetServerTime()))
     if left <= 0 then
-      return "|cff999999" .. L["ended?"] .. "|r"
+      return W.Dim(L["ended?"])
     end
     return left >= 3600 and ("%dh"):format(left / 3600) or ("%dm"):format(left / 60)
   end
   local bands = { [0] = "< 30m", [1] = "< 2h", [2] = "< 12h", [3] = "> 12h" }
-  return a.timeLeftBand and bands[a.timeLeftBand] or "|cff777777-|r"
+  return a.timeLeftBand and bands[a.timeLeftBand] or W.NONE
 end
 
 local AUCTION_COLS = {
@@ -162,8 +152,10 @@ local LEDGER_COLS = {
     label = "",
     width = 44,
     text = function(e)
-      return (e.kind == "sale" or e.kind == "pending") and "|cff4dd973" .. L["sold"] .. "|r"
-        or "|cffffcc33" .. L["bought"] .. "|r"
+      if e.kind == "sale" or e.kind == "pending" then
+        return W.Color("good", L["sold"])
+      end
+      return W.Color("hold", L["bought"])
     end,
   },
   {
@@ -180,7 +172,7 @@ local LEDGER_COLS = {
     label = L["Qty"],
     width = 44,
     text = function(e)
-      return e.qty and tostring(e.qty) or "|cff999999?|r"
+      return e.qty and tostring(e.qty) or W.Dim("?")
     end,
   },
   {
@@ -189,7 +181,7 @@ local LEDGER_COLS = {
     width = 92,
     text = function(e)
       if e.kind == "pending" then
-        return "|cff999999" .. L["awaiting mail"] .. "|r"
+        return W.Dim(L["awaiting mail"])
       end
       return W.Money(e.amount, true)
     end,
@@ -209,7 +201,7 @@ local LEDGER_COLS = {
     term = "pfProfit",
     sortKey = false, -- computed per sale at render time
     text = function(e)
-      return e.kind == "sale" and signedMoney(UI.pfProfitOf and UI.pfProfitOf[e]) or ""
+      return e.kind == "sale" and W.SignedMoney(UI.pfProfitOf and UI.pfProfitOf[e]) or ""
     end,
   },
   {
@@ -412,11 +404,11 @@ function UI:RenderPortfolio()
   local l = self.pfListed
   v.cards[1].value:SetText(W.Money(t.value, true))
   v.cards[2].value:SetText(
-    l.count > 0 and ("%s  |cff999999%s|r"):format(W.Money(l.value, true), L["%d auctions"]:format(l.count))
-      or "|cff777777" .. L["none"] .. "|r"
+    l.count > 0 and W.Money(l.value, true) .. "  " .. W.Dim(L["%d auctions"]:format(l.count))
+      or W.Color("none", L["none"])
   )
-  v.cards[3].value:SetText(signedMoney(t.unrealized))
-  v.cards[4].value:SetText(signedMoney(w.profit))
+  v.cards[3].value:SetText(W.SignedMoney(t.unrealized))
+  v.cards[4].value:SetText(W.SignedMoney(w.profit))
   v.cards[5].value:SetText(W.Money(m.income or 0, true) .. " / " .. W.Money(m.spent or 0, true))
   local mode = self.pfMode
   local ledgerMode, auctionsMode = mode == "ledger", mode == "auctions"

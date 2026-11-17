@@ -40,7 +40,7 @@ local FORMATS = {
     return W.Percent(v)
   end,
   plainpct = function(v)
-    return v and ("%.1f%%"):format(v * 100) or "|cff777777-|r"
+    return v and ("%.1f%%"):format(v * 100) or W.NONE
   end,
   rate = function(v)
     return W.Rate(v)
@@ -120,7 +120,7 @@ function DataTable.New(parent, opts)
     row.bg:SetColorTexture(1, 1, 1, r % 2 == 0 and 0.025 or 0)
     row.hl = row:CreateTexture(nil, "HIGHLIGHT")
     row.hl:SetAllPoints()
-    row.hl:SetColorTexture(1, 1, 1, 0.06)
+    W.Fill(row.hl, W.COLORS.rowHover)
     row.cells = {}
     row.star, row.icon, row.conf, row.action = false, false, false, false -- optional parts, set below
     for c, col in ipairs(opts.columns) do
@@ -420,9 +420,8 @@ local function itemCell(t, row, col, d, itemID)
   end
   row.icon:SetTexture(icon or 134400)
   row.icon:SetShown(itemID ~= nil)
-  local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
   local fallback = col.fallback and col.fallback(d) or (itemID and ("item:" .. itemID)) or ""
-  return (color and color.hex or "|cffffffff") .. (name or fallback) .. "|r"
+  return W.QualityText(quality, name or fallback)
 end
 
 function DataTable:Render()
@@ -475,7 +474,7 @@ function DataTable:Render()
           val = FORMATS[col.format](d[col.key])
         else
           local v = d[col.key]
-          val = v ~= nil and tostring(v) or "|cff777777-|r"
+          val = v ~= nil and tostring(v) or W.NONE
         end
         row.cells[c]:SetText(val or "")
       end

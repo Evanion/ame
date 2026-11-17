@@ -92,10 +92,10 @@ function UI:CreateCategories(v)
     b:SetPoint("TOPLEFT", 4, -4 - (i - 1) * CAT_H)
     b.sel = b:CreateTexture(nil, "BACKGROUND")
     b.sel:SetAllPoints()
-    b.sel:SetColorTexture(W.COLORS.accent[1], W.COLORS.accent[2], W.COLORS.accent[3], 0.2)
+    W.Fill(b.sel, W.COLORS.rowSelected)
     b.hl = b:CreateTexture(nil, "HIGHLIGHT")
     b.hl:SetAllPoints()
-    b.hl:SetColorTexture(1, 1, 1, 0.06)
+    W.Fill(b.hl, W.COLORS.rowHover)
     b.text = W.Text(b, "GameFontHighlightSmall")
     b.text:SetPoint("LEFT", 6, 0)
     b.text:SetPoint("RIGHT", -34, 0)
@@ -172,14 +172,14 @@ function UI:RenderCategories()
     for i, l in ipairs(watch:Lists()) do
       entries[#entries + 1] = {
         list = i,
-        label = W.StarInline(12) .. " " .. l.name .. (l.shared and (" |cff33ccff%s|r"):format(L["shared"]) or ""),
+        label = W.StarInline(12) .. " " .. l.name .. (l.shared and " " .. W.Color("brand", L["shared"]) or ""),
         count = watch:Count(i),
       }
     end
-    entries[#entries + 1] = { newList = true, label = "|cff999999+ " .. L["New list"] .. "|r", count = "" }
+    entries[#entries + 1] = { newList = true, label = W.Dim("+ " .. L["New list"]), count = "" }
     local guild = watch:GuildLists()
     if #guild > 0 then
-      entries[#entries + 1] = { header = true, label = "|cff999999" .. L["Guild watchlists"] .. "|r", count = "" }
+      entries[#entries + 1] = { header = true, label = W.Dim(L["Guild watchlists"]), count = "" }
       for _, g in ipairs(guild) do
         local n = 0
         for _ in pairs(g.items) do
@@ -187,7 +187,7 @@ function UI:RenderCategories()
         end
         entries[#entries + 1] = {
           guild = g.key,
-          label = ("   %s |cff999999(%s)|r"):format(g.name, g.owner),
+          label = "   " .. g.name .. " " .. W.Dim("(" .. g.owner .. ")"),
           count = n,
         }
       end

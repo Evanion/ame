@@ -12,7 +12,7 @@ local GetServerTime, debugprofilestop = GetServerTime, debugprofilestop
 
 local function say(fmt, ...)
   local msg = select("#", ...) > 0 and fmt:format(...) or fmt
-  DEFAULT_CHAT_FRAME:AddMessage("|cff33ccffAME|r " .. msg)
+  DEFAULT_CHAT_FRAME:AddMessage(ns.Color("brand", "AME") .. " " .. msg)
 end
 AME.Say = say
 
@@ -23,7 +23,7 @@ function AME:ReportError(context, err)
   AME_DB.stats.lastError = { context = context, error = tostring(err), at = GetServerTime() }
   if not self.reported[context] then
     self.reported[context] = true
-    say("|cffff5555%s|r %s", context .. ":", tostring(err))
+    say("%s %s", ns.Color("bad", context .. ":"), tostring(err))
   end
 end
 
@@ -194,7 +194,7 @@ function AME:OnSnapshot(snap, t, kind, info)
     d.readDoneAt, d.readItems = GetServerTime(), #snap.ids
   end
   if kind == "error" then
-    say("|cffff5555" .. L["scan read failed:"] .. "|r %s", tostring(info and info.error))
+    say(ns.Color("bad", L["scan read failed:"]) .. " %s", tostring(info and info.error))
     return
   end
   local shard = self:CurrentShard()
@@ -209,7 +209,7 @@ function AME:OnSnapshot(snap, t, kind, info)
     return added
   end, function(ok, added)
     if not ok then
-      say("|cffff5555%s|r %s", L["storing %s scan failed:"]:format(kind), tostring(added))
+      say("%s %s", ns.Color("bad", L["storing %s scan failed:"]:format(kind)), tostring(added))
       return
     end
     self:InvalidateIndex(shard)
@@ -512,9 +512,8 @@ function handlers.AUCTION_HOUSE_CLOSED()
     local d = AME:ScanDiag()
     d.aborted = (d.aborted or 0) + 1
     say(
-      "|cffffcc00"
-        .. L["the AH closed before AME finished reading the full scan; it wasn't recorded."]
-        .. "|r "
+      ns.Color("warn", L["the AH closed before AME finished reading the full scan; it wasn't recorded."])
+        .. " "
         .. L['Keep the AH open until AME says "recorded full scan".']
     )
   end

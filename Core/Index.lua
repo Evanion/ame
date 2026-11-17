@@ -22,7 +22,7 @@ function AME:CheckAlerts(index)
   for _, a in ipairs(fired) do
     local link = ns.ItemCache.Link(a.itemID)
     local what = ALERT_TEXT[a.kind]:format(money(a.market), a.threshold and money(a.threshold) or "")
-    say("|cffffcc00" .. L["Alert:"] .. "|r %s %s", link or ("item:" .. a.itemID), what)
+    say(ns.Color("warn", L["Alert:"]) .. " %s %s", link or ("item:" .. a.itemID), what)
     if UIErrorsFrame then
       UIErrorsFrame:AddMessage(L["AME alert: %s %s"]:format(link or a.itemID, what), 1, 0.82, 0)
     end
@@ -152,7 +152,7 @@ function AME:RebuildIndex()
         ns.UI:RefreshMarket()
       end
     elseif not ok then
-      say("|cffff5555" .. L["market index failed:"] .. "|r %s", tostring(index))
+      say(ns.Color("bad", L["market index failed:"]) .. " %s", tostring(index))
     end
     if self.indexPending then
       self.indexPending = false

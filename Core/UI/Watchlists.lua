@@ -26,7 +26,7 @@ function UI:WatchMenu(anchor, itemID)
     }
   end
   entries[#entries + 1] = {
-    text = "|cff999999" .. L["New list..."] .. "|r",
+    text = W.Dim(L["New list..."]),
     func = function()
       UI:PromptNewList(itemID)
     end,

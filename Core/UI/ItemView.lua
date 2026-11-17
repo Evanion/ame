@@ -209,15 +209,13 @@ function UI:CreateItemView(parent)
     return val >= 1000 and ("%.1fk"):format(val / 1000) or tostring(math.floor(val))
   end)
   chart:SetHoverFormatter(function(_, x, rows)
-    local lines = { "|cffffffff" .. date(UI.intradayMode and "%a %b %d, %H:%M" or "%a %b %d, %Y", x) .. "|r" }
+    local lines = { W.Color("white", date(UI.intradayMode and "%a %b %d, %H:%M" or "%a %b %d, %Y", x)) }
     local c = rows.candles and UI.candles
     if c and rows.candles.x == x then
       local i = rows.candles.index
       if c.period > DAY then
-        lines[1] = ("|cffffffff%s - %s|r"):format(
-          date("%b %d", x - c.period / 2),
-          date("%b %d, %Y", x + c.period / 2 - DAY)
-        )
+        lines[1] =
+          W.Color("white", date("%b %d", x - c.period / 2) .. " - " .. date("%b %d, %Y", x + c.period / 2 - DAY))
       end
       lines[#lines + 1] = L["Open"] .. "  " .. W.Money(c.open[i])
       lines[#lines + 1] = L["High"] .. "  " .. W.Money(c.high[i])
@@ -357,13 +355,15 @@ function UI:DrawItemChart()
       close = c.close,
       period = c.period,
       marker = true,
-      color = { 0.3, 0.85, 0.45, 1 },
+      color = W.COLORS.up,
+      upColor = W.COLORS.up,
+      downColor = W.COLORS.down,
     })
-    legend = W.Swatch(0.3, 0.85, 0.45)
+    legend = W.Swatch(W.COLORS.up)
       .. " "
       .. L["up"]
       .. "  "
-      .. W.Swatch(1, 0.38, 0.35)
+      .. W.Swatch(W.COLORS.down)
       .. " "
       .. L["down  (wick = cheapest)"]
       .. "   "
@@ -425,8 +425,7 @@ function UI:ShowItem(itemID)
   local function header()
     local name, _, quality, icon = W.ItemInfo(itemID)
     v.icon:SetTexture(icon or 134400)
-    local color = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
-    v.name:SetText((color and color.hex or "|cffffffff") .. (name or ("item:" .. itemID)) .. "|r")
+    v.name:SetText(W.QualityText(quality, name or ("item:" .. itemID)))
   end
   header()
   W.OnItemLoaded(itemID, header)
@@ -494,10 +493,10 @@ function UI:FillItem(_, series, latest)
     tostring(latest and latest.qty or s.qty or 0)
       .. " "
       .. W.Percent(s.supplyTrend30 and s.supplyTrend30 * 7, 0)
-      .. (s.sellRate and ("  |cff999999%s|r"):format(W.Rate(s.sellRate)) or "")
+      .. (s.sellRate and "  " .. W.Dim(W.Rate(s.sellRate)) or "")
   )
   cards[7].label:SetText(s.phase and ns.Analytics.PHASE_LABEL[s.phase] or L["Signal"])
-  cards[7].value:SetText(W.Signal(s.signal) .. ("  |cff999999%+d|r"):format(s.score or 0))
+  cards[7].value:SetText(W.Signal(s.signal) .. "  " .. W.Dim(("%+d"):format(s.score or 0)))
   v.sub:SetText(
     L["%s  ·  %d days of history  ·  data %s %s%s%s"]:format(
       ns.ShardLabel(self:ViewShard()),
@@ -506,7 +505,8 @@ function UI:FillItem(_, series, latest)
       L["%d scans in 7 days"]:format(s.scans7 or 0),
       latest and ("  ·  " .. L["last seen %s"]:format(date("%b %d %H:%M", latest.t))) or "",
       dropped > 0
-          and ("  ·  |cffffcc00%s|r"):format(
+          and "  ·  " .. W.Color(
+            "warn",
             (dropped == 1 and L["%d outlier price ignored"] or L["%d outlier prices ignored"]):format(dropped)
           )
         or ""
@@ -561,9 +561,8 @@ function UI:SuggestItems(box, text)
   end
   local entries = {}
   for i, h in ipairs(hits) do
-    local color = h.quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[h.quality]
     entries[i] = {
-      text = (color and color.hex or "|cffffffff") .. h.name .. "|r",
+      text = W.QualityText(h.quality, h.name),
       func = function()
         box:SetText("")
         box:ClearFocus()

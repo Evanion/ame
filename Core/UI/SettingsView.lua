@@ -253,11 +253,11 @@ function UI:RefreshSettings()
   v.minimap:SetChecked(hasIcon and not AME_DB.settings.minimap.hide)
   v.minimap.label:SetText(
     hasIcon and L["Show minimap button"]
-      or L["Show minimap button"] .. " |cff999999" .. L["(needs LibDBIcon; included in releases)"] .. "|r"
+      or L["Show minimap button"] .. " " .. W.Dim(L["(needs LibDBIcon; included in releases)"])
   )
 
   local AME = ns.AME
-  local lines = { L["Market: %s"]:format("|cffffffff" .. ns.ShardLabel(AME:CurrentShard()) .. "|r") }
+  local lines = { L["Market: %s"]:format(W.Color("white", ns.ShardLabel(AME:CurrentShard()))) }
   if AME:HistoryLoaded() then
     local shards, bytes = 0, 0
     for _, data in pairs(AME.history.shards) do
