@@ -1,5 +1,5 @@
 -- Sync and Settings tabs of the main window.
-local ADDON, ns = ...
+local _, ns = ...
 local L = ns.L
 
 local W = ns.Widgets
@@ -19,7 +19,6 @@ local function ago(t)
   end
   return L["%d days ago"]:format(d / 86400)
 end
-UI.Ago = ago
 
 local function heading(parent, text, x, y)
   local h = W.Text(parent, "GameFontNormal")
@@ -604,6 +603,3 @@ function UI:RefreshSettings()
     or L["No full scan recorded yet."]
   v.storage:SetText(table.concat(lines, "\n"))
 end
-
--- keep ADDON referenced for future per-addon options
-UI.ADDON = ADDON

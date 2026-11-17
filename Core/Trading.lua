@@ -20,7 +20,6 @@ end
 local function charKey()
   return ns.AME:MarketRealmName() .. ":" .. (UnitName("player") or "?")
 end
-Trading.CharKey = charKey
 
 function Trading:Init()
   AME_DB.ledger = AME_DB.ledger or {}
@@ -276,7 +275,6 @@ function Trading.HeldByName()
   end
   return out
 end
-Trading.IDFromName = idFromName
 
 -- the item a mail carries (a purchase mail has the bought item attached)
 local function mailItemID(i)

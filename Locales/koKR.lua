@@ -7,10 +7,12 @@ local L = AceLocale and AceLocale:NewLocale(ADDON, "koKR")
 if not L then
   return
 end
+
 L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
   "최근 90일간 경매장 판매 및 구매 %d건. AME는 경매 우편에서 이를 기록합니다: 우편함을 열면 새 거래가 기록됩니다."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
   "캐릭터들의 진행 중인 경매 %d건 (각 캐릭터가 마지막으로 경매장을 열었을 때 기준). 판매는 거래 장부에 바로 표시되며 경매 우편이 도착하면 정산됩니다."
+L["%d ahead"] = "앞에 %d개"
 L["%d auctions"] = "경매 %d건"
 L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
   "최근 90일간 구매자 %d명, 당신에게 쓴 골드 순 (경매 우편 기준)."
@@ -67,6 +69,7 @@ L["7-day change"] = "7일 변동"
 L["7d"] = "7일"
 L["7d average"] = "7일 평균"
 L["7d avg"] = "7일 평균"
+L["<1h"] = "<1시간"
 L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."] =
   "기록이 있는 모든 아이템을 보는 스크리너입니다. 왼쪽에서 분류나 관심 목록을 고르고, 이름으로 검색하고, 등급·가격 범위·신호로 필터링하고, 열을 클릭해 정렬하세요. 열 제목에 마우스를 올리면 설명이 나옵니다. 행을 클릭하면 차트가 열리고, 별을 클릭하면 관심 목록에 추가됩니다."
 L["AH cut"] = "수수료"
@@ -255,6 +258,7 @@ L["No scans of this item in the last 2 days. Daily history is on the other range
   "최근 2일간 이 아이템의 스캔이 없습니다. 일별 기록은 다른 기간에 있습니다."
 L["Nobody yet. Add a friend above - they need AME too, and must approve."] =
   "아직 아무도 없습니다. 위에서 친구를 추가하세요 - 상대도 AME가 있어야 하고 승인해야 합니다."
+L["Normal %s"] = "보통 %s"
 L["Nothing received yet - scans arrive when someone you share with runs a full scan."] =
   "아직 받은 것이 없습니다 - 공유 상대가 전체 스캔을 실행하면 스캔이 도착합니다."
 L["Notifications"] = "알림"
@@ -263,17 +267,23 @@ L["Open"] = "시가"
 L["Open an item's chart with"] = "아이템 차트 여는 방법"
 L["Open item charts with"] = "아이템 차트 여는 방법"
 L["Open the window with %s."] = "%s(으)로 창을 엽니다."
+L["Patient %s"] = "느긋 %s"
 L["Pick two different auction houses."] = "서로 다른 경매장 두 곳을 고르세요."
 L["Play a sound when a watchlist alert fires"] = "관심 목록 알림 시 소리 재생"
 L["Player"] = "플레이어"
 L["Portfolio"] = "포트폴리오"
 L["Portfolio tab"] = "포트폴리오 탭"
 L["Positions"] = "보유 종목"
+L["Post at"] = "등록가"
+L["Posting price"] = "등록 가격"
+L["Posting price: not enough data on this item yet."] =
+  "등록 가격: 이 아이템의 데이터가 아직 부족합니다."
 L["Pressure building"] = "압력 누적"
 L["Price"] = "가격"
 L["Price each"] = "개당 가격"
 L["Profit"] = "수익"
 L["Qty"] = "수량"
+L["Quick %s"] = "빠름 %s"
 L["Rare+"] = "희귀+"
 L["Reading the numbers"] = "수치 읽는 법"
 L["Realized profit"] = "실현 수익"
@@ -337,8 +347,6 @@ L["The market price at the auction house you sell at: what the item typically se
   "판매할 경매장의 시장가: 그곳에서 보통 팔리는 가격입니다."
 L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
   "가격 차트: 시장가, 최저 매물, 7일 평균, 공급량. 캔들로 바꾸면 트레이딩 화면이 됩니다. 마우스 휠로 확대, 끌어서 이동, 더블 클릭으로 초기화. 게임에서 아무 아이템이나 Alt-클릭하면 (가방, 대화, 경매장) 여기서 열립니다."
-L["The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones (WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the item sells."] =
-  "판매 경매장이 판매액에서 떼는 수수료: 진영 경매장 5%, 고블린 경매장 15% (WoW Forever 기준, 설정에서 조정 가능). 보증금은 빼지 않습니다 - 아이템이 팔리면 돌려받습니다."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "이 시장: 기록 %d일, 최근 스캔 %d회 전체 보관"
 L["Tightening"] = "공급 축소"
@@ -365,6 +373,8 @@ L["What listing one at the sell house costs up front: a share of the item's vend
   "판매처에 하나 등록할 때 선지급하는 비용: 아이템 상점 판매가의 일정 비율 (진영 경매장 2/8/24시간에 5/20/60%, 고블린 경매장은 그 다섯 배), 최소 1실버. 팔리면 돌려받고 안 팔리면 잃습니다 - 그러니 느리게 팔리는 아이템의 높은 보증금은 실제 위험입니다."
 L["What the item typically sells for right now. From full listing data it's the average of the cheapest 15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the lowest price."] =
   "지금 이 아이템이 보통 팔리는 가격입니다. 전체 매물 데이터에서는 경매장 공급 중 가장 싼 15-30% 의 평균이며, 몇몇 싸거나 터무니없는 매물은 무시합니다. 둘러보기 요약(많은 스캐너의 기본값)에서는 최저 매물만 알 수 있으므로 그때는 최저가입니다."
+L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
+  "최저가 경매보다 1동 낮게 등록하는 대신, 등록 기간 안에 팔리도록 얼마에 등록할지 알려 줍니다. 구매자는 가장 싼 경매부터 사므로 AME는 가격별로 내 앞에 있는 수량, 아이템이 팔리는 속도, 새 경매가 내 가격보다 낮게 올라오는 빈도를 세고, 팔리지 않으면 잃는 보증금과 판매 확률을 비교합니다. 빠름은 몇 시간 안에 거의 확실히 팔리고, 보통은 확률 대비 가장 좋은 가격이며, 느긋은 여전히 절반 정도는 팔리는 가장 높은 가격입니다. AME는 스캔(붐비는 시간대, 요일, 판매자 간 경쟁 강도)과 내 등록 기록에서 아이템별 패턴을 학습합니다. 그 가격에 아이템이 계속 만료되면 해당 아이템에 대해 더 신중해집니다. 데이터가 적으면 비슷한 아이템을 참고하며, 막대는 얼마나 알고 있는지를 보여 줍니다."
 L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."] =
   "경매장에서 산 물량의 개당 지불 가격입니다 (먼저 산 것부터 판매). 획득하거나 제작한 아이템은 비용이 없습니다."
 L["When"] = "시간"
@@ -380,6 +390,7 @@ L["Your auction mail doesn't name the other player on this client (the auction h
   "이 클라이언트의 경매 우편에는 상대 플레이어 이름이 없어서 (경매장은 익명) 표시할 사람이 없습니다."
 L["a list needs a name"] = "목록 이름이 필요합니다"
 L["a list with that name already exists"] = "같은 이름의 목록이 이미 있습니다"
+L["a week+"] = "1주 이상"
 L["above g"] = "이상(골드)"
 L["announced %d, served %d, received %d, rejected %d"] = "알림 %d, 제공 %d, 수신 %d, 거부 %d"
 L["auctionator history import"] = "Auctionator 기록 가져오기"
@@ -396,6 +407,7 @@ L["could not load %s: %s"] = "%s 불러오기 실패: %s"
 L["could not load history addon"] = "기록 애드온을 불러올 수 없음"
 L["couldn't start an auction house search for %s"] = "%s의 경매장 검색을 시작할 수 없음"
 L["data"] = "데이터"
+L["deposit %s"] = "보증금 %s"
 L["done %s"] = "완료 %s"
 L["down  (wick = cheapest)"] = "하락  (꼬리 = 최저가)"
 L["dropped to %s (alert at %s)"] = "%s(으)로 하락 (알림 기준 %s)"
@@ -426,7 +438,6 @@ L["libraries"] = "라이브러리"
 L["loaded in %s ms, %d shard(s), %.0f KB of daily history"] = "%s ms에 로드됨, 샤드 %d개, 일별 기록 %.0f KB"
 L["loading history..."] = "기록 불러오는 중..."
 L["loading item names %d/%d"] = "아이템 이름 불러오는 중 %d/%d"
-L["low"] = "낮음"
 L["lowest"] = "최저"
 L["margin %"] = "마진 %"
 L["market"] = "시장가"
@@ -483,31 +494,18 @@ L["the AH closed before AME finished reading the full scan; it wasn't recorded."
 L["today"] = "오늘"
 L["turned off in settings"] = "설정에서 꺼짐"
 L["unknown command, try /ame help"] = "알 수 없는 명령어, /ame help를 입력해 보세요"
+L["unlikely to sell soon: consider holding"] = "곧 팔리기 어려움: 보유 고려"
 L["up"] = "상승"
 L["usage: /ame item <item link or itemID>"] = "사용법: /ame item <아이템 링크 또는 itemID>"
 L["volatility"] = "변동성"
 L["waiting for them to approve"] = "상대의 승인 대기 중"
 L["wants to share, %s"] = "공유 희망, %s"
+L["well below its usual price"] = "평소 가격보다 크게 낮음"
 L["wheel: zoom, drag: pan, double-click: reset"] = "휠: 확대, 끌기: 이동, 더블 클릭: 초기화"
 L["whisper"] = "귓속말"
 L["window created, market tab rendered"] = "창 생성됨, 시장 탭 렌더링됨"
 L["yesterday"] = "어제"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "구매 경매장에 있습니다: 검색(또는 행 Shift-클릭)으로 구매하세요"
-L["%d ahead"] = "앞에 %d개"
-L["<1h"] = "<1시간"
-L["Normal %s"] = "보통 %s"
-L["Patient %s"] = "느긋 %s"
-L["Post at"] = "등록가"
-L["Posting price"] = "등록 가격"
-L["Posting price: not enough data on this item yet."] =
-  "등록 가격: 이 아이템의 데이터가 아직 부족합니다."
-L["Quick %s"] = "빠름 %s"
-L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
-  "최저가 경매보다 1동 낮게 등록하는 대신, 등록 기간 안에 팔리도록 얼마에 등록할지 알려 줍니다. 구매자는 가장 싼 경매부터 사므로 AME는 가격별로 내 앞에 있는 수량, 아이템이 팔리는 속도, 새 경매가 내 가격보다 낮게 올라오는 빈도를 세고, 팔리지 않으면 잃는 보증금과 판매 확률을 비교합니다. 빠름은 몇 시간 안에 거의 확실히 팔리고, 보통은 확률 대비 가장 좋은 가격이며, 느긋은 여전히 절반 정도는 팔리는 가장 높은 가격입니다. AME는 스캔(붐비는 시간대, 요일, 판매자 간 경쟁 강도)과 내 등록 기록에서 아이템별 패턴을 학습합니다. 그 가격에 아이템이 계속 만료되면 해당 아이템에 대해 더 신중해집니다. 데이터가 적으면 비슷한 아이템을 참고하며, 막대는 얼마나 알고 있는지를 보여 줍니다."
-L["a week+"] = "1주 이상"
-L["deposit %s"] = "보증금 %s"
-L["unlikely to sell soon: consider holding"] = "곧 팔리기 어려움: 보유 고려"
-L["well below its usual price"] = "평소 가격보다 크게 낮음"
 L["~%d days"] = "~%d일"
 L["~%dh"] = "~%d시간"

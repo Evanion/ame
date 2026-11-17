@@ -2,6 +2,7 @@
 --   lua5.1 scripts/locale-keys.lua            write Locales/enUS.lua
 --   lua5.1 scripts/locale-keys.lua --check    fail if Locales/enUS.lua is out of date
 -- Keys must be single string literals inside L[...] (one line). Files: the .lua files listed in the TOC under Core\.
+-- Writing also drops translations of keys the code no longer uses from the other locales (then run stylua).
 local check = arg[1] == "--check"
 
 local function readAll(path)
@@ -67,4 +68,42 @@ else
   f:write(text)
   f:close()
   print(("%d keys written to Locales/enUS.lua"):format(#keys))
+
+  -- Translations of texts the code no longer uses are dropped (each locale is loaded with a stub AceLocale and
+  -- rewritten: its header, then its translations in enUS order). Run stylua on Locales afterwards.
+  local LOCALES = { "deDE", "frFR", "esES", "ruRU", "ptBR", "itIT", "koKR", "zhCN", "zhTW" }
+  for _, code in ipairs(LOCALES) do
+    local path = "Locales/" .. code .. ".lua"
+    local src = readAll(path)
+    local strings = {}
+    _G.LibStub = function()
+      return {
+        NewLocale = function()
+          return strings
+        end,
+      }
+    end
+    assert(loadstring(src, path))("AzerothMercantileExchange", {})
+    local stale = 0
+    for key in pairs(strings) do
+      if not seen[key] then
+        stale = stale + 1
+      end
+    end
+    if stale > 0 then
+      local head = src:match("^(.-\nif not L then\n  return\nend\n)")
+      assert(head, path .. ": header not found")
+      local lines = { head }
+      for _, key in ipairs(keys) do
+        if strings[key] then
+          local line = ("L[%q] = %q"):format(key, strings[key]):gsub("\\\n", "\\n")
+          lines[#lines + 1] = line
+        end
+      end
+      local file = assert(io.open(path, "wb"))
+      file:write(table.concat(lines, "\n") .. "\n")
+      file:close()
+      print(("%s: dropped %d unused translations"):format(code, stale))
+    end
+  end
 end

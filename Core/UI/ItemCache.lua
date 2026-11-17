@@ -72,7 +72,6 @@ function C.OnItemData(itemID)
   if e and not e.name then
     C.Get(itemID)
     if e.name then
-      C.named = (C.named or 0) + 1
       notify()
     end
   end

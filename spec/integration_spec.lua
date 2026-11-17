@@ -563,8 +563,8 @@ describe("addon in a stubbed client", function()
       drainJobs()
       local row = v.rows[1]
       assert.are.equal(2589, row.itemID)
-      assert.is_true(row.search:IsShown())
-      row.search.scripts.OnClick(row.search)
+      assert.is_true(row.action:IsShown())
+      row.action.scripts.OnClick(row.action)
       assert.are.same({ caller = "AzerothMercantileExchange", term = "Item 2589" }, searched[1])
       -- without Auctionator: the default auction house window's search box
       _G.Auctionator = nil
@@ -590,7 +590,7 @@ describe("addon in a stubbed client", function()
       _G.AuctionHouseFrame = nil
       -- away from the auction house the buttons go away
       env:fire("AUCTION_HOUSE_CLOSED")
-      assert.is_false(row.search:IsShown())
+      assert.is_false(row.action:IsShown())
     end)
 
     it("themes the window by auction house faction", function()

@@ -161,7 +161,7 @@ function Posting:Suggest(shard, itemID, qty, hours)
   local info = ns.ItemCache and ns.ItemCache.Get(itemID)
   local vendor = info and info.sellPrice
   qty, hours = qty or 1, hours or 24
-  local deposit = ns.Arbitrage.Deposit((vendor or 0) * qty, house, hours, ns.Settings:Get("minDeposit"))
+  local deposit = ns.Arbitrage.Deposit((vendor or 0) * qty, house, hours)
   local reference = s and (s.avg7 or s.market)
   local advice = ns.Pricing.Suggest(book, params, {
     qty = qty,

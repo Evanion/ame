@@ -7,8 +7,6 @@ local W = ns.Widgets
 local Tooltip = {}
 ns.Tooltip = Tooltip
 
-Tooltip.AVG_DAYS = { 3, 7, 14, 30 }
-
 local function ago(day, today)
   if not (day and today) then
     return nil

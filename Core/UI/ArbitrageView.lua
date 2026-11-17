@@ -76,12 +76,7 @@ local COLUMNS = {
     sortKey = false,
     text = function(e)
       local info = ns.ItemCache.Get(e.itemID)
-      local dep = ns.Arbitrage.Deposit(
-        info.sellPrice,
-        UI.arb.sell,
-        ns.Settings:Get("listingHours"),
-        ns.Settings:Get("minDeposit")
-      )
+      local dep = ns.Arbitrage.Deposit(info.sellPrice, UI.arb.sell, ns.Settings:Get("listingHours"))
       return dep and W.Money(dep, true) or "-"
     end,
   },
@@ -226,9 +221,6 @@ function UI:CreateArbitrageView(parent, contentArea)
     end,
   })
   v.headers, v.rows = v.table.headers, v.table.rows
-  for _, row in ipairs(v.rows) do
-    row.search = row.action
-  end
   v.status = W.Text(v, "GameFontDisableSmall", "LEFT")
   v.status:SetPoint("BOTTOMLEFT", 0, 0)
   v.status:SetWidth(940)

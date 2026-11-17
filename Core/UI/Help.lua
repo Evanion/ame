@@ -52,10 +52,6 @@ Help.TERMS = {
     L["Sells for"],
     L["The market price at the auction house you sell at: what the item typically sells for there."],
   },
-  arbFee = {
-    L["AH cut"],
-    L["The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones (WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the item sells."],
-  },
   arbProfit = { L["Profit"], L["Per item: what it sells for, minus the AH cut, minus what you paid."] },
   arbMargin = { L["Margin"], L["Profit as a share of what you paid. 50% means every 10g spent comes back as 15g."] },
   arbSupply = {

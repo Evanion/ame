@@ -7,10 +7,12 @@ local L = AceLocale and AceLocale:NewLocale(ADDON, "ruRU")
 if not L then
   return
 end
+
 L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
   "Продаж и покупок на аукционе за последние 90 дней: %d. AME записывает их по почте аукциона: откройте почтовый ящик, чтобы учесть новые."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
   "Активных аукционов на ваших персонажах: %d (на момент, когда каждый из них последний раз открывал аукцион). Продажи сразу появляются в журнале и закрываются, когда приходит письмо с аукциона."
+L["%d ahead"] = "%d впереди"
 L["%d auctions"] = "Аукционов: %d"
 L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
   "Покупателей за последние 90 дней: %d, по золоту, потраченному у вас (по почте аукциона)."
@@ -71,6 +73,7 @@ L["7-day change"] = "Изменение за 7 дней"
 L["7d"] = "7д"
 L["7d average"] = "Среднее за 7 дней"
 L["7d avg"] = "Ср. 7д"
+L["<1h"] = "<1 ч"
 L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."] =
   "Скринер всех предметов с историей. Выберите категорию или список наблюдения слева, ищите по названию, фильтруйте по качеству, диапазону цен или сигналу и щёлкните по столбцу для сортировки. Наведите курсор на заголовок столбца, чтобы узнать его смысл. Щёлкните по строке, чтобы открыть график; щёлкните по звезде, чтобы отслеживать предмет."
 L["AH cut"] = "Комиссия аук."
@@ -264,6 +267,7 @@ L["No scans of this item in the last 2 days. Daily history is on the other range
   "За последние 2 дня этот предмет не сканировался. Дневная история - на других интервалах."
 L["Nobody yet. Add a friend above - they need AME too, and must approve."] =
   "Пока никого. Добавьте друга выше - у него тоже должен быть AME, и он должен одобрить."
+L["Normal %s"] = "Обычно %s"
 L["Nothing received yet - scans arrive when someone you share with runs a full scan."] =
   "Пока ничего не получено - сканирования приходят, когда кто-то, с кем вы делитесь, выполняет полное сканирование."
 L["Notifications"] = "Уведомления"
@@ -272,6 +276,7 @@ L["Open"] = "Открытие"
 L["Open an item's chart with"] = "Открывать график предмета по"
 L["Open item charts with"] = "Открывать графики предметов по"
 L["Open the window with %s."] = "Откройте окно командой %s."
+L["Patient %s"] = "Терпеливо %s"
 L["Pick two different auction houses."] = "Выберите два разных аукциона."
 L["Play a sound when a watchlist alert fires"] =
   "Звук при срабатывании оповещения списка"
@@ -279,11 +284,16 @@ L["Player"] = "Игрок"
 L["Portfolio"] = "Портфель"
 L["Portfolio tab"] = "Вкладка «Портфель»"
 L["Positions"] = "Позиции"
+L["Post at"] = "Выставить по"
+L["Posting price"] = "Цена выставления"
+L["Posting price: not enough data on this item yet."] =
+  "Цена выставления: по этому предмету пока мало данных."
 L["Pressure building"] = "Нарастающее давление"
 L["Price"] = "Цена"
 L["Price each"] = "Цена за шт."
 L["Profit"] = "Прибыль"
 L["Qty"] = "Кол-во"
+L["Quick %s"] = "Быстро %s"
 L["Rare+"] = "Редкое+"
 L["Reading the numbers"] = "Как читать цифры"
 L["Realized profit"] = "Реализованная прибыль"
@@ -350,8 +360,6 @@ L["The market price at the auction house you sell at: what the item typically se
   "Рыночная цена на аукционе, где вы продаёте: за сколько предмет обычно там продаётся."
 L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
   "График цен: рыночная цена, самый дешёвый лот, среднее за 7 дней и предложение. Переключитесь на свечи для трейдерского вида. Колесо мыши - масштаб, перетаскивание - сдвиг, двойной клик - сброс. Alt-клик по любому предмету в игре (сумки, чат, аукцион) откроет его здесь."
-L["The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones (WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the item sells."] =
-  "Комиссия аукциона продажи с продажи: 5% на аукционах фракций и 15% на гоблинских (ставки WoW Forever; меняется в настройках). Залог не вычитается - он возвращается, когда предмет продаётся."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "Этот рынок: %d дн. истории, %d недавних сканирований хранятся целиком"
 L["Tightening"] = "Сжатие предложения"
@@ -378,6 +386,8 @@ L["What listing one at the sell house costs up front: a share of the item's vend
   "Сколько стоит выставить одну штуку на аукционе продажи сразу: доля цены продажи торговцу (аукцион фракции 5/20/60% за 2/8/24 часа, аукцион гоблинов - в пять раз больше), минимум 1 серебряная. Залог возвращается при продаже и теряется, если предмет не продан, - так что высокий залог на медленно продающемся предмете - реальный риск."
 L["What the item typically sells for right now. From full listing data it's the average of the cheapest 15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the lowest price."] =
   "За сколько предмет обычно продаётся прямо сейчас. По полным данным лотов это среднее самых дешёвых 15-30% предложения на аукционе, что отсекает несколько дешёвых или абсурдных лотов. По сводке просмотра (что многие сканеры делают по умолчанию) известен только самый дешёвый лот, поэтому тогда это минимальная цена."
+L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
+  "По какой цене выставлять, чтобы предмет продался за время лота, - вместо того чтобы перебивать самый дешёвый лот на 1 медь. Покупатели сначала берут самые дешёвые лоты, поэтому AME считает единицы впереди вас по каждой цене, скорость продаж предмета и то, как часто новые лоты перебивают вашу цену, и сопоставляет шанс продажи с залогом, который вы теряете, если предмет не продастся. Быстро - почти наверняка продастся за несколько часов, Обычно - лучшая цена с учётом шанса, Терпеливо - самая высокая цена, по которой предмет ещё продаётся примерно в половине случаев. AME изучает поведение каждого предмета по вашим сканированиям (часы пик, дни недели, насколько жёстко конкурируют продавцы) и по вашим собственным лотам: если предметы по его ценам часто истекают, он становится осторожнее с этим предметом. При малом количестве данных он опирается на похожие предметы; полосы показывают, сколько он знает."
 L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."] =
   "Сколько вы заплатили за штуку для купленных на аукционе штук (первыми продаются самые старые покупки). У добытых или созданных предметов нет цены покупки."
 L["When"] = "Когда"
@@ -393,6 +403,7 @@ L["Your auction mail doesn't name the other player on this client (the auction h
   "Письма аукциона в этом клиенте не называют другого игрока (аукцион сохраняет анонимность), так что показать некого."
 L["a list needs a name"] = "у списка должно быть название"
 L["a list with that name already exists"] = "список с таким названием уже есть"
+L["a week+"] = "неделя+"
 L["above g"] = "выше g"
 L["announced %d, served %d, received %d, rejected %d"] =
   "объявлено %d, отдано %d, получено %d, отклонено %d"
@@ -411,6 +422,7 @@ L["could not load history addon"] = "не удалось загрузить ад
 L["couldn't start an auction house search for %s"] =
   "не удалось начать поиск на аукционе для %s"
 L["data"] = "данные"
+L["deposit %s"] = "залог %s"
 L["done %s"] = "готово %s"
 L["down  (wick = cheapest)"] = "падение  (тень = самый дешёвый)"
 L["dropped to %s (alert at %s)"] = "упала до %s (оповещение при %s)"
@@ -445,7 +457,6 @@ L["loaded in %s ms, %d shard(s), %.0f KB of daily history"] =
   "загружено за %s мс, фрагментов: %d, %.0f КБ дневной истории"
 L["loading history..."] = "загрузка истории..."
 L["loading item names %d/%d"] = "загрузка названий предметов %d/%d"
-L["low"] = "низкая"
 L["lowest"] = "минимум"
 L["margin %"] = "маржа %"
 L["market"] = "рынок"
@@ -503,12 +514,15 @@ L["the AH closed before AME finished reading the full scan; it wasn't recorded."
 L["today"] = "сегодня"
 L["turned off in settings"] = "отключено в настройках"
 L["unknown command, try /ame help"] = "неизвестная команда, попробуйте /ame help"
+L["unlikely to sell soon: consider holding"] =
+  "вряд ли продастся скоро: лучше придержать"
 L["up"] = "рост"
 L["usage: /ame item <item link or itemID>"] =
   "использование: /ame item <ссылка на предмет или itemID>"
 L["volatility"] = "волатильность"
 L["waiting for them to approve"] = "ждём их одобрения"
 L["wants to share, %s"] = "хочет делиться, %s"
+L["well below its usual price"] = "намного ниже обычной цены"
 L["wheel: zoom, drag: pan, double-click: reset"] =
   "колесо: масштаб, перетаскивание: сдвиг, двойной клик: сброс"
 L["whisper"] = "шёпот"
@@ -516,21 +530,5 @@ L["window created, market tab rendered"] = "окно создано, вклад�
 L["yesterday"] = "вчера"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "вы на аукционе покупки: «Поиск» (или Shift-клик по строке), чтобы купить"
-L["%d ahead"] = "%d впереди"
-L["<1h"] = "<1 ч"
-L["Normal %s"] = "Обычно %s"
-L["Patient %s"] = "Терпеливо %s"
-L["Post at"] = "Выставить по"
-L["Posting price"] = "Цена выставления"
-L["Posting price: not enough data on this item yet."] =
-  "Цена выставления: по этому предмету пока мало данных."
-L["Quick %s"] = "Быстро %s"
-L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
-  "По какой цене выставлять, чтобы предмет продался за время лота, - вместо того чтобы перебивать самый дешёвый лот на 1 медь. Покупатели сначала берут самые дешёвые лоты, поэтому AME считает единицы впереди вас по каждой цене, скорость продаж предмета и то, как часто новые лоты перебивают вашу цену, и сопоставляет шанс продажи с залогом, который вы теряете, если предмет не продастся. Быстро - почти наверняка продастся за несколько часов, Обычно - лучшая цена с учётом шанса, Терпеливо - самая высокая цена, по которой предмет ещё продаётся примерно в половине случаев. AME изучает поведение каждого предмета по вашим сканированиям (часы пик, дни недели, насколько жёстко конкурируют продавцы) и по вашим собственным лотам: если предметы по его ценам часто истекают, он становится осторожнее с этим предметом. При малом количестве данных он опирается на похожие предметы; полосы показывают, сколько он знает."
-L["a week+"] = "неделя+"
-L["deposit %s"] = "залог %s"
-L["unlikely to sell soon: consider holding"] =
-  "вряд ли продастся скоро: лучше придержать"
-L["well below its usual price"] = "намного ниже обычной цены"
 L["~%d days"] = "~%d дн."
 L["~%dh"] = "~%d ч"

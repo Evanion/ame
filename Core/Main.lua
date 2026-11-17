@@ -21,7 +21,6 @@ local function money(copper)
   end
   return GetCoinTextureString and GetCoinTextureString(copper) or tostring(copper)
 end
-AME.Money = money
 
 ---------------------------------------------------------------------------------------------------------------------
 -- background jobs
@@ -192,7 +191,6 @@ function AME:CheckAlerts(index)
   if #fired > 0 and ns.Settings:Get("alertSound") and PlaySound and SOUNDKIT then
     PlaySound(SOUNDKIT.RAID_WARNING or SOUNDKIT.TELL_MESSAGE or 3081)
   end
-  self.lastAlerts = fired
   if #fired > 0 and ns.UI and ns.UI.RefreshMarket then
     ns.UI:RefreshMarket()
   end
@@ -795,6 +793,9 @@ local function cmdStatus()
     s.syncReceived or 0,
     s.syncRejected or 0
   )
+  if (s.syncErrors or 0) > 0 then
+    say("|cffff5555" .. L["sync errors: %d (last: %s)"] .. "|r", s.syncErrors, tostring(s.lastSyncError))
+  end
 end
 
 SLASH_AZEROTHMERCANTILEEXCHANGE1 = "/ame"

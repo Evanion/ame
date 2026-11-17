@@ -6,10 +6,12 @@ local L = AceLocale and (AceLocale:NewLocale(ADDON, "esES") or AceLocale:NewLoca
 if not L then
   return
 end
+
 L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
   "%d ventas y compras en la CS en los últimos 90 días. AME las registra desde el correo de subastas: abre tu buzón para capturar las nuevas."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
   "%d subastas activas en tus personajes, según la última vez que cada uno abrió la casa de subastas. Las ventas aparecen en el registro al instante y se liquidan cuando llega el correo de la subasta."
+L["%d ahead"] = "%d delante"
 L["%d auctions"] = "%d subastas"
 L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
   "%d clientes en los últimos 90 días, por oro gastado contigo (según el correo de subastas)."
@@ -65,6 +67,7 @@ L["7-day change"] = "Cambio en 7 días"
 L["7d"] = "7d"
 L["7d average"] = "Media de 7 días"
 L["7d avg"] = "Media 7d"
+L["<1h"] = "<1 h"
 L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."] =
   "Un filtro de todos los objetos con historial. Elige una categoría o lista de seguimiento a la izquierda, busca por nombre, filtra por calidad, rango de precios o señal, y haz clic en una columna para ordenar. Pasa el ratón sobre el encabezado de una columna para ver qué significa. Haz clic en una fila para abrir su gráfico; haz clic en la estrella para vigilarlo."
 L["AH cut"] = "Comisión CS"
@@ -254,6 +257,7 @@ L["No scans of this item in the last 2 days. Daily history is on the other range
   "No hay escaneos de este objeto en los últimos 2 días. El historial diario está en los otros rangos."
 L["Nobody yet. Add a friend above - they need AME too, and must approve."] =
   "Nadie todavía. Añade a un amigo arriba - también necesita AME y debe aprobarlo."
+L["Normal %s"] = "Normal %s"
 L["Nothing received yet - scans arrive when someone you share with runs a full scan."] =
   "Aún no se ha recibido nada - los escaneos llegan cuando alguien con quien compartes hace un escaneo completo."
 L["Notifications"] = "Notificaciones"
@@ -262,17 +266,23 @@ L["Open"] = "Apertura"
 L["Open an item's chart with"] = "Abrir el gráfico de un objeto con"
 L["Open item charts with"] = "Abrir gráficos de objetos con"
 L["Open the window with %s."] = "Abre la ventana con %s."
+L["Patient %s"] = "Paciente %s"
 L["Pick two different auction houses."] = "Elige dos casas de subastas distintas."
 L["Play a sound when a watchlist alert fires"] = "Reproducir un sonido cuando salte una alerta de una lista"
 L["Player"] = "Jugador"
 L["Portfolio"] = "Cartera"
 L["Portfolio tab"] = "Pestaña Cartera"
 L["Positions"] = "Posiciones"
+L["Post at"] = "Subastar a"
+L["Posting price"] = "Precio de subasta"
+L["Posting price: not enough data on this item yet."] =
+  "Precio de subasta: aún no hay datos suficientes de este objeto."
 L["Pressure building"] = "Presión creciente"
 L["Price"] = "Precio"
 L["Price each"] = "Precio unitario"
 L["Profit"] = "Beneficio"
 L["Qty"] = "Cant."
+L["Quick %s"] = "Rápido %s"
 L["Rare+"] = "Raro+"
 L["Reading the numbers"] = "Cómo leer los números"
 L["Realized profit"] = "Beneficio realizado"
@@ -338,8 +348,6 @@ L["The market price at the auction house you sell at: what the item typically se
   "El precio de mercado en la casa de subastas donde vendes: por lo que suele venderse el objeto allí."
 L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
   "El gráfico de precios: precio de mercado, anuncio más barato, media de 7 días y oferta. Cambia a velas para una vista de trading. La rueda del ratón hace zoom, arrastrar desplaza, doble clic restablece. Alt-clic en cualquier objeto del juego (bolsas, chat, la CS) para abrirlo aquí."
-L["The selling auction house's cut of the sale: 5% at faction auction houses and 15% at the goblin ones (WoW Forever's rates; adjustable in Settings). The deposit isn't subtracted - you get it back when the item sells."] =
-  "La comisión de la casa de subastas de venta: 5% en las casas de subastas de facción y 15% en las goblin (tarifas de WoW Forever; ajustable en Ajustes). El depósito no se resta - lo recuperas cuando se vende el objeto."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "Este mercado: %d días de historial, %d escaneos recientes guardados completos"
 L["Tightening"] = "Contracción"
@@ -366,6 +374,8 @@ L["What listing one at the sell house costs up front: a share of the item's vend
   "Lo que cuesta de entrada anunciar uno en la casa de venta: una parte del precio de venta al vendedor del objeto (CS de facción 5/20/60% para 2/8/24 horas, CS goblin cinco veces eso), como mínimo 1 de plata. Lo recuperas cuando se vende y lo pierdes si no - así que un depósito alto en algo que se vende lento es un riesgo real."
 L["What the item typically sells for right now. From full listing data it's the average of the cheapest 15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the lowest price."] =
   "Por lo que suele venderse el objeto ahora mismo. Con datos completos de anuncios es la media del 15-30% más barato de la oferta en la casa de subastas, lo que ignora algunos anuncios baratos o absurdos. Con un resumen de navegación (lo que muchos escáneres hacen por defecto) solo se conoce el anuncio más barato, así que entonces es el precio más bajo."
+L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
+  "A qué precio subastar para que se venda dentro de la duración de la subasta, en lugar de rebajar en 1 cobre la subasta más barata. Los compradores se llevan primero las subastas más baratas, así que AME cuenta las unidades que tienes delante en cada precio, lo rápido que se vende el objeto y con qué frecuencia nuevas subastas te rebajan, y sopesa la probabilidad de vender frente al depósito que pierdes si no se vende. Rápido vende casi seguro en pocas horas, Normal es el mejor precio para esa probabilidad, Paciente es el precio más alto que aún vende aproximadamente la mitad de las veces. AME aprende el patrón de cada objeto a partir de tus escaneos (horas punta, días de la semana, cuánto compiten los vendedores) y de tus propias subastas: si los objetos caducan a menudo a sus precios, se vuelve más prudente con ese objeto. Con pocos datos se basa en objetos similares; las barras muestran cuánto sabe."
 L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."] =
   "Lo que pagaste por unidad por las unidades que compraste en la casa de subastas (las compras más antiguas se venden primero). Los objetos obtenidos como botín o fabricados no tienen coste."
 L["When"] = "Cuándo"
@@ -381,6 +391,7 @@ L["Your auction mail doesn't name the other player on this client (the auction h
   "Tu correo de subastas no nombra al otro jugador en este cliente (la casa de subastas lo mantiene anónimo), así que no hay nadie que mostrar."
 L["a list needs a name"] = "la lista necesita un nombre"
 L["a list with that name already exists"] = "ya existe una lista con ese nombre"
+L["a week+"] = "una semana+"
 L["above g"] = "más de g"
 L["announced %d, served %d, received %d, rejected %d"] = "anunciados %d, servidos %d, recibidos %d, rechazados %d"
 L["auctionator history import"] = "importación de historial de Auctionator"
@@ -397,6 +408,7 @@ L["could not load %s: %s"] = "no se pudo cargar %s: %s"
 L["could not load history addon"] = "no se pudo cargar el addon de historial"
 L["couldn't start an auction house search for %s"] = "no se pudo iniciar una búsqueda en la casa de subastas para %s"
 L["data"] = "datos"
+L["deposit %s"] = "depósito %s"
 L["done %s"] = "hecho %s"
 L["down  (wick = cheapest)"] = "baja  (mecha = más barato)"
 L["dropped to %s (alert at %s)"] = "bajó a %s (alerta en %s)"
@@ -427,7 +439,6 @@ L["loaded in %s ms, %d shard(s), %.0f KB of daily history"] =
   "cargado en %s ms, %d fragmento(s), %.0f KB de historial diario"
 L["loading history..."] = "cargando historial..."
 L["loading item names %d/%d"] = "cargando nombres de objetos %d/%d"
-L["low"] = "bajo"
 L["lowest"] = "mínimo"
 L["margin %"] = "margen %"
 L["market"] = "mercado"
@@ -483,31 +494,18 @@ L["the AH closed before AME finished reading the full scan; it wasn't recorded."
 L["today"] = "hoy"
 L["turned off in settings"] = "desactivado en los ajustes"
 L["unknown command, try /ame help"] = "comando desconocido, prueba /ame help"
+L["unlikely to sell soon: consider holding"] = "difícil que se venda pronto: considera mantener"
 L["up"] = "sube"
 L["usage: /ame item <item link or itemID>"] = "uso: /ame item <enlace de objeto o itemID>"
 L["volatility"] = "volatilidad"
 L["waiting for them to approve"] = "esperando su aprobación"
 L["wants to share, %s"] = "quiere compartir, %s"
+L["well below its usual price"] = "muy por debajo de su precio habitual"
 L["wheel: zoom, drag: pan, double-click: reset"] = "rueda: zoom, arrastrar: desplazar, doble clic: restablecer"
 L["whisper"] = "susurro"
 L["window created, market tab rendered"] = "ventana creada, pestaña de mercado dibujada"
 L["yesterday"] = "ayer"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "estás en la CS de compra: Buscar (o Mayús-clic en una fila) para comprar"
-L["%d ahead"] = "%d delante"
-L["<1h"] = "<1 h"
-L["Normal %s"] = "Normal %s"
-L["Patient %s"] = "Paciente %s"
-L["Post at"] = "Subastar a"
-L["Posting price"] = "Precio de subasta"
-L["Posting price: not enough data on this item yet."] =
-  "Precio de subasta: aún no hay datos suficientes de este objeto."
-L["Quick %s"] = "Rápido %s"
-L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
-  "A qué precio subastar para que se venda dentro de la duración de la subasta, en lugar de rebajar en 1 cobre la subasta más barata. Los compradores se llevan primero las subastas más baratas, así que AME cuenta las unidades que tienes delante en cada precio, lo rápido que se vende el objeto y con qué frecuencia nuevas subastas te rebajan, y sopesa la probabilidad de vender frente al depósito que pierdes si no se vende. Rápido vende casi seguro en pocas horas, Normal es el mejor precio para esa probabilidad, Paciente es el precio más alto que aún vende aproximadamente la mitad de las veces. AME aprende el patrón de cada objeto a partir de tus escaneos (horas punta, días de la semana, cuánto compiten los vendedores) y de tus propias subastas: si los objetos caducan a menudo a sus precios, se vuelve más prudente con ese objeto. Con pocos datos se basa en objetos similares; las barras muestran cuánto sabe."
-L["a week+"] = "una semana+"
-L["deposit %s"] = "depósito %s"
-L["unlikely to sell soon: consider holding"] = "difícil que se venda pronto: considera mantener"
-L["well below its usual price"] = "muy por debajo de su precio habitual"
 L["~%d days"] = "~%d días"
 L["~%dh"] = "~%d h"

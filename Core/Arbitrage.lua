@@ -66,8 +66,8 @@ end
 
 -- Listing deposit: a share of the item's vendor sell price by listing length, refunded when the item sells and lost
 -- when it doesn't (sources: Classic rules, confirmed for WoW Forever by community guides, Nov 2026). Goblin
--- (neutral) auction houses charge 5x the faction rate. Minimum 1 silver per listing (1 copper after the
--- Nov 17, 2026 maintenance).
+-- (neutral) auction houses charge 5x the faction rate. At least 1 silver per post, however few
+-- items it holds.
 Arbitrage.DEPOSIT_RATE = { [2] = 0.05, [8] = 0.20, [24] = 0.60 }
 Arbitrage.NEUTRAL_DEPOSIT_FACTOR = 5
 Arbitrage.MIN_DEPOSIT = 100

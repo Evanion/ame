@@ -16,7 +16,6 @@ local INTRADAY = "2D"
 local function avgDays()
   return ns.Settings:Get("tooltipAvgDays") or 7
 end
-UI.AvgDays = avgDays
 
 ---------------------------------------------------------------------------------------------------------------------
 -- window shell
@@ -409,6 +408,7 @@ function UI:CreateItemView(parent)
     UI:DrawItemChart()
   end)
   v.style:SetPoint("LEFT", v.rangeButtons[#RANGES], "RIGHT", 12, 0)
+  ns.Help.Explain(v.style, "candles")
   v.legend = W.Text(v, "GameFontDisableSmall")
   v.legend:SetPoint("LEFT", v.style, "RIGHT", 12, 0)
 

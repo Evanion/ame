@@ -27,7 +27,7 @@ W.THEMES = {
 
 function W.SetTheme(house)
   local c = W.THEMES[house] or W.THEMES.Neutral
-  W.theme = W.THEMES[house] and house or "Neutral"
+  W.theme = W.THEMES[house] and house or "Neutral" -- the applied theme
   W.COLORS.accent = { c[1], c[2], c[3], 1 }
   W.COLORS.selected = { c[1], c[2], c[3], 0.22 }
 end
@@ -504,7 +504,6 @@ function W.Menu(anchor, entries, opts)
     menu.items[i]:Hide()
   end
   menu.anchor = anchor
-  menu.entries = entries
   menu:SetSize(width, #entries * ROW + 6)
   menu:ClearAllPoints()
   menu:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
@@ -619,5 +618,3 @@ function W.Confidence(level)
   end
   return table.concat(out, " ")
 end
-
-W.CONFIDENCE_LABEL = { high = L["high"], medium = L["medium"], low = L["low"] }
