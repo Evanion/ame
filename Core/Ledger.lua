@@ -44,6 +44,32 @@ function Ledger:Add(e, key)
   return true
 end
 
+Ledger.SAME_MAIL = 3600 -- an invoice's arrival time is estimated from the mail's days left: this close = same mail
+
+-- Record an auction invoice once. The game gives no mail ID, and the arrival time is only estimated, so an invoice
+-- that matches an entry already recorded (same kind, item, amount, quantity and character, arriving within
+-- SAME_MAIL) is that entry. claimed (one table per mailbox pass) lets two identical invoices - two equal sales -
+-- each keep their own entry. Returns true when added.
+function Ledger:AddInvoice(e, claimed)
+  for _, x in ipairs(self.db.entries) do
+    if
+      not claimed[x]
+      and x.kind == e.kind
+      and x.name == e.name
+      and x.amount == e.amount
+      and x.qty == e.qty
+      and x.char == e.char
+      and math.abs(x.t - e.t) <= Ledger.SAME_MAIL
+    then
+      claimed[x] = true
+      return false
+    end
+  end
+  self:Add(e)
+  claimed[e] = true
+  return true
+end
+
 -- the mail for a sale arrived: drop the oldest pending sale of that item (and character) near its time
 function Ledger:Settle(sale)
   local list = self.db.entries

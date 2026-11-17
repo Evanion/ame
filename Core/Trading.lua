@@ -286,18 +286,19 @@ function Trading:ResolveLedger()
   return n
 end
 
--- Record AH invoices in the inbox (sold: "seller", bought: "buyer"); each mail once.
+-- Record AH invoices in the inbox (sold: "seller", bought: "buyer"); each mail once, however often the mailbox is
+-- opened (Ledger:AddInvoice matches invoices to what is already recorded).
 function Trading:ScanMail()
   if not (GetInboxNumItems and GetInboxInvoiceInfo and GetInboxHeaderInfo) then
     return 0
   end
   local now, added = GetServerTime(), 0
+  local claimed = {} -- ledger entries matched to an invoice in this pass (see Ledger:AddInvoice)
   for i = 1, GetInboxNumItems() or 0 do
     local invoiceType, itemName, playerName, bid, _, _, consignment, _, _, _, count = GetInboxInvoiceInfo(i)
     if (invoiceType == "seller" or invoiceType == "buyer") and itemName and bid then
       local daysLeft = select(7, GetInboxHeaderInfo(i)) or Trading.MAIL_DAYS
       local t = now - math.floor((Trading.MAIL_DAYS - daysLeft) * 86400)
-      local key = ("%s|%s|%d|%d|%d"):format(invoiceType, itemName, bid, count or 1, math.floor(daysLeft * 1440))
       local entry = {
         t = t,
         kind = invoiceType == "seller" and "sale" or "buy",
@@ -311,7 +312,7 @@ function Trading:ScanMail()
         counterparty = type(playerName) == "string" and playerName:match("%S") and playerName ~= "?" and playerName
           or nil,
       }
-      if self.ledger:Add(entry, key) then
+      if self.ledger:AddInvoice(entry, claimed) then
         added = added + 1
       end
     end

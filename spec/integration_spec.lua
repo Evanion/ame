@@ -802,7 +802,12 @@ describe("addon in a stubbed client", function()
         return nil, nil, "Auction House", "subject", 0, 0, mails[i].days
       end
       env:fire("MAIL_INBOX_UPDATE")
-      env:fire("MAIL_INBOX_UPDATE") -- the same mail again: recorded once
+      -- ten minutes later the same mails are opened again: their days left have shrunk; still recorded once
+      env.now = env.now + 600
+      for _, m in ipairs(mails) do
+        m.days = m.days - 600 / 86400
+      end
+      env:fire("MAIL_INBOX_UPDATE")
       env:fire("BAG_UPDATE_DELAYED")
       -- at the Horde AH: 2 auctions of Linen, 5 at 2s each and 1 at 3s
       local owned = {

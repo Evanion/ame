@@ -35,6 +35,30 @@ describe("Ledger", function()
     assert.are.equal(100, basis.unit)
   end)
 
+  it("records each invoice once however often the mailbox is opened", function()
+    -- the arrival time is estimated from the mail's shrinking days left, so it wobbles between openings
+    local function invoice(t)
+      return { t = t, kind = "sale", name = "Silk", qty = 5, amount = 500, cut = 25, char = "Tyken" }
+    end
+    assert.is_true(l:AddInvoice(invoice(1000), {}))
+    assert.is_false(l:AddInvoice(invoice(1030), {})) -- reopened half a minute later
+    assert.is_false(l:AddInvoice(invoice(1000 + 3000), {})) -- or an hour later
+    assert.are.equal(1, #l.db.entries)
+    -- two equal sales are two mails: both are kept, and stay single on the next opening
+    local pass = {}
+    assert.is_false(l:AddInvoice(invoice(1000), pass))
+    assert.is_true(l:AddInvoice(invoice(1010), pass))
+    assert.are.equal(2, #l.db.entries)
+    pass = {}
+    assert.is_false(l:AddInvoice(invoice(1100), pass))
+    assert.is_false(l:AddInvoice(invoice(1100), pass))
+    assert.are.equal(2, #l.db.entries)
+    -- a different character's identical sale is its own
+    local other = invoice(1000)
+    other.char = "Klydig"
+    assert.is_true(l:AddInvoice(other, {}))
+  end)
+
   it("matches entries by name when only some of them know the item ID", function()
     l:Add({ t = 100, kind = "buy", name = "Silk", qty = 10, amount = 500 }, "b") -- recorded before the ID was known
     l:Add(sale(200, 4, 400, 20), "s")
