@@ -83,6 +83,14 @@ local function emptySegment()
   }
 end
 
+-- Give the frame back between steps - only inside a background job: queries like Series also run from slash commands
+-- on the main thread, where yielding is an error, possibly while another job has set the yield hook.
+function Store:pause()
+  if coroutine.running() then
+    self.yield()
+  end
+end
+
 function Store:decode(packed, fields)
   local hit = self.cache[packed]
   if hit then
@@ -205,7 +213,7 @@ function Store:mergeInto(tier, rowsByBucket)
     end)
     local seg = tier[b] and self:decode(tier[b], Store.SEGMENT_FIELDS) or emptySegment()
     tier[b] = self:encode(mergeRows(seg, rows), Store.SEGMENT_FIELDS)
-    self.yield()
+    self:pause()
   end
 end
 
@@ -231,9 +239,9 @@ function Store:AddScan(snap, t, src, kind, packed)
   -- compressing a full scan takes ~100 ms in one go (inside LibDeflate); yield around it so nothing else piles on
   if not packed then
     local text = Codec.EncodeSnapshot(snap)
-    self.yield()
+    self:pause()
     packed = Codec.Pack(text, self.compressor)
-    self.yield()
+    self:pause()
   end
   local entry = { t = t, src = src, k = kind, s = packed }
   local pos = #raw + 1
@@ -244,7 +252,7 @@ function Store:AddScan(snap, t, src, kind, packed)
   local prevQty, obs = nil, 0
   if kind == "full" then
     prevQty, obs = self:previousFull(pos)
-    self.yield()
+    self:pause()
     -- the next full scan pairs with this one: remember its quantities instead of decompressing it again
     local qty = {}
     for i, id in ipairs(ids) do
@@ -438,7 +446,7 @@ function Store:Rollup()
         end
         data.days[day] = nil
         data.seen[day] = nil
-        self.yield()
+        self:pause()
       end
     end
     -- rows may contain the same id several times (one per day); merge them one day at a time via mergeRows
@@ -508,6 +516,7 @@ function Store:Series(itemID, fromDay, toDay)
     local first = week * 7
     if buckets[b] and first + 6 >= fromDay and first <= toDay then
       local seg = self:decode(buckets[b], Store.SEGMENT_FIELDS)
+      self:pause()
       local i = find(seg.ids, itemID)
       if i then
         out[#out + 1] = point(seg, i, "week", week)
@@ -517,6 +526,7 @@ function Store:Series(itemID, fromDay, toDay)
   for day, buckets in pairs(self.data.days) do
     if buckets[b] and day >= fromDay and day <= toDay then
       local seg = self:decode(buckets[b], Store.SEGMENT_FIELDS)
+      self:pause()
       local i = find(seg.ids, itemID)
       if i then
         out[#out + 1] = point(seg, i, "day", day)
@@ -539,7 +549,7 @@ function Store:BucketSeries(b, fromDay, toDay)
       local last = res == "week" and first + 6 or period
       if buckets[b] and last >= fromDay and first <= toDay then
         local seg = self:decode(buckets[b], Store.SEGMENT_FIELDS)
-        self.yield()
+        self:pause()
         for i, id in ipairs(seg.ids) do
           local list = out[id]
           if not list then
@@ -561,11 +571,14 @@ function Store:BucketSeries(b, fromDay, toDay)
   return out
 end
 
+-- Newest scan values for an item. Walks the raw scans newest first, decoding one per step outside the segment cache
+-- (a decoded full scan is ~40k numbers: caching dozens pinned ~8 MB) and yielding between them.
 function Store:Latest(itemID)
   local raw = self.data.raw
   for k = #raw, 1, -1 do
     local e = raw[k]
-    local snap = self:decode(e.s, Codec.SNAPSHOT_FIELDS)
+    local snap = Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor))
+    self:pause()
     local i = find(snap.ids, itemID)
     if i then
       return {
@@ -603,7 +616,7 @@ function Store:Intraday(itemID, fromT)
           src = e.src,
         }
       end
-      self.yield()
+      self:pause()
     end
   end
   return out

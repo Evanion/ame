@@ -343,8 +343,13 @@ describe("Store", function()
       for id = 1, 3 * Store.BUCKETS do
         items[id] = { 1, 1, 1, 1, 1 }
       end
-      store:AddScan(snap(items), clock, "a")
+      coroutine.wrap(function() -- background jobs run in a coroutine; outside one the store never yields
+        store:AddScan(snap(items), clock, "a")
+      end)()
       assert.is_true(yields >= Store.BUCKETS, "yields " .. yields)
+      yields = 0
+      store:Series(1) -- on the main thread (a slash command): no yielding
+      assert.are.equal(0, yields)
     end)
 
     it("works inside a coroutine that yields", function()
