@@ -233,6 +233,24 @@ function AME:IndexFor(shard, cb)
   end)
 end
 
+-- Your faction's auction house index (the market you trade in): tooltips and the portfolio value things here, never
+-- at the goblin or other faction's house. Built in the background when missing (nil until then).
+function AME:FactionIndex()
+  local house = UnitFactionGroup("player")
+  if house ~= "Horde" and house ~= "Alliance" then
+    house = self:CurrentHouse()
+  end
+  local shard = ns.ShardKey(self:MarketRealmName(), house)
+  if self.indexShard == shard and self.index then
+    return self.index
+  end
+  local cached = self.indexes and self.indexes[shard]
+  if not cached and self:HistoryLoaded() and self:HasData(shard) then
+    self:IndexFor(shard, function() end)
+  end
+  return cached
+end
+
 -- latest order book for an item at an auction house (from a search there), if fresher than maxAge seconds
 function AME:BookFor(shard, itemID, maxAge)
   if not self:HistoryLoaded() or not self.history.shards[shard] then
@@ -482,9 +500,13 @@ function handlers.ADDON_LOADED(name)
   ns.Settings:Init()
   AME_DB.watch = AME_DB.watch or {}
   AME.watch = ns.Watch.New(AME_DB.watch)
+  ns.Trading:Init()
 end
 
 function handlers.PLAYER_LOGIN()
+  C_Timer.After(2, function()
+    ns.Trading:ScanBags()
+  end)
   if C_AuctionHouse and C_AuctionHouse.ReplicateItems then
     hooksecurefunc(C_AuctionHouse, "ReplicateItems", function()
       AME.scanRequestedAt = debugprofilestop()
@@ -524,6 +546,11 @@ function handlers.PLAYER_LOGIN()
     "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
     "GUILD_ROSTER_UPDATE",
     "PLAYER_GUILD_UPDATE",
+    "MAIL_INBOX_UPDATE",
+    "BAG_UPDATE_DELAYED",
+    "BANKFRAME_OPENED",
+    "PLAYERBANKSLOTS_CHANGED",
+    "OWNED_AUCTIONS_UPDATED",
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "COMMODITY_SEARCH_RESULTS_UPDATED",
     "ITEM_SEARCH_RESULTS_UPDATED",
@@ -564,6 +591,7 @@ function handlers.AUCTION_HOUSE_SHOW()
   if AME:LoadHistory() then
     AME:Backfill(false)
   end
+  ns.Trading:QueryAuctions()
 end
 
 function handlers.GUILD_ROSTER_UPDATE()
@@ -572,6 +600,24 @@ function handlers.GUILD_ROSTER_UPDATE()
   end
 end
 handlers.PLAYER_GUILD_UPDATE = handlers.GUILD_ROSTER_UPDATE
+
+-- portfolio: auction mail, bags, bank, own auctions
+function handlers.MAIL_INBOX_UPDATE()
+  ns.Trading:ScanMail()
+end
+
+function handlers.BAG_UPDATE_DELAYED()
+  ns.Trading:ScanBags()
+end
+
+function handlers.BANKFRAME_OPENED()
+  ns.Trading:ScanBank()
+end
+handlers.PLAYERBANKSLOTS_CHANGED = handlers.BANKFRAME_OPENED
+
+function handlers.OWNED_AUCTIONS_UPDATED()
+  ns.Trading:ScanAuctions()
+end
 
 function handlers.AUCTION_HOUSE_CLOSED()
   AME.ahOpen = false

@@ -69,23 +69,7 @@ end
 -- Tooltips always show your own faction's auction house (the market you trade in), never the goblin AH or the
 -- other faction's - even right after visiting those. Cross-AH comparisons live on the Arbitrage tab.
 local function factionIndex()
-  local AME = ns.AME
-  if not AME then
-    return nil
-  end
-  local house = UnitFactionGroup("player")
-  if house ~= "Horde" and house ~= "Alliance" then
-    house = AME:CurrentHouse()
-  end
-  local shard = ns.ShardKey(AME:MarketRealmName(), house)
-  if AME.indexShard == shard and AME.index then
-    return AME.index
-  end
-  local cached = AME.indexes and AME.indexes[shard]
-  if not cached and AME:HistoryLoaded() and AME:HasData(shard) then
-    AME:IndexFor(shard, function() end) -- built in the background; tooltips show it next time
-  end
-  return cached
+  return ns.AME and ns.AME:FactionIndex()
 end
 
 -- the item's summary at your faction's auction house (nil when unknown)

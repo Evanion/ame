@@ -61,17 +61,18 @@ function UI:Create()
 
   self.tabs = {}
   local function tab(name, label, x)
-    local b = W.Button(f, label, 70, 20, function()
+    local b = W.Button(f, label, 66, 20, function()
       UI:ShowTab(name)
     end)
     b:SetPoint("TOPRIGHT", -(34 + x), -8)
     self.tabs[name] = b
   end
-  tab("market", "Market", 380)
-  tab("arbitrage", "Arbitrage", 304)
-  tab("item", "Item", 228)
-  tab("sync", "Sync", 152)
-  tab("settings", "Settings", 76)
+  tab("market", "Market", 420)
+  tab("arbitrage", "Arbitrage", 350)
+  tab("portfolio", "Portfolio", 280)
+  tab("item", "Item", 210)
+  tab("sync", "Sync", 140)
+  tab("settings", "Settings", 70)
   tab("guide", "Guide", 0)
 
   self.views = {
@@ -80,6 +81,7 @@ function UI:Create()
     guide = ns.Help.CreateGuide(f, contentArea),
     sync = self:CreateSyncView(f, contentArea),
     arbitrage = self:CreateArbitrageView(f, contentArea),
+    portfolio = self:CreatePortfolioView(f, contentArea),
     settings = self:CreateSettingsView(f, contentArea),
   }
   local footer = W.Text(f, "GameFontDisableSmall", "RIGHT")

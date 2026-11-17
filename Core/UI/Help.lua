@@ -98,6 +98,34 @@ Help.TERMS = {
     "How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both "
       .. "auction houses (alts on this account count) before buying.",
   },
+  pfValue = {
+    "Holdings value",
+    "Everything your characters hold - bags, bank and active auctions - at your faction auction house's market "
+      .. "price. Bank items and auctions are counted as of the last time you opened the bank / auction house.",
+  },
+  pfCost = {
+    "Average cost",
+    "What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). "
+      .. "Items you looted or crafted have no cost.",
+  },
+  pfUnrealized = {
+    "Unrealized profit",
+    "For units you bought on the auction house: what they're worth now at market price minus what you paid. It "
+      .. "becomes real profit when you sell.",
+  },
+  pfProfit = {
+    "Realized profit",
+    "From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest "
+      .. "purchases first). Sales of looted or crafted items count fully.",
+  },
+  pfFlow = {
+    "Sold / bought",
+    "Gold received from auction sales (after the cut) and gold spent on auction purchases in the last 30 days.",
+  },
+  pfDays = {
+    "Days to sell",
+    "How long selling everything you hold would take at the item's current sell rate (estimate).",
+  },
   candles = {
     "Candles",
     "Each candle covers one or more days. It opens at the previous candle's close and closes at the market "
@@ -143,6 +171,12 @@ Help.GUIDE = {
       .. "(alts on this account count). Hover the columns for details.",
   },
   {
+    "Portfolio tab",
+    "What all your characters hold, valued at your faction's market, with cost and unrealized profit for what "
+      .. "you bought on the AH, the Buy/Hold/Sell signal and how long it would take to sell. The ledger lists "
+      .. "your AH sales and purchases - recorded from auction mail when you open your mailbox.",
+  },
+  {
     "Item tab",
     "The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading "
       .. "view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, "
@@ -171,7 +205,7 @@ function Help.CreateGuide(parent, contentArea)
   local v = contentArea(parent)
   local x, y, colW = 0, 0, 470
   for i, section in ipairs(Help.GUIDE) do
-    if i == 4 then
+    if i == 5 then
       x, y = colW + 20, 0
     end
     local head = W.Text(v, "GameFontNormal")

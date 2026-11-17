@@ -702,6 +702,67 @@ describe("addon in a stubbed client", function()
       assert.are.equal("~120/d", v.rows[1].cells[col].text)
     end)
 
+    it("builds the portfolio from bags and auction mail, with a ledger and realized profit", function()
+      seeded()
+      -- the item API resolves "Item <id>" names (invoices name items, they don't link them)
+      local instant = C_Item.GetItemInfoInstant
+      _G.C_Item.GetItemInfoInstant = function(x)
+        if type(x) == "string" then
+          return tonumber(x:match("Item (%d+)"))
+        end
+        return instant(x)
+      end
+      -- bags: two stacks of 20 Linen (2589)
+      _G.C_Container = {
+        GetContainerNumSlots = function(bag)
+          return bag == 0 and 2 or 0
+        end,
+        GetContainerItemInfo = function(bag, slot)
+          if bag == 0 and slot <= 2 then
+            return { itemID = 2589, stackCount = 20 }
+          end
+        end,
+      }
+      -- mailbox: bought 5 Linen for 5000 earlier, sold 10 for 30000 (1500 AH cut) just now
+      local mails = {
+        { "buyer", "Item 2589", "Seller", 5000, 0, 0, 0, 0, 0, 0, 5, days = 29 },
+        { "seller", "Item 2589", "Buyer", 30000, 0, 100, 1500, 0, 0, 0, 10, days = 29.9 },
+      }
+      _G.GetInboxNumItems = function()
+        return #mails
+      end
+      _G.GetInboxInvoiceInfo = function(i)
+        return unpack(mails[i])
+      end
+      _G.GetInboxHeaderInfo = function(i)
+        return nil, nil, "Auction House", "subject", 0, 0, mails[i].days
+      end
+      env:fire("MAIL_INBOX_UPDATE")
+      env:fire("MAIL_INBOX_UPDATE") -- the same mail again: recorded once
+      env:fire("BAG_UPDATE_DELAYED")
+      local ledger = ns.AME.ledger
+      assert.are.equal(2, #ledger.db.entries)
+      local week = ledger:Summary(env.now - 7 * 86400)
+      assert.are.equal(30000 - 1500, week.income)
+      -- the sale used up the 5 bought units (1000 each) and 5 never bought on the AH
+      assert.are.equal(30000 - 1500 - 5000, week.profit)
+
+      ns.UI:Toggle()
+      ns.UI:ShowTab("portfolio")
+      local v = ns.UI.pfView
+      v.scripts.OnShow(v)
+      local row = ns.UI.pfRows[1]
+      assert.are.equal(2589, row.itemID)
+      assert.are.equal(40, row.qty)
+      assert.are.equal(row.market * 40, ns.UI.pfTotals.value)
+      assert.truthy(v.cards[1].value.text ~= "")
+      v.ledgerButton.scripts.OnClick(v.ledgerButton)
+      assert.are.equal("ledger", ns.UI.pfMode)
+      assert.truthy(v.ledger.rows[1].cells[2].text:find("sold"))
+      _G.C_Container, _G.GetInboxNumItems, _G.GetInboxInvoiceInfo, _G.GetInboxHeaderInfo = nil, nil, nil, nil
+      _G.C_Item.GetItemInfoInstant = instant
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)
