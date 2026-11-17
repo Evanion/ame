@@ -46,6 +46,8 @@ Core\SyncService.lua
 Core\Trading.lua
 Core\Posting.lua
 Core\Main.lua
+Core\Index.lua
+Core\Commands.lua
 Core\SelfTest.lua
 Core\UI\Widgets.lua
 Core\UI\Help.lua
