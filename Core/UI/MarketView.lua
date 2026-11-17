@@ -58,26 +58,6 @@ local function itemInfo(itemID)
   return ns.ItemCache.Get(itemID)
 end
 
-local function goldBox(parent, hint, onChange)
-  local box = W.Input(parent)
-  box:SetSize(58, 20)
-  box:SetAutoFocus(false)
-  box:SetNumeric(true)
-  box.hint = W.Text(box, "GameFontDisableSmall")
-  box.hint:SetPoint("LEFT", 6, 0)
-  box.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
-  box.hint:SetJustifyH("LEFT")
-  box.hint:SetWordWrap(false)
-  box.hint:SetText(hint)
-  box:SetScript("OnTextChanged", function(self)
-    self.hint:SetShown(self:GetText() == "")
-    onChange(tonumber(self:GetText()))
-  end)
-  box:SetScript("OnEnterPressed", box.ClearFocus)
-  box:SetScript("OnEscapePressed", box.ClearFocus)
-  return box
-end
-
 -- category sidebar: "All items", classes in AH order, the selected class's subclasses indented
 function UI:CreateCategories(v)
   local side = CreateFrame("Frame", nil, v, "BackdropTemplate")
@@ -250,27 +230,17 @@ function UI:CreateMarketView(parent)
   v.main = main
 
   -- toolbar: search, quality, price range, signals, reset
-  local search = W.Input(main)
-  search:SetSize(170, 20)
+  local search = W.Input(main, {
+    width = 170,
+    hint = L["Search items..."],
+    onChange = function(text) -- also on SetText: a Shift-clicked item fills the box
+      UI.mq.text = text
+      UI.offset = 0
+      UI:RefreshMarket(true)
+    end,
+    clearOnEscape = true,
+  })
   search:SetPoint("TOPLEFT", 6, 0)
-  search:SetAutoFocus(false)
-  search.hint = W.Text(search, "GameFontDisableSmall")
-  search.hint:SetPoint("LEFT", 6, 0)
-  search.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
-  search.hint:SetJustifyH("LEFT")
-  search.hint:SetWordWrap(false)
-  search.hint:SetText(L["Search items..."])
-  search:SetScript("OnTextChanged", function(self)
-    self.hint:SetShown(self:GetText() == "")
-    UI.mq.text = self:GetText()
-    UI.offset = 0
-    UI:RefreshMarket(true)
-  end)
-  search:SetScript("OnEnterPressed", search.ClearFocus)
-  search:SetScript("OnEscapePressed", function(self)
-    self:SetText("")
-    self:ClearFocus()
-  end)
   v.search = search
 
   local qualityOptions = {}
@@ -286,13 +256,13 @@ function UI:CreateMarketView(parent)
   quality:SetPoint("LEFT", search, "RIGHT", 8, 0)
   v.quality = quality
 
-  local minBox = goldBox(main, L["min g"], function(g)
+  local minBox = W.GoldInput(main, L["min g"], function(g)
     UI.mq.minPrice = g and g * 10000 or nil
     UI.offset = 0
     UI:RefreshMarket(true)
   end)
   minBox:SetPoint("LEFT", quality, "RIGHT", 10, 0)
-  local maxBox = goldBox(main, L["max g"], function(g)
+  local maxBox = W.GoldInput(main, L["max g"], function(g)
     UI.mq.maxPrice = g and g * 10000 or nil
     UI.offset = 0
     UI:RefreshMarket(true)

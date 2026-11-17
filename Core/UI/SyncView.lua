@@ -76,15 +76,7 @@ function UI:CreateSyncView(parent, contentArea)
 
   -- trusted players
   heading(v, L["Trusted players"], COL2, 0)
-  local input = W.Input(v)
-  input:SetSize(240, 20)
-  input:SetPoint("TOPLEFT", COL2, -24)
-  input.hint = W.Text(input, "GameFontDisableSmall")
-  input.hint:SetPoint("LEFT", 6, 0)
-  input.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
-  input.hint:SetJustifyH("LEFT")
-  input.hint:SetWordWrap(false)
-  input.hint:SetText(L["Character name, e.g. First Last"])
+  local input
   local function add()
     local e, why = svc:AddTrusted(input:GetText())
     if e then
@@ -96,10 +88,8 @@ function UI:CreateSyncView(parent, contentArea)
     input:ClearFocus()
     UI:RefreshSync()
   end
-  input:SetScript("OnTextChanged", function(self)
-    self.hint:SetShown(self:GetText() == "")
-  end)
-  input:SetScript("OnEnterPressed", add)
+  input = W.Input(v, { width = 240, hint = L["Character name, e.g. First Last"], onEnter = add })
+  input:SetPoint("TOPLEFT", COL2, -24)
   v.input = input
   local addButton = W.Button(v, L["Add"], 60, 20, add)
   addButton:SetPoint("LEFT", input, "RIGHT", 6, 0)

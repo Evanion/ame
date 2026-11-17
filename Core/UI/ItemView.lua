@@ -30,43 +30,34 @@ function UI:CreateItemView(parent)
   local v = contentArea(parent)
 
   -- search / header
-  local box = W.Input(v)
-  box:SetSize(230, 20)
+  local box
+  box = W.Input(v, {
+    width = 230,
+    hint = L["Item name, ID, or Shift-click an item"],
+    onChange = function(text, _, user)
+      if user then
+        UI:SuggestItems(box, text)
+      end
+    end,
+    onEnter = function(self)
+      local id = ns.ItemIDFrom(self:GetText())
+      if not id then
+        local best = UI:ItemSuggestions(self:GetText(), 1)[1]
+        id = best and best.itemID
+      end
+      self:ClearFocus()
+      W.HideMenu(self)
+      if id then
+        self:SetText("")
+        UI:ShowItem(id)
+      end
+    end,
+    clearOnEscape = true,
+    onEscape = W.HideMenu,
+  })
   box:SetPoint("TOPRIGHT", -2, 0)
-  box:SetAutoFocus(false)
-  box:SetScript("OnEnterPressed", function(self)
-    local id = ns.ItemIDFrom(self:GetText())
-    if not id then
-      local best = UI:ItemSuggestions(self:GetText(), 1)[1]
-      id = best and best.itemID
-    end
-    self:ClearFocus()
-    W.HideMenu(self)
-    if id then
-      self:SetText("")
-      UI:ShowItem(id)
-    end
-  end)
-  box.hint = W.Text(box, "GameFontDisableSmall")
-  box.hint:SetPoint("LEFT", 6, 0)
-  box.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
-  box.hint:SetJustifyH("LEFT")
-  box.hint:SetWordWrap(false)
-  box.hint:SetText(L["Item name, ID, or Shift-click an item"])
-  box:SetScript("OnTextChanged", function(self, user)
-    local text = self:GetText()
-    self.hint:SetShown(text == "")
-    if user then
-      UI:SuggestItems(self, text)
-    end
-  end)
   box:HookScript("OnEditFocusGained", function()
     UI:WarmItemNames()
-  end)
-  box:SetScript("OnEscapePressed", function(self)
-    self:SetText("")
-    self:ClearFocus()
-    W.HideMenu(self)
   end)
   self.searchBox = box
   -- Shift-clicking an item (chat link, bags, AH) opens it while the Item tab is up. Every modified item click goes
@@ -90,25 +81,12 @@ function UI:CreateItemView(parent)
   end)
   v.alertSignal:SetPoint("TOPRIGHT", -96, -24)
   local function goldAlert(field, hint)
-    local input = W.Input(v)
-    input:SetSize(64, 18)
-    input:SetNumeric(true)
-    input.hint = W.Text(input, "GameFontDisableSmall")
-    input.hint:SetPoint("LEFT", 6, 0)
-    input.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
-    input.hint:SetJustifyH("LEFT")
-    input.hint:SetWordWrap(false)
-    input.hint:SetText(hint)
-    input:SetScript("OnTextChanged", function(self, user)
-      self.hint:SetShown(self:GetText() == "")
+    return W.GoldInput(v, hint, function(g, user)
       if user and UI.itemID then
-        local g = tonumber(self:GetText())
         ns.AME.watch:SetAlert(UI.itemID, { [field] = g and g * 10000 or false })
         UI:UpdateWatchControls(true)
       end
     end)
-    input:SetScript("OnEnterPressed", input.ClearFocus)
-    return input
   end
   v.alertAbove = goldAlert("above", L["above g"])
   v.alertAbove:SetPoint("RIGHT", v.alertSignal, "LEFT", -8, 0)

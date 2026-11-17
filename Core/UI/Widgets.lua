@@ -435,16 +435,39 @@ function W.CloseButton(parent, onClick)
 end
 
 -- Flat text input matching the buttons: panel background, padded text, accent border while focused.
-function W.Input(parent)
+--   W.Input(parent, {
+--     width = 120, height = 20,
+--     hint = "Search...",                  -- dim placeholder while empty (box:SetHint to change it)
+--     numeric = true,
+--     onChange = function(text, value, user) end, -- value = tonumber(text); user = typed (not SetText)
+--     onEnter = function(box) end,         -- Enter (default: drop focus)
+--     clearOnEscape = true,                -- Escape empties the box (it always drops focus)
+--     onEscape = function(box) end,        -- after that
+--   })
+-- The input owns OnTextChanged / OnEnterPressed / OnEscapePressed; set behaviour through opts, not SetScript.
+function W.Input(parent, opts)
+  opts = opts or {}
   local box = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
   W.Skin(box, W.COLORS.panel)
   box:SetFontObject("GameFontHighlightSmall")
   box:SetTextInsets(6, 6, 0, 0)
   box:SetAutoFocus(false)
-  box:SetHeight(20)
+  if opts.width then
+    box:SetWidth(opts.width)
+  end
+  box:SetHeight(opts.height or 20)
+  if opts.numeric then
+    box:SetNumeric(true)
+  end
+  box.hint = false
+  box.SetHint = W.InputHint
+  if opts.hint then
+    box:SetHint(opts.hint)
+  end
   box:HookScript("OnEditFocusGained", function(self)
-    local a = W.COLORS.accent
+    local a, c = W.COLORS.accent, W.COLORS.panel
     self:SetBackdropBorderColor(a[1], a[2], a[3], 0.7)
+    self:SetBackdropColor(c[1], c[2], c[3], c[4])
   end)
   box:HookScript("OnEditFocusLost", function(self)
     local b = W.COLORS.border
@@ -457,11 +480,61 @@ function W.Input(parent)
     end
   end)
   box:HookScript("OnLeave", function(self)
-    local c = W.COLORS.panel
-    self:SetBackdropColor(c[1], c[2], c[3], c[4])
+    if not self:HasFocus() then
+      local c = W.COLORS.panel
+      self:SetBackdropColor(c[1], c[2], c[3], c[4])
+    end
   end)
-  box:SetScript("OnEscapePressed", box.ClearFocus)
+  box:SetScript("OnTextChanged", function(self, user)
+    local text = self:GetText() or ""
+    if self.hint then
+      self.hint:SetShown(text == "")
+    end
+    if opts.onChange then
+      opts.onChange(text, tonumber(text), user)
+    end
+  end)
+  box:SetScript("OnEnterPressed", function(self)
+    if opts.onEnter then
+      opts.onEnter(self)
+    else
+      self:ClearFocus()
+    end
+  end)
+  box:SetScript("OnEscapePressed", function(self)
+    if opts.clearOnEscape then
+      self:SetText("")
+    end
+    self:ClearFocus()
+    if opts.onEscape then
+      opts.onEscape(self)
+    end
+  end)
   return box
+end
+
+-- placeholder text shown while an input is empty (clipped to the box: translations run longer)
+function W.InputHint(box, text)
+  if not box.hint then
+    box.hint = W.Text(box, "GameFontDisableSmall")
+    box.hint:SetPoint("LEFT", 6, 0)
+    box.hint:SetPoint("RIGHT", -6, 0)
+    box.hint:SetWordWrap(false)
+  end
+  box.hint:SetText(text)
+  box.hint:SetShown((box:GetText() or "") == "")
+end
+
+-- whole-gold input with a hint ("min g"); onChange(gold or nil, user)
+function W.GoldInput(parent, hint, onChange)
+  return W.Input(parent, {
+    width = 64,
+    numeric = true,
+    hint = hint,
+    onChange = function(_, value, user)
+      onChange(value, user)
+    end,
+  })
 end
 
 W.STAR = "Interface\\Common\\FavoritesIcon"

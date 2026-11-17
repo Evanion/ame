@@ -134,29 +134,12 @@ function UI:CreateArbitrageView(parent, contentArea)
   end, { neutral = true })
   v.sell:SetPoint("LEFT", sellLabel, "RIGHT", 6, 0)
 
-  local function goldInput(hint, onChange)
-    local input = W.Input(v)
-    input:SetSize(66, 20)
-    input:SetNumeric(true)
-    input.hint = W.Text(input, "GameFontDisableSmall")
-    input.hint:SetPoint("LEFT", 6, 0)
-    input.hint:SetPoint("RIGHT", -6, 0) -- clipped to the box (translations run longer)
-    input.hint:SetJustifyH("LEFT")
-    input.hint:SetWordWrap(false)
-    input.hint:SetText(hint)
-    input:SetScript("OnTextChanged", function(self)
-      self.hint:SetShown(self:GetText() == "")
-      onChange(tonumber(self:GetText()))
-    end)
-    input:SetScript("OnEnterPressed", input.ClearFocus)
-    return input
-  end
-  v.minProfit = goldInput(L["profit g"], function(g)
+  v.minProfit = W.GoldInput(v, L["profit g"], function(g)
     UI.arb.minProfit = g and g * 10000 or 1
     UI:RefreshArbitrage(true)
   end)
   v.minProfit:SetPoint("LEFT", v.sell, "RIGHT", 16, 0)
-  v.minMargin = goldInput(L["margin %"], function(p)
+  v.minMargin = W.GoldInput(v, L["margin %"], function(p) -- whole percent, same box as gold
     UI.arb.minMargin = (p or 10) / 100
     UI:RefreshArbitrage(true)
   end)

@@ -166,17 +166,16 @@ function UI:CreateSettingsView(parent, contentArea)
     local t = W.Text(v, "GameFontHighlightSmall")
     t:SetPoint("TOPLEFT", COL2, y)
     t:SetText(label)
-    local input = W.Input(v)
-    input:SetSize(44, 20)
-    input:SetNumeric(true)
+    local input = W.Input(v, {
+      width = 44,
+      numeric = true,
+      onChange = function(_, n, user)
+        if user and n and n <= 100 then
+          ns.Settings:Set(key, n)
+        end
+      end,
+    })
     input:SetPoint("TOPLEFT", COL2 + 170, y + 4)
-    input:SetScript("OnTextChanged", function(self, user)
-      local n = tonumber(self:GetText())
-      if user and n and n <= 100 then
-        ns.Settings:Set(key, n)
-      end
-    end)
-    input:SetScript("OnEnterPressed", input.ClearFocus)
     local pct = W.Text(v, "GameFontHighlightSmall")
     pct:SetPoint("LEFT", input, "RIGHT", 4, 0)
     pct:SetText("%")
