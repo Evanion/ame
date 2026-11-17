@@ -44,7 +44,21 @@ local function mine()
   return h
 end
 
--- item counts in container bags first..last
+-- soulbound: can't be sold, so it isn't stock. The slot info usually says; otherwise ask the item API.
+local function isBound(bag, slot, flag)
+  if flag ~= nil then
+    return flag and true or false
+  end
+  if C_Item and C_Item.IsBound and ItemLocation and ItemLocation.CreateFromBagAndSlot then
+    local ok, bound = pcall(function()
+      return C_Item.IsBound(ItemLocation:CreateFromBagAndSlot(bag, slot))
+    end)
+    return ok and bound == true
+  end
+  return false
+end
+
+-- item counts in container bags first..last (soulbound items left out: only what you could sell counts)
 local function countBags(first, last)
   local numSlots, itemInfo = api("GetContainerNumSlots"), api("GetContainerItemInfo")
   if not (numSlots and itemInfo) then
@@ -53,14 +67,14 @@ local function countBags(first, last)
   local out = {}
   for bag = first, last do
     for slot = 1, numSlots(bag) or 0 do
-      local a, b, _, _, _, _, _, _, _, id = itemInfo(bag, slot)
+      local a, b, _, _, _, _, _, _, _, id, bound = itemInfo(bag, slot)
       local itemID, count
       if type(a) == "table" then -- C_Container: an info table
-        itemID, count = a.itemID, a.stackCount
-      else -- classic: texture, count, ..., itemID (10th)
+        itemID, count, bound = a.itemID, a.stackCount, a.isBound
+      else -- classic: texture, count, ..., itemID (10th), isBound (11th)
         itemID, count = id, b
       end
-      if itemID then
+      if itemID and not isBound(bag, slot, bound) then
         out[itemID] = (out[itemID] or 0) + (count or 1)
       end
     end

@@ -33,6 +33,7 @@ read_globals = {
   "GetServerTime", "GetNormalizedRealmName", "GetRealmName", "GetAutoCompleteRealms", "UnitName",
   "UnitFactionGroup", "IsInGuild", "C_FriendList", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "GetInboxNumItems", "GetInboxInvoiceInfo",
   "GetInboxItemLink",
+  "ItemLocation",
   "ATTACHMENTS_MAX_RECEIVE", "GetInboxHeaderInfo", "C_Container", "GetContainerNumSlots", "GetContainerItemInfo", "AuctionHouseFrame", "AuctionHouseFrameDisplayMode", "AuctionFrame", "BrowseName", "AuctionFrameBrowse_Search", "ChatFrameUtil", "ChatEdit_GetActiveWindow", "GetTime", "GetGuildInfoText", "RegionalUniqueNamesEnabled", "C_GameRules",
   -- optional integrations
   "Auctionator", "LibStub",

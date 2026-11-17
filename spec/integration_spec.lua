@@ -712,14 +712,16 @@ describe("addon in a stubbed client", function()
         end
         return instant(x)
       end
-      -- bags: two stacks of 20 Linen (2589)
+      -- bags: two stacks of 20 Linen (2589), and one soulbound copy that isn't stock (can't be sold)
       _G.C_Container = {
         GetContainerNumSlots = function(bag)
-          return bag == 0 and 2 or 0
+          return bag == 0 and 3 or 0
         end,
         GetContainerItemInfo = function(bag, slot)
           if bag == 0 and slot <= 2 then
-            return { itemID = 2589, stackCount = 20 }
+            return { itemID = 2589, stackCount = 20, isBound = false }
+          elseif bag == 0 and slot == 3 then
+            return { itemID = 2589, stackCount = 1, isBound = true }
           end
         end,
       }
