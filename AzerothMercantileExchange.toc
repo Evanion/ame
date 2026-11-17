@@ -51,6 +51,9 @@ Core\UI\Widgets.lua
 Core\UI\Help.lua
 Core\UI\DataTable.lua
 Core\UI\Window.lua
+Core\UI\ItemView.lua
+Core\UI\Watchlists.lua
+Core\UI\MarketView.lua
 Core\UI\Panels.lua
 Core\UI\ArbitrageView.lua
 Core\UI\PortfolioView.lua
