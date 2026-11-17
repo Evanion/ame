@@ -66,6 +66,7 @@ function Portfolio.Build(holdings, basis, items)
         market = s.market,
         value = value,
         signal = s.signal,
+        signalRank = s.signalRank,
         sellRate = s.sellRate,
         daysToSell = s.sellRate and s.sellRate > 0 and h.qty / s.sellRate or nil,
       }

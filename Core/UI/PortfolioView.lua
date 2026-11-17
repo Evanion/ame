@@ -36,7 +36,7 @@ local function days(v)
 end
 
 local POSITION_COLS = {
-  { key = "name", label = "Item", width = 210, item = true, sortKey = false },
+  { key = "name", label = "Item", width = 210, item = true, ascendingFirst = true },
   { key = "qty", label = "Held", width = 50 },
   { key = "market", label = "Market", width = 84, format = "money" },
   { key = "value", label = "Value", width = 92, format = "money" },
@@ -50,7 +50,15 @@ local POSITION_COLS = {
       return signedMoney(e.unrealized)
     end,
   },
-  { key = "signal", label = "Signal", width = 50, format = "signal", term = "signal", sortKey = false },
+  {
+    key = "signal",
+    label = "Signal",
+    width = 50,
+    format = "signal",
+    term = "signal",
+    sortKey = "signalRank",
+    ascendingFirst = true,
+  },
   { key = "sellRate", label = "Sells/d", width = 58, format = "rate", term = "sellRate" },
   {
     key = "daysToSell",
@@ -76,7 +84,7 @@ local function timeLeft(a)
 end
 
 local AUCTION_COLS = {
-  { key = "name", label = "Item", width = 230, item = true, sortKey = false },
+  { key = "name", label = "Item", width = 230, item = true, ascendingFirst = true },
   { key = "qty", label = "Qty", width = 50 },
   { key = "unit", label = "Price each", width = 92, format = "money" },
   { key = "total", label = "Total", width = 96, format = "money" },
@@ -93,7 +101,7 @@ local AUCTION_COLS = {
     label = "Character",
     width = 150,
     align = "LEFT",
-    sortKey = false,
+    ascendingFirst = true,
     text = function(a)
       return a.char or ""
     end,
@@ -103,12 +111,39 @@ local AUCTION_COLS = {
     label = "Auction house",
     width = 100,
     align = "LEFT",
-    sortKey = false,
+    ascendingFirst = true,
     text = function(a)
       return ns.HOUSE_LABEL[a.house] or a.house or ""
     end,
   },
 }
+
+local function counterpartyCols(amountLabel, tradesLabel)
+  return {
+    { key = "name", label = "Player", width = 180, align = "LEFT", ascendingFirst = true },
+    { key = "amount", label = amountLabel, width = 110, format = "money" },
+    { key = "trades", label = tradesLabel, width = 70 },
+    { key = "units", label = "Items", width = 60 },
+    {
+      key = "favourite",
+      label = "Mostly",
+      width = 230,
+      align = "LEFT",
+      ascendingFirst = true,
+      text = function(c)
+        return c.favourite or ""
+      end,
+    },
+    {
+      key = "last",
+      label = "Last",
+      width = 96,
+      text = function(c)
+        return c.last > 0 and date("%b %d %H:%M", c.last) or ""
+      end,
+    },
+  }
+end
 
 local LEDGER_COLS = {
   {
@@ -116,6 +151,7 @@ local LEDGER_COLS = {
     label = "When",
     width = 96,
     align = "LEFT",
+    sortKey = "t",
     text = function(e)
       return date("%b %d %H:%M", e.t)
     end,
@@ -169,6 +205,7 @@ local LEDGER_COLS = {
     label = "Profit",
     width = 92,
     term = "pfProfit",
+    sortKey = false, -- computed per sale at render time
     text = function(e)
       return e.kind == "sale" and signedMoney(UI.pfProfitOf and UI.pfProfitOf[e]) or ""
     end,
@@ -183,9 +220,6 @@ local LEDGER_COLS = {
     end,
   },
 }
-for _, col in ipairs(LEDGER_COLS) do
-  col.sortKey = false -- newest first
-end
 
 function UI:CreatePortfolioView(parent, contentArea)
   local v = contentArea(parent)
@@ -255,6 +289,16 @@ function UI:CreatePortfolioView(parent, contentArea)
     UI:RefreshPortfolio()
   end)
   v.auctionsButton:SetPoint("LEFT", v.ledgerButton, "RIGHT", 4, 0)
+  v.customersButton = W.Button(v, "Customers", 80, 20, function()
+    UI.pfMode, UI.pfOffset = "customers", 0
+    UI:RefreshPortfolio()
+  end)
+  v.customersButton:SetPoint("LEFT", v.auctionsButton, "RIGHT", 4, 0)
+  v.suppliersButton = W.Button(v, "Suppliers", 80, 20, function()
+    UI.pfMode, UI.pfOffset = "suppliers", 0
+    UI:RefreshPortfolio()
+  end)
+  v.suppliersButton:SetPoint("LEFT", v.customersButton, "RIGHT", 4, 0)
   local function itemID(e)
     return e.itemID
   end
@@ -263,7 +307,6 @@ function UI:CreatePortfolioView(parent, contentArea)
     rows = ROWS,
     top = -82,
     itemID = itemID,
-    localSort = true,
     sort = { key = "value", ascending = false },
     offset = {
       get = function()
@@ -287,14 +330,26 @@ function UI:CreatePortfolioView(parent, contentArea)
     rows = ROWS,
     top = -82,
     itemID = itemID,
-    localSort = true,
     sort = { key = "total", ascending = false },
+  })
+  v.customers = ns.DataTable.New(v, {
+    columns = counterpartyCols("Spent with you", "Purchases"),
+    rows = ROWS,
+    top = -82,
+    sort = { key = "amount", ascending = false },
+  })
+  v.suppliers = ns.DataTable.New(v, {
+    columns = counterpartyCols("You spent", "Purchases"),
+    rows = ROWS,
+    top = -82,
+    sort = { key = "amount", ascending = false },
   })
   v.ledger = ns.DataTable.New(v, {
     columns = LEDGER_COLS,
     rows = ROWS,
     top = -82,
     itemID = itemID,
+    sort = { key = "t", ascending = false }, -- newest first
     offset = {
       get = function()
         return UI.pfOffset
@@ -331,6 +386,16 @@ function UI:RefreshPortfolio()
   self.pfMonth = AME.ledger and AME.ledger:Summary(now - 30 * DAY) or {}
   self.pfLedger = AME.ledger and AME.ledger:Recent(now - 90 * DAY) or {}
   self.pfAuctions = ns.Trading:ActiveAuctions()
+  self.pfCustomers = AME.ledger and AME.ledger:Counterparties("sale", now - 90 * DAY) or {}
+  self.pfSuppliers = AME.ledger and AME.ledger:Counterparties("buy", now - 90 * DAY) or {}
+  -- does this client's auction mail name the other player at all?
+  self.pfNamesSeen = false
+  for _, e in ipairs(AME.ledger and AME.ledger.db.entries or {}) do
+    if e.counterparty then
+      self.pfNamesSeen = true
+      break
+    end
+  end
   self.pfIndexMissing = index == nil
   self:RenderPortfolio()
 end
@@ -351,12 +416,24 @@ function UI:RenderPortfolio()
   v.cards[5].value:SetText(W.Money(m.income or 0, true) .. " / " .. W.Money(m.spent or 0, true))
   local mode = self.pfMode
   local ledgerMode, auctionsMode = mode == "ledger", mode == "auctions"
+  local customersMode, suppliersMode = mode == "customers", mode == "suppliers"
   v.positionsButton:SetSelected(mode == "positions")
   v.ledgerButton:SetSelected(ledgerMode)
   v.auctionsButton:SetSelected(auctionsMode)
+  v.customersButton:SetSelected(customersMode)
+  v.suppliersButton:SetSelected(suppliersMode)
 
-  local list = ledgerMode and self.pfLedger or auctionsMode and self.pfAuctions or self.pfRows
-  local tbl = ledgerMode and v.ledger or auctionsMode and v.auctions or v.positions
+  local lists = {
+    positions = { self.pfRows, v.positions },
+    ledger = { self.pfLedger, v.ledger },
+    auctions = { self.pfAuctions, v.auctions },
+    customers = { self.pfCustomers, v.customers },
+    suppliers = { self.pfSuppliers, v.suppliers },
+  }
+  local list, tbl = lists[mode][1], lists[mode][2]
+  for name, pair in pairs(lists) do
+    pair[2]:SetShown(name == mode)
+  end
   if ledgerMode and ns.AME.ledger then
     self.pfProfitOf = {}
     for _, e in ipairs(list) do
@@ -365,9 +442,6 @@ function UI:RenderPortfolio()
       end
     end
   end
-  v.positions:SetShown(mode == "positions")
-  v.ledger:SetShown(ledgerMode)
-  v.auctions:SetShown(auctionsMode)
   tbl:SetData(list)
   tbl:Render()
 
@@ -377,7 +451,16 @@ function UI:RenderPortfolio()
     chars = chars + 1
   end
   local status
-  if auctionsMode then
+  if customersMode or suppliersMode then
+    if not self.pfNamesSeen and #self.pfLedger > 0 then
+      status = "Your auction mail doesn't name the other player on this client (the auction house keeps them "
+        .. "anonymous), so there's no one to list."
+    else
+      status = customersMode
+          and ("%d customers in the last 90 days, by gold spent with you (from auction mail)."):format(#list)
+        or ("%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."):format(#list)
+    end
+  elseif auctionsMode then
     status = (
       "%d active auctions on your characters, as of the last time each opened the auction house. Sales show up "
       .. "in the ledger right away and are settled when the auction mail arrives."

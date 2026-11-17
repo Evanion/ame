@@ -226,7 +226,7 @@ function Trading:ScanMail()
   end
   local now, added = GetServerTime(), 0
   for i = 1, GetInboxNumItems() or 0 do
-    local invoiceType, itemName, _, bid, _, _, consignment, _, _, _, count = GetInboxInvoiceInfo(i)
+    local invoiceType, itemName, playerName, bid, _, _, consignment, _, _, _, count = GetInboxInvoiceInfo(i)
     if (invoiceType == "seller" or invoiceType == "buyer") and itemName and bid then
       local daysLeft = select(7, GetInboxHeaderInfo(i)) or Trading.MAIL_DAYS
       local t = now - math.floor((Trading.MAIL_DAYS - daysLeft) * 86400)
@@ -240,6 +240,9 @@ function Trading:ScanMail()
         amount = bid,
         cut = invoiceType == "seller" and (consignment or 0) or nil,
         char = UnitName("player"),
+        -- the buyer (on your sales) or seller (on your purchases), when the mail names them
+        counterparty = type(playerName) == "string" and playerName:match("%S") and playerName ~= "?" and playerName
+          or nil,
       }
       if self.ledger:Add(entry, key) then
         added = added + 1

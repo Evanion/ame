@@ -200,8 +200,12 @@ function Analytics.Summarize(series)
       s.signal = "wait"
     end
   end
+  s.signalRank = Analytics.SIGNAL_RANK[s.signal]
   return s
 end
+
+-- sort order for signals: buy first, then wait, hold, sell, and no signal last
+Analytics.SIGNAL_RANK = { buy = 1, wait = 2, hold = 3, sell = 4, none = 5 }
 
 -- Market phase: the price trend read against the supply trend over the last week of data.
 --                 supply shrinking      flat              growing

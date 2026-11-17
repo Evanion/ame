@@ -13,9 +13,9 @@
 --     itemID = function(d) return d.itemID end,     -- rows are items (icon, tooltip, click opens the chart)
 --     star = true, confidence = function(d) return "high" end,
 --     action = { label = "Search", width = 56, shown = function(d) end, onClick = function(d) end },
---     sort = { key = "score", ascending = false },  -- current sort (arrow in the header)
---     onSort = function(key) end,                   -- header clicked; owner re-sorts and calls SetData
---     localSort = true,                             -- or let the table sort by d[key]
+--     sort = { key = "score", ascending = false },  -- initial / current sort (arrow in the header)
+--     onSort = function(key) end,                   -- only when the owner sorts (e.g. sorting tied to filters);
+--                                                   -- otherwise the table sorts its rows itself on header clicks
 --     offset = { get = fn, set = fn },              -- optional: owner keeps the scroll position
 --     onClick = function(d, button) end, tooltip = function(tip, d) end,
 --   })
@@ -53,7 +53,7 @@ local function label(col)
   return type(col.label) == "function" and col.label() or col.label or ""
 end
 
--- the data key a column sorts by (false: not sortable)
+-- the data key a column sorts by (false: not sortable); item columns sort by item name ("__name")
 local function sortKey(col)
   if col.sortKey == false then
     return nil
@@ -61,7 +61,7 @@ local function sortKey(col)
   if type(col.sortKey) == "function" then
     return col.sortKey()
   end
-  return col.sortKey or col.key
+  return col.sortKey or (col.item and "__name") or col.key
 end
 
 function DataTable.New(parent, opts)
@@ -99,6 +99,7 @@ function DataTable.New(parent, opts)
       if opts.onSort then
         opts.onSort(t.sort.key, t.sort.ascending)
       else
+        t:Resort()
         t:Render()
       end
     end)
@@ -257,26 +258,68 @@ function DataTable:Scroll(delta)
   self:Render()
 end
 
+-- Rows to show. Unless the owner sorts (onSort), the table keeps a sorted copy and re-sorts on header clicks.
 function DataTable:SetData(list)
-  self.data = list or {}
-  if self.opts.localSort and self.sort.key then
-    local key, asc = self.sort.key, self.sort.ascending
-    table.sort(self.data, function(a, b)
-      local x, y = a[key], b[key]
-      if x == y or x == nil or y == nil then
-        if x == nil and y ~= nil then
-          return false
-        elseif y == nil and x ~= nil then
-          return true
-        end
-        return (a.itemID or 0) < (b.itemID or 0)
-      end
-      if asc then
-        return x < y
-      end
-      return x > y
-    end)
+  self.source = list or {}
+  self:Resort()
+end
+
+-- a row's value for a sort key: the item's name for "__name", lower-cased text, numbers as they are
+function DataTable:SortValue(d, key)
+  local v
+  if key == "__name" then
+    local id = self.opts.itemID and self.opts.itemID(d)
+    v = id and W.ItemInfo(id) or d.name
+  else
+    v = d[key]
   end
+  if type(v) == "string" then
+    return v:lower()
+  elseif type(v) == "boolean" then
+    return v and 1 or 0
+  end
+  return v
+end
+
+function DataTable:Resort()
+  local src = self.source or {}
+  if self.opts.onSort or not self.sort.key then
+    self.data = src
+    return
+  end
+  local data = {}
+  for i, d in ipairs(src) do
+    data[i] = d
+  end
+  local key, asc = self.sort.key, self.sort.ascending
+  local cache = {}
+  local function value(d)
+    local v = cache[d]
+    if v == nil then
+      v = self:SortValue(d, key)
+      cache[d] = v == nil and false or v
+    end
+    return v ~= false and v or nil
+  end
+  table.sort(data, function(a, b)
+    local x, y = value(a), value(b)
+    if x == nil or y == nil or type(x) ~= type(y) then
+      if x == nil and y ~= nil then
+        return false -- empty values last, either direction
+      elseif y == nil and x ~= nil then
+        return true
+      end
+      return tostring(a) < tostring(b)
+    end
+    if x == y then
+      return tostring(a) < tostring(b)
+    end
+    if asc then
+      return x < y
+    end
+    return x > y
+  end)
+  self.data = data
 end
 
 function DataTable:SetShown(shown)

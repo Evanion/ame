@@ -791,6 +791,52 @@ describe("addon in a stubbed client", function()
       _G.C_Item.GetItemInfoInstant = instant
     end)
 
+    it("sorts any table by clicking its column headers", function()
+      seeded()
+      _G.C_Container = {
+        GetContainerNumSlots = function(bag)
+          return bag == 0 and 2 or 0
+        end,
+        GetContainerItemInfo = function(_, slot)
+          return slot == 1 and { itemID = 2589, stackCount = 50 } or { itemID = 4306, stackCount = 2 }
+        end,
+      }
+      env:fire("BAG_UPDATE_DELAYED")
+      ns.UI:Toggle()
+      ns.UI:ShowTab("portfolio")
+      local v = ns.UI.pfView
+      v.scripts.OnShow(v)
+      local t = v.positions
+      local function order()
+        return { t.rows[1].itemID, t.rows[2].itemID }
+      end
+      local function click(label)
+        for _, h in ipairs(t.headers) do
+          if h.text.text:find(label, 1, true) then
+            h.scripts.OnClick(h)
+            return
+          end
+        end
+        error("no header " .. label)
+      end
+      local byValue = order()
+      click("Held") -- most held first
+      assert.are.same({ 2589, 4306 }, order())
+      click("Held") -- again: fewest first
+      assert.are.same({ 4306, 2589 }, order())
+      click("Value")
+      local first = order()
+      click("Value")
+      assert.are.same({ first[2], first[1] }, order())
+      click("Item") -- by name, A-Z first
+      assert.are.same({ 2589, 4306 }, order()) -- "Item 2589" < "Item 4306"
+      click("Signal") -- sortable too
+      assert.truthy(t.headers[7].text.text:find("Signal", 1, true))
+      assert.are.equal(2, #ns.UI.pfRows) -- the owner's list isn't reordered
+      assert.are.same(byValue, { ns.UI.pfRows[1].itemID, ns.UI.pfRows[2].itemID })
+      _G.C_Container = nil
+    end)
+
     it("fills in item names in every table once the client loads them (no 'item:<id>' left behind)", function()
       seeded()
       -- the client doesn't know Linen yet

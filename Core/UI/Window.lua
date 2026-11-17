@@ -985,7 +985,15 @@ local COLUMNS = {
   { key = "vol30", label = "Volatility", width = 70, format = "plainpct", term = "vol30" },
   { key = "qty", label = "Supply", width = 52, term = "qty" },
   { key = "sellRate", label = "Sells/d", width = 58, format = "rate", term = "sellRate" },
-  { key = "signal", label = "Signal", width = 50, format = "signal", term = "signal" },
+  {
+    key = "signal",
+    label = "Signal",
+    width = 50,
+    format = "signal",
+    term = "signal",
+    sortKey = "signalRank",
+    ascendingFirst = true,
+  },
   { key = "score", label = "Score", width = 50, term = "score" },
 }
 local ROWS = 17

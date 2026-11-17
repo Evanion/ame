@@ -63,6 +63,27 @@ describe("Ledger", function()
     assert.are.equal(0, #l:Pending())
   end)
 
+  it("ranks your customers and suppliers by gold, from the names on auction mail", function()
+    local function sale(t, who, item, amount, qty)
+      return { t = t, kind = "sale", name = item, qty = qty, amount = amount, cut = 0, counterparty = who }
+    end
+    l:Add(sale(1, "Ada", "Silk", 300, 3), "1")
+    l:Add(sale(2, "Ada", "Wool", 100, 1), "2")
+    l:Add(sale(3, "Bob", "Silk", 1000, 10), "3")
+    l:Add(sale(4, nil, "Silk", 5000, 1), "4") -- anonymous: not counted
+    l:Add({ t = 5, kind = "buy", name = "Iron", qty = 2, amount = 80, counterparty = "Cy" }, "5")
+    local customers = l:Counterparties("sale", 0)
+    assert.are.equal(2, #customers)
+    assert.are.equal("Bob", customers[1].name)
+    local ada = customers[2]
+    assert.are.equal(400, ada.amount)
+    assert.are.equal(2, ada.trades)
+    assert.are.equal(4, ada.units)
+    assert.are.equal("Silk", ada.favourite)
+    assert.are.equal(2, ada.last)
+    assert.are.equal("Cy", l:Counterparties("buy", 0)[1].name)
+  end)
+
   it("forgets entries older than 90 days", function()
     l:Add(buy(100, 1, 50), "old")
     l:Add(buy(100 + 91 * 86400, 1, 50), "new")

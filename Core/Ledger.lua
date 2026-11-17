@@ -159,6 +159,44 @@ function Ledger:Profit(entry)
   return profits[entry]
 end
 
+-- Who you trade with: kind "sale" -> your customers (buyers), "buy" -> your suppliers (sellers). Only entries whose
+-- mail named the other player count. Sorted by gold, biggest first:
+--   { { name, trades, amount, units, last, favourite = item name }, ... }
+function Ledger:Counterparties(kind, since)
+  local by = {}
+  for _, e in ipairs(self.db.entries) do
+    if e.kind == kind and e.counterparty and e.t >= (since or 0) then
+      local c = by[e.counterparty]
+      if not c then
+        c = { name = e.counterparty, trades = 0, amount = 0, units = 0, last = 0, items = {} }
+        by[e.counterparty] = c
+      end
+      c.trades, c.amount, c.units = c.trades + 1, c.amount + (e.amount or 0), c.units + (e.qty or 0)
+      c.last = math.max(c.last, e.t)
+      local item = e.name or "?"
+      c.items[item] = (c.items[item] or 0) + (e.amount or 0)
+    end
+  end
+  local out = {}
+  for _, c in pairs(by) do
+    local best, bestAmount = nil, -1
+    for item, amount in pairs(c.items) do
+      if amount > bestAmount or (amount == bestAmount and item < best) then
+        best, bestAmount = item, amount
+      end
+    end
+    c.favourite, c.items = best, nil
+    out[#out + 1] = c
+  end
+  table.sort(out, function(a, b)
+    if a.amount == b.amount then
+      return a.name < b.name
+    end
+    return a.amount > b.amount
+  end)
+  return out
+end
+
 -- newest first, optionally since a time
 function Ledger:Recent(since, limit)
   local out = {}
