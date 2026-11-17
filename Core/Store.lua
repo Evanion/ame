@@ -213,7 +213,8 @@ end
 -- writes
 
 -- kind: "full" (replicate scan, default) or "partial" (search / sell-tab results for a few items)
-function Store:AddScan(snap, t, src, kind)
+-- packed (optional): the snapshot already compressed (a scan received over sync), stored as is.
+function Store:AddScan(snap, t, src, kind, packed)
   kind = kind or "full"
   local data = self.data
   local day = floor(t / Store.DAY)
@@ -227,7 +228,14 @@ function Store:AddScan(snap, t, src, kind)
 
   -- raw tier (sorted by t)
   local raw = data.raw
-  local entry = { t = t, src = src, k = kind, s = Codec.Pack(Codec.EncodeSnapshot(snap), self.compressor) }
+  -- compressing a full scan takes ~100 ms in one go (inside LibDeflate); yield around it so nothing else piles on
+  if not packed then
+    local text = Codec.EncodeSnapshot(snap)
+    self.yield()
+    packed = Codec.Pack(text, self.compressor)
+    self.yield()
+  end
+  local entry = { t = t, src = src, k = kind, s = packed }
   local pos = #raw + 1
   while pos > 1 and raw[pos - 1].t > t do
     pos = pos - 1
@@ -236,6 +244,13 @@ function Store:AddScan(snap, t, src, kind)
   local prevQty, obs = nil, 0
   if kind == "full" then
     prevQty, obs = self:previousFull(pos)
+    self.yield()
+    -- the next full scan pairs with this one: remember its quantities instead of decompressing it again
+    local qty = {}
+    for i, id in ipairs(ids) do
+      qty[id] = snap.qty[i]
+    end
+    self.lastFull = { t = t, qty = qty }
   end
 
   -- merge into the day
@@ -329,6 +344,9 @@ function Store:previousFull(pos)
       return nil, 0
     end
     if (e.k or "full") == "full" and e.t < entry.t then
+      if self.lastFull and self.lastFull.t == e.t then
+        return self.lastFull.qty, floor((entry.t - e.t) / 60)
+      end
       local ok, snap = pcall(function()
         return Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor))
       end)

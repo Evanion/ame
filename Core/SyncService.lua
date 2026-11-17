@@ -300,28 +300,37 @@ function Service:OnMessage(msg, distribution, sender)
   end
 end
 
+-- A received scan: decoded, checked and stored in a background job (decoding a full scan takes ~60 ms - not in the
+-- chat event). The packed payload is the sender's stored string, so it's stored as is, not packed again.
 function Service:Merge(m, sender)
   local AME = self.AME
-  local ok, snap = pcall(function()
-    return ns.Codec.DecodeSnapshot(ns.Codec.Unpack(m.packed, AME.compressor))
-  end)
-  if not ok or not snap then
-    self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
-    return
-  end
-  -- compare with our own prices for that same auction house (goblin AH scans against goblin AH prices)
-  local ref = (AME.index and AME.indexShard == m.shard) and AME.index or (AME.indexes and AME.indexes[m.shard])
-  local reference = ref and ref.items or {}
-  local plausible, why = Sync.Plausible(snap, reference)
-  if not plausible then
-    self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
-    self.stats.lastSyncRejection = ("%s: %s"):format(tostring(sender), tostring(why))
-    return
-  end
+  local snap
   AME:WithStore("sync-merge", m.shard, function(store)
-    return store:AddScan(snap, m.t, m.src, m.kind == "partial" and "partial" or "full")
-  end, function(done, added)
-    if done and added then
+    local ok, decoded = pcall(function()
+      return ns.Codec.DecodeSnapshot(ns.Codec.Unpack(m.packed, AME.compressor))
+    end)
+    if not ok or not decoded then
+      return { rejected = "undecodable" }
+    end
+    snap = decoded
+    store.yield()
+    -- compare with our own prices for that same auction house (goblin AH scans against goblin AH prices)
+    local ref = (AME.index and AME.indexShard == m.shard) and AME.index or (AME.indexes and AME.indexes[m.shard])
+    local plausible, why = Sync.Plausible(snap, ref and ref.items or {})
+    if not plausible then
+      return { rejected = why }
+    end
+    return { added = store:AddScan(snap, m.t, m.src, m.kind == "partial" and "partial" or "full", m.packed) }
+  end, function(done, result)
+    local why = done and result and result.rejected
+    if why then
+      self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
+      if why ~= "undecodable" then
+        self.stats.lastSyncRejection = ("%s: %s"):format(tostring(sender), tostring(why))
+      end
+      return
+    end
+    if done and result and result.added then
       self.stats.syncReceived = (self.stats.syncReceived or 0) + 1
       self.trust:Received(sender)
       self.stats.lastSyncReceived = { from = sender, at = GetServerTime(), items = #snap.ids }

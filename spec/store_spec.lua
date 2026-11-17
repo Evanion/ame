@@ -394,6 +394,30 @@ describe("Store", function()
     end)
   end)
 
+  describe("storing scans cheaply", function()
+    it("stores an already-packed scan as is, and pairs full scans without decompressing the previous one", function()
+      local data = {}
+      local store = newStore(data)
+      local first = snap({ [10] = { 100, 100, 100, 10, 2 } })
+      local packed = ns.Codec.Pack(ns.Codec.EncodeSnapshot(first), store.compressor)
+      store:AddScan(first, clock, "guildmate", "full", packed)
+      assert.are.equal(packed, data.raw[1].s)
+      local unpacks = 0
+      local unpack = ns.Codec.Unpack
+      ns.Codec.Unpack = function(s, ...)
+        if s == packed then -- the previous scan (merging into the day's segment unpacks that, which is fine)
+          unpacks = unpacks + 1
+        end
+        return unpack(s, ...)
+      end
+      store:AddScan(snap({ [10] = { 100, 100, 100, 4, 1 } }), clock + 3600, "me")
+      ns.Codec.Unpack = unpack
+      assert.are.equal(0, unpacks)
+      local p = store:Series(10)[1]
+      assert.are.equal(6, p.drain) -- 10 -> 4 units between the two scans
+    end)
+  end)
+
   describe("decompressed segments kept between index builds", function()
     it("decompresses only what changed since the last build, and gives the same series", function()
       local data = {}
