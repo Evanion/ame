@@ -304,3 +304,13 @@ describe("Analytics market phase", function()
     assert.are.equal("balanced", base.phase)
   end)
 end)
+
+describe("Analytics signal order", function()
+  it("sorts sell first, then buy, hold, wait, and no signal last", function()
+    local A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+    local order = { "sell", "buy", "hold", "wait", "none" }
+    for i = 2, #order do
+      assert.is_true(A.SIGNAL_RANK[order[i - 1]] < A.SIGNAL_RANK[order[i]], order[i - 1] .. " before " .. order[i])
+    end
+  end)
+end)
