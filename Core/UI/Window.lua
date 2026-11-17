@@ -60,21 +60,21 @@ function UI:Create()
   close:SetPoint("TOPRIGHT", -6, -7)
   self.closeButton = close
 
-  self.tabs = {}
-  local function tab(name, label, x)
-    local b = W.Button(f, label, 66, 20, function()
+  self.tabBar = W.Segmented(f, {
+    { "market", L["Market"] },
+    { "arbitrage", L["Arbitrage"] },
+    { "portfolio", L["Portfolio"] },
+    { "item", L["Item"] },
+    { "sync", L["Sync"] },
+    { "settings", L["Settings"] },
+    { "guide", L["Guide"] },
+  }, {
+    minWidth = 66,
+    onSelect = function(name)
       UI:ShowTab(name)
-    end)
-    b:SetPoint("TOPRIGHT", -(34 + x), -8)
-    self.tabs[name] = b
-  end
-  tab("market", L["Market"], 420)
-  tab("arbitrage", L["Arbitrage"], 350)
-  tab("portfolio", L["Portfolio"], 280)
-  tab("item", L["Item"], 210)
-  tab("sync", L["Sync"], 140)
-  tab("settings", L["Settings"], 70)
-  tab("guide", L["Guide"], 0)
+    end,
+  })
+  self.tabBar:SetPoint("TOPRIGHT", -34, -8) -- right-aligned: long labels push the row left
 
   self.views = {
     item = self:CreateItemView(f),
@@ -185,18 +185,9 @@ function UI:ApplyTheme()
   W.SetTheme(preferred ~= "auto" and preferred or self:ViewHouse())
   local a = W.COLORS.accent
   self.title:SetText(("|c%sAzeroth|r Mercantile Exchange"):format(W.Hex(a)))
-  for n, b in pairs(self.tabs) do
-    b:SetSelected(n == self.current)
-  end
   if self.chartHolder then
     self.chartHolder:SetBackdropBorderColor(a[1], a[2], a[3], 0.22)
     W.TintInnerGlow(self.chartHolder)
-  end
-  local iv = self.itemView
-  if iv then
-    for _, b in ipairs(iv.rangeButtons) do
-      b:SetSelected(b.key == self.rangeKey)
-    end
   end
   local mv = self.marketView
   if mv then
@@ -211,8 +202,8 @@ function UI:ShowTab(name)
   self:Create()
   for n, v in pairs(self.views) do
     v:SetShown(n == name)
-    self.tabs[n]:SetSelected(n == name)
   end
+  self.tabBar:Select(name, true)
   self.current = name
   if name == "market" then
     self:RefreshMarket()

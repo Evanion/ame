@@ -95,15 +95,11 @@ function UI:CreateItemView(parent)
   v.alertLabel = W.Text(v, "GameFontDisableSmall", "RIGHT")
   v.alertLabel:SetPoint("RIGHT", v.alertBelow, "LEFT", -6, 0)
   v.alertLabel:SetText(L["Alert when"])
-  v.watch = W.Button(v, L["Watch"], 84, 18, function(self)
+  v.watch = W.Button(v, L["Watch"], 84, 20, function(self)
     UI:WatchMenu(self, UI.itemID)
-  end)
-  v.watch.star = v.watch:CreateTexture(nil, "OVERLAY")
+  end, { icon = 14 })
+  v.watch.star = v.watch.icon
   W.SetStar(v.watch.star, false)
-  v.watch.star:SetSize(14, 14)
-  v.watch.star:SetPoint("LEFT", 6, 0)
-  v.watch.label:ClearAllPoints()
-  v.watch.label:SetPoint("LEFT", 24, 0)
   v.watch:SetPoint("RIGHT", v.alertLabel, "LEFT", -12, 0)
 
   v.icon = v:CreateTexture(nil, "ARTWORK")
@@ -133,25 +129,24 @@ function UI:CreateItemView(parent)
   end
 
   -- range buttons
-  v.rangeButtons = {}
+  local ranges, days = {}, {}
   for i, r in ipairs(RANGES) do
-    local b = W.Button(v, r[3] or r[1], 44, 18, function()
-      UI:SetRange(r[2], r[1])
-    end)
-    if i == 1 then
-      b:SetPoint("TOPLEFT", v.cards[1], "BOTTOMLEFT", 0, -10)
-    else
-      b:SetPoint("LEFT", v.rangeButtons[i - 1], "RIGHT", 4, 0)
-    end
-    b.key = r[1]
-    v.rangeButtons[i] = b
+    ranges[i], days[r[1]] = { r[1], r[3] or r[1] }, r[2]
   end
-  v.style = W.Button(v, L["Candles"], 64, 18, function()
+  v.ranges = W.Segmented(v, ranges, {
+    minWidth = 44,
+    onSelect = function(key)
+      UI:SetRange(days[key], key)
+    end,
+  })
+  v.ranges:SetPoint("TOPLEFT", v.cards[1], "BOTTOMLEFT", 0, -10)
+  v.rangeButtons = v.ranges.buttons
+  v.style = W.Button(v, L["Candles"], 64, 20, function()
     local style = ns.Settings:Get("chartStyle") == "candles" and "line" or "candles"
     ns.Settings:Set("chartStyle", style)
     UI:DrawItemChart()
   end)
-  v.style:SetPoint("LEFT", v.rangeButtons[#RANGES], "RIGHT", 12, 0)
+  v.style:SetPoint("LEFT", v.ranges, "RIGHT", 12, 0)
   ns.Help.Explain(v.style, "candles")
   v.legend = W.Text(v, "GameFontDisableSmall")
   v.legend:SetPoint("LEFT", v.style, "RIGHT", 12, 0)
@@ -161,7 +156,7 @@ function UI:CreateItemView(parent)
   W.Skin(holder, { 0.07, 0.08, 0.1, 1 }, W.COLORS.border)
   W.InnerGlow(holder)
   self.chartHolder = holder
-  holder:SetPoint("TOPLEFT", v.rangeButtons[1], "BOTTOMLEFT", 0, -8)
+  holder:SetPoint("TOPLEFT", v.ranges, "BOTTOMLEFT", 0, -8)
   holder:SetPoint("BOTTOMRIGHT", 0, 22)
 
   -- posting price suggestion (Pricing / Posting), under the chart
@@ -221,9 +216,7 @@ end
 
 function UI:SetRange(days, key)
   self.rangeDays, self.rangeKey = days, key
-  for _, b in ipairs(self.itemView.rangeButtons) do
-    b:SetSelected(b.key == key)
-  end
+  self.itemView.ranges:Select(key, true)
   local wasIntraday = self.intradayMode
   self.intradayMode = key == INTRADAY
   if self.intradayMode then

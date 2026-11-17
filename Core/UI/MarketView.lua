@@ -270,26 +270,24 @@ function UI:CreateMarketView(parent)
   maxBox:SetPoint("LEFT", minBox, "RIGHT", 6, 0)
   v.minBox, v.maxBox = minBox, maxBox
 
-  local filters = { { nil, L["All"] }, { "buy", L["Buy"] }, { "hold", L["Hold"] }, { "sell", L["Sell"] } }
-  v.filterButtons = {}
-  for i, fdef in ipairs(filters) do
-    local b = W.Button(main, fdef[2], 46, 20, function()
-      UI.mq.signal = fdef[1]
+  v.signals = W.Segmented(main, {
+    { "all", L["All"] },
+    { "buy", L["Buy"] },
+    { "hold", L["Hold"] },
+    { "sell", L["Sell"] },
+  }, {
+    minWidth = 46,
+    onSelect = function(key)
+      UI.mq.signal = key ~= "all" and key or nil
       UI.offset = 0
       UI:RefreshMarket(true)
-    end)
-    b.key = fdef[1] or "all"
-    if i == 1 then
-      b:SetPoint("LEFT", maxBox, "RIGHT", 10, 0)
-    else
-      b:SetPoint("LEFT", v.filterButtons[i - 1], "RIGHT", 3, 0)
-    end
-    v.filterButtons[i] = b
-  end
+    end,
+  })
+  v.signals:SetPoint("LEFT", maxBox, "RIGHT", 10, 0)
   local reset = W.Button(main, L["Reset"], 52, 20, function()
     UI:ResetMarketFilters()
   end)
-  reset:SetPoint("LEFT", v.filterButtons[#filters], "RIGHT", 10, 0)
+  reset:SetPoint("LEFT", v.signals, "RIGHT", 10, 0)
 
   -- the list (shared DataTable component)
   v.table = ns.DataTable.New(main, {
@@ -415,9 +413,7 @@ function UI:RenderMarket()
     return
   end
   local q = self.mq
-  for _, b in ipairs(v.filterButtons) do
-    b:SetSelected(b.key == (q.signal or "all"))
-  end
+  v.signals:Select(q.signal or "all", true)
   v.quality:SetValue(q.minQuality)
   local total = #list
   local t = v.table

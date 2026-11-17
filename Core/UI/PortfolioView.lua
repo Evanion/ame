@@ -268,31 +268,21 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.cards[2]:SetScript("OnLeave", function()
     GameTooltip:Hide()
   end)
-  v.positionsButton = W.Button(v, L["Positions"], 80, 20, function()
-    UI.pfMode, UI.pfOffset = "positions", 0
-    UI:RefreshPortfolio()
-  end)
-  v.positionsButton:SetPoint("TOPLEFT", 0, -54)
-  v.ledgerButton = W.Button(v, L["Ledger"], 80, 20, function()
-    UI.pfMode, UI.pfOffset = "ledger", 0
-    UI:RefreshPortfolio()
-  end)
-  v.ledgerButton:SetPoint("LEFT", v.positionsButton, "RIGHT", 4, 0)
-  v.auctionsButton = W.Button(v, L["Auctions"], 80, 20, function()
-    UI.pfMode, UI.pfOffset = "auctions", 0
-    UI:RefreshPortfolio()
-  end)
-  v.auctionsButton:SetPoint("LEFT", v.ledgerButton, "RIGHT", 4, 0)
-  v.customersButton = W.Button(v, L["Customers"], 80, 20, function()
-    UI.pfMode, UI.pfOffset = "customers", 0
-    UI:RefreshPortfolio()
-  end)
-  v.customersButton:SetPoint("LEFT", v.auctionsButton, "RIGHT", 4, 0)
-  v.suppliersButton = W.Button(v, L["Suppliers"], 80, 20, function()
-    UI.pfMode, UI.pfOffset = "suppliers", 0
-    UI:RefreshPortfolio()
-  end)
-  v.suppliersButton:SetPoint("LEFT", v.customersButton, "RIGHT", 4, 0)
+  v.modes = W.Segmented(v, {
+    { "positions", L["Positions"] },
+    { "ledger", L["Ledger"] },
+    { "auctions", L["Auctions"] },
+    { "customers", L["Customers"] },
+    { "suppliers", L["Suppliers"] },
+  }, {
+    minWidth = 80,
+    onSelect = function(mode)
+      UI.pfMode, UI.pfOffset = mode, 0
+      UI:RefreshPortfolio()
+    end,
+  })
+  v.modes:SetPoint("TOPLEFT", 0, -54)
+  v.ledgerButton, v.auctionsButton = v.modes.byKey.ledger, v.modes.byKey.auctions -- shortcuts (specs)
   local function itemID(e)
     return e.itemID
   end
@@ -413,11 +403,7 @@ function UI:RenderPortfolio()
   local mode = self.pfMode
   local ledgerMode, auctionsMode = mode == "ledger", mode == "auctions"
   local customersMode, suppliersMode = mode == "customers", mode == "suppliers"
-  v.positionsButton:SetSelected(mode == "positions")
-  v.ledgerButton:SetSelected(ledgerMode)
-  v.auctionsButton:SetSelected(auctionsMode)
-  v.customersButton:SetSelected(customersMode)
-  v.suppliersButton:SetSelected(suppliersMode)
+  v.modes:Select(mode, true)
 
   local lists = {
     positions = { self.pfRows, v.positions },

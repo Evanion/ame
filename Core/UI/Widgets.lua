@@ -46,7 +46,15 @@ function W.SetTheme(house)
   W.COLORS.accent = { c[1], c[2], c[3], 1 }
   W.COLORS.selected = { c[1], c[2], c[3], 0.22 }
   W.COLORS.rowSelected = { c[1], c[2], c[3], 0.2 }
+  -- selected buttons take the new accent
+  for b in pairs(W.buttons) do
+    if b.selected then
+      b:SetSelected(true)
+    end
+  end
 end
+
+W.buttons = setmetatable({}, { __mode = "k" }) -- every W.Button, for re-tinting on a theme change
 
 -- "ffRRGGBB" for |c escapes
 function W.Hex(c)
@@ -78,14 +86,24 @@ function W.Text(parent, font, justify)
   return fs
 end
 
--- flat button with hover and optional selected state; onClick(button)
-function W.Button(parent, label, width, height, onClick)
+-- flat button with hover and optional selected state; onClick(button).
+-- opts.icon: a leading icon of that size (b.icon, a texture; the label moves right of it)
+function W.Button(parent, label, width, height, onClick, opts)
   local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
   b:SetSize(width or 60, height or 20)
   W.Skin(b, W.COLORS.panel)
+  b.selected = false
+  W.buttons[b] = true
   b.label = W.Text(b, "GameFontHighlightSmall", "CENTER")
-  b.label:SetPoint("CENTER")
   b.label:SetText(label)
+  if opts and opts.icon then
+    b.icon = b:CreateTexture(nil, "OVERLAY")
+    b.icon:SetSize(opts.icon, opts.icon)
+    b.icon:SetPoint("LEFT", 6, 0)
+    b.label:SetPoint("LEFT", b.icon, "RIGHT", 4, 0)
+  else
+    b.label:SetPoint("CENTER")
+  end
   b:SetScript("OnEnter", function(self)
     if not self.selected then
       local c = W.COLORS.panelHover
@@ -111,6 +129,54 @@ function W.Button(parent, label, width, height, onClick)
     self:SetBackdropBorderColor(bc[1], bc[2], bc[3], on and 0.6 or bc[4])
   end
   return b
+end
+
+-- A row of buttons where one is selected (tabs, ranges, filters, modes).
+--   W.Segmented(parent, { { key, label }, ... }, {
+--     height = 20, gap = 4,
+--     width = 60,                 -- fixed button width; or
+--     minWidth = 44,              -- at least this, wider for long labels (translations)
+--     onSelect = function(key, button) end,
+--   })
+-- Returns a frame sized to the row (anchor it as one piece) with :Select(key, silent), :Selected(), .buttons (in
+-- order) and .byKey; each button has .key. Clicking selects and calls onSelect.
+function W.Segmented(parent, items, opts)
+  opts = opts or {}
+  local h, gap = opts.height or 20, opts.gap or 4
+  local seg = CreateFrame("Frame", nil, parent)
+  seg.buttons, seg.byKey, seg.selected = {}, {}, false
+  local x = 0
+  for i, item in ipairs(items) do
+    local b = W.Button(seg, item[2], opts.width or 60, h, function(self)
+      seg:Select(self.key)
+    end)
+    b.key = item[1]
+    local w = opts.width
+    if not w then
+      local textW = b.label:GetStringWidth() or 0
+      w = math.max(opts.minWidth or 0, math.ceil(textW) + 16)
+      b:SetWidth(w)
+    end
+    b:SetPoint("LEFT", x, 0)
+    x = x + w + gap
+    seg.buttons[i], seg.byKey[b.key] = b, b
+  end
+  seg:SetSize(math.max(0, x - gap), h)
+
+  function seg:Select(key, silent)
+    self.selected = key
+    for _, b in ipairs(self.buttons) do
+      b:SetSelected(b.key == key)
+    end
+    if not silent and opts.onSelect then
+      opts.onSelect(key, self.byKey[key])
+    end
+  end
+
+  function seg:Selected()
+    return self.selected
+  end
+  return seg
 end
 
 -- The default UI fonts lack glyphs like ▲ ▼ ▮, so use inline textures instead.
