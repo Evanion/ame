@@ -791,6 +791,45 @@ describe("addon in a stubbed client", function()
       _G.C_Item.GetItemInfoInstant = instant
     end)
 
+    it("keeps each list's scroll position when you open an item and come back", function()
+      boot()
+      env.npcFaction = nil
+      env:fire("AUCTION_HOUSE_SHOW")
+      local goblin, horde = {}, {}
+      for i = 1, 40 do
+        goblin[i] = { 1000 + i, 9000, 1 }
+        horde[i] = { 1000 + i, 1000, 1 }
+      end
+      fullScan(goblin)
+      env:fire("AUCTION_HOUSE_CLOSED")
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      fullScan(horde)
+      env:advance(4)
+      drainJobs()
+      ns.UI:Toggle()
+      for _, tab in ipairs({ "market", "arbitrage" }) do
+        ns.UI:ShowTab(tab)
+        local view = tab == "market" and ns.UI.marketView or ns.UI.arbView
+        if view.scripts.OnShow then
+          view.scripts.OnShow(view)
+        end
+        drainJobs()
+        local t = view.table
+        t:Scroll(-3) -- down 9 rows
+        local first = t.rows[1].itemID
+        assert.is_true(t:Offset() > 0, tab)
+        ns.UI:ShowItem(t.rows[1].itemID)
+        drainJobs()
+        ns.UI:ShowTab(tab)
+        if view.scripts.OnShow then
+          view.scripts.OnShow(view)
+        end
+        drainJobs()
+        assert.are.equal(first, t.rows[1].itemID, tab .. " should be where we left it")
+      end
+    end)
+
     it("sorts any table by clicking its column headers", function()
       seeded()
       _G.C_Container = {

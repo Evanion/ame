@@ -225,7 +225,7 @@ function UI:CreateArbitrageView(parent, contentArea)
   v.status:SetWidth(940)
 
   v:SetScript("OnShow", function()
-    UI:RefreshArbitrage()
+    UI:RefreshArbitrage(true) -- coming back (e.g. from an item chart): keep the scroll position
   end)
   return v
 end
@@ -246,7 +246,9 @@ function UI:RefreshArbitrage(keepOffset)
   local AME = ns.AME
   local realm = AME:MarketRealmName()
   local buyShard, sellShard = ns.ShardKey(realm, a.buy), ns.ShardKey(realm, a.sell)
-  self.arbRows = nil
+  if not keepOffset then
+    self.arbRows = nil -- a new comparison: show "loading"; a refresh keeps the rows until the new ones are in
+  end
   v.status:SetText("Loading market data...")
   self:RenderArbitrage()
   local token = {}

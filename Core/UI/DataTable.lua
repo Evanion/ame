@@ -254,7 +254,8 @@ function DataTable:SetOffset(n)
 end
 
 function DataTable:Scroll(delta)
-  self:SetOffset(math.max(0, self:Offset() - delta * 3))
+  local maxOffset = math.max(0, #(self.data or {}) - #self.rows)
+  self:SetOffset(math.max(0, math.min(self:Offset(), maxOffset) - delta * 3))
   self:Render()
 end
 
@@ -366,8 +367,9 @@ function DataTable:Render()
   local list = self.data
   local n = #self.rows
   local maxOffset = math.max(0, #list - n)
+  -- show what fits, but keep the remembered position: a list that's briefly shorter (reloading, switching tabs)
+  -- must not lose where you were scrolled to
   local offset = math.min(self:Offset(), maxOffset)
-  self:SetOffset(offset)
   self.syncing = true
   self.bar:SetMinMaxValues(0, maxOffset)
   self.bar:SetValue(offset)
