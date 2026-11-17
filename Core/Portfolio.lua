@@ -28,6 +28,28 @@ function Portfolio.Merge(holdings)
   return out
 end
 
+-- What's listed on the auction house right now, across characters:
+--   { count, value (asking prices), net (after each house's cut), market (at market price), chars = {...} }
+-- cut(house) gives the seller's cut fraction; items = market summaries
+function Portfolio.Listed(holdings, cut, items)
+  local out = { count = 0, value = 0, net = 0, market = 0, chars = {} }
+  for char, h in pairs(holdings or {}) do
+    local l = h.listed
+    if l and l.count > 0 then
+      local net = l.value * (1 - (cut and cut(l.house) or 0))
+      local market = 0
+      for itemID, qty in pairs(h.auctions or {}) do
+        local s = items and items[itemID]
+        market = market + (s and s.market or 0) * qty
+      end
+      out.count, out.value, out.net, out.market =
+        out.count + l.count, out.value + l.value, out.net + net, out.market + market
+      out.chars[char] = { count = l.count, value = l.value, net = net, house = l.house }
+    end
+  end
+  return out
+end
+
 -- positions sorted by value, plus totals { value, cost (of the part with a known cost), unrealized }
 function Portfolio.Build(holdings, basis, items)
   local rows = {}

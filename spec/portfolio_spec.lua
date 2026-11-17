@@ -82,6 +82,22 @@ describe("Portfolio", function()
     assert.are.equal(2, m[30].qty)
   end)
 
+  it("totals what's listed on the AH across characters, after each house's cut and at market", function()
+    local h = {
+      a = { auctions = { [10] = 10 }, listed = { count = 2, value = 1500, house = "Horde" } },
+      b = { auctions = { [20] = 1 }, listed = { count = 1, value = 6000, house = "Neutral" } },
+      c = { bags = { [10] = 1 } },
+    }
+    local l = P.Listed(h, function(house)
+      return house == "Neutral" and 0.15 or 0.05
+    end, items)
+    assert.are.equal(3, l.count)
+    assert.are.equal(7500, l.value)
+    assert.are.equal(1500 * 0.95 + 6000 * 0.85, l.net)
+    assert.are.equal(10 * 120 + 5000, l.market)
+    assert.is_nil(l.chars.c)
+  end)
+
   it("values positions at market, with cost basis and unrealized profit where known", function()
     local rows, totals = P.Build(holdings, { [10] = { units = 8, unit = 100 } }, items)
     assert.are.equal(2, #rows)

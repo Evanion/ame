@@ -44,7 +44,7 @@ end
 local function card(parent, label, x)
   local c = CreateFrame("Frame", nil, parent, "BackdropTemplate")
   W.Skin(c, W.COLORS.panel)
-  c:SetSize(228, 44)
+  c:SetSize(184, 44)
   c:SetPoint("TOPLEFT", x, 0)
   c.label = W.Text(c, "GameFontDisableSmall")
   c.label:SetPoint("TOPLEFT", 8, -6)
@@ -131,15 +131,54 @@ function UI:CreatePortfolioView(parent, contentArea)
   self.pfView = v
   self.pfMode = "positions"
   v.cards = {
-    card(v, "Holdings value (all characters)", 0),
-    card(v, "Unrealized profit (AH purchases)", 238),
-    card(v, "Realized profit, last 7 days", 476),
-    card(v, "Last 30 days: sold / bought", 714),
+    card(v, "Holdings value", 0),
+    card(v, "Listed on the AH now", 192),
+    card(v, "Unrealized profit", 384),
+    card(v, "Realized profit, 7 days", 576),
+    card(v, "30 days: sold / bought", 768),
   }
-  for i, term in ipairs({ "pfValue", "pfUnrealized", "pfProfit", "pfFlow" }) do
+  for i, term in ipairs({ "pfValue", false, "pfUnrealized", "pfProfit", "pfFlow" }) do
     v.cards[i]:EnableMouse(true)
-    ns.Help.Explain(v.cards[i], term)
+    if term then
+      ns.Help.Explain(v.cards[i], term)
+    end
   end
+  -- listed: per-character breakdown on hover
+  v.cards[2]:SetScript("OnEnter", function(self)
+    local l = UI.pfListed
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    GameTooltip:SetText("Listed on the auction house now", 1, 1, 1)
+    GameTooltip:AddLine(
+      "Your active auctions on all characters, as of the last time each opened the auction house.",
+      nil,
+      nil,
+      nil,
+      true
+    )
+    if l and l.count > 0 then
+      GameTooltip:AddLine(" ")
+      GameTooltip:AddDoubleLine("Asking prices", W.Money(l.value), 0.8, 0.8, 0.8, 1, 1, 1)
+      GameTooltip:AddDoubleLine("You'd receive (after the cut)", W.Money(l.net), 0.8, 0.8, 0.8, 1, 1, 1)
+      GameTooltip:AddDoubleLine("At market price", W.Money(l.market), 0.8, 0.8, 0.8, 1, 1, 1)
+      GameTooltip:AddLine(" ")
+      for char, c in pairs(l.chars) do
+        GameTooltip:AddDoubleLine(
+          ("%s (%s)"):format(char:gsub("^[^:]*:", ""), ns.HOUSE_LABEL[c.house] or c.house or "?"),
+          ("%d  ·  %s"):format(c.count, W.Money(c.value, true)),
+          0.7,
+          0.7,
+          0.7,
+          1,
+          1,
+          1
+        )
+      end
+    end
+    GameTooltip:Show()
+  end)
+  v.cards[2]:SetScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
   v.positionsButton = W.Button(v, "Positions", 80, 20, function()
     UI.pfMode, UI.pfOffset = "positions", 0
     UI:RefreshPortfolio()
@@ -176,6 +215,9 @@ function UI:RefreshPortfolio()
   local index = AME:FactionIndex()
   local basis = AME.ledger and AME.ledger:CostBasis() or {}
   self.pfRows, self.pfTotals = ns.Portfolio.Build(ns.Trading:Holdings(), basis, index and index.items or {})
+  self.pfListed = ns.Portfolio.Listed(ns.Trading:Holdings(), function(house)
+    return ns.Settings:AuctionCut(house)
+  end, index and index.items or {})
   local now = GetServerTime()
   self.pfWeek = AME.ledger and AME.ledger:Summary(now - 7 * DAY) or {}
   self.pfMonth = AME.ledger and AME.ledger:Summary(now - 30 * DAY) or {}
@@ -206,10 +248,14 @@ function UI:RenderPortfolio()
     return
   end
   local t, w, m = self.pfTotals, self.pfWeek, self.pfMonth
-  v.cards[1].value:SetText(W.Money(t.value))
-  v.cards[2].value:SetText(signedMoney(t.unrealized))
-  v.cards[3].value:SetText(signedMoney(w.profit))
-  v.cards[4].value:SetText(W.Money(m.income or 0, true) .. "  /  " .. W.Money(m.spent or 0, true))
+  local l = self.pfListed
+  v.cards[1].value:SetText(W.Money(t.value, true))
+  v.cards[2].value:SetText(
+    l.count > 0 and ("%s  |cff999999%d auctions|r"):format(W.Money(l.value, true), l.count) or "|cff777777none|r"
+  )
+  v.cards[3].value:SetText(signedMoney(t.unrealized))
+  v.cards[4].value:SetText(signedMoney(w.profit))
+  v.cards[5].value:SetText(W.Money(m.income or 0, true) .. " / " .. W.Money(m.spent or 0, true))
   local ledgerMode = self.pfMode == "ledger"
   v.positionsButton:SetSelected(not ledgerMode)
   v.ledgerButton:SetSelected(ledgerMode)

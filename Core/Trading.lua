@@ -90,17 +90,24 @@ function Trading:ScanAuctions()
   if not (ah and ah.GetNumOwnedAuctions and ah.GetOwnedAuctionInfo) then
     return
   end
-  local out = {}
+  local out, listed = {}, { count = 0, value = 0, house = ns.AME:CurrentHouse() }
   for i = 1, ah.GetNumOwnedAuctions() or 0 do
     local info = ah.GetOwnedAuctionInfo(i)
     local active = info and (info.status == nil or info.status == 0)
     local id = info and info.itemKey and info.itemKey.itemID
     if active and id then
-      out[id] = (out[id] or 0) + (info.quantity or 1)
+      local qty = info.quantity or 1
+      out[id] = (out[id] or 0) + qty
+      -- asking price: buyout (per unit, times the quantity), else the bid
+      local unit = info.buyoutAmount or info.bidAmount
+      if unit then
+        listed.value = listed.value + unit * qty
+      end
+      listed.count = listed.count + 1
     end
   end
   local h = mine()
-  h.auctions, h.auctionsAt = out, GetServerTime()
+  h.auctions, h.auctionsAt, h.listed = out, GetServerTime(), listed
 end
 
 function Trading:QueryAuctions()

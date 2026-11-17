@@ -740,6 +740,19 @@ describe("addon in a stubbed client", function()
       env:fire("MAIL_INBOX_UPDATE")
       env:fire("MAIL_INBOX_UPDATE") -- the same mail again: recorded once
       env:fire("BAG_UPDATE_DELAYED")
+      -- at the Horde AH: 2 auctions of Linen, 5 at 2s each and 1 at 3s
+      local owned = {
+        { itemKey = { itemID = 2589 }, quantity = 5, buyoutAmount = 200, status = 0 },
+        { itemKey = { itemID = 2589 }, quantity = 1, buyoutAmount = 300, status = 0 },
+        { itemKey = { itemID = 2589 }, quantity = 4, buyoutAmount = 200, status = 1 }, -- sold: not listed
+      }
+      env.ah.GetNumOwnedAuctions = function()
+        return #owned
+      end
+      env.ah.GetOwnedAuctionInfo = function(i)
+        return owned[i]
+      end
+      env:fire("OWNED_AUCTIONS_UPDATED")
       local ledger = ns.AME.ledger
       assert.are.equal(2, #ledger.db.entries)
       local week = ledger:Summary(env.now - 7 * 86400)
@@ -753,9 +766,12 @@ describe("addon in a stubbed client", function()
       v.scripts.OnShow(v)
       local row = ns.UI.pfRows[1]
       assert.are.equal(2589, row.itemID)
-      assert.are.equal(40, row.qty)
-      assert.are.equal(row.market * 40, ns.UI.pfTotals.value)
+      assert.are.equal(row.market * row.qty, ns.UI.pfTotals.value)
       assert.truthy(v.cards[1].value.text ~= "")
+      assert.are.equal(2, ns.UI.pfListed.count)
+      assert.are.equal(5 * 200 + 300, ns.UI.pfListed.value)
+      assert.truthy(v.cards[2].value.text:find("2 auctions"))
+      assert.are.equal(46, row.qty) -- 40 in bags + 6 listed
       v.ledgerButton.scripts.OnClick(v.ledgerButton)
       assert.are.equal("ledger", ns.UI.pfMode)
       assert.truthy(v.ledger.rows[1].cells[2].text:find("sold"))
