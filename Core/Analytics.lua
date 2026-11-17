@@ -9,6 +9,7 @@
 --   trend30                     least-squares slope per day / mean (drift: +0.01 = +1%/day)
 --   supplyTrend30               same for quantity
 --   sellRate                    estimated units sold per day (supply drain between full scans, last 7 points)
+--   scans7                      scans feeding the last 7 points (see Analytics.Confidence)
 --   days                        number of points
 --   score, signal               opportunity score (higher = cheaper than usual on a stable item) and
 --                               "buy" | "hold" | "sell" | "none" (not enough history yet)
@@ -152,6 +153,12 @@ function Analytics.Summarize(series)
     change7 = n > 7 and Analytics.Change(markets[n - 7], markets[n]) or nil,
     change30 = n > 30 and Analytics.Change(markets[n - 30], markets[n]) or nil,
   }
+  -- data behind the numbers: scans feeding the last 7 points
+  local scans7 = 0
+  for k = math.max(1, n - 6), n do
+    scans7 = scans7 + (series[k].scans or 1)
+  end
+  s.scans7 = scans7
   -- liquidity: units gone between consecutive full scans over the last 7 points, per day observed
   local drained, observed = 0, 0
   for k = math.max(1, n - 6), n do
@@ -272,4 +279,19 @@ function Analytics.Clean(series, factor)
     end
   end
   return out, dropped
+end
+
+-- How much to trust an item's numbers: "high" (6+ scans in its last week of data, seen within a day, a week of
+-- history), "medium" (2+ scans, seen within 3 days), else "low". today: day number.
+function Analytics.Confidence(s, today)
+  if not s then
+    return "low"
+  end
+  local age = today and s.day and (today - s.day) or 0
+  if (s.scans7 or 0) >= 6 and age <= 1 and (s.days or 0) >= 7 then
+    return "high"
+  elseif (s.scans7 or 0) >= 2 and age <= 3 then
+    return "medium"
+  end
+  return "low"
 end

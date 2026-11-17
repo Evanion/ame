@@ -6,7 +6,11 @@ local Help = {}
 ns.Help = Help
 
 Help.TERMS = {
-  name = { "Item", "Click a row to open its price chart. Click the star to add it to a watchlist." },
+  name = {
+    "Item",
+    "Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show "
+      .. "how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old.",
+  },
   market = {
     "Market price",
     "What the item typically sells for right now. From full listing data it's the average of the cheapest "

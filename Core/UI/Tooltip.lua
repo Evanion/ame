@@ -61,7 +61,8 @@ function Tooltip.Lines(s, opts)
   end
   local seen = ago(s.day, opts.today)
   if seen then
-    row("last data", seen)
+    local level = ns.Analytics and ns.Analytics.Confidence(s, opts.today) or nil
+    row("data", ("%s%s|r  %d scans/7d, %s"):format(DIM, level and W.Confidence(level) or "", s.scans7 or 0, seen))
   end
   return rows
 end

@@ -231,3 +231,20 @@ describe("Analytics sell rate", function()
     assert.are.equal(160, s.sellRate) -- 120 units over 18 observed hours = 160 per day
   end)
 end)
+
+describe("Analytics.Confidence", function()
+  it("rates how much to trust an item's numbers from scan count, freshness and history", function()
+    local A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+    local series = {}
+    for d = 1, 8 do
+      series[d] = { day = d, market = 100, scans = 2 }
+    end
+    local s = A.Summarize(series)
+    assert.are.equal(14, s.scans7)
+    assert.are.equal("high", A.Confidence(s, 8))
+    assert.are.equal("medium", A.Confidence(s, 11)) -- 3 days old
+    assert.are.equal("low", A.Confidence(s, 20)) -- stale
+    assert.are.equal("low", A.Confidence(A.Summarize({ { day = 1, market = 100, scans = 1 } }), 1))
+    assert.are.equal("medium", A.Confidence(A.Summarize({ { day = 1, market = 100, scans = 3 } }), 1))
+  end)
+end)

@@ -698,9 +698,11 @@ function UI:FillItem(_, series, latest)
   )
   cards[7].value:SetText(W.Signal(s.signal) .. ("  |cff999999%+d|r"):format(s.score or 0))
   v.sub:SetText(
-    ("%s  ·  %d days of history%s%s"):format(
+    ("%s  ·  %d days of history  ·  data %s %s%s%s"):format(
       ns.ShardLabel(self:ViewShard()),
       #series,
+      W.Confidence(ns.Analytics.Confidence(s, math.floor(GetServerTime() / DAY))),
+      ("%d scans in 7 days"):format(s.scans7 or 0),
       latest and ("  ·  last seen " .. date("%b %d %H:%M", latest.t)) or "",
       dropped > 0 and ("  ·  |cffffcc00%d outlier price%s ignored|r"):format(dropped, dropped == 1 and "" or "s") or ""
     )
@@ -1233,8 +1235,13 @@ function UI:CreateMarketView(parent)
     local cx = 0
     for c, col in ipairs(COLUMNS) do
       local fs = W.Text(row, "GameFontHighlightSmall", col.key == "name" and "LEFT" or "RIGHT")
-      fs:SetSize(col.key == "name" and col.width - 40 or col.width, ROW_H)
+      fs:SetSize(col.key == "name" and col.width - 62 or col.width, ROW_H)
       fs:SetPoint("LEFT", col.key == "name" and cx + 40 or cx, 0)
+      if col.key == "name" then
+        row.conf = W.Text(row, "GameFontHighlightSmall", "RIGHT")
+        row.conf:SetSize(20, ROW_H)
+        row.conf:SetPoint("LEFT", cx + col.width - 20, 0)
+      end
       fs:SetWordWrap(false)
       row.cells[c] = fs
       cx = cx + col.width + 8
@@ -1452,6 +1459,7 @@ function UI:RenderMarket()
       if not name then
         self:RenderWhenLoaded(s.itemID)
       end
+      row.conf:SetText(W.Confidence(ns.Analytics.Confidence(s, self.index and self.index.day)))
       local watched = ns.AME.watch and ns.AME.watch:Watched(s.itemID)
       row.star.watched = watched
       W.SetStar(row.star.tex, watched)

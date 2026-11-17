@@ -27,7 +27,7 @@ much should I trust this number, and what is my guild watching.
 | M7 | **Liquidity.** Estimated units sold per day from supply drain between consecutive full scans of the same house (sold + cancelled + expired, labelled as an estimate); days-to-sell for a stack. Screener column, item page, tooltip detail, Arbitrage sell-side liquidity. | built |
 | M8 | **Market depth.** Keep the latest order book (price tiers) from item/commodity searches; cost of buying N units, and how many units an arbitrage route stays profitable for ("buy 37, +12g"). Searching from the Arbitrage tab fills it. | built |
 | M9 | **Portfolio and ledger.** AH sales and purchases from auction mail invoices (net of cut and deposit); holdings in bags, bank and active auctions per character, account-wide; cost basis from purchases; unrealized and realized P&L; Portfolio tab with Buy/Hold/Sell next to each position. | built |
-| M10 | **Data confidence.** Per item: scans in the last 7 days and freshness, shown as a confidence marker (high / medium / low) in the screener, item page and tooltip detail. | planned |
+| M10 | **Data confidence.** Per item: scans in the last 7 days and freshness, shown as a confidence marker (high / medium / low) in the screener, item page and tooltip detail. | built |
 | M11 | **Guild watchlists.** Share a watchlist with the guild over sync; members see it in the sidebar (read-only, copyable) as a guild market board. | planned |
 
 Then: bugfix rounds from in-game testing, then release.
