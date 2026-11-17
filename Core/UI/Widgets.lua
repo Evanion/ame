@@ -930,6 +930,58 @@ function W.RowList(parent, opts)
   return list
 end
 
+-- Popups (StaticPopup). The dialog is registered under id on first use; arg fills a %s in text, data is handed
+-- back to onAccept.
+local function popup(id, text, accept, extra)
+  local d = StaticPopupDialogs[id]
+  if not d then
+    d = {
+      text = text,
+      button1 = accept,
+      button2 = CANCEL or L["Cancel"],
+      OnAccept = function(dialog, data)
+        StaticPopupDialogs[id].accepted(dialog, data)
+      end,
+      timeout = 0,
+      whileDead = true,
+      hideOnEscape = true,
+      preferredIndex = 3,
+    }
+    for k, v in pairs(extra or {}) do
+      d[k] = v
+    end
+    StaticPopupDialogs[id] = d
+  end
+  return d
+end
+
+-- yes / no: onAccept(data)
+function W.Confirm(id, text, accept, onAccept, arg, data)
+  popup(id, text, accept or ACCEPT or L["Accept"]).accepted = function(_, d)
+    onAccept(d)
+  end
+  StaticPopup_Show(id, arg, nil, data)
+end
+
+-- ask for a line of text: onAccept(text, data) on Accept or Enter
+function W.Prompt(id, text, onAccept, data)
+  popup(id, text, ACCEPT or L["Accept"], {
+    hasEditBox = true,
+    EditBoxOnEnterPressed = function(box)
+      local dialog = box:GetParent()
+      StaticPopupDialogs[id].OnAccept(dialog, dialog.data)
+      dialog:Hide()
+    end,
+  }).accepted = function(
+    dialog,
+    d
+  )
+    local box = dialog and (dialog.editBox or dialog.EditBox)
+    onAccept(box and box:GetText(), d)
+  end
+  StaticPopup_Show(id, nil, nil, data)
+end
+
 -- The status line along the bottom of a tab (counts, hints); join its parts with W.SEP.
 W.SEP = "  ·  "
 function W.StatusLine(parent)

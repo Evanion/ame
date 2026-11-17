@@ -197,21 +197,16 @@ end
 -- ReloadUI is protected outside hardware events (a timer callback gets ADDON_ACTION_BLOCKED), so ask with a popup
 -- whose button click is the hardware event.
 function SelfTest.PromptReload(passed, warned, failed)
-  if not (StaticPopupDialogs and StaticPopup_Show) then
+  if not (StaticPopupDialogs and StaticPopup_Show and ns.Widgets) then
     return
   end
-  StaticPopupDialogs.AME_SELFTEST_RELOAD = StaticPopupDialogs.AME_SELFTEST_RELOAD
-    or {
-      text = "Azeroth Mercantile Exchange " .. L["selftest finished:\n%s\n\nReload the UI now to save the results?"],
-      button1 = RELOADUI or L["Reload UI"],
-      button2 = CANCEL or L["Cancel"],
-      OnAccept = function()
-        ReloadUI()
-      end,
-      timeout = 0,
-      whileDead = true,
-      hideOnEscape = true,
-      preferredIndex = 3,
-    }
-  StaticPopup_Show("AME_SELFTEST_RELOAD", L["%d passed, %d warnings, %d failed"]:format(passed, warned, failed))
+  ns.Widgets.Confirm(
+    "AME_SELFTEST_RELOAD",
+    "Azeroth Mercantile Exchange " .. L["selftest finished:\n%s\n\nReload the UI now to save the results?"],
+    RELOADUI or L["Reload UI"],
+    function()
+      ReloadUI()
+    end,
+    L["%d passed, %d warnings, %d failed"]:format(passed, warned, failed)
+  )
 end

@@ -58,6 +58,7 @@ L["A screener over every item with history. Pick a category or watchlist on the 
 L["AH cut"] = true
 L["AME alert: %s %s"] = true
 L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] = true
+L["Accept"] = true
 L["AceComm not available: sync disabled"] = true
 L["Activity"] = true
 L["Add"] = true
@@ -117,6 +118,7 @@ L["Data quality"] = true
 L["Days to sell"] = true
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] = true
 L["Decline"] = true
+L["Delete"] = true
 L["Delete list..."] = true
 L["Delete the watchlist \"%s\"?"] = true
 L["Deposit"] = true

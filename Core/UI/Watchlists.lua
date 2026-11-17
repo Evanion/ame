@@ -46,31 +46,13 @@ function UI:StarClicked(anchor, itemID)
 end
 
 function UI:PromptNewList(itemID)
-  StaticPopupDialogs.AME_NEW_LIST = StaticPopupDialogs.AME_NEW_LIST
-    or {
-      text = L["Name for the new watchlist:"],
-      button1 = ACCEPT or "Accept",
-      button2 = CANCEL or "Cancel",
-      hasEditBox = true,
-      OnAccept = function(popup, data)
-        local box = popup.editBox or popup.EditBox
-        local i = ns.AME.watch:AddList(box and box:GetText())
-        if i and data then
-          ns.AME.watch:Toggle(i, data)
-        end
-        UI:WatchChanged()
-      end,
-      EditBoxOnEnterPressed = function(box)
-        local popup = box:GetParent()
-        StaticPopupDialogs.AME_NEW_LIST.OnAccept(popup, popup.data)
-        popup:Hide()
-      end,
-      timeout = 0,
-      whileDead = true,
-      hideOnEscape = true,
-      preferredIndex = 3,
-    }
-  StaticPopup_Show("AME_NEW_LIST", nil, nil, itemID)
+  W.Prompt("AME_NEW_LIST", L["Name for the new watchlist:"], function(name, data)
+    local i = ns.AME.watch:AddList(name)
+    if i and data then
+      ns.AME.watch:Toggle(i, data)
+    end
+    UI:WatchChanged()
+  end, itemID)
 end
 
 -- right-click on one of your lists: share with the guild, delete
@@ -105,31 +87,20 @@ function UI:PromptDeleteList(i)
   if not l then
     return
   end
-  StaticPopupDialogs.AME_DELETE_LIST = StaticPopupDialogs.AME_DELETE_LIST
-    or {
-      text = L['Delete the watchlist "%s"?'],
-      button1 = DELETE or "Delete",
-      button2 = CANCEL or "Cancel",
-      OnAccept = function(_, data)
-        local doomed = ns.AME.watch:Lists()[data]
-        local wasShared = doomed and doomed.shared and doomed.name
-        if ns.AME.watch:RemoveList(data) then
-          if wasShared then
-            ns.SyncService:QueueShare({ wasShared })
-          end
-          local q = UI.mq
-          if q and q.list then
-            q.list, q.only = nil, nil
-          end
-          UI:WatchChanged()
-        end
-      end,
-      timeout = 0,
-      whileDead = true,
-      hideOnEscape = true,
-      preferredIndex = 3,
-    }
-  StaticPopup_Show("AME_DELETE_LIST", l.name, nil, i)
+  W.Confirm("AME_DELETE_LIST", L['Delete the watchlist "%s"?'], DELETE or L["Delete"], function(data)
+    local doomed = ns.AME.watch:Lists()[data]
+    local wasShared = doomed and doomed.shared and doomed.name
+    if ns.AME.watch:RemoveList(data) then
+      if wasShared then
+        ns.SyncService:QueueShare({ wasShared })
+      end
+      local q = UI.mq
+      if q and q.list then
+        q.list, q.only = nil, nil
+      end
+      UI:WatchChanged()
+    end
+  end, l.name, i)
 end
 
 -- after any watchlist change: re-filter a shown watchlist, redraw stars, sidebar and item controls
