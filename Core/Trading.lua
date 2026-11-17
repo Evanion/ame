@@ -227,7 +227,8 @@ end
 -- Item ID from an invoice's item name. Invoices only carry the name, and GetItemInfoInstant(name) only works for
 -- items the client has cached, so also look through what your characters hold and list (a bought item is usually
 -- still in your bags, a sold one was in your auction list).
-local function idFromName(name)
+-- byName (optional): Trading.HeldByName(), built once by callers resolving many names
+local function idFromName(name, byName)
   if not name then
     return nil
   end
@@ -238,21 +239,42 @@ local function idFromName(name)
       return id
     end
   end
+  return byName and byName[name]
+end
+
+-- resolve many invoice names: the held-items map is built once, and only if the client's cache doesn't know a name
+function Trading.NameResolver()
+  local byName
+  return function(name)
+    local id = idFromName(name)
+    if id or not name then
+      return id
+    end
+    byName = byName or Trading.HeldByName()
+    return byName[name]
+  end
+end
+
+-- name -> item ID for everything your characters hold or list (names of items the client has loaded)
+function Trading.HeldByName()
+  local out = {}
+  local function add(itemID)
+    local name = itemID and W_ItemName(itemID)
+    if name and not out[name] then
+      out[name] = itemID
+    end
+  end
   for _, h in pairs(AME_DB.holdings or {}) do
     for _, place in ipairs({ "bags", "bank", "auctions" }) do
       for itemID in pairs(h[place] or {}) do
-        if W_ItemName(itemID) == name then
-          return itemID
-        end
+        add(itemID)
       end
     end
     for _, a in ipairs(h.auctionList or {}) do
-      if a.itemID and W_ItemName(a.itemID) == name then
-        return a.itemID
-      end
+      add(a.itemID)
     end
   end
-  return nil
+  return out
 end
 Trading.IDFromName = idFromName
 
@@ -274,10 +296,10 @@ end
 -- Ledger entries recorded before their item was known get their ID once it can be found (needed to match purchases
 -- against holdings for the average cost, and to show icons). Returns how many were filled in.
 function Trading:ResolveLedger()
-  local n = 0
+  local n, resolve = 0, Trading.NameResolver()
   for _, e in ipairs(AME_DB.ledger and AME_DB.ledger.entries or {}) do
     if not e.itemID and e.name then
-      e.itemID = idFromName(e.name)
+      e.itemID = resolve(e.name)
       if e.itemID then
         n = n + 1
       end
@@ -294,6 +316,7 @@ function Trading:ScanMail()
   end
   local now, added = GetServerTime(), 0
   local claimed = {} -- ledger entries matched to an invoice in this pass (see Ledger:AddInvoice)
+  local resolve = Trading.NameResolver()
   for i = 1, GetInboxNumItems() or 0 do
     local invoiceType, itemName, playerName, bid, _, _, consignment, _, _, _, count = GetInboxInvoiceInfo(i)
     if (invoiceType == "seller" or invoiceType == "buyer") and itemName and bid then
@@ -302,7 +325,7 @@ function Trading:ScanMail()
       local entry = {
         t = t,
         kind = invoiceType == "seller" and "sale" or "buy",
-        itemID = (invoiceType == "buyer" and mailItemID(i)) or idFromName(itemName),
+        itemID = (invoiceType == "buyer" and mailItemID(i)) or resolve(itemName),
         name = itemName,
         qty = count or 1,
         amount = bid,

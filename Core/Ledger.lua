@@ -188,10 +188,15 @@ function Ledger:CostBasis()
   return out
 end
 
+-- realized profit of every sale: { [sale entry] = profit } (one FIFO pass; use this for lists)
+function Ledger:Profits()
+  local _, profits = match(self.db.entries)
+  return profits
+end
+
 -- realized profit of one sale entry
 function Ledger:Profit(entry)
-  local _, profits = match(self.db.entries)
-  return profits[entry]
+  return self:Profits()[entry]
 end
 
 -- Who you trade with: kind "sale" -> your customers (buyers), "buy" -> your suppliers (sellers). Only entries whose

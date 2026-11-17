@@ -439,12 +439,7 @@ function UI:RenderPortfolio()
     pair[2]:SetShown(name == mode)
   end
   if ledgerMode and ns.AME.ledger then
-    self.pfProfitOf = {}
-    for _, e in ipairs(list) do
-      if e.kind == "sale" then
-        self.pfProfitOf[e] = ns.AME.ledger:Profit(e)
-      end
-    end
+    self.pfProfitOf = ns.AME.ledger:Profits() -- one pass over the ledger, not one per sale
   end
   tbl:SetData(list)
   tbl:Render()

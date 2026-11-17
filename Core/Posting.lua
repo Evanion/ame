@@ -55,6 +55,17 @@ function Posting:Profile(shard, itemID)
   return p
 end
 
+-- a profile without keeping it: full scans and category averages touch every item, and holding thousands of decoded
+-- profiles for the session (~7.5 MB per house) buys nothing - only items you look at are cached (Profile)
+function Posting:Peek(shard, itemID)
+  local cached = self.cache[shard] and self.cache[shard][itemID]
+  if cached then
+    return cached
+  end
+  local s = AME_DB.pricing[shard] and AME_DB.pricing[shard][itemID]
+  return s and ns.Pricing.Decode(s) or ns.Pricing.NewProfile()
+end
+
 function Posting:Save(shard, itemID, p)
   AME_DB.pricing[shard] = AME_DB.pricing[shard] or {}
   AME_DB.pricing[shard][itemID] = ns.Pricing.Encode(p)
@@ -68,7 +79,7 @@ function Posting:OnSnapshot(shard, snap, t)
   end
   local function observe(job)
     for i, id in ipairs(snap.ids) do
-      local p = self:Profile(shard, id)
+      local p = self:Peek(shard, id)
       ns.Pricing.Observe(p, { t = t, min = snap.min[i], qty = snap.qty[i], ladder = snap.ladder and snap.ladder[i] })
       self:Save(shard, id, p)
       if job and i % 50 == 0 then
@@ -79,7 +90,12 @@ function Posting:OnSnapshot(shard, snap, t)
   if #snap.ids <= 50 then
     observe()
   else
-    ns.AME.jobs:Add("pricing-observe", observe, function() end)
+    ns.AME.jobs:Add("pricing-observe", observe, function(ok, err)
+      if not ok then
+        AME_DB.stats.pricingError = tostring(err)
+        ns.AME.Say("|cffff5555%s|r %s", "pricing:", tostring(err))
+      end
+    end)
     self.priors[shard] = nil -- a full scan changes many items: recompute category behaviour
   end
 end
@@ -98,7 +114,7 @@ function Posting:Prior(shard, itemID)
     if n and n >= 3 then
       local other = ns.ItemCache and ns.ItemCache.Get(id)
       if (other and other.classID or -1) == class then
-        list[#list + 1] = self:Profile(shard, id)
+        list[#list + 1] = self:Peek(shard, id)
       end
     end
   end
