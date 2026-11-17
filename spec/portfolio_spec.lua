@@ -67,9 +67,9 @@ describe("Ledger", function()
     local function sale(t, who, item, amount, qty)
       return { t = t, kind = "sale", name = item, qty = qty, amount = amount, cut = 0, counterparty = who }
     end
-    l:Add(sale(1, "Ada", "Silk", 300, 3), "1")
-    l:Add(sale(2, "Ada", "Wool", 100, 1), "2")
-    l:Add(sale(3, "Bob", "Silk", 1000, 10), "3")
+    l:Add(soldTo(1, "Ada", "Silk", 300, 3), "1")
+    l:Add(soldTo(2, "Ada", "Wool", 100, 1), "2")
+    l:Add(soldTo(3, "Bob", "Silk", 1000, 10), "3")
     l:Add(sale(4, nil, "Silk", 5000, 1), "4") -- anonymous: not counted
     l:Add({ t = 5, kind = "buy", name = "Iron", qty = 2, amount = 80, counterparty = "Cy" }, "5")
     local customers = l:Counterparties("sale", 0)
