@@ -15,6 +15,17 @@ local function say(fmt, ...)
 end
 AME.Say = say
 
+-- A code error somewhere the UI carries on without the result (a suggestion, a chart, a background pass): saved for
+-- /ame status and said in chat once per context and session, instead of passing for "no data".
+AME.reported = {}
+function AME:ReportError(context, err)
+  AME_DB.stats.lastError = { context = context, error = tostring(err), at = GetServerTime() }
+  if not self.reported[context] then
+    self.reported[context] = true
+    say("|cffff5555%s|r %s", context .. ":", tostring(err))
+  end
+end
+
 local function money(copper)
   if not copper then
     return "-"
@@ -241,6 +252,8 @@ function AME:IndexFor(shard, cb)
     self.indexWaiters[shard] = nil
     if ok and index then
       self.indexes[shard] = index
+    elseif not ok then
+      self:ReportError("market index", index)
     end
     for _, f in ipairs(cbs) do
       f(ok and index or nil)
@@ -795,6 +808,10 @@ local function cmdStatus()
   )
   if (s.syncErrors or 0) > 0 then
     say("|cffff5555" .. L["sync errors: %d (last: %s)"] .. "|r", s.syncErrors, tostring(s.lastSyncError))
+  end
+  local err = AME_DB.stats.lastError
+  if err then
+    say("|cffff5555" .. L["last error (%s, %s): %s"] .. "|r", err.context, date("%b %d %H:%M", err.at), err.error)
   end
 end
 

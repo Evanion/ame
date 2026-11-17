@@ -92,8 +92,7 @@ function Posting:OnSnapshot(shard, snap, t)
   else
     ns.AME.jobs:Add("pricing-observe", observe, function(ok, err)
       if not ok then
-        AME_DB.stats.pricingError = tostring(err)
-        ns.AME.Say("|cffff5555%s|r %s", "pricing:", tostring(err))
+        ns.AME:ReportError("pricing", err)
       end
     end)
     self.priors[shard] = nil -- a full scan changes many items: recompute category behaviour
@@ -197,7 +196,11 @@ function Posting:Record(itemID, unit, qty, hours)
     return
   end
   local shard = ns.AME:CurrentShard()
+  -- never let a model error get in the way of posting: record the listing without its chance, and report it
   local ok, chance = pcall(self.ChanceAt, self, shard, itemID, qty or 1, hours, unit)
+  if not ok then
+    ns.AME:ReportError("posting price", chance)
+  end
   table.insert(AME_DB.listings, {
     itemID = itemID,
     name = itemName(itemID),

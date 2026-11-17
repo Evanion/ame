@@ -525,6 +525,9 @@ function UI:LoadIntraday()
   ns.AME:WithStore("intraday-" .. itemID, self:ViewShard(), function(store)
     return store:Intraday(itemID, GetServerTime() - 2 * DAY)
   end, function(ok, points)
+    if not ok then
+      ns.AME:ReportError("recent scans", points)
+    end
     if self.itemID ~= itemID or not self.intradayMode then
       return
     end
@@ -754,6 +757,9 @@ function UI:UpdatePostAdvice()
   end
   local ok, advice =
     pcall(ns.Posting.Suggest, ns.Posting, self:ViewShard(), self.itemID, 1, ns.Settings:Get("listingHours"))
+  if not ok then
+    ns.AME:ReportError("posting price", advice)
+  end
   v.post.text:SetText(W.PostAdvice(ok and advice or nil))
 end
 

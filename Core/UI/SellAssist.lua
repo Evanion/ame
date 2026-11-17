@@ -144,6 +144,9 @@ function Sell:Refresh()
   end
   self.key, self.at, self.src = key, t, src
   local ok, advice = pcall(ns.Posting.Suggest, ns.Posting, ns.AME:CurrentShard(), id, qty, hours)
+  if not ok then
+    ns.AME:ReportError("posting price", advice)
+  end
   advice = ok and advice or nil
   self.advice = advice
   bar.title:SetText(W.Confidence(advice and advice.confidence or "low") .. " |cffffd100" .. L["Post at"] .. "|r")

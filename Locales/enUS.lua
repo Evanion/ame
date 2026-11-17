@@ -348,6 +348,7 @@ L["item %d: %d points in %.1f ms"] = true
 L["item from latest scan has no daily points"] = true
 L["item not loaded yet - try again in a moment"] = true
 L["just now"] = true
+L["last error (%s, %s): %s"] = true
 L["last full scan"] = true
 L["last full scan: %d items, %s ago"] = true
 L["last seen %s"] = true
