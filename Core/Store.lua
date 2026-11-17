@@ -571,6 +571,18 @@ function Store:BucketSeries(b, fromDay, toDay)
   return out
 end
 
+-- Size of a shard's stored history: days of daily points and the bytes of their packed segments.
+function Store.Footprint(data)
+  local days, bytes = 0, 0
+  for _, buckets in pairs(data and data.days or {}) do
+    days = days + 1
+    for _, packed in pairs(buckets) do
+      bytes = bytes + #packed
+    end
+  end
+  return days, bytes
+end
+
 -- Newest scan values for an item. Walks the raw scans newest first, decoding one per step outside the segment cache
 -- (a decoded full scan is ~40k numbers: caching dozens pinned ~8 MB) and yielding between them.
 function Store:Latest(itemID)

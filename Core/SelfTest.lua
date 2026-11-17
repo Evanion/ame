@@ -86,12 +86,8 @@ function SelfTest.Run(AME)
     assert(AME:LoadHistory(), L["could not load history addon"])
     local shards, bytes = 0, 0
     for _, data in pairs(AME.history.shards) do
-      shards = shards + 1
-      for _, buckets in pairs(data.days or {}) do
-        for _, p in pairs(buckets) do
-          bytes = bytes + #p
-        end
-      end
+      local _, b = ns.Store.Footprint(data)
+      shards, bytes = shards + 1, bytes + b
     end
     AME_DB.stats.historyBytes = bytes
     return "PASS",

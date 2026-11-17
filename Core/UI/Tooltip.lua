@@ -7,19 +7,6 @@ local W = ns.Widgets
 local Tooltip = {}
 ns.Tooltip = Tooltip
 
-local function ago(day, today)
-  if not (day and today) then
-    return nil
-  end
-  local d = today - day
-  if d <= 0 then
-    return L["today"]
-  elseif d == 1 then
-    return L["yesterday"]
-  end
-  return L["%d days ago"]:format(d)
-end
-
 local DIM = "|cff999999"
 
 -- Pure: tooltip rows for an item summary.
@@ -64,7 +51,7 @@ function Tooltip.Lines(s, opts)
   if s.signal == "none" or not s.signal then
     row(L["score"], ("%+d"):format(s.score or 0))
   end
-  local seen = ago(s.day, opts.today)
+  local seen = ns.Widgets.DaysAgo(s.day, opts.today)
   if seen then
     local level = ns.Analytics and ns.Analytics.Confidence(s, opts.today) or nil
     row(
@@ -99,7 +86,7 @@ local function addLines(tooltip, itemID)
   local rows = Tooltip.Lines(s, {
     avgDays = ns.Settings:Get("tooltipAvgDays"),
     detail = detail,
-    today = math.floor(GetServerTime() / 86400),
+    today = ns.Today(GetServerTime()),
   })
   for _, r in ipairs(rows) do
     if r[2] then
@@ -120,7 +107,7 @@ function Tooltip:Install()
   elseif GameTooltip and GameTooltip.HookScript then
     GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
       local _, link = tooltip:GetItem()
-      addLines(tooltip, link and ns.AME.ItemIDFrom(link))
+      addLines(tooltip, link and ns.ItemIDFrom(link))
     end)
   end
 
@@ -128,7 +115,7 @@ function Tooltip:Install()
   if HandleModifiedItemClick then
     hooksecurefunc("HandleModifiedItemClick", function(link)
       if link and ns.Settings:ClickModifierDown() then
-        local id = ns.AME.ItemIDFrom(link)
+        local id = ns.ItemIDFrom(link)
         if id then
           ns.UI:ShowItem(id)
         end

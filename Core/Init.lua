@@ -12,6 +12,21 @@ ns.L = ns.L or setmetatable({}, {
 local L = ns.L
 
 ns.HOUSES = { Alliance = true, Horde = true, Neutral = true }
+ns.HOUSE_ORDER = { "Alliance", "Horde", "Neutral" }
+
+ns.DAY = 86400
+-- day number of a server time (UTC days, as history is stored)
+function ns.Today(t)
+  return math.floor(t / ns.DAY)
+end
+
+-- item ID from an item link, or from text that is just a number; nil otherwise
+function ns.ItemIDFrom(text)
+  if type(text) ~= "string" or text == "" then
+    return nil
+  end
+  return tonumber(text:match("item:(%d+)") or text:match("^%s*(%d+)%s*$"))
+end
 
 -- the addon's icon (also used for the minimap / broker launcher and the window title)
 ns.ICON = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Icon"
@@ -41,7 +56,7 @@ ns.HOUSE_LABEL = { Alliance = L["Alliance AH"], Horde = L["Horde AH"], Neutral =
 -- Human-readable market name: "PvP · Goblin AH". Never show raw shard keys: WoW treats "|N" (as in "|Neutral")
 -- and other "|x" pairs in displayed text as escape codes.
 function ns.ShardLabel(shard)
-  local realm, house = tostring(shard):match("^(.*)|(%a+)$")
+  local realm, house = ns.SplitShard(shard)
   if not realm then
     return (tostring(shard):gsub("|", "/"))
   end
@@ -49,6 +64,11 @@ function ns.ShardLabel(shard)
 end
 
 -- Shard key: one price history per market (realm, or Forever ruleset) + auction house.
+-- realm, house of a shard key (nil when it isn't one)
+function ns.SplitShard(shard)
+  return tostring(shard):match("^(.*)|(%a+)$")
+end
+
 function ns.ShardKey(realm, house)
   assert(type(realm) == "string" and realm ~= "", "realm required")
   assert(ns.HOUSES[house], "house must be Alliance, Horde or Neutral")

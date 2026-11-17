@@ -145,7 +145,7 @@ function Service:Announce()
   end
   local any = false
   for shard, data in pairs(self.AME.history.shards) do
-    if shard:match("^(.-)|") == realm then
+    if ns.SplitShard(shard) == realm then
       local inventory = Sync.Inventory(data.raw or {}, Sync.MAX_ANNOUNCE)
       if #inventory > 0 then
         local msg = Sync.EncodeAnnounce(shard, inventory)
@@ -198,7 +198,7 @@ function Service:ShareWatchlists(removed)
 end
 
 local function sameRealm(shard)
-  return shard and shard:match("^(.-)|") == ns.SyncService.AME:MarketRealmName()
+  return shard and ns.SplitShard(shard) == ns.SyncService.AME:MarketRealmName()
 end
 
 -- Is a message over this channel from this sender acceptable?

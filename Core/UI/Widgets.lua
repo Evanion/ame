@@ -560,6 +560,36 @@ function W.Rate(perDay)
   return ("~%.1f/d"):format(perDay)
 end
 
+-- how long ago a server time was: "just now", "5 min ago", "3 h ago", "2 days ago"; "never" without one
+function W.Ago(t, now)
+  if not t then
+    return L["never"]
+  end
+  local d = math.max(0, now - t)
+  if d < 60 then
+    return L["just now"]
+  elseif d < 3600 then
+    return L["%d min ago"]:format(d / 60)
+  elseif d < 86400 then
+    return L["%d h ago"]:format(d / 3600)
+  end
+  return L["%d days ago"]:format(d / 86400)
+end
+
+-- how long ago a day number was: "today", "yesterday", "3 days ago" (nil without both days)
+function W.DaysAgo(day, today)
+  if not (day and today) then
+    return nil
+  end
+  local d = today - day
+  if d <= 0 then
+    return L["today"]
+  elseif d == 1 then
+    return L["yesterday"]
+  end
+  return L["%d days ago"]:format(d)
+end
+
 -- expected time to sell: "<1h", "~5h", "~2 days", "a week+"
 function W.Hours(h)
   if not h then

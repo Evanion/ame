@@ -6,18 +6,7 @@ local W = ns.Widgets
 local UI = ns.UI
 
 local function ago(t)
-  if not t then
-    return L["never"]
-  end
-  local d = math.max(0, GetServerTime() - t)
-  if d < 60 then
-    return L["just now"]
-  elseif d < 3600 then
-    return L["%d min ago"]:format(d / 60)
-  elseif d < 86400 then
-    return L["%d h ago"]:format(d / 3600)
-  end
-  return L["%d days ago"]:format(d / 86400)
+  return W.Ago(t, GetServerTime())
 end
 
 local function heading(parent, text, x, y)
@@ -575,21 +564,13 @@ function UI:RefreshSettings()
   local AME = ns.AME
   local lines = { L["Market: %s"]:format("|cffffffff" .. ns.ShardLabel(AME:CurrentShard()) .. "|r") }
   if AME:HistoryLoaded() then
-    local shards, days, bytes = 0, 0, 0
+    local shards, bytes = 0, 0
     for _, data in pairs(AME.history.shards) do
-      shards = shards + 1
-      for _, buckets in pairs(data.days or {}) do
-        days = days + 1
-        for _, p in pairs(buckets) do
-          bytes = bytes + #p
-        end
-      end
+      local _, b = ns.Store.Footprint(data)
+      shards, bytes = shards + 1, bytes + b
     end
     local here = AME.history.shards[AME:CurrentShard()]
-    local hereDays = 0
-    for _ in pairs(here and here.days or {}) do
-      hereDays = hereDays + 1
-    end
+    local hereDays = ns.Store.Footprint(here)
     lines[#lines + 1] = L["This market: %d days of history, %d recent scans kept in full"]:format(
       hereDays,
       here and #(here.raw or {}) or 0

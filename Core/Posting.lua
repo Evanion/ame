@@ -145,7 +145,8 @@ end
 -- Everything the model needs for one item at one auction house, and its suggestion.
 --   qty: units you post; hours: listing time; returns advice (see Pricing.Suggest) plus .book, .params, or nil
 function Posting:Suggest(shard, itemID, qty, hours)
-  local house = shard:match("|(%a+)$") or ns.AME:CurrentHouse()
+  local _, house = ns.SplitShard(shard)
+  house = house or ns.AME:CurrentHouse()
   local p = self:Profile(shard, itemID)
   local s = summaryFor(shard, itemID)
   local params = ns.Pricing.Params(p, self:Prior(shard, itemID), s)

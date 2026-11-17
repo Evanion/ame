@@ -10,7 +10,6 @@ local HOUSES = {
   { "Horde", L["Horde AH"] },
   { "Neutral", L["Goblin AH"] },
 }
-local HOUSE_NAME = { Alliance = L["Alliance AH"], Horde = L["Horde AH"], Neutral = L["Goblin AH"] }
 local AGES = {
   { 1, L["Seen today/yesterday"] },
   { 3, L["Seen in 3 days"] },
@@ -259,7 +258,7 @@ function UI:RefreshArbitrage(keepOffset)
       if self.arbToken ~= token then
         return
       end
-      self.arbMissing = (not buyIndex and HOUSE_NAME[a.buy]) or (not sellIndex and HOUSE_NAME[a.sell]) or nil
+      self.arbMissing = (not buyIndex and ns.HOUSE_LABEL[a.buy]) or (not sellIndex and ns.HOUSE_LABEL[a.sell]) or nil
       local cut = ns.Settings:AuctionCut(a.sell)
       self.arbCut = cut
       self.arbRows = ns.Arbitrage.Find(buyIndex, sellIndex, {
@@ -267,7 +266,7 @@ function UI:RefreshArbitrage(keepOffset)
         minProfit = a.minProfit,
         minMargin = a.minMargin,
         maxAge = a.maxAge or nil,
-        today = math.floor(GetServerTime() / 86400),
+        today = ns.Today(GetServerTime()),
         sortKey = a.sortKey,
         ascending = a.ascending,
       })
@@ -321,8 +320,8 @@ function UI:RenderArbitrage()
   else
     status = L["%d routes  -  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"]:format(
       total,
-      HOUSE_NAME[a.buy],
-      HOUSE_NAME[a.sell],
+      ns.HOUSE_LABEL[a.buy],
+      ns.HOUSE_LABEL[a.sell],
       math.floor((self.arbCut or 0) * 100 + 0.5),
       ns.Settings:Get("listingHours")
     )

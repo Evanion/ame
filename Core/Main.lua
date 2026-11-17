@@ -83,7 +83,7 @@ function AME:MigrateShardKeys()
   local function migrate(t)
     local moves = {}
     for key in pairs(t) do
-      local realm, house = key:match("^(.+)|(%a+)$")
+      local realm, house = ns.SplitShard(key)
       if realm and ns.HOUSES[house] then
         local newKey = ns.ShardKey(ns.MarketRealm(realm), house)
         if newKey ~= key and t[newKey] == nil then
@@ -220,7 +220,7 @@ function AME:BuildIndex(store, shard, job)
       end
     end
   end
-  return ns.MarketIndex.Build(store, math.floor(GetServerTime() / 86400), AME.INDEX_DAYS, function()
+  return ns.MarketIndex.Build(store, ns.Today(GetServerTime()), AME.INDEX_DAYS, function()
     job:Checkpoint()
   end, ns.Settings:Get("outlierFactor"), current)
 end
@@ -597,7 +597,7 @@ function handlers.PLAYER_LOGIN()
       AME:RebuildIndex()
       -- other auction houses of this market (e.g. the goblin AH), for tooltips and arbitrage
       local realm, current = AME:MarketRealmName(), AME:CurrentHouse()
-      for _, house in ipairs({ "Alliance", "Horde", "Neutral" }) do
+      for _, house in ipairs(ns.HOUSE_ORDER) do
         local shard = ns.ShardKey(realm, house)
         if house ~= current and AME:HasData(shard) then
           AME:IndexFor(shard, function() end)
@@ -707,13 +707,7 @@ events:RegisterEvent("PLAYER_LOGIN")
 ---------------------------------------------------------------------------------------------------------------------
 -- slash commands
 
-local function itemIDFrom(arg)
-  if not arg or arg == "" then
-    return nil
-  end
-  return tonumber(arg:match("item:(%d+)") or arg:match("^%s*(%d+)%s*$"))
-end
-AME.ItemIDFrom = itemIDFrom
+local itemIDFrom = ns.ItemIDFrom
 
 local function cmdItem(arg)
   local id = itemIDFrom(arg)
@@ -772,13 +766,7 @@ local function cmdStatus()
   if AME:HistoryLoaded() then
     local data = AME.history.shards[shard]
     if data then
-      local days, bytes = 0, 0
-      for _, buckets in pairs(data.days or {}) do
-        days = days + 1
-        for _, p in pairs(buckets) do
-          bytes = bytes + #p
-        end
-      end
+      local days, bytes = ns.Store.Footprint(data)
       say(L["history: %d raw scans, %d days, %.0f KB"], #(data.raw or {}), days, bytes / 1024)
     end
   end

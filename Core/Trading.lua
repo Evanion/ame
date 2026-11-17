@@ -283,7 +283,7 @@ local function mailItemID(i)
   end
   for slot = 1, (ATTACHMENTS_MAX_RECEIVE or 16) do
     local link = GetInboxItemLink(i, slot)
-    local id = type(link) == "string" and tonumber(link:match("item:(%d+)"))
+    local id = ns.ItemIDFrom(link)
     if id then
       return id
     end

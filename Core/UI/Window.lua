@@ -269,7 +269,7 @@ function UI:CreateItemView(parent)
   box:SetPoint("TOPRIGHT", -2, 0)
   box:SetAutoFocus(false)
   box:SetScript("OnEnterPressed", function(self)
-    local id = ns.AME.ItemIDFrom(self:GetText())
+    local id = ns.ItemIDFrom(self:GetText())
     if not id then
       local best = UI:ItemSuggestions(self:GetText(), 1)[1]
       id = best and best.itemID
@@ -779,7 +779,7 @@ function UI:WarmItemNames()
 end
 
 function UI:ItemSuggestions(text, limit)
-  if not text or text == "" or ns.AME.ItemIDFrom(text) then
+  if not text or text == "" or ns.ItemIDFrom(text) then
     return {}
   end
   return ns.MarketFilter.FindByName((self:ViewIndex()), text, function(id)
@@ -814,7 +814,7 @@ function UI:OnItemLinkClicked(link, fromInsert)
   if not (link and self.frame and self.frame:IsShown()) then
     return
   end
-  local id = ns.AME.ItemIDFrom(link)
+  local id = ns.ItemIDFrom(link)
   if not id then
     return
   end
