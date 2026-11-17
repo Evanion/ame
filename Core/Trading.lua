@@ -196,6 +196,9 @@ function Trading:OnSystemMessage(msg)
   self.expiredPattern = self.expiredPattern or pattern(ERR_AUCTION_EXPIRED_S, "Your auction of %s has expired.")
   local sold = msg:match(self.soldPattern)
   local expired = not sold and msg:match(self.expiredPattern)
+  if (sold or expired) and ns.Posting then
+    ns.Posting:OnOutcome(sold or expired, sold ~= nil) -- the pricing model learns how its chances held up
+  end
   if sold then
     local unit = listedUnit(sold)
     self.ledger:Add({

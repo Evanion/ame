@@ -495,3 +495,20 @@ L["window created, market tab rendered"] = "창 생성됨, 시장 탭 렌더링�
 L["yesterday"] = "어제"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "구매 경매장에 있습니다: 검색(또는 행 Shift-클릭)으로 구매하세요"
+L["%d ahead"] = "앞에 %d개"
+L["<1h"] = "<1시간"
+L["Normal %s"] = "보통 %s"
+L["Patient %s"] = "느긋 %s"
+L["Post at"] = "등록가"
+L["Posting price"] = "등록 가격"
+L["Posting price: not enough data on this item yet."] =
+  "등록 가격: 이 아이템의 데이터가 아직 부족합니다."
+L["Quick %s"] = "빠름 %s"
+L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
+  "최저가 경매보다 1동 낮게 등록하는 대신, 등록 기간 안에 팔리도록 얼마에 등록할지 알려 줍니다. 구매자는 가장 싼 경매부터 사므로 AME는 가격별로 내 앞에 있는 수량, 아이템이 팔리는 속도, 새 경매가 내 가격보다 낮게 올라오는 빈도를 세고, 팔리지 않으면 잃는 보증금과 판매 확률을 비교합니다. 빠름은 몇 시간 안에 거의 확실히 팔리고, 보통은 확률 대비 가장 좋은 가격이며, 느긋은 여전히 절반 정도는 팔리는 가장 높은 가격입니다. AME는 스캔(붐비는 시간대, 요일, 판매자 간 경쟁 강도)과 내 등록 기록에서 아이템별 패턴을 학습합니다. 그 가격에 아이템이 계속 만료되면 해당 아이템에 대해 더 신중해집니다. 데이터가 적으면 비슷한 아이템을 참고하며, 막대는 얼마나 알고 있는지를 보여 줍니다."
+L["a week+"] = "1주 이상"
+L["deposit %s"] = "보증금 %s"
+L["unlikely to sell soon: consider holding"] = "곧 팔리기 어려움: 보유 고려"
+L["well below its usual price"] = "평소 가격보다 크게 낮음"
+L["~%d days"] = "~%d일"
+L["~%dh"] = "~%d시간"

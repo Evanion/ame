@@ -23,6 +23,7 @@ Locales\zhTW.lua
 Core\Locale.lua
 Core\Init.lua
 Core\Stats.lua
+Core\Pricing.lua
 Core\Codec.lua
 Core\Compress.lua
 Core\Store.lua
@@ -41,6 +42,7 @@ Core\Sync.lua
 Core\Trust.lua
 Core\SyncService.lua
 Core\Trading.lua
+Core\Posting.lua
 Core\Main.lua
 Core\SelfTest.lua
 Core\UI\Widgets.lua
@@ -52,4 +54,5 @@ Core\UI\Panels.lua
 Core\UI\ArbitrageView.lua
 Core\UI\PortfolioView.lua
 Core\UI\Tooltip.lua
+Core\UI\SellAssist.lua
 Core\UI\Settings.lua

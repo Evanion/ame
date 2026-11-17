@@ -517,3 +517,21 @@ L["window created, market tab rendered"] = "окно создано, вклад�
 L["yesterday"] = "вчера"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "вы на аукционе покупки: «Поиск» (или Shift-клик по строке), чтобы купить"
+L["%d ahead"] = "%d впереди"
+L["<1h"] = "<1 ч"
+L["Normal %s"] = "Обычно %s"
+L["Patient %s"] = "Терпеливо %s"
+L["Post at"] = "Выставить по"
+L["Posting price"] = "Цена выставления"
+L["Posting price: not enough data on this item yet."] =
+  "Цена выставления: по этому предмету пока мало данных."
+L["Quick %s"] = "Быстро %s"
+L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
+  "По какой цене выставлять, чтобы предмет продался за время лота, - вместо того чтобы перебивать самый дешёвый лот на 1 медь. Покупатели сначала берут самые дешёвые лоты, поэтому AME считает единицы впереди вас по каждой цене, скорость продаж предмета и то, как часто новые лоты перебивают вашу цену, и сопоставляет шанс продажи с залогом, который вы теряете, если предмет не продастся. Быстро - почти наверняка продастся за несколько часов, Обычно - лучшая цена с учётом шанса, Терпеливо - самая высокая цена, по которой предмет ещё продаётся примерно в половине случаев. AME изучает поведение каждого предмета по вашим сканированиям (часы пик, дни недели, насколько жёстко конкурируют продавцы) и по вашим собственным лотам: если предметы по его ценам часто истекают, он становится осторожнее с этим предметом. При малом количестве данных он опирается на похожие предметы; полосы показывают, сколько он знает."
+L["a week+"] = "неделя+"
+L["deposit %s"] = "залог %s"
+L["unlikely to sell soon: consider holding"] =
+  "вряд ли продастся скоро: лучше придержать"
+L["well below its usual price"] = "намного ниже обычной цены"
+L["~%d days"] = "~%d дн."
+L["~%dh"] = "~%d ч"

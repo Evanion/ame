@@ -702,6 +702,68 @@ describe("addon in a stubbed client", function()
       assert.are.equal("~120/d", v.rows[1].cells[col].text)
     end)
 
+    it("learns each item's market from scans, suggests posting prices, and learns from your posts", function()
+      seeded()
+      local shard = ns.AME:CurrentShard()
+      local profile = ns.Posting:Profile(shard, 2589)
+      assert.truthy(profile.n >= 1) -- consecutive daily scans
+      assert.truthy(AME_DB.pricing[shard][2589]:find(";")) -- saved compactly
+      local advice = ns.Posting:Suggest(shard, 2589, 5, 24)
+      assert.is_not_nil(advice)
+      assert.truthy(advice.quick.price <= advice.normal.price and advice.normal.price <= advice.patient.price)
+      assert.truthy(advice.deposit >= 100) -- 1 silver minimum per post
+      -- you post 5 at the suggested price: recorded with the model's chance
+      C_AuctionHouse.PostCommodity({ itemID = 2589 }, 3, 5, advice.normal.price)
+      assert.are.equal(1, #AME_DB.listings)
+      assert.are.equal(24, AME_DB.listings[1].hours)
+      assert.is_number(AME_DB.listings[1].chance)
+      -- it sold: the outcome calibrates the item
+      env:fire("CHAT_MSG_SYSTEM", "A buyer has been found for your auction of Item 2589.")
+      assert.are.equal(0, #AME_DB.listings)
+      assert.are.equal(1, ns.Posting:Profile(shard, 2589).no)
+
+      -- the item view shows it under the chart
+      ns.UI:Toggle()
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      assert.truthy(ns.UI.itemView.post.text.text:find("Post at"))
+
+      -- the auction house's sell window: a bar under it fills in the price you pick (you still click Post)
+      local filled
+      local sell = CreateFrame("Frame")
+      sell.GetItem = function()
+        return { itemID = 2589 }
+      end
+      sell.GetQuantity = function()
+        return 5
+      end
+      sell.GetDuration = function()
+        return 3
+      end
+      sell.PriceInput = {
+        SetAmount = function(_, v)
+          filled = v
+        end,
+      }
+      local ahFrame = CreateFrame("Frame")
+      ahFrame.CommoditiesSellFrame = sell
+      _G.AuctionHouseFrame = ahFrame
+      finally(function()
+        _G.AuctionHouseFrame = nil
+      end)
+      env:fire("AUCTION_HOUSE_SHOW")
+      env:update(40)
+      local bar = ns.SellAssist.bar
+      assert.truthy(bar:IsShown())
+      assert.truthy(bar.buttons[2].label.text:find("Normal"))
+      bar.buttons[2].scripts.OnClick(bar.buttons[2])
+      assert.are.equal(ns.SellAssist.advice.normal.price, filled)
+      sell.GetItem = function() end -- slot emptied: the bar goes away
+      env:update(40)
+      assert.is_false(bar:IsShown())
+      _G.AuctionHouseFrame = nil
+    end)
+
     it("builds the portfolio from bags and auction mail, with a ledger and realized profit", function()
       seeded()
       -- the item API resolves "Item <id>" names (invoices name items, they don't link them)

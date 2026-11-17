@@ -138,6 +138,8 @@ M.newObject = newObject
 local function newAuctionHouse()
   local a = { rows = {}, commodities = {} }
   function a.ReplicateItems() end
+  function a.PostCommodity() end -- hooked by the addon: your posts feed the pricing model
+  function a.PostItem() end
   -- browse results: a.browse = { { itemID, minPrice, totalQuantity }, ... }; a.browseFull
   a.browse, a.browseFull = {}, true
   function a.SendBrowseQuery() end
@@ -215,6 +217,9 @@ function M.install(opts)
       env.timers[#env.timers + 1] = { at = env.now + s, fn = fn }
     end,
   })
+  set("GetTime", function()
+    return env.now
+  end)
   set("GetServerTime", function()
     return env.now
   end)
@@ -292,6 +297,9 @@ function M.install(opts)
     return o
   end)
   set("C_Item", {
+    GetItemID = function(location) -- item locations are faked as { itemID = id }
+      return location and location.itemID
+    end,
     GetItemInfo = function(id)
       return "Item " .. id, "|Hitem:" .. id .. "|h", 1, nil, nil, nil, nil, nil, nil, 134400
     end,

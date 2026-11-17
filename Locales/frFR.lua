@@ -497,3 +497,20 @@ L["window created, market tab rendered"] = "fenêtre créée, onglet Marché aff
 L["yesterday"] = "hier"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "vous êtes à l'HV d'achat : Rechercher (ou Maj-clic sur une ligne) pour acheter"
+L["%d ahead"] = "%d devant"
+L["<1h"] = "<1 h"
+L["Normal %s"] = "Normal %s"
+L["Patient %s"] = "Patient %s"
+L["Post at"] = "Mettre en vente à"
+L["Posting price"] = "Prix de mise en vente"
+L["Posting price: not enough data on this item yet."] =
+  "Prix de mise en vente : pas encore assez de données sur cet objet."
+L["Quick %s"] = "Rapide %s"
+L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
+  "À quel prix mettre en vente pour que l'objet se vende pendant la durée de l'annonce - au lieu de passer de 1 cuivre sous l'annonce la moins chère. Les acheteurs prennent d'abord les annonces les moins chères : AME compte donc les unités devant vous à chaque prix, la vitesse de vente de l'objet et la fréquence à laquelle de nouvelles annonces passent sous votre prix, puis met en balance la chance de vendre et le dépôt que vous perdez si l'objet ne se vend pas. Rapide vend presque sûrement en quelques heures, Normal est le meilleur prix compte tenu de la chance de vente, Patient est le prix le plus élevé qui vend encore environ une fois sur deux. AME apprend le profil de chaque objet à partir de vos scans (heures d'affluence, jours de la semaine, intensité de la concurrence entre vendeurs) et de vos propres annonces : si des objets expirent souvent à ses prix, il devient plus prudent pour cet objet. Avec peu de données, il s'appuie sur des objets similaires ; les barres montrent ce qu'il sait."
+L["a week+"] = "une semaine+"
+L["deposit %s"] = "dépôt %s"
+L["unlikely to sell soon: consider holding"] = "peu de chances de vendre bientôt : envisagez de garder"
+L["well below its usual price"] = "bien en dessous de son prix habituel"
+L["~%d days"] = "~%d jours"
+L["~%dh"] = "~%d h"

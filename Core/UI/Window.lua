@@ -418,7 +418,19 @@ function UI:CreateItemView(parent)
   W.InnerGlow(holder)
   self.chartHolder = holder
   holder:SetPoint("TOPLEFT", v.rangeButtons[1], "BOTTOMLEFT", 0, -8)
-  holder:SetPoint("BOTTOMRIGHT", 0, 0)
+  holder:SetPoint("BOTTOMRIGHT", 0, 22)
+
+  -- posting price suggestion (Pricing / Posting), under the chart
+  v.post = CreateFrame("Frame", nil, v)
+  v.post:SetPoint("BOTTOMLEFT", 0, 0)
+  v.post:SetPoint("BOTTOMRIGHT", 0, 0)
+  v.post:SetHeight(18)
+  v.post:EnableMouse(true)
+  ns.Help.Explain(v.post, "posting")
+  v.post.text = W.Text(v.post, "GameFontHighlightSmall")
+  v.post.text:SetAllPoints()
+  v.post.text:SetJustifyH("LEFT")
+  v.post.text:SetWordWrap(false)
   local chart = LibStub("LibAMEChart-1.0"):New(holder, {
     panes = { { axis = "price", weight = 3 }, { axis = "volume", weight = 1 } },
   })
@@ -731,6 +743,18 @@ function UI:FillItem(_, series, latest)
         or ""
     )
   )
+  self:UpdatePostAdvice()
+end
+
+-- what to post the viewed item at (one unit, your usual listing time) at the viewed auction house
+function UI:UpdatePostAdvice()
+  local v = self.itemView
+  if not (v and v.post and self.itemID) then
+    return
+  end
+  local ok, advice =
+    pcall(ns.Posting.Suggest, ns.Posting, self:ViewShard(), self.itemID, 1, ns.Settings:Get("listingHours"))
+  v.post.text:SetText(W.PostAdvice(ok and advice or nil))
 end
 
 ---------------------------------------------------------------------------------------------------------------------

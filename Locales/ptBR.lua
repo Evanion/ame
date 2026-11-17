@@ -497,3 +497,20 @@ L["window created, market tab rendered"] = "janela criada, aba de mercado render
 L["yesterday"] = "ontem"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "você está na CL de compra: Pesquisar (ou Shift-clique numa linha) para comprar"
+L["%d ahead"] = "%d à frente"
+L["<1h"] = "<1 h"
+L["Normal %s"] = "Normal %s"
+L["Patient %s"] = "Paciente %s"
+L["Post at"] = "Leiloar por"
+L["Posting price"] = "Preço de leilão"
+L["Posting price: not enough data on this item yet."] =
+  "Preço de leilão: ainda não há dados suficientes sobre este item."
+L["Quick %s"] = "Rápido %s"
+L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
+  "Por quanto leiloar para vender dentro da duração do leilão, em vez de baixar 1 cobre do leilão mais barato. Os compradores levam primeiro os leilões mais baratos, então o AME conta as unidades à sua frente em cada preço, a rapidez com que o item vende e a frequência com que novos leilões ficam abaixo do seu preço, e pesa a chance de vender contra o depósito que você perde se não vender. Rápido vende quase com certeza em poucas horas, Normal é o melhor preço para a chance, Paciente é o preço mais alto que ainda vende cerca de metade das vezes. O AME aprende o padrão de cada item com suas varreduras (horários de pico, dias da semana, quão forte é a concorrência entre vendedores) e com seus próprios leilões: se itens expiram com frequência nos preços dele, ele fica mais cauteloso com aquele item. Com poucos dados, ele se baseia em itens semelhantes; as barras mostram quanto ele sabe."
+L["a week+"] = "uma semana+"
+L["deposit %s"] = "depósito %s"
+L["unlikely to sell soon: consider holding"] = "pouco provável vender logo: considere manter"
+L["well below its usual price"] = "bem abaixo do preço habitual"
+L["~%d days"] = "~%d dias"
+L["~%dh"] = "~%d h"

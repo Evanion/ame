@@ -325,6 +325,7 @@ function AME:OnSnapshot(snap, t, kind, info)
   local shard = self:CurrentShard()
   local src = UnitName("player") or "?"
   local started = self.scanRequestedAt
+  ns.Posting:OnSnapshot(shard, snap, t) -- the pricing model learns each item's market from consecutive scans
   self:WithStore("store-" .. kind, shard, function(store)
     local added = store:AddScan(snap, t, src, kind)
     if info and info.books then
@@ -504,6 +505,7 @@ function handlers.ADDON_LOADED(name)
   AME_DB.watch = AME_DB.watch or {}
   AME.watch = ns.Watch.New(AME_DB.watch)
   ns.Trading:Init()
+  ns.Posting:Init()
 end
 
 function handlers.PLAYER_LOGIN()

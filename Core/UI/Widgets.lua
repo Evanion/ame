@@ -561,6 +561,44 @@ function W.Rate(perDay)
   return ("~%.1f/d"):format(perDay)
 end
 
+-- expected time to sell: "<1h", "~5h", "~2 days", "a week+"
+function W.Hours(h)
+  if not h then
+    return L["a week+"]
+  elseif h < 1 then
+    return L["<1h"]
+  elseif h < 36 then
+    return L["~%dh"]:format(math.floor(h + 0.5))
+  end
+  return L["~%d days"]:format(math.floor(h / 24 + 0.5))
+end
+
+-- one posting suggestion (Pricing.Suggest's quick / normal / patient): "12s 5c (~3h)"
+function W.PostChoice(choice)
+  return ("%s |cff999999(%s)|r"):format(W.Money(choice.price), W.Hours(choice.hours))
+end
+
+-- the whole suggestion on one line
+function W.PostAdvice(advice)
+  if not advice then
+    return "|cff999999" .. L["Posting price: not enough data on this item yet."] .. "|r"
+  end
+  local parts = {
+    W.Confidence(advice.confidence) .. " |cffffd100" .. L["Post at"] .. "|r",
+    L["Quick %s"]:format(W.PostChoice(advice.quick)),
+    L["Normal %s"]:format(W.PostChoice(advice.normal)),
+    L["Patient %s"]:format(W.PostChoice(advice.patient)),
+    L["%d ahead"]:format(advice.normal.ahead),
+  }
+  local text = table.concat(parts, "   ")
+  if advice.hold then
+    text = text .. "   |cffff6159" .. L["unlikely to sell soon: consider holding"] .. "|r"
+  elseif advice.cheap then
+    text = text .. "   |cffffcc00" .. L["well below its usual price"] .. "|r"
+  end
+  return text
+end
+
 -- data confidence as three small bars (textures, not font glyphs): high = 3 green, medium = 2 amber, low = 1 red
 local CONFIDENCE = {
   high = { 3, { 0.3, 0.85, 0.45 } },

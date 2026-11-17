@@ -108,7 +108,9 @@ local function summarize(e)
   local mean = weightedMean(units, counts, order, last)
   local trimmed = weightedMean(units, counts, order, last, mean * Stats.MARKET_TRIM_LOW, mean * Stats.MARKET_TRIM_HIGH)
 
-  return round(units[order[1]]), round(trimmed or mean), round(median), total, n
+  -- the cheap end of the book, for the pricing model (what sells, how deep undercuts go)
+  local ladder = ns.Pricing and ns.Pricing.Ladder(units, counts, order) or nil
+  return round(units[order[1]]), round(trimmed or mean), round(median), total, n, ladder
 end
 
 function Accumulator:Finish()
@@ -117,9 +119,12 @@ function Accumulator:Finish()
     ids[#ids + 1] = id
   end
   sort(ids)
-  local snap = { ids = ids, min = {}, market = {}, median = {}, qty = {}, auctions = {}, skipped = self.skipped }
+  -- ladder: per item, units within each Pricing.BANDS of the lowest price (fed to the pricing model, not stored)
+  local snap =
+    { ids = ids, min = {}, market = {}, median = {}, qty = {}, auctions = {}, ladder = {}, skipped = self.skipped }
   for i, id in ipairs(ids) do
-    snap.min[i], snap.market[i], snap.median[i], snap.qty[i], snap.auctions[i] = summarize(self.items[id])
+    snap.min[i], snap.market[i], snap.median[i], snap.qty[i], snap.auctions[i], snap.ladder[i] =
+      summarize(self.items[id])
   end
   return snap
 end

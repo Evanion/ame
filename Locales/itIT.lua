@@ -498,3 +498,20 @@ L["window created, market tab rendered"] = "finestra creata, scheda Mercato dise
 L["yesterday"] = "ieri"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "sei alla CdA di acquisto: Cerca (o Maiusc-clic su una riga) per comprare"
+L["%d ahead"] = "%d davanti"
+L["<1h"] = "<1 h"
+L["Normal %s"] = "Normale %s"
+L["Patient %s"] = "Paziente %s"
+L["Post at"] = "Metti a"
+L["Posting price"] = "Prezzo d'inserzione"
+L["Posting price: not enough data on this item yet."] =
+  "Prezzo d'inserzione: dati ancora insufficienti su questo oggetto."
+L["Quick %s"] = "Rapido %s"
+L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] =
+  "A che prezzo mettere all'asta perché venda entro la durata dell'inserzione, invece di stare 1 rame sotto l'inserzione più economica. Gli acquirenti prendono prima le inserzioni più economiche, quindi AME conta le unità davanti a te a ogni prezzo, quanto velocemente si vende l'oggetto e quanto spesso nuove inserzioni vanno sotto il tuo prezzo, e pesa la probabilità di vendere contro il deposito che perdi se non vende. Rapido vende quasi sicuramente entro poche ore, Normale è il prezzo migliore per la probabilità, Paziente è il prezzo più alto che vende ancora circa metà delle volte. AME impara l'andamento di ogni oggetto dalle tue scansioni (ore di punta, giorni della settimana, quanto competono i venditori) e dalle tue inserzioni: se gli oggetti scadono spesso ai suoi prezzi, diventa più prudente per quell'oggetto. Con pochi dati si basa su oggetti simili; le barre mostrano quanto sa."
+L["a week+"] = "una settimana+"
+L["deposit %s"] = "deposito %s"
+L["unlikely to sell soon: consider holding"] = "difficile che venda presto: valuta di tenerlo"
+L["well below its usual price"] = "molto sotto il suo prezzo abituale"
+L["~%d days"] = "~%d giorni"
+L["~%dh"] = "~%d h"

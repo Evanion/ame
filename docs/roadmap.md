@@ -30,17 +30,21 @@ much should I trust this number, and what is my guild watching.
 | M10 | **Data confidence.** Per item: scans in the last 7 days and freshness, shown as a confidence marker (high / medium / low) in the screener, item page and tooltip detail. | built |
 | M11 | **Guild watchlists.** Share a watchlist with the guild over sync; members see it in the sidebar (read-only, copyable) as a guild market board. | built |
 | M12 | **Price x supply phases.** Read price trend against supply trend (shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand, dumping); show the phase and let it confirm or veto signals (a Buy while dumping becomes Wait). | built |
+| M13 | **Posting price.** An adaptive queue model instead of 1c undercutting: units ahead at each price, sales rate, undercutting supply and undercut size per item (from consecutive scans, with a 5-band price ladder per scan), hour-of-day and weekday shapes, and calibration from your own posts (sold vs expired); items with little data borrow from their category. Expected value weighs the chance of selling against the deposit (1s minimum per post). Quick / Normal / Patient on the item page and a bar under the AH sell window that fills the price. | built |
+| M14 | **Translations.** AceLocale; deDE, frFR, esES (+esMX), ruRU, ptBR, itIT, koKR, zhCN, zhTW (AI-made, for native review). | built |
 
 Then: bugfix rounds from in-game testing, then release.
 
 ## Later
 
-- Crafting margins (reagent cost vs product price), disenchant values, deal finder / sniper, posting helper. Others
+- Crafting margins (reagent cost vs product price), disenchant values, deal finder / sniper. Others
   (AHledger, TSM, AzerothCharts, Fojji) cover these; add them once AME's own strengths are in.
 - Liquidity: tell sold from expired. Match individual auctions between replicate scans (gone with hours left =
   sold or cancelled; gone in its last "short" window = expired), weight browse-summary drains by price (cheap
   listings that vanish were bought), and use your own auction mail (exact) as a calibration.
-- Weekday seasonality; hourly history beyond 48 h; gear variants (#3); translations; export (#6).
+- Posting price: pool listing outcomes over guild sync; a backtest of signals and posting advice once there are
+  ~3 weeks of data (an offline script over AME_DB).
+- Hourly history beyond 48 h; gear variants (#3); export (#6).
 
 ## Working rules
 
