@@ -384,7 +384,7 @@ function UI:CreateSettingsView(parent, contentArea)
   )
 
   v.minimap = W.Check(v, L["Show minimap button"], function(on)
-    ns.Settings:SetMinimap(on)
+    ns.Launcher:SetMinimap(on)
   end)
   v.minimap:SetPoint("TOPLEFT", 0, -150)
 
@@ -554,7 +554,7 @@ function UI:RefreshSettings()
   v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
   v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))
   v.hours:SetIndex(indexOf(v.hours.values, ns.Settings:Get("listingHours")))
-  local hasIcon = ns.Settings:HasMinimapLibrary()
+  local hasIcon = ns.Launcher:HasMinimapLibrary()
   v.minimap:SetChecked(hasIcon and not AME_DB.settings.minimap.hide)
   v.minimap.label:SetText(
     hasIcon and L["Show minimap button"]

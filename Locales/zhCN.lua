@@ -91,8 +91,6 @@ L["An opportunity ranking from -100 to +100. Higher means the item is further be
 L["Announce recorded full scans in chat"] = "在聊天中通告已记录的全面扫描"
 L["Announced %d times, served %d scans, received %d, rejected %d"] =
   "已通告 %d 次，提供 %d 次扫描，接收 %d 次，拒绝 %d 次"
-L["Announces your recent full scans to the guild and fetches ones you're missing, paced in the background so it never disrupts chat or raid addons. Received scans that disagree wildly with your own prices are rejected."] =
-  "向公会通告你最近的全面扫描，并获取你缺少的扫描。在后台限速进行，绝不会干扰聊天或团队插件。与你自己的价格差异过大的扫描会被拒绝。"
 L["Any age"] = "任意时间"
 L["Any quality"] = "任意品质"
 L["Approve"] = "批准"
@@ -128,8 +126,6 @@ L["Character name, e.g. First Last"] = "角色名称，例如 First Last"
 L["Chart style"] = "图表样式"
 L["Checks every part of AME and offers a reload so the results are saved."] =
   "检查 AME 的各个部分，并提供重载界面以保存结果。"
-L["Checks every part of the addon, records timings, then reloads the UI."] =
-  "检查插件的各个部分，记录耗时，然后重载界面。"
 L["Class %d"] = "类别 %d"
 L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] =
   "点击某行打开其价格图表。点击星标将其加入自选列表。名称后的条形表示数据的可信度：3 绿 = 近期扫描充足，2 黄 = 有一些，1 红 = 很少或过旧。"
@@ -150,7 +146,6 @@ L['Delete the watchlist "%s"?'] = "删除自选列表“%s”？"
 L["Deposit"] = "保管费"
 L["Deposits for"] = "保管费按"
 L["Depth"] = "深度"
-L["Disabled"] = "已禁用"
 L["Display"] = "显示"
 L["Dumping"] = "抛售"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
@@ -198,8 +193,6 @@ L["How much the price jumps from day to day (the spread of daily % changes over 
   "价格每天的跳动幅度（30天内每日涨跌 % 的离散程度）。数值低表示物品稳定、可预测；数值高表示波动剧烈——风险更大，机会也更大。"
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =
   "两个价格中较旧那个的时效。两边数据都新鲜，路线才可信——买入前请扫描两个拍卖行（本账号的小号也算）。"
-L["If Auctionator is installed: fills days that have no AME data from its recent price history."] =
-  "如果安装了 Auctionator：用其近期价格历史填补没有 AME 数据的日期。"
 L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."] =
   "如果安装了 Auctionator：为 AME 没有数据的日期导入其近期每日价格（阵营拍卖行）。"
 L["Ignore outrageous prices"] = "忽略离谱价格"
@@ -236,8 +229,6 @@ L["Market"] = "市场价"
 L["Market price"] = "市场价"
 L["Market tab"] = "市场标签页"
 L["Market: %s"] = "市场：%s"
-L["Modified click on items in bags, chat links and the auction house. Choose Alt+Shift if another addon (e.g. AHDB) already uses Alt-click."] =
-  "在背包、聊天链接和拍卖行中对物品的组合键点击。如果其他插件（如 AHDB）已使用 Alt-点击，请选择 Alt+Shift。"
 L["Mostly"] = "最常交易"
 L["Name for the new watchlist:"] = "新自选列表的名称："
 L["New list"] = "新列表"
@@ -262,9 +253,7 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
 L["Notifications"] = "通知"
 L["Off"] = "关闭"
 L["Open"] = "开盘"
-L["Open an item's chart with"] = "打开物品图表的方式"
 L["Open item charts with"] = "打开物品图表的方式"
-L["Open the window with %s."] = "使用 %s 打开窗口。"
 L["Patient %s"] = "耐心 %s"
 L["Pick two different auction houses."] = "请选择两个不同的拍卖行。"
 L["Play a sound when a watchlist alert fires"] = "自选提醒触发时播放声音"
@@ -311,7 +300,6 @@ L["Sells per day (estimate)"] = "日销量（估计）"
 L["Sells per day at the sell house"] = "卖出拍卖行的日销量"
 L["Sells/d"] = "日销"
 L["Settings"] = "设置"
-L["Share full scans with guild members who use AME"] = "与使用 AME 的公会成员共享全面扫描"
 L["Share full scans with my guild (members running AME)"] =
   "与我的公会共享全面扫描（运行 AME 的成员）"
 L["Share with guild"] = "与公会共享"
@@ -322,7 +310,6 @@ L["Sharing settings are on the Sync tab. These options are also in the game's Ad
 L["Shift-click to search the auction house"] = "Shift-点击以搜索拍卖行"
 L["Shortage"] = "短缺"
 L["Show AME prices in item tooltips"] = "在物品鼠标提示中显示 AME 价格"
-L["Show market data in item tooltips"] = "在物品鼠标提示中显示市场数据"
 L["Show minimap button"] = "显示小地图按钮"
 L["Signal"] = "信号"
 L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] =

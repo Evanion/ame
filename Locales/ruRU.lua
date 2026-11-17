@@ -100,8 +100,6 @@ L["Announce recorded full scans in chat"] =
   "Объявлять в чате о записанных полных сканированиях"
 L["Announced %d times, served %d scans, received %d, rejected %d"] =
   "Объявлено раз: %d, отдано сканирований: %d, получено: %d, отклонено: %d"
-L["Announces your recent full scans to the guild and fetches ones you're missing, paced in the background so it never disrupts chat or raid addons. Received scans that disagree wildly with your own prices are rejected."] =
-  "Объявляет гильдии о ваших недавних полных сканированиях и загружает недостающие, понемногу в фоне, чтобы не мешать чату и рейдовым аддонам. Полученные сканирования, сильно расходящиеся с вашими ценами, отклоняются."
 L["Any age"] = "Любой давности"
 L["Any quality"] = "Любое качество"
 L["Approve"] = "Одобрить"
@@ -137,8 +135,6 @@ L["Character name, e.g. First Last"] = "Имя персонажа, наприм�
 L["Chart style"] = "Вид графика"
 L["Checks every part of AME and offers a reload so the results are saved."] =
   "Проверяет все части AME и предлагает перезагрузку, чтобы сохранить результаты."
-L["Checks every part of the addon, records timings, then reloads the UI."] =
-  "Проверяет все части аддона, замеряет время, затем перезагружает интерфейс."
 L["Class %d"] = "Класс %d"
 L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] =
   "Щёлкните по строке, чтобы открыть график цен. Щёлкните по звезде, чтобы добавить предмет в список наблюдения. Полоски после названия показывают, насколько можно доверять числам: 3 зелёные = много свежих сканирований, 2 жёлтые = немного, 1 красная = мало или устаревшие."
@@ -159,7 +155,6 @@ L['Delete the watchlist "%s"?'] = 'Удалить список наблюден�
 L["Deposit"] = "Залог"
 L["Deposits for"] = "Залог за"
 L["Depth"] = "Глубина"
-L["Disabled"] = "Отключено"
 L["Display"] = "Отображение"
 L["Dumping"] = "Сброс"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
@@ -207,8 +202,6 @@ L["How much the price jumps from day to day (the spread of daily % changes over 
   "Насколько цена прыгает изо дня в день (разброс дневных изменений в % за 30 дней). Низкие числа - стабильный, предсказуемый предмет; высокие - рискованные колебания и большие возможности."
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =
   "Возраст более старой из двух цен. Свежие данные с обеих сторон делают маршрут надёжным - отсканируйте оба аукциона (твинки на этой учётной записи тоже считаются) перед покупкой."
-L["If Auctionator is installed: fills days that have no AME data from its recent price history."] =
-  "Если установлен Auctionator: заполняет дни без данных AME его недавней историей цен."
 L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."] =
   "Если установлен Auctionator: импортирует его недавние дневные цены за дни, по которым у AME нет данных (аукцион фракции)."
 L["Ignore outrageous prices"] = "Игнорировать несуразные цены"
@@ -247,8 +240,6 @@ L["Market"] = "Рынок"
 L["Market price"] = "Рыночная цена"
 L["Market tab"] = "Вкладка «Рынок»"
 L["Market: %s"] = "Рынок: %s"
-L["Modified click on items in bags, chat links and the auction house. Choose Alt+Shift if another addon (e.g. AHDB) already uses Alt-click."] =
-  "Клик с модификатором по предметам в сумках, ссылкам в чате и на аукционе. Выберите Alt+Shift, если другой аддон (например, AHDB) уже использует Alt-клик."
 L["Mostly"] = "Чаще всего"
 L["Name for the new watchlist:"] = "Название нового списка:"
 L["New list"] = "Новый список"
@@ -273,9 +264,7 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
 L["Notifications"] = "Уведомления"
 L["Off"] = "Выкл."
 L["Open"] = "Открытие"
-L["Open an item's chart with"] = "Открывать график предмета по"
 L["Open item charts with"] = "Открывать графики предметов по"
-L["Open the window with %s."] = "Откройте окно командой %s."
 L["Patient %s"] = "Терпеливо %s"
 L["Pick two different auction houses."] = "Выберите два разных аукциона."
 L["Play a sound when a watchlist alert fires"] =
@@ -324,8 +313,6 @@ L["Sells per day (estimate)"] = "Продаж в день (оценка)"
 L["Sells per day at the sell house"] = "Продаж в день на аукционе продажи"
 L["Sells/d"] = "Прод./д"
 L["Settings"] = "Настройки"
-L["Share full scans with guild members who use AME"] =
-  "Делиться полными сканированиями с членами гильдии, у которых есть AME"
 L["Share full scans with my guild (members running AME)"] =
   "Делиться полными сканированиями с гильдией (у кого есть AME)"
 L["Share with guild"] = "Делиться с гильдией"
@@ -336,8 +323,6 @@ L["Sharing settings are on the Sync tab. These options are also in the game's Ad
 L["Shift-click to search the auction house"] = "Shift-клик - поиск на аукционе"
 L["Shortage"] = "Дефицит"
 L["Show AME prices in item tooltips"] = "Показывать цены AME в подсказках предметов"
-L["Show market data in item tooltips"] =
-  "Показывать рыночные данные в подсказках предметов"
 L["Show minimap button"] = "Показывать кнопку у миникарты"
 L["Signal"] = "Сигнал"
 L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] =

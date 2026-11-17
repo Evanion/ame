@@ -93,8 +93,6 @@ L["An opportunity ranking from -100 to +100. Higher means the item is further be
 L["Announce recorded full scans in chat"] = "기록된 전체 스캔을 대화창에 알림"
 L["Announced %d times, served %d scans, received %d, rejected %d"] =
   "알림 %d회, 스캔 제공 %d회, 수신 %d회, 거부 %d회"
-L["Announces your recent full scans to the guild and fetches ones you're missing, paced in the background so it never disrupts chat or raid addons. Received scans that disagree wildly with your own prices are rejected."] =
-  "최근 전체 스캔을 길드에 알리고 빠진 스캔을 가져옵니다. 백그라운드에서 속도를 조절하므로 대화나 공격대 애드온을 방해하지 않습니다. 당신의 가격과 크게 다른 수신 스캔은 거부됩니다."
 L["Any age"] = "모든 기간"
 L["Any quality"] = "모든 등급"
 L["Approve"] = "승인"
@@ -130,8 +128,6 @@ L["Character name, e.g. First Last"] = "캐릭터 이름, 예: First Last"
 L["Chart style"] = "차트 형식"
 L["Checks every part of AME and offers a reload so the results are saved."] =
   "AME의 모든 부분을 검사하고, 결과 저장을 위해 UI 재시작을 제안합니다."
-L["Checks every part of the addon, records timings, then reloads the UI."] =
-  "애드온의 모든 부분을 검사하고 소요 시간을 기록한 뒤 UI를 재시작합니다."
 L["Class %d"] = "분류 %d"
 L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] =
   "행을 클릭하면 가격 차트가 열립니다. 별을 클릭하면 관심 목록에 추가됩니다. 이름 뒤 막대는 수치의 신뢰도입니다: 초록 3개 = 최근 스캔 충분, 주황 2개 = 약간, 빨강 1개 = 적거나 오래됨."
@@ -152,7 +148,6 @@ L['Delete the watchlist "%s"?'] = "관심 목록 '%s'을(를) 삭제할까요?"
 L["Deposit"] = "보증금"
 L["Deposits for"] = "보증금 기준"
 L["Depth"] = "깊이"
-L["Disabled"] = "비활성화됨"
 L["Display"] = "표시"
 L["Dumping"] = "투매"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
@@ -200,8 +195,6 @@ L["How much the price jumps from day to day (the spread of daily % changes over 
   "가격이 하루하루 얼마나 튀는지 (30일간 일별 % 변동의 분산). 낮으면 안정적이고 예측 가능한 아이템, 높으면 위험한 변동 - 그리고 더 큰 기회입니다."
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =
   "두 가격 중 오래된 쪽의 경과 시간입니다. 양쪽 데이터가 최신이어야 경로를 믿을 수 있습니다 - 사기 전에 두 경매장을 모두 스캔하세요 (이 계정의 부캐릭터도 됩니다)."
-L["If Auctionator is installed: fills days that have no AME data from its recent price history."] =
-  "Auctionator가 설치되어 있으면: AME 데이터가 없는 날을 그 최근 가격 기록으로 채웁니다."
 L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."] =
   "Auctionator가 설치되어 있으면: AME 데이터가 없는 날의 최근 일별 가격을 가져옵니다 (진영 경매장)."
 L["Ignore outrageous prices"] = "터무니없는 가격 무시"
@@ -238,8 +231,6 @@ L["Market"] = "시장가"
 L["Market price"] = "시장가"
 L["Market tab"] = "시장 탭"
 L["Market: %s"] = "시장: %s"
-L["Modified click on items in bags, chat links and the auction house. Choose Alt+Shift if another addon (e.g. AHDB) already uses Alt-click."] =
-  "가방, 대화 링크, 경매장에서 아이템을 조합키 클릭합니다. 다른 애드온(예: AHDB)이 이미 Alt-클릭을 쓰면 Alt+Shift를 고르세요."
 L["Mostly"] = "주요 품목"
 L["Name for the new watchlist:"] = "새 관심 목록 이름:"
 L["New list"] = "새 목록"
@@ -264,9 +255,7 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
 L["Notifications"] = "알림"
 L["Off"] = "끄기"
 L["Open"] = "시가"
-L["Open an item's chart with"] = "아이템 차트 여는 방법"
 L["Open item charts with"] = "아이템 차트 여는 방법"
-L["Open the window with %s."] = "%s(으)로 창을 엽니다."
 L["Patient %s"] = "느긋 %s"
 L["Pick two different auction houses."] = "서로 다른 경매장 두 곳을 고르세요."
 L["Play a sound when a watchlist alert fires"] = "관심 목록 알림 시 소리 재생"
@@ -314,7 +303,6 @@ L["Sells per day (estimate)"] = "일 판매량 (추정)"
 L["Sells per day at the sell house"] = "판매처 일 판매량"
 L["Sells/d"] = "일 판매"
 L["Settings"] = "설정"
-L["Share full scans with guild members who use AME"] = "AME를 쓰는 길드원과 전체 스캔 공유"
 L["Share full scans with my guild (members running AME)"] = "내 길드와 전체 스캔 공유 (AME 사용 길드원)"
 L["Share with guild"] = "길드와 공유"
 L["Share with trusted players (below)"] = "신뢰하는 플레이어와 공유 (아래)"
@@ -324,7 +312,6 @@ L["Sharing settings are on the Sync tab. These options are also in the game's Ad
 L["Shift-click to search the auction house"] = "Shift-클릭으로 경매장 검색"
 L["Shortage"] = "품귀"
 L["Show AME prices in item tooltips"] = "아이템 툴팁에 AME 가격 표시"
-L["Show market data in item tooltips"] = "아이템 툴팁에 시장 데이터 표시"
 L["Show minimap button"] = "미니맵 버튼 표시"
 L["Signal"] = "신호"
 L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] =

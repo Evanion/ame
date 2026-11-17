@@ -22,7 +22,7 @@ cp AzerothMercantileExchange_History/AzerothMercantileExchange_History.toc Azero
 # embedded libraries: only what embeds.xml loads (plus licences)
 need() { [ -e "$1" ] || { echo "missing $1 - run scripts/fetch-libs.sh (LibDBIcon: see that script)" >&2; exit 1; }; }
 mkdir -p "$CORE/Libs/Ace3" "$CORE/Libs/LibDeflate"
-for m in LibStub CallbackHandler-1.0 AceGUI-3.0 AceConfig-3.0 AceComm-3.0 AceLocale-3.0; do
+for m in LibStub CallbackHandler-1.0 AceComm-3.0 AceLocale-3.0; do
   need "Libs/Ace3/$m"
   cp -r "Libs/Ace3/$m" "$CORE/Libs/Ace3/"
 done

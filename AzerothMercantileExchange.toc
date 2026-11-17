@@ -22,6 +22,7 @@ Locales\zhCN.lua
 Locales\zhTW.lua
 Core\Locale.lua
 Core\Init.lua
+Core\Settings.lua
 Core\Stats.lua
 Core\Pricing.lua
 Core\Codec.lua
@@ -55,4 +56,4 @@ Core\UI\ArbitrageView.lua
 Core\UI\PortfolioView.lua
 Core\UI\Tooltip.lua
 Core\UI\SellAssist.lua
-Core\UI\Settings.lua
+Core\UI\Launcher.lua

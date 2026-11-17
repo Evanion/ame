@@ -92,8 +92,6 @@ L["An opportunity ranking from -100 to +100. Higher means the item is further be
 L["Announce recorded full scans in chat"] = "Anunciar no chat as varreduras completas registradas"
 L["Announced %d times, served %d scans, received %d, rejected %d"] =
   "Anunciado %d vezes, %d varreduras servidas, %d recebidas, %d rejeitadas"
-L["Announces your recent full scans to the guild and fetches ones you're missing, paced in the background so it never disrupts chat or raid addons. Received scans that disagree wildly with your own prices are rejected."] =
-  "Anuncia suas varreduras completas recentes para a guilda e busca as que faltam para você, em ritmo lento em segundo plano para nunca atrapalhar o chat nem addons de raide. Varreduras recebidas que divergem demais dos seus próprios preços são rejeitadas."
 L["Any age"] = "Qualquer idade"
 L["Any quality"] = "Qualquer qualidade"
 L["Approve"] = "Aprovar"
@@ -129,8 +127,6 @@ L["Character name, e.g. First Last"] = "Nome do personagem, ex.: Nome Sobrenome"
 L["Chart style"] = "Estilo do gráfico"
 L["Checks every part of AME and offers a reload so the results are saved."] =
   "Verifica todas as partes do AME e oferece recarregar para salvar os resultados."
-L["Checks every part of the addon, records timings, then reloads the UI."] =
-  "Verifica todas as partes do addon, registra tempos e depois recarrega a IU."
 L["Class %d"] = "Classe %d"
 L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] =
   "Clique numa linha para abrir o gráfico de preços. Clique na estrela para adicioná-lo a uma lista de observação. As barras após o nome mostram quanto confiar nos números: 3 verdes = muitas varreduras recentes, 2 âmbar = algumas, 1 vermelha = poucas ou antigas."
@@ -151,7 +147,6 @@ L['Delete the watchlist "%s"?'] = 'Excluir a lista de observação "%s"?'
 L["Deposit"] = "Depósito"
 L["Deposits for"] = "Depósitos de"
 L["Depth"] = "Profundidade"
-L["Disabled"] = "Desativado"
 L["Display"] = "Exibição"
 L["Dumping"] = "Despejo"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
@@ -199,8 +194,6 @@ L["How much the price jumps from day to day (the spread of daily % changes over 
   "Quanto o preço salta de um dia para o outro (a dispersão das variações diárias em % ao longo de 30 dias). Números baixos indicam um item estável e previsível; números altos, oscilações arriscadas - e oportunidades maiores."
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =
   "A idade do mais antigo dos dois preços. Dados recentes dos dois lados tornam uma rota confiável - faça varreduras nas duas casas de leilões (alts desta conta contam) antes de comprar."
-L["If Auctionator is installed: fills days that have no AME data from its recent price history."] =
-  "Se o Auctionator estiver instalado: preenche os dias sem dados do AME com o histórico de preços recente dele."
 L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."] =
   "Se o Auctionator estiver instalado: importa os preços diários recentes dele para os dias em que o AME não tem dados (CL de facção)."
 L["Ignore outrageous prices"] = "Ignorar preços absurdos"
@@ -237,8 +230,6 @@ L["Market"] = "Mercado"
 L["Market price"] = "Preço de mercado"
 L["Market tab"] = "Aba Mercado"
 L["Market: %s"] = "Mercado: %s"
-L["Modified click on items in bags, chat links and the auction house. Choose Alt+Shift if another addon (e.g. AHDB) already uses Alt-click."] =
-  "Clique com modificador em itens nas bolsas, links do chat e na casa de leilões. Escolha Alt+Shift se outro addon (ex.: AHDB) já usa Alt-clique."
 L["Mostly"] = "Principalmente"
 L["Name for the new watchlist:"] = "Nome da nova lista:"
 L["New list"] = "Nova lista"
@@ -263,9 +254,7 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
 L["Notifications"] = "Notificações"
 L["Off"] = "Desativado"
 L["Open"] = "Abertura"
-L["Open an item's chart with"] = "Abrir o gráfico de um item com"
 L["Open item charts with"] = "Abrir gráficos de itens com"
-L["Open the window with %s."] = "Abra a janela com %s."
 L["Patient %s"] = "Paciente %s"
 L["Pick two different auction houses."] = "Escolha duas casas de leilões diferentes."
 L["Play a sound when a watchlist alert fires"] = "Tocar um som quando um alerta de lista disparar"
@@ -313,8 +302,6 @@ L["Sells per day (estimate)"] = "Vendas por dia (estimativa)"
 L["Sells per day at the sell house"] = "Vendas por dia na casa de venda"
 L["Sells/d"] = "Vendas/d"
 L["Settings"] = "Configurações"
-L["Share full scans with guild members who use AME"] =
-  "Compartilhar varreduras completas com membros da guilda que usam o AME"
 L["Share full scans with my guild (members running AME)"] =
   "Compartilhar varreduras completas com minha guilda (membros com AME)"
 L["Share with guild"] = "Compartilhar com a guilda"
@@ -325,7 +312,6 @@ L["Sharing settings are on the Sync tab. These options are also in the game's Ad
 L["Shift-click to search the auction house"] = "Shift-clique para pesquisar na casa de leilões"
 L["Shortage"] = "Escassez"
 L["Show AME prices in item tooltips"] = "Mostrar preços do AME nas dicas dos itens"
-L["Show market data in item tooltips"] = "Mostrar dados de mercado nas dicas dos itens"
 L["Show minimap button"] = "Mostrar botão no minimapa"
 L["Signal"] = "Sinal"
 L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] =
