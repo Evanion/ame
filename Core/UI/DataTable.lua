@@ -172,7 +172,7 @@ function DataTable.New(parent, opts)
         row.icon = row:CreateTexture(nil, "ARTWORK")
         row.icon:SetSize(ICON_W, ICON_W)
         if opts.confidence then
-          row.conf = W.Text(row, "GameFontHighlightSmall", "RIGHT")
+          row.conf = W.Text(row, "GameFontHighlightSmall", "LEFT")
           row.conf:SetSize(20, rowH)
         end
       end
@@ -577,6 +577,12 @@ function DataTable:Render()
           val = v ~= nil and tostring(v) or W.NONE
         end
         row.cells[c]:SetText(val or "")
+        if col.item and row.conf then -- the confidence bars right after the (possibly cut) name
+          local fs = row.cells[c]
+          local w = math.min(fs:GetStringWidth() or 0, fs:GetWidth() or 0)
+          row.conf:ClearAllPoints()
+          row.conf:SetPoint("LEFT", fs, "LEFT", w + 5, 0)
+        end
       end
     end
   end

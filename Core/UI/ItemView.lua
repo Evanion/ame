@@ -631,7 +631,7 @@ end
 -- The auction house searched one item (you picked it to post or buy, in the game's window or an addon's): while the
 -- Item tab is open, show that item - unless you're typing in AME's search box.
 -- the frames of the sell windows we know: the game's (SellAssist) and Auctionator's selling tab
-UI.SELL_FRAMES = { "AuctionatorSellingFrame", "AuctionatorSellingTabFrame" }
+UI.SELL_FRAMES = { "AuctionatorSellingFrame", "AuctionatorSellingTabFrame" } -- Auctionator's selling tab
 
 function UI:Selling()
   if ns.SellAssist and ns.SellAssist:Active() then

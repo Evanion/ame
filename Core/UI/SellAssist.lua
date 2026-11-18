@@ -33,8 +33,52 @@ end
 
 -- the sell frames of the current auction house:
 --   { frame, read() -> itemID, qty, hours; set(price, qty); get() -> the price box (per unit) }
+-- Auctionator's selling tab (its "Selling" tab frame, AuctionatorSellingFrame.SaleItemFrame): the item it's about
+-- to post, how many per auction, the listing length, and its unit price box (old-style AH: UnitPrice; new: Price)
+Sell.AUCTIONATOR_DURATION = { [12] = 1, [24] = 2, [48] = 3 } -- its duration values -> the game's duration index
+local function auctionatorSource()
+  local tab = _G.AuctionatorSellingFrame
+  local sale = type(tab) == "table" and rawget(tab, "SaleItemFrame")
+  if not sale then
+    return nil
+  end
+  local function priceBox()
+    return rawget(sale, "UnitPrice") or rawget(sale, "Price")
+  end
+  return {
+    frame = sale,
+    auctionator = true,
+    read = function()
+      local info = rawget(sale, "itemInfo")
+      local id = info and info.itemLink and ns.ItemIDFrom(info.itemLink)
+      if not id then
+        return nil
+      end
+      local qty = 1
+      if sale.GetStackSize then
+        qty = call(sale, "GetStackSize") or 1
+      elseif sale.Quantity then
+        qty = call(sale.Quantity, "GetNumber") or 1
+      end
+      local value = sale.Duration and call(sale.Duration, "GetValue")
+      local hours = ns.Posting.DurationHours(Sell.AUCTIONATOR_DURATION[value] or 3)
+      return id, math.max(1, qty), hours
+    end,
+    set = function(price)
+      call(priceBox(), "SetAmount", price)
+    end,
+    get = function()
+      return call(priceBox(), "GetAmount")
+    end,
+  }
+end
+
 local function sources()
   local out = {}
+  local auctionator = auctionatorSource()
+  if auctionator then
+    out[#out + 1] = auctionator
+  end
   local ah = AuctionHouseFrame
   if ah then
     for _, key in ipairs({ "CommoditiesSellFrame", "ItemSellFrame" }) do
@@ -161,7 +205,7 @@ function Sell:Build(parent)
   local function fill(price, target)
     local src, a = Sell.src, Sell.advice
     if src and a and price then
-      Sell.filled, Sell.target = price, target
+      Sell.filled, Sell.target, Sell.seen = price, target, price
       src.set(price, a.qty)
       Sell:Draw()
     end
@@ -305,13 +349,22 @@ function Sell:Draw()
     bar.info:SetText(table.concat(parts, "  ·  "))
     bar.fill.label:SetText(L["Fill price"])
     bar.fill:SetSelected(true)
-    local same = advice.quick.price == advice.patient.price
-    bar.quick:SetShown(not same)
-    bar.patient:SetShown(not same)
-    bar.quick.label:SetText(L["Quick %s"]:format(W.Money(advice.quick.price)))
-    bar.patient.label:SetText(L["Patient %s"]:format(W.Money(advice.patient.price)))
-    bar.reset:SetShown(target ~= nil)
-    bar.reset.label:SetText(L["Suggested %s"]:format(W.Money(advice.normal.price)))
+    -- the three prices stay put (nothing appears or disappears as you click); the one in the box is highlighted
+    local box = self.src and self.src.get and self.src.get()
+    for _, it in ipairs({
+      { bar.quick, "quick", L["Quick %s"] },
+      { bar.reset, "normal", L["Normal %s"] },
+      {
+        bar.patient,
+        "patient",
+        L["Patient %s"],
+      },
+    }) do
+      local b, key = it[1], it[2]
+      b:Show()
+      b.label:SetText(it[3]:format(W.Money(advice[key].price)))
+      b:SetSelected(box ~= nil and box == advice[key].price)
+    end
   end
   Sell.LayoutButtons(bar)
 end
@@ -319,7 +372,7 @@ end
 -- buttons sized to their labels, right to left: Fill, Patient, Quick, Suggested; the confidence sits left of them
 function Sell.LayoutButtons(bar)
   local prev
-  for _, b in ipairs({ bar.fill, bar.patient, bar.quick, bar.reset }) do
+  for _, b in ipairs({ bar.fill, bar.patient, bar.reset, bar.quick }) do
     b:SetWidth(math.max(60, math.ceil(b.label:GetStringWidth() or 40) + 20))
     b:SetHeight(24)
     if b:IsShown() then
@@ -356,6 +409,8 @@ function Sell:Refresh()
   local price = src.get and src.get() or nil
   if id ~= self.item then
     self.item, self.target, self.filled, self.seen = id, nil, nil, price
+  elseif not self.seen or self.seen == 0 then
+    self.seen = price -- the box got its first price only now (filled in after the item arrived)
   elseif price and price > 0 and price ~= self.seen then
     self.seen = price
     if price ~= self.filled then

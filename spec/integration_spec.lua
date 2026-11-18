@@ -709,7 +709,7 @@ describe("addon in a stubbed client", function()
       v.search:SetText("")
       v.search.scripts.OnTextChanged(v.search)
       -- category sidebar: All items, watchlists, "+ New list", then classes; clicking a class filters to it
-      local classLine = v.side.lines[4]
+      local classLine = v.side.lines[6]
       assert.are.equal(7, classLine.entry.classID)
       classLine.scripts.OnClick(classLine)
       assert.are.equal(2, #ns.UI.list)
@@ -808,6 +808,9 @@ describe("addon in a stubbed client", function()
       assert.is_true(v.signalsShort:IsShown())
       assert.is_false(v.columns:IsShown())
       assert.is_false(v.minBox:IsShown())
+      assert.is_true(t.userHidden.qty and t.userHidden.score) -- Supply and Score give way when narrow
+      assert.truthy(v.side.lines[2].entry.header) -- "Watchlists" heading
+      assert.truthy(v.columns.label.text:find("hidden"))
       local mp = v.slots.main.points
       assert.are.equal(-(22 + ns.UI.SLOT_GAP), mp[1][3]) -- the table moves up into the chips row's space
       v.signalsShort.byKey.sell.scripts.OnClick(v.signalsShort.byKey.sell)
@@ -916,7 +919,7 @@ describe("addon in a stubbed client", function()
       assert.is_true(ns.AME.watch:Has(1, id))
       assert.is_true(row.star.watched) -- drawn as a filled star
       -- sidebar: line 2 is the watchlist; selecting it shows only watched items
-      local listLine = v.side.lines[2]
+      local listLine = v.side.lines[3]
       assert.are.equal(1, listLine.entry.list)
       listLine.scripts.OnClick(listLine, "LeftButton")
       assert.are.equal(1, #ns.UI.list)
@@ -1370,9 +1373,15 @@ describe("addon in a stubbed client", function()
       assert.truthy(bar.info.text:find("% cut", 1, true))
       assert.truthy(bar.info.text:find("^Just under") or bar.info.text:find("listing"), bar.info.text)
       assert.truthy(bar.conf.text:find("Confidence"))
-      assert.is_false(bar.reset:IsShown())
+      -- Quick, Normal and Patient are always there; the one in the price box is highlighted
+      assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown())
       bar.fill.scripts.OnClick(bar.fill)
       assert.are.equal(advice.normal.price, filled)
+      assert.is_true(bar.reset.selected)
+      bar.quick.scripts.OnClick(bar.quick)
+      assert.are.equal(advice.quick.price, filled)
+      assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown()) -- nothing disappears
+      bar.fill.scripts.OnClick(bar.fill)
       -- clicking a listing in the sell window puts its price in the box: the bar re-targets just under it
       local listing = advice.book.prices[#advice.book.prices]
       filled = listing
@@ -1403,6 +1412,34 @@ describe("addon in a stubbed client", function()
       sell.GetItem = function() end -- slot emptied: the bar goes away
       env:update(40)
       assert.is_false(bar:IsShown())
+      -- Auctionator's selling tab: the bar reads its item and fills its unit price box
+      local unit
+      local sale = CreateFrame("Frame")
+      sale.itemInfo = { itemLink = "|cffffffff|Hitem:2589::::::::|h[Item 2589]|h|r", count = 20 }
+      sale.GetStackSize = function()
+        return 5
+      end
+      sale.Duration = {
+        GetValue = function()
+          return 48
+        end,
+      }
+      sale.UnitPrice = {
+        SetAmount = function(_, v)
+          unit = v
+        end,
+        GetAmount = function()
+          return unit
+        end,
+      }
+      _G.AuctionatorSellingFrame = { SaleItemFrame = sale }
+      ns.SellAssist:Invalidate()
+      env:update(40)
+      assert.truthy(bar:IsShown())
+      assert.are.equal(5, ns.SellAssist.advice.qty)
+      bar.fill.scripts.OnClick(bar.fill)
+      assert.are.equal(ns.SellAssist.advice.normal.price, unit)
+      _G.AuctionatorSellingFrame = nil
       _G.AuctionHouseFrame = nil
     end)
 
@@ -1955,7 +1992,7 @@ describe("addon in a stubbed client", function()
       ns.UI:Toggle()
       ns.UI:ShowTab("market")
       -- right-click my list > Share with guild
-      ns.UI:ListMenu(ns.UI.marketView.side.lines[2], 1)
+      ns.UI:ListMenu(ns.UI.marketView.side.lines[3], 1)
       local share = ns.Widgets.menu.items[1]
       share.scripts.OnClick(share)
       assert.is_true(watch:Lists()[1].shared)
@@ -1986,7 +2023,7 @@ describe("addon in a stubbed client", function()
       copy.scripts.OnClick(copy)
       assert.are.equal("Herbs (Guild Mate)", watch:Lists()[2].name)
       -- unsharing tells the guild to drop it
-      ns.UI:ListMenu(v.side.lines[2], 1)
+      ns.UI:ListMenu(v.side.lines[3], 1)
       share = ns.Widgets.menu.items[1]
       share.scripts.OnClick(share)
       env:advance(3)

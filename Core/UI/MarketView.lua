@@ -37,7 +37,16 @@ local COLUMNS = {
       return W.Money(s["avg" .. avgDays()], true)
     end,
   },
-  { key = "vsAvg", drop = 3, label = L["vs avg"], width = 62, format = "pct", term = "vsAvg" },
+  {
+    key = "vsAvg",
+    drop = 1,
+    width = 76,
+    format = "pct",
+    term = "vsAvg",
+    label = function()
+      return L["vs %d-day avg"]:format(avgDays())
+    end,
+  },
   { key = "min", label = L["Lowest"], width = 80, format = "money", term = "min", optional = true },
   { key = "change7", drop = 6, label = L["7d"], width = 62, format = "pct", term = "change7", optional = true },
   {
@@ -49,12 +58,13 @@ local COLUMNS = {
     term = "vol30",
     optional = true,
   },
-  { key = "qty", drop = 1, label = L["Supply"], width = 52, format = "count", term = "qty" },
+  { key = "qty", drop = 3, label = L["Supply"], width = 52, format = "count", term = "qty" },
   { key = "sellRate", label = L["Sales/day"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "signal",
     label = L["Signal"],
-    width = 58,
+    width = 64,
+    align = "LEFT",
     term = "signal",
     sortKey = "signalRank",
     ascendingFirst = true,
@@ -151,6 +161,7 @@ function UI:CategoryEntries()
   local entries = { { all = true, label = L["All items"], count = self.index and self.index.count or 0 } }
   local watch = ns.AME.watch
   if watch then
+    entries[#entries + 1] = { header = true, label = W.Dim(L["Watchlists"]), count = "" }
     for i, l in ipairs(watch:Lists()) do
       entries[#entries + 1] = {
         list = i,
@@ -177,6 +188,7 @@ function UI:CategoryEntries()
       end
     end
   end
+  entries[#entries + 1] = { header = true, label = W.Dim(L["Categories"]), count = "" }
   for _, c in ipairs(self.categories or {}) do
     entries[#entries + 1] = { classID = c.classID, label = ns.ItemCache.ClassName(c.classID), count = c.count }
     if q.classID == c.classID then
@@ -326,7 +338,7 @@ function UI:RenderCategories()
       b.sel:SetShown(selected(q, e))
       b.text:SetText(e.label)
       b.text:SetFontObject(e.subClassID and "GameFontHighlightSmall" or "GameFontNormalSmall")
-      b.count:SetText(e.count)
+      b.count:SetText(type(e.count) == "number" and W.Thousands(e.count) or e.count)
     else
       b:Hide()
     end
@@ -365,16 +377,24 @@ function UI:MarketHiddenColumns()
   return hidden
 end
 
+UI.MARKET_COMPACT_HIDDEN = { qty = true, score = true }
+
 function UI:ApplyMarketColumns()
   local v = self.marketView
-  v.table:SetUserHidden(self:MarketHiddenColumns())
+  local hidden = self:MarketHiddenColumns()
+  if self.marketCompact then
+    for key in pairs(UI.MARKET_COMPACT_HIDDEN) do
+      hidden[key] = true
+    end
+  end
+  v.table:SetUserHidden(hidden)
   self:UpdateColumnsButton()
 end
 
 function UI:UpdateColumnsButton()
   local v = self.marketView
   local n = v.table:HiddenCount()
-  v.columns.label:SetText(n > 0 and L["Columns (%d hidden)"]:format(n) or L["Columns"])
+  v.columns.label:SetText(n > 0 and L["Columns  ·  %d hidden"]:format(n) or L["Columns"])
 end
 
 function UI:ColumnMenu(anchor)
@@ -529,6 +549,7 @@ function UI:UpdateMarketChips()
     end)
   end
   v.chips:Set(chips)
+  v:PlaceSignals()
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -596,7 +617,7 @@ function UI:CreateMarketView(parent)
     UI:ColumnMenu(self)
   end)
   v.columns:SetPoint("RIGHT", 0, 0)
-  v.views = W.Button(bar, L["Views"], 64, 20, function(self)
+  v.views = W.Button(bar, L["Views"] .. W.ARROW_DOWN, 72, 20, function(self)
     UI:ViewsMenu(self)
   end)
   v.views:SetPoint("RIGHT", v.columns, "LEFT", -6, 0)
@@ -615,12 +636,44 @@ function UI:CreateMarketView(parent)
       UI:RefreshMarket(true)
     end,
   })
-  v.signals:SetPoint("LEFT", 0, 0)
+  v.filtersLabel = W.Text(slots.chips, "GameFontDisableSmall")
+  v.filtersLabel:SetText(L["Filters:"])
   v.chips = W.Chips(slots.chips, function()
     UI:ResetMarketFilters()
   end)
-  v.chips:SetPoint("LEFT", v.signals, "RIGHT", 12, 0)
-  v.chips:SetPoint("RIGHT", 0, 0)
+  -- Where the signal filter goes: the toolbar when there's room after the price boxes (before Views / Columns),
+  -- else the chips row. The chips row shows only when it has something (filters, or the signal filter).
+  function v:PlaceSignals()
+    if slots.compact then
+      self.signals:Hide()
+      self.filtersLabel:Hide()
+      slots:ShowBar(slots.chips, false)
+      return
+    end
+    self.signals:Show()
+    local need = 160 + 104 + 64 + 64 + 8 * 4 + 10 + (self.signals:GetWidth() or 0) + 10 + 72 + 116 + 6
+    local onToolbar = (bar:GetWidth() or 0) >= need
+    self.signals:SetParent(onToolbar and bar or slots.chips)
+    self.signals:ClearAllPoints()
+    self.filtersLabel:ClearAllPoints()
+    self.chips:ClearAllPoints()
+    if onToolbar then
+      self.signals:SetPoint("LEFT", self.maxBox, "RIGHT", 10, 0)
+      self.filtersLabel:SetPoint("LEFT", 0, 0)
+      self.chips:SetPoint("LEFT", self.filtersLabel, "RIGHT", 8, 0)
+    else
+      self.signals:SetPoint("LEFT", slots.chips, "LEFT", 0, 0)
+      self.filtersLabel:SetPoint("LEFT", self.signals, "RIGHT", 12, 0)
+      self.chips:SetPoint("LEFT", self.filtersLabel, "RIGHT", 8, 0)
+    end
+    self.chips:SetPoint("RIGHT", slots.chips, "RIGHT", 0, 0)
+    local hasChips = (self.chips.count or 0) > 0
+    self.filtersLabel:SetShown(hasChips)
+    slots:ShowBar(slots.chips, hasChips or not onToolbar)
+  end
+  bar:HookScript("OnSizeChanged", function()
+    v:PlaceSignals()
+  end)
 
   -- the list (shared DataTable component)
   v.table = ns.DataTable.New(main, {
@@ -704,7 +757,8 @@ function UI:CreateMarketView(parent)
 
   function v:SetCompact(on)
     slots:SetCompact(on)
-    slots:ShowBar(slots.chips, not on)
+    UI.marketCompact = on
+    UI:ApplyMarketColumns()
     self.category:SetShown(on)
     self.search:ClearAllPoints()
     if on then
@@ -717,6 +771,7 @@ function UI:CreateMarketView(parent)
     end
     self.signalsShort:SetShown(on)
     self.more:SetShown(on)
+    self:PlaceSignals()
   end
   v:SetCompact(slots.compact)
 
