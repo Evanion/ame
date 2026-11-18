@@ -480,8 +480,11 @@ function W.CardRow(parent, defs, opts)
 end
 
 -- The default UI fonts lack glyphs like ▲ ▼ ▮, so use inline textures instead.
-W.ARROW_UP = " |TInterface\\Buttons\\Arrow-Up-Up:12:12:0:-2|t"
-W.ARROW_DOWN = " |TInterface\\Buttons\\Arrow-Down-Up:12:12:0:2|t"
+-- AME's own triangles (media/Signals): their art fills the image, so they sit centred on the text (the game's
+-- arrow art sits high in its image), in gold.
+W.ARROW_UP = " |TInterface\\AddOns\\AzerothMercantileExchange\\media\\Signals\\Up:9:9:0:0:32:32:0:32:0:32:255:209:0|t"
+W.ARROW_DOWN =
+  " |TInterface\\AddOns\\AzerothMercantileExchange\\media\\Signals\\Down:9:9:0:0:32:32:0:32:0:32:255:209:0|t"
 
 -- small tinted colour square for legends: W.Swatch(r, g, b) or W.Swatch(colorTable)
 function W.Swatch(r, g, b)
