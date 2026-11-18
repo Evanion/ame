@@ -77,7 +77,7 @@ local COLUMNS = {
       return ("%s / %s"):format(W.Count(e.buyQty), W.Count(e.sellQty))
     end,
   },
-  { key = "sellRate", drop = 2, label = L["Sells/d"], width = 58, format = "rate", term = "arbSellRate" },
+  { key = "sellRate", drop = 2, label = L["Sales/day"], width = 58, format = "rate", term = "arbSellRate" },
   {
     key = "age",
     drop = 1,
@@ -244,7 +244,7 @@ function UI:CreateRouteSidebar(v, side)
   r.margin = st:Pair(L["Margin"], "arbMargin")
   st:Heading(L["Depth and speed"])
   r.depth = st:Pair(L["Depth"], "arbDepth", 6)
-  r.rate = st:Pair(L["Sells/d"], "arbSellRate")
+  r.rate = st:Pair(L["Sales/day"], "arbSellRate")
   st:Heading(L["Data"])
   r.buyAge = st:Pair("", "arbAge", 6)
   r.sellAge = st:Pair("", "arbAge")

@@ -262,7 +262,7 @@ L["How long selling everything you hold would take at the item's current sell ra
   "현재 판매 속도로 보유량을 모두 파는 데 걸리는 시간 (추정)."
 L["How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: falling supply often comes before rising prices."] =
   "최신 데이터에 등록된 수량입니다. 아이템 페이지에서 옆의 % 값은 주간 공급 추세입니다: 공급 감소는 종종 가격 상승에 앞섭니다."
-L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sells/d."] =
+L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sales/day."] =
   "경로가 수익을 내는 동안 구매 경매장에서 살 수 있는 수량과 총 수익입니다: 수수료를 뗀 1개 판매가보다 싸게 등록된 모든 매물. 아이템의 매물 정보가 필요하므로 먼저 구매 경매장에서 아이템을 검색하세요 (검색 버튼이 해줍니다) - 이후 6시간 동안 유지됩니다. 그만큼 파는 데도 시간이 걸리니 일 판매량을 확인하세요."
 L["How much the market price moved compared with 7 days of data ago. Green is up, red is down."] =
   "7일치 데이터 이전과 비교한 시장가 변동입니다. 초록은 상승, 빨강은 하락."
@@ -310,6 +310,8 @@ L["Market"] = "시장가"
 L["Market phase"] = "시장 국면"
 L["Market phase: %s"] = "시장 국면: %s"
 L["Market price"] = "시장가"
+L["Market sales per day (estimate)"] = "일 판매량 (추정)"
+L["Market sales per day at the sell house"] = "판매처 일 판매량"
 L["Market tab"] = "시장 탭"
 L["Market: %s"] = "시장: %s"
 L["Mostly"] = "주요 품목"
@@ -407,6 +409,7 @@ L["Routes compare two auction houses' prices. Scan both (alts count), then searc
 L["Run self-test"] = "자가 진단 실행"
 L["SELL"] = "매도"
 L["SELL signal at %s"] = "%s에 매도 신호"
+L["Sales/day"] = "일 판매"
 L["Save these filters as a view..."] = "이 필터를 보기로 저장..."
 L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."] =
   "내 가격과 크게 다른 스캔은 거부되며, 플레이어를 차단할 수도 있습니다. 길드 관리자는 길드 정보에 한 줄을 추가해 길드 전체에서 플레이어를 차단할 수 있습니다. 위쪽 카드에는 각 경매장 데이터가 얼마나 최신인지와 누가 스캔했는지가 표시됩니다."
@@ -429,9 +432,6 @@ L["Sellers withdrawing"] = "판매자 철수"
 L["Selling"] = "판매"
 L["Selling: posting prices"] = "판매: 등록 가격"
 L["Sells for"] = "판매가"
-L["Sells per day (estimate)"] = "일 판매량 (추정)"
-L["Sells per day at the sell house"] = "판매처 일 판매량"
-L["Sells/d"] = "일 판매"
 L["Settings"] = "설정"
 L["Settings are saved per account. Sharing settings are on the Sync tab."] =
   "설정은 계정별로 저장됩니다. 공유 설정은 동기화 탭에 있습니다."
@@ -458,7 +458,7 @@ L["Steady demand"] = "꾸준한 수요"
 L["Suggested %s"] = "추천 %s"
 L["Suppliers"] = "판매자"
 L["Supply"] = "공급"
-L["Supply  ·  sells/day"] = "공급  ·  일 판매"
+L["Supply  ·  sales/day"] = "공급  ·  일 판매"
 L["Swap"] = "교환"
 L["Switch to the Item tab when you put an item up for sale"] =
   "아이템을 판매 등록할 때 아이템 탭으로 전환"

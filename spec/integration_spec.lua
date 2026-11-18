@@ -1251,7 +1251,7 @@ describe("addon in a stubbed client", function()
       local v = ns.UI.marketView
       local col
       for c, h in ipairs(v.headers) do
-        if h.text.text:find("Sells/d") then
+        if h.text.text:find("Sales/day") then
           col = c
         end
       end

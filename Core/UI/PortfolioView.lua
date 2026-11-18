@@ -38,7 +38,7 @@ local POSITION_COLS = {
     sortKey = "signalRank",
     ascendingFirst = true,
   },
-  { key = "sellRate", drop = 3, label = L["Sells/d"], width = 58, format = "rate", term = "sellRate" },
+  { key = "sellRate", drop = 3, label = L["Sales/day"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "daysToSell",
     drop = 4,

@@ -259,7 +259,7 @@ L["How long selling everything you hold would take at the item's current sell ra
   "Wie lange es dauern würde, alles, was du besitzt, zur aktuellen Verkaufsrate des Gegenstands zu verkaufen (Schätzung)."
 L["How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: falling supply often comes before rising prices."] =
   "Wie viele in den neuesten Daten angeboten werden. Auf der Gegenstandsseite ist die Angabe in % neben der Menge der wöchentliche Angebotstrend: Sinkendes Angebot kommt oft vor steigenden Preisen."
-L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sells/d."] =
+L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sales/day."] =
   "Wie viele Stück du im Kauf-AH kaufen kannst, bevor sich die Route nicht mehr lohnt, und der Gesamtgewinn: jedes Angebot unter dem, was eines nach Gebühr einbringt. Dafür braucht es die Angebote des Gegenstands, also suche ihn zuerst im Kauf-AH (der Suchen-Knopf erledigt das) - danach bleiben sie 6 Stunden erhalten. Diese Menge zu verkaufen braucht trotzdem Zeit: Prüfe Verk./T."
 L["How much the market price moved compared with 7 days of data ago. Green is up, red is down."] =
   "Wie stark sich der Marktpreis gegenüber den Daten von vor 7 Tagen bewegt hat. Grün ist hoch, rot ist runter."
@@ -307,6 +307,8 @@ L["Market"] = "Markt"
 L["Market phase"] = "Marktphase"
 L["Market phase: %s"] = "Marktphase: %s"
 L["Market price"] = "Marktpreis"
+L["Market sales per day (estimate)"] = "Verkäufe pro Tag (Schätzung)"
+L["Market sales per day at the sell house"] = "Verkäufe pro Tag im Verkaufs-AH"
 L["Market tab"] = "Markt-Reiter"
 L["Market: %s"] = "Markt: %s"
 L["Mostly"] = "Meistens"
@@ -403,6 +405,7 @@ L["Routes compare two auction houses' prices. Scan both (alts count), then searc
 L["Run self-test"] = "Selbsttest starten"
 L["SELL"] = "VERKAUFEN"
 L["SELL signal at %s"] = "VERKAUF-Signal bei %s"
+L["Sales/day"] = "Verk./T"
 L["Save these filters as a view..."] = "Diese Filter als Ansicht speichern..."
 L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."] =
   "Scans, die stark von deinen eigenen Preisen abweichen, werden abgelehnt, und du kannst Spieler blockieren. Gildenoffiziere können Spieler mit einer Zeile in den Gildeninformationen für die ganze Gilde blockieren. Die Karten oben zeigen, wie aktuell die Daten jedes Auktionshauses sind und wer sie gescannt hat."
@@ -425,9 +428,6 @@ L["Sellers withdrawing"] = "Verkäufer ziehen sich zurück"
 L["Selling"] = "Verkaufen"
 L["Selling: posting prices"] = "Verkaufen: Einstellpreise"
 L["Sells for"] = "Verkauft für"
-L["Sells per day (estimate)"] = "Verkäufe pro Tag (Schätzung)"
-L["Sells per day at the sell house"] = "Verkäufe pro Tag im Verkaufs-AH"
-L["Sells/d"] = "Verk./T"
 L["Settings"] = "Einstellungen"
 L["Settings are saved per account. Sharing settings are on the Sync tab."] =
   "Einstellungen werden pro Account gespeichert. Die Einstellungen zum Teilen findest du im Sync-Reiter."
@@ -455,7 +455,7 @@ L["Steady demand"] = "Stabile Nachfrage"
 L["Suggested %s"] = "Vorschlag %s"
 L["Suppliers"] = "Lieferanten"
 L["Supply"] = "Angebot"
-L["Supply  ·  sells/day"] = "Angebot  ·  Verk./Tag"
+L["Supply  ·  sales/day"] = "Angebot  ·  Verk./Tag"
 L["Swap"] = "Tauschen"
 L["Switch to the Item tab when you put an item up for sale"] =
   "Zum Gegenstand-Tab wechseln, wenn du einen Gegenstand zum Verkauf einstellst"

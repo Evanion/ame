@@ -198,7 +198,7 @@ function UI:CreateItemView(parent)
   cards[3] = st:Pair(L["Average"], "avg")
   cards[4] = st:Pair(L["7d change"], "change7")
   cards[5] = st:Pair(L["Volatility"], "vol30")
-  cards[6] = st:Pair(L["Supply  ·  sells/day"], "sellRate")
+  cards[6] = st:Pair(L["Supply  ·  sales/day"], "sellRate")
   v.cards = cards
   -- posting price (Pricing / Posting)
   v.postHead = st:Heading(L["Post at"])

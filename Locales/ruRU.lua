@@ -271,7 +271,7 @@ L["How long selling everything you hold would take at the item's current sell ra
   "Сколько времени займёт продажа всего, что у вас есть, при текущем темпе продаж предмета (оценка)."
 L["How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: falling supply often comes before rising prices."] =
   "Сколько выставлено в последних данных. На странице предмета % рядом - недельный тренд предложения: падение предложения часто предшествует росту цен."
-L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sells/d."] =
+L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sales/day."] =
   "Сколько штук можно купить на аукционе покупки, пока маршрут не перестанет окупаться, и общая прибыль: каждый лот дешевле, чем выручка за штуку после комиссии. Нужны лоты предмета, поэтому сначала найдите его на аукционе покупки (это делает кнопка «Поиск») - затем они хранятся 6 часов. Продать столько всё равно требует времени: смотрите Прод./д."
 L["How much the market price moved compared with 7 days of data ago. Green is up, red is down."] =
   "Насколько рыночная цена изменилась по сравнению с данными 7-дневной давности. Зелёный - рост, красный - падение."
@@ -321,6 +321,8 @@ L["Market"] = "Рынок"
 L["Market phase"] = "Фаза рынка"
 L["Market phase: %s"] = "Фаза рынка: %s"
 L["Market price"] = "Рыночная цена"
+L["Market sales per day (estimate)"] = "Продаж в день (оценка)"
+L["Market sales per day at the sell house"] = "Продаж в день на аукционе продажи"
 L["Market tab"] = "Вкладка «Рынок»"
 L["Market: %s"] = "Рынок: %s"
 L["Mostly"] = "Чаще всего"
@@ -421,6 +423,7 @@ L["Routes compare two auction houses' prices. Scan both (alts count), then searc
 L["Run self-test"] = "Запустить самопроверку"
 L["SELL"] = "ПРОДАТЬ"
 L["SELL signal at %s"] = "Сигнал ПРОДАТЬ по %s"
+L["Sales/day"] = "Прод./д"
 L["Save these filters as a view..."] = "Сохранить фильтры как вид..."
 L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."] =
   "Сканирования, сильно расходящиеся с вашими ценами, отклоняются, и вы можете блокировать игроков. Офицеры гильдии могут заблокировать игрока для всей гильдии строкой в информации о гильдии. Карточки вверху показывают, насколько свежи данные каждого аукциона и кто их отсканировал."
@@ -443,9 +446,6 @@ L["Sellers withdrawing"] = "Уход продавцов"
 L["Selling"] = "Продажа"
 L["Selling: posting prices"] = "Продажа: цены выставления"
 L["Sells for"] = "Продаётся за"
-L["Sells per day (estimate)"] = "Продаж в день (оценка)"
-L["Sells per day at the sell house"] = "Продаж в день на аукционе продажи"
-L["Sells/d"] = "Прод./д"
 L["Settings"] = "Настройки"
 L["Settings are saved per account. Sharing settings are on the Sync tab."] =
   "Настройки сохраняются для всей учётной записи. Настройки обмена - на вкладке «Синхронизация»."
@@ -473,7 +473,7 @@ L["Steady demand"] = "Устойчивый спрос"
 L["Suggested %s"] = "Совет: %s"
 L["Suppliers"] = "Поставщики"
 L["Supply"] = "Предложение"
-L["Supply  ·  sells/day"] = "Предложение  ·  прод./день"
+L["Supply  ·  sales/day"] = "Предложение  ·  прод./день"
 L["Swap"] = "Поменять"
 L["Switch to the Item tab when you put an item up for sale"] =
   "Переключаться на вкладку «Предмет», когда вы выставляете предмет на продажу"

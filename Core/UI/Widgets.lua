@@ -1063,6 +1063,9 @@ function W.Rate(perDay)
   if not perDay then
     return W.NONE
   end
+  if perDay >= 1000 then
+    return "~" .. W.Count(perDay) .. "/d" -- ~32k/d
+  end
   if perDay >= 10 or perDay < 0.05 then -- "~0/d", not "~0.0/d": nothing measurably sells
     return ("~%d/d"):format(math.floor(perDay + 0.5))
   end
