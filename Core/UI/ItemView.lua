@@ -49,14 +49,20 @@ end
 
 function UI:CreateItemView(parent)
   local v = contentArea(parent)
-  local slots = UI.Slots(v, { header = 34, toolbar = 22, right = UI.ITEM_SIDEBAR, rightCards = true, status = true })
+  local slots = UI.Slots(v, { header = 34, right = UI.ITEM_SIDEBAR, rightCards = true, status = true })
   v.slots = slots
-  local head, bar, side = slots.header, slots.toolbar, slots.right
+  local head, side = slots.header, slots.right
+  -- the chart's controls (ranges; Line | Candles) belong to the chart: a row above it, spanning its width
+  local bar = CreateFrame("Frame", nil, slots.main)
+  bar:SetHeight(22)
+  bar:SetPoint("TOPLEFT")
+  bar:SetPoint("TOPRIGHT")
+  v.chartBar = bar
 
   -- header: icon, name, subtitle; search box on the right
   local box
   box = W.Input(head, {
-    width = 260,
+    width = UI.ITEM_SIDEBAR,
     hint = L["Search item, or Shift-click one"],
     onChange = function(text, _, user)
       if user then
@@ -155,7 +161,7 @@ function UI:CreateItemView(parent)
   local holder = CreateFrame("Frame", nil, slots.main, "BackdropTemplate")
   W.Skin(holder, { 0.07, 0.08, 0.1, 1 }, W.COLORS.border)
   W.InnerGlow(holder)
-  holder:SetPoint("TOPLEFT")
+  holder:SetPoint("TOPLEFT", 0, -(22 + UI.SLOT_GAP)) -- under the chart's controls
   holder:SetPoint("BOTTOMRIGHT") -- above the summary bar when narrow (SetCompact)
   self.chartHolder = holder
   local chart = LibStub("LibAMEChart-1.0"):New(holder, {
@@ -335,8 +341,9 @@ function UI:CreateItemView(parent)
     self.details:SetSelected(false)
     self.summaryBar:SetFrameLevel((slots.right:GetFrameLevel() or 1) + 5) -- above the Details panel
     holder:ClearAllPoints()
-    holder:SetPoint("TOPLEFT")
+    holder:SetPoint("TOPLEFT", 0, -(22 + UI.SLOT_GAP))
     holder:SetPoint("BOTTOMRIGHT", 0, on and (UI.ITEM_SUMMARY_H + 6) or 0)
+    box:SetWidth(on and 200 or UI.ITEM_SIDEBAR)
     -- the Details panel stops above the summary bar
     slots.right:ClearAllPoints()
     slots.right:SetPoint("TOPRIGHT", 0, slots.top)
@@ -763,9 +770,12 @@ function UI:FillItem(_, series, latest)
   end
   cards[5].value:SetText(W.Count(latest and latest.qty or s.qty or 0) .. trendText)
   cards[6].value:SetText(s.sellRate and ("~" .. W.Count(s.sellRate)) or W.NONE)
-  cards[7].value:SetText(
-    W.SignalGlyph(s.signal) .. (s.phase and W.Dim("  ·  " .. ns.Analytics.PHASE_LABEL[s.phase]:lower()) or "")
-  )
+  local phaseText = s.phase and W.Dim(ns.Analytics.PHASE_LABEL[s.phase]:lower()) or ""
+  if s.signal and s.signal ~= "none" then
+    cards[7].value:SetText(W.SignalGlyph(s.signal) .. (phaseText ~= "" and W.Dim("  ·  ") .. phaseText or ""))
+  else
+    cards[7].value:SetText(phaseText)
+  end
   local avg = s["avg" .. avgDays()] or s.avg30
   local market = latest and latest.market or s.market
   local change = market and avg and avg > 0 and market / avg - 1 or nil
