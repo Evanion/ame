@@ -315,6 +315,21 @@ describe("addon in a stubbed client", function()
       assert.are.equal(built.items[2589].market, restored.items[2589].market)
       assert.is_false(AME:IndexBusy())
 
+      -- saved by an older version (no vendor prices yet): shown, then rebuilt once
+      AME:SaveIndexes()
+      AME_DB.indexCache[shard].v = nil
+      AME.indexes, AME.index, AME.indexShard = {}, nil, nil
+      AME:RestoreIndexes()
+      for _ = 1, 50 do
+        if AME:IndexBusy() then
+          break
+        end
+        env:update(1)
+      end
+      assert.is_true(AME:IndexBusy())
+      drainJobs()
+      assert.is_false(AME:IndexBusy())
+
       -- the history changed since it was saved: shown right away (stale), rebuilt in the background
       AME:SaveIndexes()
       fullScan({ { 2589, 2000, 10 } })

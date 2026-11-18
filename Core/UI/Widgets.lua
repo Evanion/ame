@@ -797,8 +797,9 @@ function W.Check(parent, label, onToggle)
   b.box = CreateFrame("Frame", nil, b, "BackdropTemplate")
   b.box:SetAllPoints()
   W.Skin(b.box, W.COLORS.panel)
-  -- ticked: an accent-coloured square inside the box (the game's check texture doesn't show on every client)
-  b.mark = b:CreateTexture(nil, "OVERLAY")
+  -- ticked: an accent-coloured square inside the box
+  -- on the box frame: a child frame draws over its parent's own textures, so a mark on the button would be hidden
+  b.mark = b.box:CreateTexture(nil, "OVERLAY")
   b.mark:SetPoint("TOPLEFT", 4, -4)
   b.mark:SetPoint("BOTTOMRIGHT", -4, 4)
   b.label = W.Text(b, "GameFontHighlightSmall")

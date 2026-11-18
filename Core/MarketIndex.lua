@@ -85,6 +85,9 @@ for code, name in ipairs(SIGNALS) do
   SIGNAL_CODE[name] = code
 end
 
+-- bumped when saved indexes gain information (2: vendor prices): older saves are shown, then rebuilt once
+MarketIndex.SAVE_VERSION = 2
+
 MarketIndex.SAVED_FIELDS = {
   { "market", 1 },
   { "min", 1 },

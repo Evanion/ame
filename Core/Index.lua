@@ -221,7 +221,7 @@ function AME:SaveIndexes()
   for shard, index in pairs(self.indexes) do
     local ok, text = pcall(ns.MarketIndex.Encode, index)
     if ok then
-      saved[shard] = { rev = index.rev or 0, s = text }
+      saved[shard] = { rev = index.rev or 0, v = ns.MarketIndex.SAVE_VERSION, s = text }
     end
   end
   AME_DB.indexCache = saved
@@ -239,7 +239,7 @@ function AME:RestoreIndexes()
       if self.history.shards[shard] then
         local ok, index = pcall(ns.MarketIndex.Decode, entry.s)
         if ok and index then
-          index.rev = entry.rev
+          index.rev, index.saveVersion = entry.rev, entry.v or 1 -- saves before versioning: 1
           restored[shard] = index
         end
         job:Checkpoint()
@@ -252,7 +252,8 @@ function AME:RestoreIndexes()
     end
     for shard, data in pairs(self.history.shards) do
       local index = self.indexes[shard]
-      if not index or index.rev ~= (data.rev or 0) or index.day ~= today then
+      local outdated = index and index.saveVersion and index.saveVersion ~= ns.MarketIndex.SAVE_VERSION
+      if not index or outdated or index.rev ~= (data.rev or 0) or index.day ~= today then
         if index or shard == self:CurrentShard() or self:HasData(shard) then
           self:RefreshIndex(shard)
         end
