@@ -118,13 +118,11 @@ function UI:CreateArbitrageView(parent, contentArea)
     UI:RefreshArbitrage()
   end, { neutral = true })
   W.Labeled(bar, L["Buy at"], v.buy):SetPoint("LEFT", 0, 0)
-  v.swap = W.Button(bar, "<>", 30, 20, function()
+  v.swap = W.Button(bar, L["Swap"], 50, 20, function()
     UI.arb.buy, UI.arb.sell = UI.arb.sell, UI.arb.buy
     UI:RefreshArbitrage()
   end)
-  W.Tooltip(v.swap, function(tip)
-    W.TipText(tip, L["Swap"])
-  end)
+  v.swap:SetWidth(math.ceil(v.swap.label:GetStringWidth() or 34) + 16) -- fits the translated label
   v.swap:SetPoint("LEFT", v.buy, "RIGHT", 6, 0)
   v.sell = W.Dropdown(bar, 104, HOUSES, function(value)
     UI.arb.sell = value
