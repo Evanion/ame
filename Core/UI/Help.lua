@@ -218,8 +218,9 @@ Help.GUIDE = {
   },
 }
 
--- The Guide's articles, grouped like a documentation site. Each article: key, title, body (paragraphs). The glossary
--- group is built from Help.TERMS (Help.GLOSSARY order), so every hover explanation has its own page.
+-- The Guide's articles, grouped like a documentation site. Each article: key, title, label (optional: a shorter
+-- name in the sidebar, e.g. "Market" under "Tabs"; the title otherwise), body (paragraphs). The glossary group is
+-- built from Help.TERMS (Help.GLOSSARY order), so every hover explanation has its own page.
 local function guideText(i)
   return Help.GUIDE[i][2]
 end
@@ -253,13 +254,14 @@ function Help.Articles()
     {
       L["Tabs"],
       {
-        { key = "tabMarket", title = Help.GUIDE[2][1], body = { guideText(2) } },
-        { key = "tabItem", title = Help.GUIDE[5][1], body = { guideText(5) } },
-        { key = "tabArbitrage", title = Help.GUIDE[3][1], body = { guideText(3) } },
-        { key = "tabPortfolio", title = Help.GUIDE[4][1], body = { guideText(4) } },
+        { key = "tabMarket", title = Help.GUIDE[2][1], label = L["Market"], body = { guideText(2) } },
+        { key = "tabItem", title = Help.GUIDE[5][1], label = L["Item"], body = { guideText(5) } },
+        { key = "tabArbitrage", title = Help.GUIDE[3][1], label = L["Arbitrage"], body = { guideText(3) } },
+        { key = "tabPortfolio", title = Help.GUIDE[4][1], label = L["Portfolio"], body = { guideText(4) } },
         {
           key = "tabSync",
           title = L["Sync tab"],
+          label = L["Sync"],
           body = {
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
             L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
@@ -268,6 +270,7 @@ function Help.Articles()
         {
           key = "tabSettings",
           title = L["Settings tab"],
+          label = L["Settings"],
           body = {
             L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."],
           },
@@ -347,7 +350,7 @@ function Help.CreateGuide(parent, contentArea)
     b.text:SetPoint("LEFT", 8, 0)
     b.text:SetPoint("RIGHT", -4, 0)
     b.text:SetWordWrap(false)
-    b.text:SetText(a.title)
+    b.text:SetText(a.label or a.title) -- the sidebar's short name; the article keeps its full title
     b:SetScript("OnClick", function()
       v:ShowArticle(a.key)
     end)
@@ -368,7 +371,7 @@ function Help.CreateGuide(parent, contentArea)
     if not text or text == "" then
       return true
     end
-    if a.title:lower():find(text, 1, true) then
+    if a.title:lower():find(text, 1, true) or (a.label and a.label:lower():find(text, 1, true)) then
       return true
     end
     for _, p in ipairs(a.body) do
@@ -413,7 +416,7 @@ function Help.CreateGuide(parent, contentArea)
     -- the compact dropdown lists the same articles
     local options = {}
     for i, a in ipairs(self.matches) do
-      options[i] = { a.key, a.title }
+      options[i] = { a.key, a.label or a.title }
     end
     if #options == 0 then
       options[1] = { false, L["No articles match"] }

@@ -938,6 +938,9 @@ describe("addon in a stubbed client", function()
       guide.search:SetText("")
       guide.search.scripts.OnTextChanged(guide.search, true)
       assert.is_true(guide.byKey.commands.link:IsShown())
+      assert.are.equal("Market", guide.byKey.tabMarket.link.text.text) -- the sidebar label, not "Market tab"
+      guide.byKey.tabMarket.link.scripts.OnClick(guide.byKey.tabMarket.link)
+      assert.are.equal("Market tab", guide.title.text) -- the article keeps its full title
     end)
 
     it("stars items into a watchlist, shows the list and fires alerts after a scan", function()
