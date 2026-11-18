@@ -101,8 +101,8 @@ L["AME listens to the game's own auction house APIs, so every scan and search yo
   "AME ascolta le API della casa d'aste del gioco stesso, quindi ogni scansione e ricerca che fai viene registrata - dalla finestra predefinita della casa d'aste o da qualsiasi addon di scansione (funziona bene con addon come Auctionator). Non viene scansionato nulla in più. Lo storico è tenuto per mercato (reame o regole Forever) e per casa d'aste, e i membri della gilda che usano AME condividono automaticamente le loro scansioni complete."
 L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
   "AME registra la casa d'aste mentre la usi e la trasforma in storico dei prezzi, grafici, segnali e prezzi d'inserzione. Non c'è niente da configurare: apri la casa d'aste ed esegui una scansione completa (quella di Auctionator o quella del gioco), e AME la registra."
-L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
-  "AME suggerisce un prezzo in base a quanto velocemente si vende questo oggetto, invece di ribassare di 1c. Inserisci prezzo lo mette nella casella; sei sempre tu a mettere all'asta."
+L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."] =
+  "AME suggerisce un prezzo in base a quanto velocemente si vende l'oggetto, invece di ribassare di 1c. Clicca un prezzo per inserirlo nel campo; clicchi tu su Metti all'asta."
 L["API + database found"] = "API + database trovati"
 L["API found, database not readable (no backfill)"] = "API trovata, database non leggibile (niente backfill)"
 L["About %s sell a day, so it sells quickly."] = "Se ne vendono circa %s al giorno, quindi si vende in fretta."
@@ -296,6 +296,8 @@ L["How much the market price moved compared with 7 days of data ago. Green is up
   "Quanto si è mosso il prezzo di mercato rispetto ai dati di 7 giorni fa. Verde è in salita, rosso in discesa."
 L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
   "Quanto salta il prezzo da un giorno all'altro (la dispersione delle variazioni giornaliere in % calcolata su 30 giorni). Numeri bassi indicano un oggetto stabile e prevedibile; numeri alti oscillazioni rischiose - e opportunità più grandi."
+L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."] =
+  "Quanto fidarsi dei numeri: 3 barre verdi = molte scansioni recenti, 2 ambra = alcune, 1 rossa = poche o vecchie. Più scansioni dell'oggetto (complete o ricerche) la alzano."
 L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."] =
   "Quanto è vecchio l'ultimo prezzo di questo oggetto. Le righe più vecchie di 3 giorni sbiadiscono: scansiona di nuovo (o attendi la scansione di un compagno di gilda) prima di fidarti."
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =

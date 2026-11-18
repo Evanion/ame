@@ -1409,7 +1409,7 @@ describe("addon in a stubbed client", function()
       assert.truthy(bar.title.text:find("Post at"))
       assert.truthy(bar.info.text:find("% cut", 1, true))
       assert.truthy(bar.info.text:find("^Just under") or bar.info.text:find("listing"), bar.info.text)
-      assert.truthy(bar.conf.text:find("Confidence"))
+      assert.truthy(bar.conf.text:find("WHITE8x8", 1, true)) -- just the confidence bars
       -- Quick, Normal and Patient are always there; the one in the price box is highlighted
       assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown())
       assert.is_false(bar.fill:IsShown()) -- the choices fill their own prices: no extra button

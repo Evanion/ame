@@ -106,8 +106,8 @@ L["AME listens to the game's own auction house APIs, so every scan and search yo
   "AME слушает собственные API аукциона в игре, поэтому записывается каждое ваше сканирование и поиск - из стандартного окна аукциона или любого аддона-сканера (хорошо работает с аддонами вроде Auctionator). Ничего лишнего не сканируется. История хранится отдельно для каждого рынка (игровой мир или правила Forever) и аукциона, а члены гильдии с AME автоматически делятся полными сканированиями."
 L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
   "AME записывает аукцион, пока вы им пользуетесь, и превращает это в историю цен, графики, сигналы и цены выставления. Настраивать ничего не нужно: откройте аукцион и запустите полное сканирование (Auctionator или встроенное в игру), и AME его запишет."
-L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
-  "AME предлагает цену исходя из того, как быстро продаётся предмет, а не сбивает на 1м. «Подставить цену» вписывает её в поле; выставляете лот всё равно вы."
+L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."] =
+  "AME предлагает цену по скорости продаж предмета, а не сбивает на 1м. Нажмите цену, чтобы вписать её; выставляете вы сами."
 L["API + database found"] = "API и база данных найдены"
 L["API found, database not readable (no backfill)"] =
   "API найден, база данных не читается (без дозаполнения истории)"
@@ -312,6 +312,8 @@ L["How much the market price moved compared with 7 days of data ago. Green is up
   "Насколько рыночная цена изменилась по сравнению с данными 7-дневной давности. Зелёный - рост, красный - падение."
 L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
   "Насколько цена прыгает изо дня в день (разброс дневных изменений в % за 30 дней). Низкие числа - стабильный, предсказуемый предмет; высокие - рискованные колебания и большие возможности."
+L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."] =
+  "Насколько можно доверять цифрам: 3 зелёных полоски = много свежих сканов, 2 жёлтых = несколько, 1 красная = мало или старые. Больше сканов предмета (полных или поисков) повышают её."
 L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."] =
   "Насколько стара последняя цена предмета. Строки старше 3 дней тускнеют: просканируйте снова (или дождитесь скана согильдийца), прежде чем им доверять."
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =

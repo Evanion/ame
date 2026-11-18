@@ -101,8 +101,8 @@ L["AME listens to the game's own auction house APIs, so every scan and search yo
   "AME 监听游戏自身的拍卖行接口，因此你进行的每次扫描和搜索都会被记录——无论来自默认拍卖行窗口还是任何扫描插件（与 Auctionator 等插件配合良好）。不会进行额外扫描。历史按市场（服务器或 Forever 规则集）和拍卖行分别保存，运行 AME 的公会成员会自动共享他们的全面扫描。"
 L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
   "AME 会在你使用拍卖行时进行记录，并将其转化为价格历史、图表、信号和上架价格。无需任何设置：打开拍卖行并进行一次完整扫描（Auctionator 的或游戏自带的），AME 就会记录下来。"
-L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
-  "AME 根据该物品的售出速度建议价格，而不是压价 1 铜。“填入价格”会把它填进输入框；上架仍需你自己点击。"
+L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."] =
+  "AME 按物品卖出的速度建议价格，而不是压价 1 铜。点击价格即可填入；上架仍需你自己点击。"
 L["API + database found"] = "已找到 API 和数据库"
 L["API found, database not readable (no backfill)"] = "已找到 API，数据库不可读（无历史回填）"
 L["About %s sell a day, so it sells quickly."] = "每天约售出 %s 件，卖得很快。"
@@ -295,6 +295,8 @@ L["How much the market price moved compared with 7 days of data ago. Green is up
   "市场价与 7 天数据之前相比的变化。绿色为上涨，红色为下跌。"
 L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
   "价格每天的跳动幅度（30天内每日涨跌 % 的离散程度）。数值低表示物品稳定、可预测；数值高表示波动剧烈——风险更大，机会也更大。"
+L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."] =
+  "数字的可信程度：3 条绿色 = 近期扫描多，2 条琥珀色 = 一些，1 条红色 = 少或过旧。对该物品更多扫描（完整扫描或搜索）可提高可信度。"
 L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."] =
   "该物品最新价格的时效。超过 3 天的行会变暗：信任之前请重新扫描（或等待公会成员的扫描传来）。"
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =

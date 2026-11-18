@@ -101,8 +101,8 @@ L["AME listens to the game's own auction house APIs, so every scan and search yo
   "O AME escuta as próprias APIs de casa de leilões do jogo, então toda varredura e pesquisa que você faz é registrada - pela janela padrão da casa de leilões ou por qualquer addon de varredura (funciona bem com addons como o Auctionator). Nada a mais é varrido. O histórico é mantido por mercado (reino ou regras do Forever) e casa de leilões, e membros da guilda que usam o AME compartilham suas varreduras completas automaticamente."
 L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
   "O AME registra a casa de leilões enquanto você a usa e transforma isso em histórico de preços, gráficos, sinais e preços de leilão. Não há nada para configurar: abra a casa de leilões e faça uma varredura completa (a do Auctionator ou a do próprio jogo), e o AME a registra."
-L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
-  "O AME sugere um preço pela rapidez com que este item vende, em vez de cobrir por 1c. Preencher preço coloca-o no campo; quem cria o leilão ainda é você."
+L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."] =
+  "O AME sugere um preço pela rapidez com que o item vende, em vez de cobrir por 1c. Clique num preço para colocá-lo na caixa; você ainda clica em Anunciar."
 L["API + database found"] = "API + banco de dados encontrados"
 L["API found, database not readable (no backfill)"] =
   "API encontrada, banco de dados ilegível (sem preenchimento de histórico)"
@@ -297,6 +297,8 @@ L["How much the market price moved compared with 7 days of data ago. Green is up
   "Quanto o preço de mercado se moveu em comparação com 7 dias de dados atrás. Verde é alta, vermelho é queda."
 L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
   "Quanto o preço salta de um dia para o outro (a dispersão das variações diárias em % ao longo de 30 dias). Números baixos indicam um item estável e previsível; números altos, oscilações arriscadas - e oportunidades maiores."
+L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."] =
+  "Quanto confiar nos números: 3 barras verdes = muitas varreduras recentes, 2 âmbar = algumas, 1 vermelha = poucas ou antigas. Mais varreduras do item (completas ou buscas) a aumentam."
 L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."] =
   "A idade do preço mais recente deste item. Linhas com mais de 3 dias ficam esmaecidas: faça uma nova varredura (ou espere a varredura de um colega de guilda) antes de confiar nelas."
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =

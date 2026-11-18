@@ -229,16 +229,23 @@ function Sell:Build(parent)
   end)
   bar.reset:SetPoint("RIGHT", bar.quick, "LEFT", -6, 0)
   bar.tag = W.Text(bar, "GameFontNormal")
-  bar.tag:SetPoint("LEFT", 12, 0)
+  bar.tag:SetPoint("TOPLEFT", 12, -9)
   bar.tag:SetText("AME")
-  bar.conf = W.Text(bar, "GameFontDisableSmall", "RIGHT")
   bar.title = W.Text(bar, "GameFontHighlight")
-  bar.title:SetPoint("TOPLEFT", bar.tag, "RIGHT", 14, 14)
-  bar.title:SetPoint("RIGHT", bar.conf, "LEFT", -10, 0)
+  bar.title:SetPoint("LEFT", bar.tag, "RIGHT", 12, 0)
   bar.title:SetWordWrap(false)
+  -- confidence: just the bars after the title (what they mean is on hover)
+  bar.confHover = CreateFrame("Frame", nil, bar)
+  bar.conf = W.Text(bar.confHover, "GameFontHighlightSmall")
+  bar.conf:SetPoint("LEFT", bar.confHover, "LEFT", 0, 0)
+  bar.confHover:SetSize(30, 16)
+  bar.confHover:SetPoint("LEFT", bar.title, "RIGHT", 8, 0)
+  bar.confHover:EnableMouse(true)
+  ns.Help.Explain(bar.confHover, "confidence")
+  -- the reason line: the whole width under the title and the buttons
   bar.info = W.Text(bar, "GameFontDisableSmall")
-  bar.info:SetPoint("TOPLEFT", bar.title, "BOTTOMLEFT", 0, -5)
-  bar.info:SetPoint("RIGHT", bar.conf, "LEFT", -10, 0)
+  bar.info:SetPoint("BOTTOMLEFT", 12, 8)
+  bar.info:SetPoint("RIGHT", -10, 0)
   bar.info:SetWordWrap(false)
   bar:Hide()
   return bar
@@ -296,7 +303,7 @@ function Sell:Draw()
     Sell.LayoutButtons(bar)
     return
   end
-  bar.conf:SetText(W.Dim(L["Confidence"]) .. " " .. pips)
+  bar.conf:SetText(pips)
   local now = GetServerTime()
   local target = self.target
   local choice, title
@@ -397,17 +404,13 @@ function Sell.LayoutButtons(bar)
       if prev then
         b:SetPoint("RIGHT", prev, "LEFT", -6, 0)
       else
-        b:SetPoint("RIGHT", -10, 0)
+        b:SetPoint("TOPRIGHT", -10, -5)
       end
       prev = b
     end
   end
-  bar.conf:ClearAllPoints()
-  if prev then
-    bar.conf:SetPoint("RIGHT", prev, "LEFT", -12, 0)
-  else
-    bar.conf:SetPoint("RIGHT", -10, 0)
-  end
+  -- the title stops short of the buttons (it ends in "..." when it must)
+  bar.title:SetPoint("RIGHT", prev or bar, prev and "LEFT" or "RIGHT", prev and -44 or -44, 0)
 end
 
 function Sell:Refresh()
@@ -455,7 +458,7 @@ function Sell:Refresh()
     self.hint = W.Hint(
       bar,
       "sellBar",
-      L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."]
+      L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."]
     ) or false
   end
 end

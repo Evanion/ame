@@ -102,8 +102,8 @@ L["AME listens to the game's own auction house APIs, so every scan and search yo
   "AME écoute les API de l'hôtel des ventes du jeu lui-même, donc chaque scan et chaque recherche que vous lancez est enregistré - depuis la fenêtre d'hôtel des ventes par défaut ou n'importe quel addon de scan (il fonctionne bien avec des addons comme Auctionator). Rien n'est scanné en plus. L'historique est conservé par marché (royaume ou règles Forever) et par hôtel des ventes, et les membres de guilde utilisant AME partagent automatiquement leurs scans complets."
 L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
   "AME enregistre l'hôtel des ventes pendant que vous l'utilisez et en tire un historique des prix, des graphiques, des signaux et des prix de mise en vente. Rien à configurer : ouvrez l'hôtel des ventes et lancez un scan complet (celui d'Auctionator ou celui du jeu), et AME l'enregistre."
-L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
-  "AME propose un prix selon la vitesse de vente de cet objet, au lieu de casser le prix d'1c. Remplir le prix le met dans la case ; c'est toujours vous qui mettez en vente."
+L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."] =
+  "AME propose un prix selon la vitesse de vente de l'objet, au lieu de baisser d'1c. Cliquez sur un prix pour le mettre dans la case ; vous cliquez vous-même sur Mettre en vente."
 L["API + database found"] = "API + base de données trouvées"
 L["API found, database not readable (no backfill)"] = "API trouvée, base de données illisible (pas de backfill)"
 L["About %s sell a day, so it sells quickly."] = "Environ %s se vendent par jour, donc il part vite."
@@ -297,6 +297,8 @@ L["How much the market price moved compared with 7 days of data ago. Green is up
   "De combien le prix du marché a bougé par rapport aux données d'il y a 7 jours. Vert : hausse, rouge : baisse."
 L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
   "À quel point le prix saute d'un jour à l'autre (l'écart des variations quotidiennes en % calculé sur 30 jours). Un chiffre bas signifie un objet stable et prévisible ; un chiffre haut, des variations risquées - et de plus grosses opportunités."
+L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."] =
+  "Le degré de confiance dans les chiffres : 3 barres vertes = beaucoup de scans récents, 2 orange = quelques-uns, 1 rouge = peu ou anciens. Plus de scans de l'objet (complets ou recherches) l'augmentent."
 L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."] =
   "L'âge du dernier prix de cet objet. Les lignes de plus de 3 jours s'estompent : scannez à nouveau (ou attendez le scan d'un membre de la guilde) avant de vous y fier."
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =

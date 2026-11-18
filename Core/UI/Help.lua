@@ -42,6 +42,10 @@ Help.TERMS = {
       .. " "
       .. L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."],
   },
+  confidence = {
+    L["Confidence"],
+    L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."],
+  },
   vsAvg = {
     L["vs average"],
     L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."],
@@ -163,6 +167,7 @@ Help.GLOSSARY = {
   "phase",
   "age",
   "name",
+  "confidence",
   "posting",
   "candles",
   "arbBuy",

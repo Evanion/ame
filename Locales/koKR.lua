@@ -103,8 +103,8 @@ L["AME listens to the game's own auction house APIs, so every scan and search yo
   "AME는 게임 자체의 경매장 API를 감지하므로, 당신이 실행하는 모든 스캔과 검색이 기록됩니다 - 기본 경매장 창이든 어떤 스캔 애드온이든 상관없습니다 (Auctionator 같은 애드온과 잘 작동합니다). 추가로 스캔하지는 않습니다. 기록은 시장(서버 또는 Forever 규칙 세트)과 경매장별로 보관되며, AME를 사용하는 길드원은 전체 스캔을 자동으로 공유합니다."
 L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
   "AME는 경매장을 사용하는 동안 기록해 가격 기록, 차트, 신호, 등록 가격으로 만들어 줍니다. 설정할 것은 없습니다: 경매장을 열고 전체 스캔(Auctionator 또는 게임 자체 스캔)을 실행하면 AME가 기록합니다."
-L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
-  "AME는 1c씩 낮추는 대신 이 아이템이 얼마나 빨리 팔리는지에 따라 가격을 제안합니다. 가격 입력을 누르면 칸에 채워지고, 등록은 직접 클릭해야 합니다."
+L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."] =
+  "AME는 1코퍼씩 낮추는 대신 아이템이 팔리는 속도로 가격을 제안합니다. 가격을 클릭하면 입력란에 들어가며, 등록은 직접 클릭합니다."
 L["API + database found"] = "API + 데이터베이스 찾음"
 L["API found, database not readable (no backfill)"] =
   "API 찾음, 데이터베이스 읽을 수 없음 (기록 보충 없음)"
@@ -300,6 +300,8 @@ L["How much the market price moved compared with 7 days of data ago. Green is up
   "7일치 데이터 이전과 비교한 시장가 변동입니다. 초록은 상승, 빨강은 하락."
 L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
   "가격이 하루하루 얼마나 튀는지 (30일간 일별 % 변동의 분산). 낮으면 안정적이고 예측 가능한 아이템, 높으면 위험한 변동 - 그리고 더 큰 기회입니다."
+L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."] =
+  "숫자를 얼마나 믿을 수 있는지: 초록 막대 3개 = 최근 스캔 많음, 주황 2개 = 일부, 빨강 1개 = 적거나 오래됨. 아이템을 더 스캔하면(전체 스캔이나 검색) 올라갑니다."
 L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."] =
   "이 아이템의 최신 가격이 얼마나 오래됐는지입니다. 3일보다 오래된 행은 흐려집니다: 믿기 전에 다시 스캔하세요 (또는 길드원의 스캔을 기다리세요)."
 L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =
