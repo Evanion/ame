@@ -202,29 +202,29 @@ function Sell:Build(parent)
       tip:AddLine(L["%d%% chance to sell in %dh"]:format(Sell.chance, Sell.advice and Sell.advice.hours or 24), 1, 1, 1)
     end
   end, "ANCHOR_TOP")
-  local function fill(price, target)
+  local function fill(price, target, key)
     local src, a = Sell.src, Sell.advice
     if src and a and price then
-      Sell.filled, Sell.target, Sell.seen = price, target, price
+      Sell.filled, Sell.target, Sell.seen, Sell.picked = price, target, price, key
       src.set(price, a.qty)
       Sell:Draw()
     end
   end
   bar.fill = W.Button(bar, L["Fill price"], 110, 24, function()
-    fill(Sell.shown, Sell.target)
+    fill(Sell.shown, Sell.target, not Sell.target and "normal" or nil)
   end)
   bar.fill:SetPoint("RIGHT", -8, 0)
   bar.fill:SetSelected(true)
   bar.patient = W.Button(bar, "", 130, 20, function()
-    fill(Sell.advice and Sell.advice.patient.price)
+    fill(Sell.advice and Sell.advice.patient.price, nil, "patient")
   end)
   bar.patient:SetPoint("RIGHT", bar.fill, "LEFT", -8, 0)
   bar.quick = W.Button(bar, "", 130, 20, function()
-    fill(Sell.advice and Sell.advice.quick.price)
+    fill(Sell.advice and Sell.advice.quick.price, nil, "quick")
   end)
   bar.quick:SetPoint("RIGHT", bar.patient, "LEFT", -6, 0)
   bar.reset = W.Button(bar, "", 130, 20, function()
-    fill(Sell.advice and Sell.advice.normal.price)
+    fill(Sell.advice and Sell.advice.normal.price, nil, "normal")
   end)
   bar.reset:SetPoint("RIGHT", bar.quick, "LEFT", -6, 0)
   bar.tag = W.Text(bar, "GameFontNormal")
@@ -349,8 +349,20 @@ function Sell:Draw()
     bar.info:SetText(table.concat(parts, "  ·  "))
     bar.fill.label:SetText(L["Fill price"])
     bar.fill:SetSelected(true)
-    -- the three prices stay put (nothing appears or disappears as you click); the one in the box is highlighted
+    -- the three prices stay put (nothing appears or disappears as you click); ONE is highlighted: the one you
+    -- clicked if the box still holds its price, else the first that matches the box (Normal before Quick, Patient -
+    -- two choices can have the same price)
     local box = self.src and self.src.get and self.src.get()
+    local lit
+    if box and self.picked and advice[self.picked] and advice[self.picked].price == box then
+      lit = self.picked
+    else
+      for _, key in ipairs({ "normal", "quick", "patient" }) do
+        if not lit and box and advice[key].price == box then
+          lit = key
+        end
+      end
+    end
     for _, it in ipairs({
       { bar.quick, "quick", L["Quick %s"] },
       { bar.reset, "normal", L["Normal %s"] },
@@ -363,7 +375,7 @@ function Sell:Draw()
       local b, key = it[1], it[2]
       b:Show()
       b.label:SetText(it[3]:format(W.Money(advice[key].price)))
-      b:SetSelected(box ~= nil and box == advice[key].price)
+      b:SetSelected(key == lit)
     end
   end
   Sell.LayoutButtons(bar)

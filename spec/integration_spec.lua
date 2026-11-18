@@ -1415,6 +1415,14 @@ describe("addon in a stubbed client", function()
       bar.fill.scripts.OnClick(bar.fill)
       assert.are.equal(advice.normal.price, filled)
       assert.is_true(bar.reset.selected)
+      -- one button lit even when two choices share a price (Normal = Patient here)
+      advice.patient.price = advice.normal.price
+      ns.SellAssist:Draw()
+      assert.is_true(bar.reset.selected)
+      assert.is_false(bar.patient.selected)
+      bar.patient.scripts.OnClick(bar.patient) -- the one you click is the one lit
+      assert.is_true(bar.patient.selected)
+      assert.is_false(bar.reset.selected)
       bar.quick.scripts.OnClick(bar.quick)
       assert.are.equal(advice.quick.price, filled)
       assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown()) -- nothing disappears
