@@ -17,6 +17,7 @@ Settings.DEFAULTS = {
   announceScans = true,
   openWithAH = false, -- open the AME window when the auction house opens
   closeWithAH = false, -- and close it again with the AH (only when the AH opened it)
+  sellSwitchesTab = true, -- putting an item up for sale switches an open AME window to the Item tab for it
   alertSound = true,
   cutFaction = 5, -- seller's cut in % at faction auction houses
   cutNeutral = 15, -- and at goblin (neutral) auction houses

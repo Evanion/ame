@@ -292,6 +292,7 @@ L["Suppliers"] = true
 L["Supply"] = true
 L["Supply  ·  sells/day"] = true
 L["Swap"] = true
+L["Switch to the Item tab when you put an item up for sale"] = true
 L["Sync"] = true
 L["Sync is unavailable: the AceComm library didn't load."] = true
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] = true

@@ -383,6 +383,23 @@ describe("addon in a stubbed client", function()
       env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 4306)
       env:advance(2)
       drainJobs()
+      assert.are.equal("market", ns.UI.current) -- a search while not selling (buying, browsing) leaves the tab alone
+      -- putting it up for sale (here in Auctionator's selling tab) switches to the Item tab
+      _G.AuctionatorSellingFrame = CreateFrame("Frame")
+      finally(function()
+        _G.AuctionatorSellingFrame = nil
+      end)
+      env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 4306)
+      env:advance(2)
+      drainJobs()
+      assert.are.equal("item", ns.UI.current)
+      assert.are.equal(4306, ns.UI.itemID)
+      -- unless that's turned off in Settings
+      ns.Settings:Set("sellSwitchesTab", false)
+      ns.UI:ShowTab("market")
+      env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
+      env:advance(2)
+      drainJobs()
       assert.are.equal("market", ns.UI.current)
     end)
 

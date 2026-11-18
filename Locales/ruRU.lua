@@ -368,6 +368,8 @@ L["Suppliers"] = "Поставщики"
 L["Supply"] = "Предложение"
 L["Supply  ·  sells/day"] = "Предложение  ·  прод./день"
 L["Swap"] = "Поменять"
+L["Switch to the Item tab when you put an item up for sale"] =
+  "Переключаться на вкладку «Предмет», когда вы выставляете предмет на продажу"
 L["Sync"] = "Синхронизация"
 L["Sync is unavailable: the AceComm library didn't load."] =
   "Синхронизация недоступна: библиотека AceComm не загрузилась."

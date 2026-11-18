@@ -355,6 +355,7 @@ L["Suppliers"] = "Fornecedores"
 L["Supply"] = "Oferta"
 L["Supply  ·  sells/day"] = "Oferta  ·  vendas/dia"
 L["Swap"] = "Inverter"
+L["Switch to the Item tab when you put an item up for sale"] = "Mudar para a aba Item ao colocar um item à venda"
 L["Sync"] = "Sincronizar"
 L["Sync is unavailable: the AceComm library didn't load."] =
   "A sincronização está indisponível: a biblioteca AceComm não carregou."

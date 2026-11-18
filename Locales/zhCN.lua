@@ -352,6 +352,7 @@ L["Suppliers"] = "卖家"
 L["Supply"] = "供应"
 L["Supply  ·  sells/day"] = "供应  ·  日销"
 L["Swap"] = "互换"
+L["Switch to the Item tab when you put an item up for sale"] = "上架物品时切换到物品标签"
 L["Sync"] = "同步"
 L["Sync is unavailable: the AceComm library didn't load."] = "同步不可用：AceComm 库未加载。"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =

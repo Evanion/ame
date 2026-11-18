@@ -88,8 +88,10 @@ function UI:CreateSettingsView(parent, contentArea)
   checks[#checks + 1] = settingCheck(v, L["Play a sound when a watchlist alert fires"], "alertSound", 0, -226)
   checks[#checks + 1] = settingCheck(v, L["Open AME together with the auction house"], "openWithAH", 0, -248)
   checks[#checks + 1] = settingCheck(v, L["...and close it when the auction house closes"], "closeWithAH", 20, -270)
+  checks[#checks + 1] =
+    settingCheck(v, L["Switch to the Item tab when you put an item up for sale"], "sellSwitchesTab", 0, -292)
 
-  heading(v, L["Data quality"], 0, -302)
+  heading(v, L["Data quality"], 0, -324)
   local factors = {
     { false, L["Off"] },
     { 3, L["%dx off usual"]:format(3) },
@@ -105,11 +107,11 @@ function UI:CreateSettingsView(parent, contentArea)
       UI:ShowItem(UI.itemID)
     end
   end, { neutral = true })
-  W.Labeled(v, L["Ignore outrageous prices"], v.outliers, nil, 150):SetPoint("TOPLEFT", 0, -328)
+  W.Labeled(v, L["Ignore outrageous prices"], v.outliers, nil, 150):SetPoint("TOPLEFT", 0, -350)
   W.Paragraph(
     v,
     L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."]
-  ):SetPoint("TOPLEFT", 0, -350)
+  ):SetPoint("TOPLEFT", 0, -372)
 
   -- data
   heading(v, L["Data"], COL2, 0)

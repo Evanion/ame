@@ -355,6 +355,8 @@ L["Suppliers"] = "판매자"
 L["Supply"] = "공급"
 L["Supply  ·  sells/day"] = "공급  ·  일 판매"
 L["Swap"] = "교환"
+L["Switch to the Item tab when you put an item up for sale"] =
+  "아이템을 판매 등록할 때 아이템 탭으로 전환"
 L["Sync"] = "동기화"
 L["Sync is unavailable: the AceComm library didn't load."] =
   "동기화 사용 불가: AceComm 라이브러리를 불러오지 못했습니다."

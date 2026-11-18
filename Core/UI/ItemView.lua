@@ -424,8 +424,28 @@ end
 
 -- The auction house searched one item (you picked it to post or buy, in the game's window or an addon's): while the
 -- Item tab is open, show that item - unless you're typing in AME's search box.
+-- the frames of the sell windows we know: the game's (SellAssist) and Auctionator's selling tab
+UI.SELL_FRAMES = { "AuctionatorSellingFrame", "AuctionatorSellingTabFrame" }
+
+function UI:Selling()
+  if ns.SellAssist and ns.SellAssist:Active() then
+    return true
+  end
+  for _, name in ipairs(UI.SELL_FRAMES) do
+    local f = _G[name]
+    if type(f) == "table" and f.IsVisible and f:IsVisible() then
+      return true
+    end
+  end
+  return false
+end
+
 function UI:FollowAuctionItem(itemID)
-  if not (self.frame and self.frame:IsShown() and self.current == "item") or itemID == self.itemID then
+  if not (self.frame and self.frame:IsShown()) or itemID == self.itemID then
+    return
+  end
+  -- on the Item tab: always follow; elsewhere: when you're putting it up for sale (Settings), not when buying
+  if self.current ~= "item" and not (ns.Settings:Get("sellSwitchesTab") and self:Selling()) then
     return
   end
   if self.searchBox and self.searchBox:HasFocus() then
