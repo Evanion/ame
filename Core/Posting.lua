@@ -173,6 +173,9 @@ function Posting:Suggest(shard, itemID, qty, hours)
   })
   if advice then
     advice.book, advice.params, advice.deposit, advice.qty, advice.hours = book, params, deposit, qty, hours
+    if s and s.market then
+      advice.market = { price = math.floor(s.market + 0.5) } -- the item's market price (the sell bar's fourth choice)
+    end
   end
   return advice
 end

@@ -212,7 +212,11 @@ function Sell:Build(parent)
   end
   -- the bar's own button: "Use X" (just under a listing you clicked) or "Post anyway at X" (a vendor pays more)
   bar.fill = W.Button(bar, L["Fill price"], 110, 24, function()
-    fill(Sell.shown, Sell.target, not Sell.target and "normal" or nil)
+    if Sell.vendorCase then
+      fill(Sell.shown, Sell.target, nil)
+    else
+      fill(Sell.advice and Sell.advice.market and Sell.advice.market.price, nil, "market")
+    end
   end)
   bar.fill:SetPoint("RIGHT", -8, 0)
   bar.fill:SetSelected(true)
@@ -340,6 +344,7 @@ function Sell:Draw()
         W.Money(vendor)
       )
     )
+    self.vendorCase = true
     bar.fill.label:SetText(L["Post anyway at %s"]:format(W.Money(choice.price)))
     bar.fill:SetSelected(false)
     bar.quick:Hide()
@@ -358,9 +363,7 @@ function Sell:Draw()
     bar.title:SetText(title)
     bar.info:SetText(table.concat(parts, "  ·  "))
     -- Quick / Normal / Patient fill their own prices; the extra button only when you clicked a listing: just under it
-    bar.fill:SetShown(target ~= nil and self.underListing and true or false)
-    bar.fill.label:SetText(L["Use %s"]:format(W.Money(choice.price)))
-    bar.fill:SetSelected(true)
+    self.vendorCase = false
     -- the three prices stay put (nothing appears or disappears as you click); ONE is highlighted: the one you
     -- clicked if the box still holds its price, else the first that matches the box (Normal before Quick, Patient -
     -- two choices can have the same price)
@@ -369,8 +372,8 @@ function Sell:Draw()
     if box and self.picked and advice[self.picked] and advice[self.picked].price == box then
       lit = self.picked
     else
-      for _, key in ipairs({ "normal", "quick", "patient" }) do
-        if not lit and box and advice[key].price == box then
+      for _, key in ipairs({ "normal", "quick", "patient", "market" }) do
+        if not lit and box and advice[key] and advice[key].price == box then
           lit = key
         end
       end
@@ -389,11 +392,17 @@ function Sell:Draw()
       b.label:SetText(it[3]:format(W.Money(advice[key].price)))
       b:SetSelected(key == lit)
     end
+    -- Market: the item's market price, the fourth choice
+    bar.fill:SetShown(advice.market ~= nil)
+    if advice.market then
+      bar.fill.label:SetText(L["Market %s"]:format(W.Money(advice.market.price)))
+      bar.fill:SetSelected(lit == "market")
+    end
   end
   Sell.LayoutButtons(bar)
 end
 
--- buttons sized to their labels, right to left: Fill, Patient, Quick, Suggested; the confidence sits left of them
+-- buttons sized to their labels, right to left: Market (or Post anyway), Patient, Normal, Quick
 function Sell.LayoutButtons(bar)
   local prev
   for _, b in ipairs({ bar.fill, bar.patient, bar.reset, bar.quick }) do

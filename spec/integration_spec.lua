@@ -1412,7 +1412,7 @@ describe("addon in a stubbed client", function()
       assert.truthy(bar.conf.text:find("WHITE8x8", 1, true)) -- just the confidence bars
       -- Quick, Normal and Patient are always there; the one in the price box is highlighted
       assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown())
-      assert.is_false(bar.fill:IsShown()) -- the choices fill their own prices: no extra button
+      assert.truthy(bar.fill.label.text:find("^Market")) -- the fourth choice: the item's market price
       bar.reset.scripts.OnClick(bar.reset)
       assert.are.equal(advice.normal.price, filled)
       assert.is_true(bar.reset.selected)
@@ -1435,12 +1435,9 @@ describe("addon in a stubbed client", function()
       assert.truthy(bar.title.text:find("Under that listing"), bar.title.text)
       assert.are.equal(listing - 1, ns.SellAssist.shown)
       assert.is_true(bar.reset:IsShown())
-      assert.is_true(bar.fill:IsShown()) -- "Use X": just under the listing you clicked
-      assert.truthy(bar.fill.label.text:find("^Use"))
-      bar.fill.scripts.OnClick(bar.fill)
-      assert.are.equal(listing - 1, filled)
-      env:update(40)
-      assert.truthy(bar.title.text:find("Under that listing")) -- our own fill isn't a new target
+      bar.fill.scripts.OnClick(bar.fill) -- Market: fills the item's market price
+      assert.are.equal(advice.market.price, filled)
+      assert.is_true(bar.fill.selected)
       filled = listing + 7 -- a price you type: judged as yours
       env:update(40)
       assert.truthy(bar.title.text:find("Your price"))
