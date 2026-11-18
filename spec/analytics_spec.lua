@@ -305,10 +305,34 @@ describe("Analytics market phase", function()
   end)
 end)
 
+describe("Analytics VENDOR check", function()
+  local A
+  before_each(function()
+    A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+  end)
+
+  it("says VENDOR when the AH nets less than a vendor after the cut and the deposit", function()
+    -- market 150c: 142.5c after a 5% cut, minus a 100c deposit = 42.5c < vendor 60c
+    local s = { market = 150, signal = "buy", signalRank = A.SIGNAL_RANK.buy }
+    assert.is_true(A.VendorCheck(s, 60, 0.05, 100))
+    assert.are.equal("vendor", s.signal)
+    assert.are.equal(A.SIGNAL_RANK.vendor, s.signalRank)
+    assert.near(42.5, s.vendorNet, 1e-9)
+  end)
+
+  it("leaves the signal alone when the AH pays more, or the vendor price is unknown", function()
+    local s = { market = 10000, signal = "hold" }
+    assert.is_false(A.VendorCheck(s, 60, 0.05, 100))
+    assert.are.equal("hold", s.signal)
+    assert.is_false(A.VendorCheck({ market = 1, signal = "none" }, nil, 0.05, 100))
+    assert.is_false(A.VendorCheck({ market = 1, signal = "none" }, 0, 0.05, 100))
+  end)
+end)
+
 describe("Analytics signal order", function()
-  it("sorts sell first, then buy, hold, wait, and no signal last", function()
+  it("sorts sell first, then buy, hold, wait, vendor, and no signal last", function()
     local A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
-    local order = { "sell", "buy", "hold", "wait", "none" }
+    local order = { "sell", "buy", "hold", "wait", "vendor", "none" }
     for i = 2, #order do
       assert.is_true(A.SIGNAL_RANK[order[i - 1]] < A.SIGNAL_RANK[order[i]], order[i - 1] .. " before " .. order[i])
     end

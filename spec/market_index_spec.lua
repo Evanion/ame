@@ -89,6 +89,26 @@ describe("MarketIndex", function()
     end
   end)
 
+  it("keeps VENDOR through a save, and reads saves from before it existed", function()
+    for d = 1971, 2000 do
+      scan(d, { [5] = 100 + (d % 2), [6] = 100 })
+    end
+    local index = ns.MarketIndex.Build(store, 2000, 30, nil, nil, nil, function(s)
+      if s.itemID == 6 then
+        ns.Analytics.VendorCheck(s, 500, 0.05, 100)
+      end
+    end)
+    assert.are.equal("vendor", index.items[6].signal)
+    local text = ns.MarketIndex.Encode(index)
+    local back = ns.MarketIndex.Decode(text)
+    assert.are.equal("vendor", back.items[6].signal)
+    assert.are.equal(index.items[5].signal, back.items[5].signal)
+    -- an older save: signal code 5 meant "none"
+    index.items[6].signal = "none"
+    local old = ns.MarketIndex.Decode(ns.MarketIndex.Encode(index))
+    assert.are.equal("none", old.items[6].signal)
+  end)
+
   it("ranks items by opportunity score", function()
     for d = 1971, 2000 do
       scan(d, { [5] = 100 + (d % 2), [6] = (d == 2000) and 60 or 100 + (d % 2), [7] = (d == 2000) and 150 or 100 })

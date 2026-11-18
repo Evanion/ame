@@ -23,6 +23,7 @@ ns.HEX = {
   warn = "ffcc00", -- warnings
   hold = "ffcc33", -- HOLD, purchases
   wait = "8fa3b8", -- WAIT
+  vendor = "c8a272", -- VENDOR
   brand = "33ccff", -- "AME" / "Azeroth" in chat and titles
   gold = "ffd100", -- the gold unit, "Post at"
   white = "ffffff",

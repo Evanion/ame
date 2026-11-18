@@ -48,9 +48,18 @@ function AME:BuildIndex(store, shard, job)
       end
     end
   end
+  -- VENDOR where selling on this house nets less than a vendor (one listing at your usual length)
+  local _, house = ns.SplitShard(shard)
+  local cut, hours = ns.Settings:AuctionCut(house), ns.Settings:Get("listingHours")
+  local function vendorCheck(s)
+    local vendor = ns.ItemCache.Get(s.itemID).sellPrice
+    if vendor and vendor > 0 then
+      ns.Analytics.VendorCheck(s, vendor, cut, ns.Arbitrage.Deposit(vendor, house, hours))
+    end
+  end
   return ns.MarketIndex.Build(store, ns.Today(GetServerTime()), AME.INDEX_DAYS, function()
     job:Checkpoint()
-  end, ns.Settings:Get("outlierFactor"), current)
+  end, ns.Settings:Get("outlierFactor"), current, vendorCheck)
 end
 
 -- Market indexes, one per auction house, built in the background. An index is never dropped while a new one is built:
@@ -188,11 +197,13 @@ end
 -- of rebuilding it after each one (a rebuild is seconds of background work).
 AME.INDEX_QUIET = 60
 AME.indexLater = {}
-function AME:InvalidateIndexLater(shard)
-  local gen = (self.indexLater[shard] or 0) + 1
-  self.indexLater[shard] = gen
-  C_Timer.After(AME.INDEX_QUIET, function()
-    if self.indexLater[shard] == gen then
+-- shard nil: every house; delay: seconds of quiet (INDEX_QUIET by default)
+function AME:InvalidateIndexLater(shard, delay)
+  local key = shard or "*"
+  local gen = (self.indexLater[key] or 0) + 1
+  self.indexLater[key] = gen
+  C_Timer.After(delay or AME.INDEX_QUIET, function()
+    if self.indexLater[key] == gen then
       self:InvalidateIndex(shard)
     end
   end)

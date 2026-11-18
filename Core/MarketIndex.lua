@@ -9,7 +9,8 @@ ns.MarketIndex = MarketIndex
 -- outlierFactor: drop days priced more than this many times off the item's neighbouring days (nil = keep all)
 -- cached: keep decompressed segments for the next build (Store:KeepTexts) - for the auction house you're at, where
 -- the index is rebuilt after every scan
-function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached)
+-- adjust (optional): fn(summary) applied to every item's summary (e.g. the VENDOR check, which needs vendor prices)
+function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached, adjust)
   local index = { day = today, days = days, count = 0, items = {}, outliers = 0 }
   if cached then
     store:KeepTexts(true)
@@ -24,6 +25,9 @@ function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached
       if s then
         s.outliers = dropped > 0 and dropped or nil
         s.itemID = id
+        if adjust then
+          adjust(s)
+        end
         index.items[id] = s
         index.count = index.count + 1
       end
@@ -74,7 +78,12 @@ local PHASE_NUM = {}
 for i, key in ipairs(PHASE_KEYS) do
   PHASE_NUM[key] = i
 end
-local SIGNALS = { "sell", "buy", "hold", "wait", "none" } -- by Analytics.SIGNAL_RANK
+-- stored codes (stable across versions: saves from before VENDOR existed used 1-5)
+local SIGNALS = { "sell", "buy", "hold", "wait", "none", "vendor" }
+local SIGNAL_CODE = {}
+for code, name in ipairs(SIGNALS) do
+  SIGNAL_CODE[name] = code
+end
 
 MarketIndex.SAVED_FIELDS = {
   { "market", 1 },
@@ -120,7 +129,7 @@ function MarketIndex.Encode(index, checkpoint)
   end
   for i, id in ipairs(ids) do
     local s = index.items[id]
-    cols.signal[i] = ns.Analytics.SIGNAL_RANK[s.signal or "none"] or 5
+    cols.signal[i] = SIGNAL_CODE[s.signal or "none"] or SIGNAL_CODE.none
     cols.phase[i] = PHASE_NUM[s.phase] or 0
     for _, f in ipairs(MarketIndex.SAVED_FIELDS) do
       local v = s[f[1]]

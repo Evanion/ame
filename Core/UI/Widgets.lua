@@ -333,6 +333,7 @@ local SIGNALS = {
   sell = { "bad", L["SELL"] },
   hold = { "hold", L["HOLD"] },
   wait = { "wait", L["WAIT"] },
+  vendor = { "vendor", L["VENDOR"] },
 }
 function W.Signal(signal)
   local s = SIGNALS[signal]

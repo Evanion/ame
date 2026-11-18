@@ -162,6 +162,7 @@ function UI:CreateSettingsView(parent, contentArea)
       onChange = function(_, n, user)
         if user and n and n <= 100 then
           ns.Settings:Set(key, n)
+          ns.AME:InvalidateIndexLater(nil, 2) -- VENDOR signals depend on the cut (rebuilt once typing settles)
         end
       end,
     })
@@ -183,6 +184,7 @@ function UI:CreateSettingsView(parent, contentArea)
   }
   v.hours = W.Dropdown(v, 110, hours, function(value)
     ns.Settings:Set("listingHours", value)
+    ns.AME:InvalidateIndex() -- VENDOR signals depend on the deposit
     if UI.RenderArbitrage then
       UI:RenderArbitrage()
     end

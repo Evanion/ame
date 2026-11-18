@@ -275,6 +275,7 @@ function UI:CreateMarketView(parent)
     { "buy", L["Buy"] },
     { "hold", L["Hold"] },
     { "sell", L["Sell"] },
+    { "vendor", L["Vendor"] },
   }, {
     minWidth = 46,
     onSelect = function(key)
