@@ -184,6 +184,20 @@ function AME:InvalidateIndex(shard)
   end
 end
 
+-- Searches and browsing add a little data at a time: refresh the index once they've been quiet for a while instead
+-- of rebuilding it after each one (a rebuild is seconds of background work).
+AME.INDEX_QUIET = 60
+AME.indexLater = {}
+function AME:InvalidateIndexLater(shard)
+  local gen = (self.indexLater[shard] or 0) + 1
+  self.indexLater[shard] = gen
+  C_Timer.After(AME.INDEX_QUIET, function()
+    if self.indexLater[shard] == gen then
+      self:InvalidateIndex(shard)
+    end
+  end)
+end
+
 -- the index of the auction house you're at
 function AME:RebuildIndex()
   self:RefreshIndex(self:CurrentShard())

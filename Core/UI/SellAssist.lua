@@ -81,6 +81,11 @@ local function sources()
   return out
 end
 
+-- recompute on the next check (new listings for the item in the sell slot)
+function Sell:Invalidate()
+  self.key = nil
+end
+
 function Sell:Active()
   for _, src in ipairs(sources()) do
     if src.frame and src.frame.IsVisible and src.frame:IsVisible() then

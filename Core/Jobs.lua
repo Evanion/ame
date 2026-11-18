@@ -52,16 +52,27 @@ function Jobs:Cancel(name)
   end
 end
 
--- Run the head job until it yields (budget spent) or finishes. One job per tick keeps frames predictable.
+-- Run one job per tick (keeps frames predictable) until it yields (budget spent) or finishes: the first normal job,
+-- or, when there is none, the first low-priority one (a budgetMs of its own) - so a long background rebuild never
+-- holds up what you just asked for (a chart, storing a search).
 function Jobs:Tick()
-  local job = self.queue[1]
+  local pick = 1
+  for i, j in ipairs(self.queue) do
+    if not j.budgetMs then
+      pick = i
+      break
+    end
+  end
+  local job = self.queue[pick]
   if not job then
     return
   end
   self.tickStart = self.clock()
+  self.current = job -- the job running now (yield hooks shared between jobs use it)
   local ok, result = coroutine.resume(job.co)
+  self.current = nil
   if not ok or coroutine.status(job.co) == "dead" then
-    table.remove(self.queue, 1)
+    table.remove(self.queue, pick)
     if job.onDone then
       job.onDone(ok, result)
     end

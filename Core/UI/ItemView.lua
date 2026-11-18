@@ -409,6 +409,18 @@ function UI:DrawItemChart()
   chart:Refresh()
 end
 
+-- Fresh listings for some items were recorded (a search): their posting prices can update.
+function UI:OnItemListings(ids)
+  for _, id in ipairs(ids) do
+    if id == self.itemID and self.frame and self.frame:IsShown() then
+      self:UpdatePostAdvice()
+    end
+  end
+  if ns.SellAssist and ns.SellAssist.Invalidate then
+    ns.SellAssist:Invalidate()
+  end
+end
+
 -- The auction house searched one item (you picked it to post or buy, in the game's window or an addon's): while the
 -- Item tab is open, show that item - unless you're typing in AME's search box.
 function UI:FollowAuctionItem(itemID)

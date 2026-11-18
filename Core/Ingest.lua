@@ -23,7 +23,7 @@ local Ingest = {}
 Ingest.__index = Ingest
 ns.Ingest = Ingest
 
-Ingest.SETTLE = 1.0
+Ingest.SETTLE = 0.4 -- a search's results arrive together; record them once they stop
 Ingest.BROWSE_SETTLE = 2.0 -- browse pages arrive as the list scrolls; record a partial once they pause
 Ingest.POLL = 1.0 -- seconds between legacy list checks
 Ingest.POLL_LIMIT = 180 -- give up waiting for a getAll list after this many polls

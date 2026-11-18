@@ -14,6 +14,31 @@ describe("Jobs", function()
     })
   end)
 
+  it("runs what you just asked for before a long low-priority job, then finishes that one", function()
+    local order = {}
+    runner:Add("rebuild", function(job)
+      for step = 1, 20 do
+        clock = clock + 1
+        order[#order + 1] = "rebuild" .. step
+        job:Checkpoint()
+      end
+    end, nil, 2) -- low priority: 2 ms per tick
+    runner:Tick() -- the rebuild starts
+    assert.are.equal(runner.queue[1].name, "rebuild")
+    local chart = false
+    runner:Add("chart", function()
+      chart = true
+      order[#order + 1] = "chart"
+    end)
+    runner:Tick()
+    assert.is_true(chart) -- jumped the queue
+    while runner:Busy() do
+      runner:Tick()
+    end
+    assert.are.equal("rebuild20", order[#order])
+    assert.is_nil(runner.current)
+  end)
+
   it("runs a job to completion over several ticks, respecting the frame budget", function()
     local done = false
     runner:Add("work", function(job)

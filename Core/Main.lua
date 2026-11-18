@@ -152,6 +152,13 @@ function AME:Store(shardKey)
     store = ns.Store.New(self.history.shards[shardKey], {
       compressor = self.compressor,
       now = GetServerTime,
+      -- yield for whichever job is running: jobs on the same store can now interleave (normal before low priority)
+      yield = function()
+        local job = AME.jobs.current
+        if job then
+          job:Checkpoint()
+        end
+      end,
     })
     self.stores[shardKey] = store
   end
@@ -165,15 +172,11 @@ function AME:WithStore(name, shardKey, fn, onDone, budgetMs)
   if not store then
     return
   end
-  -- No pcall in here: WoW's Lua 5.1 can't yield across pcall. coroutine.resume already catches errors, and
-  -- the yield hook is reset in the completion callback instead.
+  -- No pcall in here: WoW's Lua 5.1 can't yield across pcall; coroutine.resume already catches errors. The store
+  -- yields for whichever job is running (AME:Store).
   self.jobs:Add(name, function(job)
-    store.yield = function()
-      job:Checkpoint()
-    end
     return fn(store, job)
   end, function(ok, result)
-    store.yield = function() end
     if onDone then
       onDone(ok, result)
     end
@@ -202,10 +205,6 @@ function AME:OnSnapshot(snap, t, kind, info)
   local src = UnitName("player") or "?"
   local started = self.scanRequestedAt
   ns.Posting:OnSnapshot(shard, snap, t) -- the pricing model learns each item's market from consecutive scans
-  if kind == "partial" and #snap.ids == 1 and ns.UI and ns.UI.FollowAuctionItem then
-    -- one item searched (picked to sell or buy, in the game's AH window or an addon's): show it on the Item tab
-    ns.UI:FollowAuctionItem(snap.ids[1])
-  end
   self:WithStore("store-" .. kind, shard, function(store)
     local added = store:AddScan(snap, t, src, kind)
     if info and info.books then
@@ -217,9 +216,15 @@ function AME:OnSnapshot(snap, t, kind, info)
       say("%s %s", ns.Color("bad", L["storing %s scan failed:"]:format(kind)), tostring(added))
       return
     end
-    self:InvalidateIndex(shard)
+    if kind ~= "full" then
+      -- a search or browse: fold it into the index once searching quiets down, not after every search
+      self:InvalidateIndexLater(shard)
+    end
     if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
       ns.UI:RefreshViewOptions()
+    end
+    if kind == "partial" and ns.UI and ns.UI.OnItemListings then
+      ns.UI:OnItemListings(snap.ids) -- fresh listings: the posting price for those items can update
     end
     if kind == "full" then
       local ms = started and math.floor(debugprofilestop() - started) or nil
@@ -547,12 +552,31 @@ function handlers.AUCTION_HOUSE_BROWSE_RESULTS_UPDATED()
 end
 handlers.AUCTION_HOUSE_BROWSE_RESULTS_ADDED = handlers.AUCTION_HOUSE_BROWSE_RESULTS_UPDATED
 
+-- The AH searched one item (you picked it to sell or buy - in the game's window or an addon's, like Auctionator's
+-- sell tab): the Item tab shows it right away. Debounced, so a shopping list searching item after item doesn't flick
+-- through them all.
+local followGen = 0
+local function followSearch(itemID)
+  if not (itemID and ns.UI and ns.UI.FollowAuctionItem) then
+    return
+  end
+  followGen = followGen + 1
+  local gen = followGen
+  C_Timer.After(0.25, function()
+    if gen == followGen then
+      ns.UI:FollowAuctionItem(itemID)
+    end
+  end)
+end
+
 function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)
   AME.ingest:OnCommodityResults(itemID)
+  followSearch(itemID)
 end
 
 function handlers.ITEM_SEARCH_RESULTS_UPDATED(itemKey)
   AME.ingest:OnItemResults(itemKey)
+  followSearch(type(itemKey) == "table" and itemKey.itemID or nil)
 end
 
 events:SetScript("OnEvent", function(_, event, ...)
