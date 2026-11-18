@@ -256,6 +256,26 @@ function UI:LoadIntraday()
 end
 
 -- days per candle so a range shows at most ~60 candles
+-- Your own trades in an item, as dots on its price chart: what you paid / got per unit, when (ledger entries).
+UI.TRADE_COLORS = { buy = { 0.35, 0.65, 1, 1 }, sale = { 1, 0.45, 0.85, 1 } }
+
+local function tradePoints(itemID)
+  local ledger = ns.AME.ledger
+  if not (ledger and itemID) then
+    return nil
+  end
+  local name = ns.ItemCache.Name(itemID)
+  local xs, ys, colors = {}, {}, {}
+  for _, e in ipairs(ledger.db.entries) do
+    local mine = e.itemID == itemID or (name and e.name == name)
+    if mine and (e.kind == "buy" or e.kind == "sale") and (e.qty or 0) > 0 and e.amount then
+      xs[#xs + 1], ys[#ys + 1], colors[#colors + 1] = e.t, e.amount / e.qty, UI.TRADE_COLORS[e.kind]
+    end
+  end
+  return #xs > 0 and { xs = xs, ys = ys, colors = colors } or nil
+end
+UI.TradePoints = tradePoints
+
 local function candlePeriod(series, rangeDays)
   local span = rangeDays
   if not span and #series > 0 then
@@ -354,6 +374,26 @@ function UI:DrawItemChart()
   if intraday then
     legend = legend .. "   " .. L["(each point is one scan)"]
   end
+  local trades = tradePoints(self.itemID)
+  if trades then
+    chart:SetSeries("trades", {
+      xs = trades.xs,
+      ys = trades.ys,
+      colors = trades.colors,
+      kind = "points",
+      axis = "price",
+      size = 8,
+    })
+    legend = legend
+      .. "   "
+      .. W.Swatch(UI.TRADE_COLORS.buy)
+      .. " "
+      .. L["you bought"]
+      .. "  "
+      .. W.Swatch(UI.TRADE_COLORS.sale)
+      .. " "
+      .. L["you sold"]
+  end
   v.legend:SetText(legend)
   if not intraday then -- a 7-point average of scans isn't a 7-day average
     chart:SetSeries("sma", {
@@ -367,6 +407,18 @@ function UI:DrawItemChart()
   end
   chart.range = range
   chart:Refresh()
+end
+
+-- The auction house searched one item (you picked it to post or buy, in the game's window or an addon's): while the
+-- Item tab is open, show that item - unless you're typing in AME's search box.
+function UI:FollowAuctionItem(itemID)
+  if not (self.frame and self.frame:IsShown() and self.current == "item") or itemID == self.itemID then
+    return
+  end
+  if self.searchBox and self.searchBox:HasFocus() then
+    return
+  end
+  self:ShowItem(itemID)
 end
 
 function UI:ShowItem(itemID)

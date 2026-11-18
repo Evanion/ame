@@ -341,6 +341,34 @@ describe("addon in a stubbed client", function()
       assert.are_not.equal(restored, AME:CachedIndex(shard)) -- swapped for the fresh one
     end)
 
+    it("follows the item the auction house searched, and marks your trades on its chart", function()
+      seeded()
+      ns.AME.ledger:Add({ t = env.now - 86400, kind = "buy", itemID = 2589, name = "Item 2589", qty = 5, amount = 5000 })
+      ns.AME.ledger:Add({ t = env.now - 3600, kind = "sale", itemID = 2589, name = "Item 2589", qty = 2, amount = 2400 })
+      ns.UI:ShowItem(4306)
+      drainJobs()
+      -- you pick Linen to sell (any AH window searches it): the Item tab follows
+      env:fire("AUCTION_HOUSE_SHOW")
+      env.ah.commodities[2589] = { { 1100, 20 } }
+      env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
+      env:advance(2)
+      drainJobs()
+      assert.are.equal(2589, ns.UI.itemID)
+      local trades = ns.UI.chart.series.trades
+      assert.are.equal("points", trades.kind)
+      assert.are.same({ 1000, 1200 }, trades.ys) -- per unit: 5000 / 5 bought, 2400 / 2 sold
+      assert.are.same(ns.UI.TRADE_COLORS.buy, trades.colors[1])
+      assert.are.same(ns.UI.TRADE_COLORS.sale, trades.colors[2])
+      assert.truthy(ns.UI.itemView.legend.text:find("you bought"))
+      -- not on another tab
+      ns.UI:ShowTab("market")
+      env.ah.commodities[4306] = { { 4000, 5 } }
+      env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 4306)
+      env:advance(2)
+      drainJobs()
+      assert.are.equal("market", ns.UI.current)
+    end)
+
     it("builds the market index after scans and feeds the screener", function()
       seeded()
       assert.is_not_nil(ns.AME.index)

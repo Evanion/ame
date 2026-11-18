@@ -202,6 +202,10 @@ function AME:OnSnapshot(snap, t, kind, info)
   local src = UnitName("player") or "?"
   local started = self.scanRequestedAt
   ns.Posting:OnSnapshot(shard, snap, t) -- the pricing model learns each item's market from consecutive scans
+  if kind == "partial" and #snap.ids == 1 and ns.UI and ns.UI.FollowAuctionItem then
+    -- one item searched (picked to sell or buy, in the game's AH window or an addon's): show it on the Item tab
+    ns.UI:FollowAuctionItem(snap.ids[1])
+  end
   self:WithStore("store-" .. kind, shard, function(store)
     local added = store:AddScan(snap, t, src, kind)
     if info and info.books then

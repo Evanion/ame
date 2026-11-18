@@ -16,12 +16,14 @@ MIT licensed (see LICENSE in this folder). Part of Azeroth Mercantile Exchange, 
 Interaction: mouse wheel zooms around the cursor, drag pans, double-click resets, hovering shows a crosshair with
 the nearest point of every series.
 
-Series kinds: "line", "area" (line + translucent fill; trapezoid fill where Texture:SetVertexOffset exists), "bars".
+Series kinds: "line", "area" (line + translucent fill; trapezoid fill where Texture:SetVertexOffset exists), "bars",
+"points" (dots, no lines: event markers such as trades; they don't stretch the axis or join the hover readout;
+per series: size, and colors = { per-point colour } to colour points individually).
 Points are downsampled with LTTB to about one per 2 px, so large series stay cheap to draw. Regions are pooled and
 reused between redraws.
 ]]
 
-local MAJOR, MINOR = "LibAMEChart-1.0", 2
+local MAJOR, MINOR = "LibAMEChart-1.0", 3
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
 if not lib then
   return
@@ -353,6 +355,10 @@ local function pool(chart, kind)
       r = chart.canvas:CreateTexture(nil, "OVERLAY", nil, -1)
     elseif kind == "plot" then
       r = chart.canvas:CreateTexture(nil, "BACKGROUND", nil, -7)
+    elseif kind == "point" then
+      r = chart.canvas:CreateTexture(nil, "OVERLAY", nil, 2)
+    elseif kind == "pointtop" then
+      r = chart.canvas:CreateTexture(nil, "OVERLAY", nil, 3)
     else
       r = chart.canvas:CreateTexture(nil, "BACKGROUND")
     end
@@ -551,7 +557,7 @@ function Chart:Refresh()
   local extents = {}
   for _, id in ipairs(self.order) do
     local s = self.series[id]
-    if s.xs and #s.xs > 0 then
+    if s.xs and #s.xs > 0 and s.kind ~= "points" then
       local lo, hi
       if s.kind == "candles" then
         local l1, h1 = M.Extent(s.xs, s.low, from, to, 0.08)
@@ -651,6 +657,10 @@ function Chart:DrawSeries(s, pane, e, from, to, sx, maxPoints)
   end
   if s.kind == "candles" then
     self:DrawCandles(s, pane, from, to, sx, sy)
+    return
+  end
+  if s.kind == "points" then
+    self:DrawPoints(s, pane, from, to, sx, sy)
     return
   end
   -- visible slice (+1 point either side so lines reach the edges)
@@ -788,6 +798,31 @@ function Chart:DrawCandles(s, pane, from, to, sx, sy)
       local y1, y2 = sy(min(op, cl)), sy(max(op, cl))
       body:SetPoint("BOTTOM", self.canvas, "BOTTOMLEFT", floor(x) + 0.5, y1)
       body:SetSize(bw, max(1, y2 - y1))
+    end
+  end
+end
+
+-- Dots at (x, y), each with a dark rim so it reads on lines, candles and fills; points outside the view are skipped.
+function Chart:DrawPoints(s, pane, from, to, sx, sy)
+  local size = s.size or 8
+  local dot = MEDIA and MEDIA .. "Dot" or "Interface\\COMMON\\Indicator-Gray"
+  for i, x in ipairs(s.xs) do
+    local y = s.ys[i]
+    if x >= from and x <= to and y then
+      local px, py = sx(x), sy(y)
+      if py >= pane.y and py <= pane.y + pane.h then
+        local r, g, b, a = colorOf(s.colors and s.colors[i] or s.color)
+        local rim = pool(self, "point")
+        rim:SetTexture(dot)
+        rim:SetVertexColor(0, 0, 0, 0.8)
+        rim:SetSize(size + 4, size + 4)
+        rim:SetPoint("CENTER", self.canvas, "BOTTOMLEFT", px, py)
+        local t = pool(self, "pointtop")
+        t:SetTexture(dot)
+        t:SetVertexColor(r, g, b, a or 1)
+        t:SetSize(size, size)
+        t:SetPoint("CENTER", self.canvas, "BOTTOMLEFT", px, py)
+      end
     end
   end
 end
@@ -1005,7 +1040,7 @@ function Chart:UpdateHover()
       d.dot:SetTexture(media and media .. "Dot" or "Interface\\COMMON\\Indicator-Gray")
       self.dots[id] = d
     end
-    if pane and e and s.kind ~= "bars" and s.kind ~= "candles" and row.x == snapX then
+    if pane and e and s.kind ~= "bars" and s.kind ~= "candles" and s.kind ~= "points" and row.x == snapX then
       local y = pane.y + (row.y - e[1]) / (e[2] - e[1]) * pane.h
       local r, g, b = colorOf(s.color)
       for part, size in pairs({ glow = 28, ring = 11, dot = 7 }) do
