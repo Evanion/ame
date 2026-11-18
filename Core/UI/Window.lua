@@ -122,16 +122,13 @@ function UI:CreateShell()
   f:SetClampedToScreen(true)
   f:SetMovable(true)
   f:SetResizable(true)
-  local maxW, maxH = UIParent:GetWidth(), UIParent:GetHeight()
-  if f.SetResizeBounds then
-    f:SetResizeBounds(UI.MIN_W, UI.MIN_H, maxW, maxH)
-  elseif f.SetMinResize then
-    f:SetMinResize(UI.MIN_W, UI.MIN_H)
-    f:SetMaxResize(maxW, maxH)
-  end
+  UI.SetSizeLimits(f)
   f:EnableMouse(true)
   f:RegisterForDrag("LeftButton")
-  f:SetScript("OnDragStart", f.StartMoving)
+  f:SetScript("OnDragStart", function()
+    UI.Unanchor(f)
+    f:StartMoving()
+  end)
   f:SetScript("OnDragStop", function()
     f:StopMovingOrSizing()
     UI:SavePlacement()
@@ -152,6 +149,7 @@ function UI:CreateShell()
   grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
   grip:SetScript("OnMouseDown", function()
     UI.sizing = true
+    UI.Unanchor(f) -- sizing from a centre or docked anchor makes the game's sizing jump: start from top-left
     f:StartSizing("BOTTOMRIGHT")
   end)
   grip:SetScript("OnMouseUp", function()
@@ -267,6 +265,30 @@ function UI:DefaultSize()
   return math.max(w, UI.MIN_W), math.max(h, UI.MIN_H)
 end
 
+-- The size limits in the window's own units: at least UI.MIN_W x UI.MIN_H, at most the screen at AME's scale.
+-- Returns the maximum width and height.
+function UI.SetSizeLimits(f)
+  local scale = f:GetScale() or 1
+  local maxW = math.max(UI.MIN_W, math.floor((UIParent:GetWidth() or 1365) / scale))
+  local maxH = math.max(UI.MIN_H, math.floor((UIParent:GetHeight() or 768) / scale))
+  if f.SetResizeBounds then
+    f:SetResizeBounds(UI.MIN_W, UI.MIN_H, maxW, maxH)
+  elseif f.SetMinResize then
+    f:SetMinResize(UI.MIN_W, UI.MIN_H)
+    f:SetMaxResize(maxW, maxH)
+  end
+  return maxW, maxH
+end
+
+-- anchor the window by its top-left corner where it is now (before moving or sizing it by hand)
+function UI.Unanchor(f)
+  local left, top = f:GetLeft(), f:GetTop()
+  if left and top then
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+  end
+end
+
 -- Placement per character, saved across sessions (AME_DB.window): one size - whatever you last resized it to - and
 -- two positions, with the auction house open ("ah") and without ("free").
 function UI:Placements()
@@ -331,11 +353,13 @@ function UI:ApplyPlacement()
   end
   self.applying = true -- our own moves aren't the user's: don't save them
   f:SetScale(ns.Settings:Get("windowScale") or 1)
+  local maxW, maxH = UI.SetSizeLimits(f)
   local saved = self:Placements()
   local p = saved[self:PlacementMode()]
   local w, h = self:DefaultSize()
   if saved.w then
-    w, h = math.max(saved.w, UI.MIN_W), math.max(saved.h, UI.MIN_H)
+    -- never larger than the screen (an earlier oversized save can't keep growing)
+    w, h = math.max(math.min(saved.w, maxW), UI.MIN_W), math.max(math.min(saved.h, maxH), UI.MIN_H)
   end
   f:SetSize(w, h)
   f:ClearAllPoints()

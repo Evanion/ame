@@ -500,6 +500,17 @@ describe("addon in a stubbed client", function()
         ns.UI:SavePlacement()
         ns.UI:ApplyPlacement()
         assert.are.same({ ns.UI.MIN_W, ns.UI.MIN_H }, { win:GetSize() })
+        -- an oversized saved size (the old resize jump) is capped to the screen at AME's scale
+        p = ns.UI:Placements()
+        p.w, p.h = 99999, 99999
+        ns.UI:ApplyPlacement()
+        assert.are.same({ 1365, 768 }, { win:GetSize() })
+        -- grabbing the corner first anchors the window by its top-left corner (no jump from a centre or dock anchor)
+        win:ClearAllPoints()
+        win:SetPoint("CENTER")
+        ns.UI.grip.scripts.OnMouseDown(ns.UI.grip)
+        assert.are.equal("TOPLEFT", last(win)[1])
+        ns.UI.grip.scripts.OnMouseUp(ns.UI.grip)
       end)
 
       it("moves a size saved per position by the previous version over", function()
