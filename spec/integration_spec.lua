@@ -875,10 +875,12 @@ describe("addon in a stubbed client", function()
       ns.UI:ShowTab("sync")
       local v = ns.UI.syncView
       v.scripts.OnShow(v)
-      local horde = v.fresh[2]
+      local horde = v.fresh[1] -- your own faction's auction house first
       assert.truthy(horde.label.text:find("Horde"))
-      assert.truthy(horde.value.text:find("by you"), horde.value.text)
-      assert.truthy(v.fresh[1].value.text:find("No full scan"))
+      assert.truthy(horde.value.text:find("old"), horde.value.text)
+      assert.truthy(horde.sub.text:find("Full scan by you"), horde.sub.text)
+      assert.truthy(v.fresh[2].label.text:find("Goblin"))
+      assert.truthy(v.fresh[3].value.text:find("No data"))
     end)
 
     it("guides: scan progress, empty states, one-time hints, glossary links from explanations", function()

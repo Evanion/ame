@@ -13,7 +13,6 @@ UI.WIDTH, UI.HEIGHT = 980, 500 -- design width the fixed-size pieces were laid o
 UI.MIN_W, UI.MIN_H = 760, 460 -- the smallest window every tab still works in
 UI.COMPACT_W = 900 -- below this width tabs use their compact layout (UI.compact)
 UI.FOOTER_H = 22 -- the window's footer row, under every tab
-UI.COLUMN2 = 490 -- x of the second column on the Sync and Settings tabs
 
 function UI.AvgDays()
   return ns.Settings:Get("tooltipAvgDays") or 7

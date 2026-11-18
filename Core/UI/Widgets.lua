@@ -1396,6 +1396,18 @@ function W.Ago(t, now)
   return L["%d days ago"]:format(d / 86400)
 end
 
+-- how old something is, without "ago": "5 min", "2 h", "1 day", "3 days"
+function W.Age(t, now)
+  local d = math.max(0, now - (t or now))
+  if d < 3600 then
+    return L["%d min"]:format(math.max(1, math.floor(d / 60)))
+  elseif d < 86400 then
+    return L["%d h"]:format(math.floor(d / 3600))
+  end
+  local days = math.floor(d / 86400)
+  return days == 1 and L["1 day"] or L["%d days"]:format(days)
+end
+
 -- how long ago a day number was: "today", "yesterday", "3 days ago" (nil without both days)
 function W.DaysAgo(day, today)
   if not (day and today) then
