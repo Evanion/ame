@@ -29,7 +29,8 @@ Settings.DEFAULTS = {
   syncGuild = true,
   syncTrusted = true,
   priceCheck = false, -- answer "!pc <item>" in guild, party and raid chat (sends chat in your name)
-  priceCheckWhisper = false, -- and in whispers from guild members, friends and trusted players
+  priceCheckWhisper = false, -- and in whispers from guild members, friends, your party or raid and trusted players
+  priceCheckCooldown = 5, -- seconds between your price check answers (5 / 10 / 30 / 60)
   minimap = { hide = false },
 }
 

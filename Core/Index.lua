@@ -159,12 +159,17 @@ end
 
 -- Your faction's auction house index (the market you trade in): tooltips and the portfolio value things here, never
 -- at the goblin or other faction's house. Built in the background when missing (nil until then).
-function AME:FactionIndex()
+-- your faction's auction house (the market tooltips and price checks quote)
+function AME:FactionShard()
   local house = UnitFactionGroup("player")
   if house ~= "Horde" and house ~= "Alliance" then
     house = self:CurrentHouse()
   end
-  local shard = ns.ShardKey(self:MarketRealmName(), house)
+  return ns.ShardKey(self:MarketRealmName(), house)
+end
+
+function AME:FactionIndex()
+  local shard = self:FactionShard()
   local cached = self:CachedIndex(shard)
   if not cached and self:HistoryLoaded() and self:HasData(shard) then
     self:IndexFor(shard, function() end)

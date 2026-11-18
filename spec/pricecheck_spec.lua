@@ -31,9 +31,9 @@ describe("PriceCheck", function()
     end)
 
     it("fresher data claims sooner; no data claims last", function()
-      assert.is_true(PC.Wait(0, 1) < PC.Wait(3, 0))
-      assert.is_true(PC.Wait(7, 1) < PC.Wait(PC.NO_DATA, 0))
-      assert.is_true(PC.Wait(30, 1) < PC.Wait(PC.NO_DATA, 0))
+      assert.is_true(PC.Wait(0, 1) < PC.Wait(3 * 1440, 0))
+      assert.is_true(PC.Wait(7 * 1440, 1) < PC.Wait(PC.NO_DATA, 0))
+      assert.is_true(PC.Wait(30 * 1440, 1) < PC.Wait(PC.NO_DATA, 0))
     end)
 
     it("picks the same winner everywhere: freshest data, then name", function()
@@ -47,6 +47,14 @@ describe("PriceCheck", function()
       assert.are.equal("gruk:linen cloth", key)
       assert.are.equal(2, age)
       assert.is_nil(PC.DecodeClaim("garbage"))
+    end)
+
+    it("rounds how long ago to 10 minutes", function()
+      assert.are.equal("just now", PC.Ago(240))
+      assert.are.equal("10 min ago", PC.Ago(300))
+      assert.are.equal("50 min ago", PC.Ago(52 * 60))
+      assert.are.equal("1 h ago", PC.Ago(57 * 60))
+      assert.are.equal("2 h 30 min ago", PC.Ago(2 * 3600 + 26 * 60))
     end)
 
     it("writes money as plain chat text", function()
@@ -64,6 +72,9 @@ describe("PriceCheck", function()
         line
       )
       assert.is_true(#line < 255)
+      local recent = PC.Reply("[Linen Cloth]", s, "Horde AH", 102, nil, 3 * 3600 + 17 * 60)
+      assert.truthy(recent:find("seen 3 h 20 min ago", 1, true), recent)
+      assert.truthy(PC.Reply("[Linen Cloth]", s, "Horde AH", 102, nil, 2 * 86400):find("seen 2 days ago", 1, true))
       assert.truthy(PC.Reply("[Linen Cloth]", nil, "Horde AH", 102):find("no prices yet", 1, true))
       assert.truthy(PC.Reply("Linnen", nil, "Horde AH", 102, false):find("item link", 1, true))
     end)
@@ -72,7 +83,10 @@ describe("PriceCheck", function()
   -- several clients in one guild, wired through a fake network with addon-message latency
   describe("one answer per request", function()
     local saved, timers, clock, said, network, me
+    local party = {}
     local G = {
+      "GetNumGroupMembers",
+      "IsInRaid",
       "GetTime",
       "GetServerTime",
       "C_Timer",
@@ -114,6 +128,9 @@ describe("PriceCheck", function()
           if k == "priceCheck" then
             return opts.off ~= true
           end
+          if k == "priceCheckCooldown" then
+            return opts.cooldown
+          end
           return k == "priceCheckWhisper" and opts.whisper or false
         end,
       }
@@ -135,6 +152,24 @@ describe("PriceCheck", function()
         end,
         Say = function() end,
       }
+      if opts.seen then -- seconds since the item was last seen in a recent scan
+        ns.AME.FactionShard = function()
+          return "R|Horde"
+        end
+        ns.AME.Store = function()
+          return {}
+        end
+        ns.AME.WithStore = function(_, _, _, fn, onDone)
+          onDone(
+            true,
+            fn({
+              Latest = function()
+                return { t = GetServerTime() - opts.seen }
+              end,
+            })
+          )
+        end
+      end
       local c = { name = name, PC = ns.PriceCheck }
       network[#network + 1] = c
       return c
@@ -165,8 +200,21 @@ describe("PriceCheck", function()
           timers[#timers + 1] = { at = clock + s, fn = fn, who = me }
         end,
       }
-      _G.UnitName = function()
+      _G.UnitName = function(unit)
+        if unit and unit ~= "player" then
+          return party[unit]
+        end
         return me and me.name
+      end
+      _G.GetNumGroupMembers = function()
+        local n = 0
+        for _ in pairs(party) do
+          n = n + 1
+        end
+        return n
+      end
+      _G.IsInRaid = function()
+        return false
       end
       _G.UnitFactionGroup = function()
         return "Horde"
@@ -223,6 +271,16 @@ describe("PriceCheck", function()
       assert.are.equal("Zed", said[1].who)
       assert.are.equal("GUILD", said[1].channel)
       assert.truthy(said[1].text:find("market 1s 20c", 1, true))
+    end)
+
+    it("both saw it today: the one who saw it more recently answers, with hours and minutes", function()
+      client("Abe", 0, { seen = 3 * 3600 })
+      client("Zed", 0, { seen = 22 * 60 })
+      chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
+      run(clock + 10)
+      assert.are.equal(1, #said)
+      assert.are.equal("Zed", said[1].who)
+      assert.truthy(said[1].text:find("seen 20 min ago", 1, true), said[1].text)
     end)
 
     it("same data age: the alphabetically first name answers", function()
@@ -314,6 +372,51 @@ describe("PriceCheck", function()
       assert.are.equal(1, #said)
       assert.are.equal("WHISPER", said[1].channel)
       assert.are.equal("Pal", said[1].target)
+
+      party.party1 = "Buddy-OtherRealm" -- a party member, not a friend
+      chat("CHAT_MSG_WHISPER", "!pc Linen Cloth", "Buddy-OtherRealm")
+      run(clock + 5)
+      assert.are.equal(2, #said)
+      assert.are.equal("Buddy-OtherRealm", said[2].target)
+      party.party1 = nil
+    end)
+
+    it("answers once every 5 seconds by default: requests during the cooldown are skipped", function()
+      client("Abe", 0)
+      chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
+      run(clock + 1)
+      chat("CHAT_MSG_GUILD", "!pc 2590", "Gruk")
+      chat("CHAT_MSG_GUILD", "!pc 2591", "Mira")
+      run(clock + 5)
+      assert.are.equal(1, #said)
+      chat("CHAT_MSG_GUILD", "!pc 2592", "Gruk")
+      run(clock + 5)
+      assert.are.equal(2, #said)
+    end)
+
+    it("while you cool down, another AME player answers", function()
+      client("Zed", 0)
+      client("Abe", 3)
+      chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
+      run(clock + 1)
+      chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Mira")
+      run(clock + 10)
+      assert.are.equal(2, #said)
+      assert.are.equal("Zed", said[1].who)
+      assert.are.equal("Abe", said[2].who)
+    end)
+
+    it("the cooldown is a setting", function()
+      client("Abe", 0, { cooldown = 30 })
+      chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
+      run(clock + 10)
+      chat("CHAT_MSG_GUILD", "!pc 2590", "Mira")
+      run(clock + 10)
+      assert.are.equal(1, #said)
+      run(clock + 15)
+      chat("CHAT_MSG_GUILD", "!pc 2591", "Mira")
+      run(clock + 5)
+      assert.are.equal(2, #said)
     end)
   end)
 end)

@@ -46,7 +46,7 @@ read_globals = {
   "BuyoutPrice",
   "StartPrice",
   "ItemLocation",
-  "ATTACHMENTS_MAX_RECEIVE", "GetInboxHeaderInfo", "C_Container", "GetContainerNumSlots", "GetContainerItemInfo", "AuctionHouseFrame", "AuctionHouseFrameDisplayMode", "AuctionFrame", "BrowseName", "AuctionFrameBrowse_Search", "ChatFrameUtil", "ChatEdit_GetActiveWindow", "GetTime", "GetGuildInfoText", "SendChatMessage", "GetNumGuildMembers", "GetGuildRosterInfo", "RegionalUniqueNamesEnabled", "C_GameRules",
+  "ATTACHMENTS_MAX_RECEIVE", "GetInboxHeaderInfo", "C_Container", "GetContainerNumSlots", "GetContainerItemInfo", "AuctionHouseFrame", "AuctionHouseFrameDisplayMode", "AuctionFrame", "BrowseName", "AuctionFrameBrowse_Search", "ChatFrameUtil", "ChatEdit_GetActiveWindow", "GetTime", "GetGuildInfoText", "SendChatMessage", "GetNumGroupMembers", "IsInRaid", "GetNumGuildMembers", "GetGuildRosterInfo", "RegionalUniqueNamesEnabled", "C_GameRules",
   -- optional integrations
   "Auctionator", "LibStub",
 }

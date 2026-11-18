@@ -10,18 +10,17 @@
 local _, ns = ...
 local L = ns.L
 
-local PC = { requests = {}, claims = {}, handled = {}, askers = {}, sent = {} }
+local PC = { requests = {}, claims = {}, handled = {} }
 ns.PriceCheck = PC
 
 PC.PREFIX = "AMEPC1"
 PC.MARK = "[AME]" -- every answer starts with this: the others spot it in chat
 PC.CLAIM_WINDOW = 0.5
 PC.ANSWER_TIMEOUT = 3
-PC.NO_DATA = 99 -- the "age" of a client without a price: it answers only when nobody with data does
-PC.UNKNOWN = 100 -- a client that doesn't recognise the item name: last resort
+PC.NO_DATA = 1000000 -- the "age" (minutes) of a client without a price: it answers only when nobody with data does
+PC.UNKNOWN = PC.NO_DATA + 1 -- a client that doesn't recognise the item name: last resort
 PC.REPEAT = 60 -- the same request (asker and item) is answered once within this many seconds
-PC.ASKER_COOLDOWN = 5 -- one request per asker this often
-PC.PER_MINUTE = 6 -- answers sent per minute, at most
+PC.COOLDOWNS = { 5, 10, 30, 60 } -- seconds between your answers (Settings: priceCheckCooldown)
 PC.MAX_QUERY = 80
 
 -- chat event -> where its requests are answered (chat channel) and claimed (addon channel)
@@ -68,9 +67,9 @@ function PC.Key(asker, query)
 end
 
 -- seconds to wait before claiming: fresher data claims first; random spreads clients with the same age apart
---   age: days since the price was seen (PC.NO_DATA / PC.UNKNOWN without one); r: 0..1
+--   age: minutes since the price was seen (PC.NO_DATA / PC.UNKNOWN without one); r: 0..1
 function PC.Wait(age, r)
-  local base = age >= PC.NO_DATA and 1.6 or 0.2 + 0.15 * math.min(age, 7)
+  local base = age >= PC.NO_DATA and 1.6 or 0.2 + 0.15 * math.min(age / 1440, 7)
   return base + 0.3 * (r or 0)
 end
 
@@ -121,10 +120,26 @@ local function daysAgo(day, today)
   return L["%d days ago"]:format(d)
 end
 
+-- how long ago, to the nearest 10 minutes: "just now", "40 min ago", "3 h ago", "3 h 20 min ago"
+function PC.Ago(seconds)
+  local m = math.floor(math.max(0, seconds) / 600 + 0.5) * 10
+  if m < 10 then
+    return L["just now"]
+  elseif m < 60 then
+    return L["%d min ago"]:format(m)
+  end
+  local h, rest = math.floor(m / 60), m % 60
+  if rest == 0 then
+    return L["%d h ago"]:format(h)
+  end
+  return L["%d h %d min ago"]:format(h, rest)
+end
+
 -- The answer line.
 --   label: the item (link or name); s: its market summary (nil: no data); house: "Horde AH"...; today: day number
---   found: false when the name wasn't recognised
-function PC.Reply(label, s, house, today, found)
+--   found: false when the name wasn't recognised; seen (optional): seconds since the item was last seen in a scan
+--   (within a day: shown in hours and minutes, else in days)
+function PC.Reply(label, s, house, today, found, seen)
   if found == false then
     return PC.MARK .. " " .. L['Don\'t know "%s" - try an item link']:format(label)
   end
@@ -138,7 +153,9 @@ function PC.Reply(label, s, house, today, found)
   if s.avg7 then
     parts[#parts + 1] = L["7-day avg %s"]:format(PC.Coins(s.avg7))
   end
-  if s.day and today then
+  if seen and seen < 86400 then
+    parts[#parts + 1] = L["seen %s"]:format(PC.Ago(seen))
+  elseif s.day and today then
     parts[#parts + 1] = L["seen %s"]:format(daysAgo(s.day, today))
   end
   return PC.MARK .. " " .. label .. ": " .. table.concat(parts, " · ") .. " (" .. house .. ")"
@@ -176,27 +193,60 @@ local function resolve(query)
   return nil
 end
 
--- what this client would answer: the line and how fresh its data is
-function PC:Answer(query)
+-- What this client would answer: done(line, age in minutes). Seen today or yesterday: the time it was last seen
+-- comes from the recent scans (decoded in a background job, so done may run a few frames later).
+function PC:Answer(query, done)
   local id = resolve(query)
+  local AME = ns.AME
   local house = UnitFactionGroup("player")
   local houseLabel = ns.HOUSE_LABEL[house] or house or ""
   if not id then
-    return PC.Reply(query, nil, houseLabel, nil, false), PC.UNKNOWN
+    return done(PC.Reply(query, nil, houseLabel, nil, false), PC.UNKNOWN)
   end
   local label = ns.ItemCache.Link(id) or ns.ItemCache.Name(id) or query
-  local index = ns.AME and ns.AME:FactionIndex()
+  local index = AME and AME:FactionIndex()
   local s = index and index.items[id]
   local today = ns.Today(GetServerTime())
-  local age = s and s.market and s.day and math.max(0, today - s.day) or PC.NO_DATA
-  return PC.Reply(label, s, houseLabel, today), age
+  if not (s and s.market and s.day) then
+    return done(PC.Reply(label, s, houseLabel, today), PC.NO_DATA)
+  end
+  local byDay = math.max(0, today - s.day) * 1440
+  local shard = today - s.day <= 1 and AME.FactionShard and AME:FactionShard()
+  if not (shard and AME:Store(shard)) then
+    return done(PC.Reply(label, s, houseLabel, today), byDay)
+  end
+  AME:WithStore("price-check", shard, function(store)
+    return store:Latest(id)
+  end, function(ok, latest)
+    local seen = ok and latest and latest.t and math.max(0, GetServerTime() - latest.t)
+    done(PC.Reply(label, s, houseLabel, today, nil, seen), seen and math.floor(seen / 60) or byDay)
+  end)
 end
 
--- whispers are answered for guild members, friends and trusted players only
+-- in your party or raid right now
+local function inGroup(name)
+  local n = GetNumGroupMembers and GetNumGroupMembers() or 0
+  if n == 0 then
+    return false
+  end
+  local raid = IsInRaid and IsInRaid()
+  for i = 1, raid and n or math.min(n, 4) do
+    local member = UnitName((raid and "raid" or "party") .. i)
+    if member and (charName(member) or ""):lower() == name then
+      return true
+    end
+  end
+  return false
+end
+
+-- whispers are answered for guild members, friends, your party or raid, and trusted players - never strangers
 function PC:Known(sender)
   local name = (charName(sender) or ""):lower()
   if name == "" then
     return false
+  end
+  if inGroup(name) then
+    return true
   end
   local sync = ns.SyncService
   if sync and sync.trust and sync.trust:IsTrusted(sender) then
@@ -224,20 +274,15 @@ local function blocked(sender)
   return sync and sync.trust and sync.trust:IsBlocked(sender) or false
 end
 
--- the per-minute cap on answers sent
+-- One answer every priceCheckCooldown seconds, however many ask: nobody can make you flood the chat. While you
+-- wait you don't claim requests either, so another AME player answers them.
 function PC:CanSend()
-  local t, kept = now(), {}
-  for _, at in ipairs(self.sent) do
-    if t - at < 60 then
-      kept[#kept + 1] = at
-    end
-  end
-  self.sent = kept
-  return #kept < PC.PER_MINUTE
+  local wait = tonumber(ns.Settings:Get("priceCheckCooldown")) or 5
+  return not self.lastSent or now() - self.lastSent >= wait
 end
 
 function PC:Say(text, channel, target)
-  self.sent[#self.sent + 1] = now()
+  self.lastSent = now()
   self.stats = AME_DB and AME_DB.stats
   if self.stats then
     self.stats.priceChecks = (self.stats.priceChecks or 0) + 1
@@ -275,28 +320,25 @@ function PC:OnChat(event, msg, sender)
     return
   end
   local t = now()
-  local who = (charName(sender) or ""):lower()
-  if self.askers[who] and t - self.askers[who] < PC.ASKER_COOLDOWN then
-    return
-  end
   local key = PC.Key(sender, query)
   if self.handled[key] and t - self.handled[key] < PC.REPEAT then
     return
   end
-  self.askers[who], self.handled[key] = t, t
-  local text, age = self:Answer(query)
-  if channel == "WHISPER" then
-    if self:CanSend() then
-      self:Say(text, "WHISPER", sender)
+  self.handled[key] = t
+  self:Answer(query, function(text, age)
+    if channel == "WHISPER" then
+      if self:CanSend() then
+        self:Say(text, "WHISPER", sender)
+      end
+      return
     end
-    return
-  end
-  local req = { key = key, channel = channel, text = text, age = age, failed = {}, round = 0 }
-  self.requests[key] = req
-  if self.claims[key] then
-    self:Watch(req) -- someone claimed it before the chat line reached us
-  end
-  self:Race(req)
+    local req = { key = key, channel = channel, text = text, age = age, failed = {}, round = 0 }
+    self.requests[key] = req
+    if self.claims[key] then
+      self:Watch(req) -- someone claimed it before the chat line reached us
+    end
+    self:Race(req)
+  end)
 end
 
 -- one round: wait, claim unless someone already has, then see who won
@@ -304,7 +346,7 @@ function PC:Race(req)
   req.round = req.round + 1
   local round = req.round
   after(PC.Wait(req.age, math.random()), function()
-    if req.done or req.round ~= round or self:Rival(req) then
+    if req.done or req.round ~= round or self:Rival(req) or not self:CanSend() then
       return
     end
     req.claimed = true

@@ -327,7 +327,7 @@ function Help.Articles()
             L["Sharing is a section of the Settings tab."],
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
             H(L["Price checks"]),
-            L["Turn on Price checks and anyone who types !pc and an item in guild, party or raid chat gets its prices from you - market, lowest and 7-day average at your faction's auction house, and how old they are. When several players run AME, they agree among themselves and only one answers. Whispers can be answered too, for guild members, friends and trusted players."],
+            L["Turn on Price checks and anyone who types !pc and an item in guild, party or raid chat gets its prices from you - market, lowest and 7-day average at your faction's auction house, and how old they are. When several players run AME, they agree among themselves and only one answers. Whispers can be answered too, for guild members, friends, your party or raid, and trusted players - never strangers. You answer at most once every 5 seconds - change it under Settings, Sharing - so nobody can make you flood the chat; while you wait, another AME player answers instead."],
             H(L["Keeping data honest"]),
             L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
           },
