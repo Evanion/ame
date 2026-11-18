@@ -71,10 +71,16 @@ function DataTable.New(parent, opts)
   local t = setmetatable({ opts = opts, data = {}, headers = {}, rows = {}, pending = {}, ownOffset = 0 }, DataTable)
   t.sort = opts.sort or {}
   local rowsN, rowH, top = opts.rows or 17, opts.rowHeight or 22, opts.top or 0
+  t.rowH = rowH
   local frame = CreateFrame("Frame", nil, parent)
   frame:SetPoint("TOPLEFT", 0, top)
   frame:SetPoint("RIGHT", 0, 0)
-  frame:SetHeight(20 + rowsN * rowH)
+  if opts.fill then
+    -- fills the parent down to its bottom (minus a status line): as many rows as fit, more as the window grows
+    frame:SetPoint("BOTTOM", 0, opts.bottom or (opts.status and 20 or 0))
+  else
+    frame:SetHeight(20 + rowsN * rowH)
+  end
   t.frame = frame
 
   -- header
@@ -111,8 +117,8 @@ function DataTable.New(parent, opts)
   end
   t.width = x -- the columns' own widths; the table fills its parent and gives the rest to the flexible column
 
-  -- rows
-  for r = 1, rowsN do
+  -- rows (made on demand: a table that fills its parent gets more as the window grows)
+  function t:MakeRow(r)
     local row = CreateFrame("Button", nil, frame)
     row:SetHeight(rowH)
     row:SetPoint("TOPLEFT", 0, -20 - (r - 1) * rowH)
@@ -193,7 +199,12 @@ function DataTable.New(parent, opts)
       end
     end)
     t.rows[r] = row
+    return row
   end
+  for r = 1, rowsN do
+    t:MakeRow(r)
+  end
+  t.visible = rowsN
 
   -- scrollbar (only shown when there's more than fits)
   local bar = CreateFrame("Slider", nil, frame, "BackdropTemplate")
@@ -221,7 +232,10 @@ function DataTable.New(parent, opts)
   frame:SetScript("OnMouseWheel", function(_, delta)
     t:Scroll(delta)
   end)
-  frame:SetScript("OnSizeChanged", function(_, width)
+  frame:SetScript("OnSizeChanged", function(_, width, height)
+    if opts.fill then
+      t:Fit(height)
+    end
     t:Layout(width)
   end)
   t:Layout(frame:GetWidth())
@@ -229,6 +243,28 @@ function DataTable.New(parent, opts)
     t.status = W.StatusLine(parent)
   end
   return t
+end
+
+-- A filling table's height changed: use as many rows as fit (making new ones as needed), hide the rest.
+function DataTable:Fit(height)
+  if type(height) ~= "number" or height <= 0 then
+    return
+  end
+  local n = math.max(1, math.floor((height - 20) / self.rowH))
+  for r = #self.rows + 1, n do
+    self:MakeRow(r)
+  end
+  self.visible = n
+  for r, row in ipairs(self.rows) do
+    if r > n then
+      row:Hide()
+    end
+  end
+  self.bar:SetHeight(n * self.rowH)
+  self.layoutWidth = nil -- new rows need their cells placed
+  if self.source then
+    self:Render()
+  end
 end
 
 -- a message centred over the rows (nothing to show, loading); nil hides it
@@ -269,18 +305,41 @@ function DataTable:Layout(width)
   self.layoutWidth = width
   local actionW = opts.action and ((opts.action.width or 56) + 8) or 0
   local flex = flexIndex(opts)
-  -- when space is short the flexible column gives up to 40% of its width (names truncate) before anything overflows
-  local minW = self.width - GAP - math.floor(opts.columns[flex].width * 0.4)
-  local rowW = math.max(minW, width - DataTable.BAR_SPACE - actionW)
-  local extra = rowW - (self.width - GAP)
+  local avail = width - DataTable.BAR_SPACE - actionW
+  -- Too narrow? First the flexible column gives up to 40% of its width (names truncate), then columns with a `drop`
+  -- rank are hidden, highest rank first, until the rest fits.
+  local flexCut = math.floor(opts.columns[flex].width * 0.4)
+  local total = self.width - GAP
+  local hidden, order = {}, {}
+  for c, col in ipairs(opts.columns) do
+    if col.drop then
+      order[#order + 1] = c
+    end
+  end
+  table.sort(order, function(a, b)
+    return opts.columns[a].drop > opts.columns[b].drop
+  end)
+  for _, c in ipairs(order) do
+    if total - flexCut <= avail then
+      break
+    end
+    hidden[c] = true
+    total = total - opts.columns[c].width - GAP
+  end
+  self.hiddenColumns = hidden
+  local rowW = math.max(total - flexCut, avail)
+  local extra = rowW - total
   local widths, xs, x = {}, {}, 0
   for c, col in ipairs(opts.columns) do
-    widths[c] = col.width + (c == flex and extra or 0)
+    widths[c] = hidden[c] and 0 or col.width + (c == flex and extra or 0)
     xs[c] = x
-    x = x + widths[c] + GAP
+    if not hidden[c] then
+      x = x + widths[c] + GAP
+    end
   end
   for c, h in ipairs(self.headers) do
-    h:SetWidth(widths[c])
+    h:SetShown(not hidden[c])
+    h:SetWidth(math.max(1, widths[c]))
     h:ClearAllPoints()
     h:SetPoint("TOPLEFT", xs[c], 0)
   end
@@ -289,6 +348,7 @@ function DataTable:Layout(width)
     for c, col in ipairs(opts.columns) do
       local fs, cx = row.cells[c], xs[c]
       fs:ClearAllPoints()
+      fs:SetShown(not hidden[c])
       if col.item then
         local nameX = opts.star and NAME_X or (ICON_W + 4)
         local trailing = opts.confidence and 22 or 0
@@ -327,7 +387,7 @@ function DataTable:SetOffset(n)
 end
 
 function DataTable:Scroll(delta)
-  local maxOffset = math.max(0, #(self.data or {}) - #self.rows)
+  local maxOffset = math.max(0, #(self.data or {}) - self.visible)
   self:SetOffset(math.max(0, math.min(self:Offset(), maxOffset) - delta * 3))
   self:Render()
 end
@@ -441,7 +501,7 @@ function DataTable:Render()
     h.text:SetText(label(h.col) .. arrow)
   end
   local list = self.data
-  local n = #self.rows
+  local n = self.visible
   local maxOffset = math.max(0, #list - n)
   -- show what fits, but keep the remembered position: a list that's briefly shorter (reloading, switching tabs)
   -- must not lose where you were scrolled to
@@ -452,7 +512,8 @@ function DataTable:Render()
   self.bar:SetShown(maxOffset > 0)
   self.syncing = false
 
-  for r, row in ipairs(self.rows) do
+  for r = 1, n do
+    local row = self.rows[r]
     local d = list[offset + r]
     row.data = d
     row.itemID = d and opts.itemID and opts.itemID(d) or false
@@ -489,5 +550,5 @@ end
 
 -- the first visible index and how many rows fit (for status lines)
 function DataTable:Window()
-  return self:Offset(), #self.rows
+  return self:Offset(), self.visible
 end

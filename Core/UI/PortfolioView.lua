@@ -16,9 +16,9 @@ end
 local POSITION_COLS = {
   { key = "name", label = L["Item"], width = 210, item = true, ascendingFirst = true },
   { key = "qty", label = L["Held"], width = 50 },
-  { key = "market", label = L["Market"], width = 84, format = "money" },
+  { key = "market", drop = 2, label = L["Market"], width = 84, format = "money" },
   { key = "value", label = L["Value"], width = 92, format = "money" },
-  { key = "unitCost", label = L["Avg cost"], width = 84, format = "money", term = "pfCost" },
+  { key = "unitCost", drop = 1, label = L["Avg cost"], width = 84, format = "money", term = "pfCost" },
   {
     key = "unrealized",
     label = L["Unrealized"],
@@ -37,9 +37,10 @@ local POSITION_COLS = {
     sortKey = "signalRank",
     ascendingFirst = true,
   },
-  { key = "sellRate", label = L["Sells/d"], width = 58, format = "rate", term = "sellRate" },
+  { key = "sellRate", drop = 3, label = L["Sells/d"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "daysToSell",
+    drop = 4,
     label = L["Days to sell"],
     width = 74,
     term = "pfDays",
@@ -76,6 +77,7 @@ local AUCTION_COLS = {
   },
   {
     key = "char",
+    drop = 1,
     label = L["Character"],
     width = 150,
     align = "LEFT",
@@ -86,6 +88,7 @@ local AUCTION_COLS = {
   },
   {
     key = "house",
+    drop = 2,
     label = L["Auction house"],
     width = 100,
     align = "LEFT",
@@ -104,6 +107,7 @@ local function counterpartyCols(amountLabel, tradesLabel)
     { key = "units", label = L["Items"], width = 60 },
     {
       key = "favourite",
+      drop = 2,
       label = L["Mostly"],
       width = 230,
       align = "LEFT",
@@ -114,6 +118,7 @@ local function counterpartyCols(amountLabel, tradesLabel)
     },
     {
       key = "last",
+      drop = 1,
       label = L["Last"],
       width = 96,
       text = function(c)
@@ -175,6 +180,7 @@ local LEDGER_COLS = {
   },
   {
     key = "cut",
+    drop = 1,
     label = L["AH cut"],
     width = 76,
     text = function(e)
@@ -193,6 +199,7 @@ local LEDGER_COLS = {
   },
   {
     key = "char",
+    drop = 2,
     label = L["Character"],
     width = 150,
     align = "LEFT",
@@ -260,6 +267,8 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.positions = ns.DataTable.New(v, {
     columns = POSITION_COLS,
     rows = ROWS,
+    fill = true,
+    bottom = 20, -- above the shared status line
     top = -80,
     itemID = itemID,
     sort = { key = "value", ascending = false },
@@ -283,6 +292,8 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.auctions = ns.DataTable.New(v, {
     columns = AUCTION_COLS,
     rows = ROWS,
+    fill = true,
+    bottom = 20, -- above the shared status line
     top = -80,
     itemID = itemID,
     sort = { key = "total", ascending = false },
@@ -290,18 +301,24 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.customers = ns.DataTable.New(v, {
     columns = counterpartyCols(L["Spent with you"], L["Purchases"]),
     rows = ROWS,
+    fill = true,
+    bottom = 20, -- above the shared status line
     top = -80,
     sort = { key = "amount", ascending = false },
   })
   v.suppliers = ns.DataTable.New(v, {
     columns = counterpartyCols(L["You spent"], L["Purchases"]),
     rows = ROWS,
+    fill = true,
+    bottom = 20, -- above the shared status line
     top = -80,
     sort = { key = "amount", ascending = false },
   })
   v.ledger = ns.DataTable.New(v, {
     columns = LEDGER_COLS,
     rows = ROWS,
+    fill = true,
+    bottom = 20, -- above the shared status line
     top = -80,
     itemID = itemID,
     sort = { key = "t", ascending = false }, -- newest first

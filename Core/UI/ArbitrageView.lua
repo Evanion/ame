@@ -50,6 +50,7 @@ local COLUMNS = {
   },
   {
     key = "supply",
+    drop = 3,
     label = L["Supply"],
     width = 60,
     term = "arbSupply",
@@ -60,6 +61,7 @@ local COLUMNS = {
   },
   {
     key = "deposit",
+    drop = 4,
     label = L["Deposit"],
     width = 70,
     term = "arbDeposit",
@@ -72,6 +74,7 @@ local COLUMNS = {
   },
   {
     key = "depth",
+    drop = 5,
     label = L["Depth"],
     width = 90,
     term = "arbDepth",
@@ -80,9 +83,10 @@ local COLUMNS = {
       return UI:DepthText(e)
     end,
   },
-  { key = "sellRate", label = L["Sells/d"], width = 58, format = "rate", term = "arbSellRate" },
+  { key = "sellRate", drop = 2, label = L["Sells/d"], width = 58, format = "rate", term = "arbSellRate" },
   {
     key = "age",
+    drop = 1,
     label = L["Data"],
     width = 48,
     term = "arbAge",
@@ -143,6 +147,7 @@ function UI:CreateArbitrageView(parent, contentArea)
   v.table = ns.DataTable.New(v, {
     columns = COLUMNS,
     rows = ROWS,
+    fill = true, -- rows fill the tab down to the status line
     top = -32,
     itemID = function(e)
       return e.itemID

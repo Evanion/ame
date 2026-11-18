@@ -166,6 +166,8 @@ L["Deposit"] = "Depósito"
 L["Deposits for"] = "Depósitos de"
 L["Depth"] = "Profundidade"
 L["Display"] = "Exibição"
+L["Dock AME beside the auction house when there's room"] =
+  "Encaixar o AME ao lado da casa de leilões quando houver espaço"
 L["Dumping"] = "Despejo"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
   "Cada candle cobre um ou mais dias. Abre no fechamento do candle anterior e fecha no preço de mercado; verde fechou mais alto, vermelho mais baixo. O pavio fino desce até o anúncio mais barato visto."
@@ -407,6 +409,7 @@ L["What you paid per unit for the units you bought on the auction house (oldest 
 L["When"] = "Quando"
 L["Where the data comes from"] = "De onde vêm os dados"
 L["Window colours"] = "Cores da janela"
+L["Window scale"] = "Escala da janela"
 L["You haven't blocked anyone."] = "Você não bloqueou ninguém."
 L["You spent"] = "Você gastou"
 L["You'd receive (after the cut)"] = "Você receberia (após a taxa)"

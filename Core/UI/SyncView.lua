@@ -17,7 +17,11 @@ local MAX_TRUSTED, MAX_PENDING, MAX_PEERS, MAX_BLOCKED = 9, 3, 5, 3
 local COL2 = UI.COLUMN2
 
 function UI:CreateSyncView(parent, contentArea)
-  local v = contentArea(parent)
+  -- everything scrolls when the window is shorter than the tab's content
+  local outer = contentArea(parent)
+  local pane = W.ScrollPane(outer)
+  local v = pane.content
+  v.pane = pane
   self.syncView = v
   local svc = ns.SyncService
 
@@ -126,7 +130,7 @@ function UI:CreateSyncView(parent, contentArea)
   svc.onChange = function()
     UI:RefreshSync()
   end
-  return v
+  return outer
 end
 
 function UI:RefreshSync()
@@ -216,4 +220,14 @@ function UI:RefreshSync()
         or W.Dim(L["waiting for them to approve"])
     )
   end)
+end
+
+-- the Sync tab's lists grow and shrink: its scroll pane re-measures after every refresh
+local refreshSync = UI.RefreshSync
+function UI:RefreshSync(...)
+  refreshSync(self, ...)
+  local v = self.syncView
+  if v and v.pane then
+    v.pane:Measure()
+  end
 end

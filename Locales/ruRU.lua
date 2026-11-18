@@ -174,6 +174,8 @@ L["Deposit"] = "Залог"
 L["Deposits for"] = "Залог за"
 L["Depth"] = "Глубина"
 L["Display"] = "Отображение"
+L["Dock AME beside the auction house when there's room"] =
+  "Пристыковывать AME рядом с аукционом, если есть место"
 L["Dumping"] = "Сброс"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
   "Каждая свеча охватывает один или несколько дней. Она открывается по закрытию предыдущей свечи и закрывается по рыночной цене; зелёная закрылась выше, красная ниже. Тонкая тень доходит до самого дешёвого замеченного лота."
@@ -421,6 +423,7 @@ L["What you paid per unit for the units you bought on the auction house (oldest 
 L["When"] = "Когда"
 L["Where the data comes from"] = "Откуда берутся данные"
 L["Window colours"] = "Цвета окна"
+L["Window scale"] = "Масштаб окна"
 L["You haven't blocked anyone."] = "Вы никого не заблокировали."
 L["You spent"] = "Ваши траты"
 L["You'd receive (after the cut)"] = "Вы получите (после комиссии)"

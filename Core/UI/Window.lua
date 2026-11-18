@@ -9,7 +9,9 @@ local UI = {}
 ns.UI = UI
 
 -- the average period used everywhere (screener column, item card, tooltips): Settings, default 7 days
-UI.WIDTH, UI.HEIGHT = 980, 500 -- the main window; content is inset 10 px on each side
+UI.WIDTH, UI.HEIGHT = 980, 500 -- design width the fixed-size pieces were laid out for; the window itself resizes
+UI.MIN_W, UI.MIN_H = 760, 460 -- the smallest window every tab still works in
+UI.COMPACT_W = 900 -- below this width tabs use their compact layout (UI.compact)
 UI.FOOTER_SPACE = 90 -- width kept free for the version at the right end of the bottom row
 UI.COLUMN2 = 490 -- x of the second column on the Sync and Settings tabs
 
@@ -116,15 +118,42 @@ function UI:CreateShell()
   local f = CreateFrame("Frame", "AMEMainWindow", UIParent, "BackdropTemplate")
   self.building = f
   self.views = {}
-  f:SetSize(UI.WIDTH, UI.HEIGHT)
-  f:SetPoint("CENTER")
   f:SetFrameStrata("HIGH")
   f:SetClampedToScreen(true)
   f:SetMovable(true)
+  f:SetResizable(true)
+  local maxW, maxH = UIParent:GetWidth(), UIParent:GetHeight()
+  if f.SetResizeBounds then
+    f:SetResizeBounds(UI.MIN_W, UI.MIN_H, maxW, maxH)
+  elseif f.SetMinResize then
+    f:SetMinResize(UI.MIN_W, UI.MIN_H)
+    f:SetMaxResize(maxW, maxH)
+  end
   f:EnableMouse(true)
   f:RegisterForDrag("LeftButton")
   f:SetScript("OnDragStart", f.StartMoving)
-  f:SetScript("OnDragStop", f.StopMovingOrSizing)
+  f:SetScript("OnDragStop", function()
+    f:StopMovingOrSizing()
+    UI:SavePlacement()
+  end)
+  f:SetScript("OnSizeChanged", function(_, w)
+    UI:OnResize(w)
+  end)
+  -- resize grip, bottom right
+  local grip = CreateFrame("Button", nil, f)
+  grip:SetSize(16, 16)
+  grip:SetPoint("BOTTOMRIGHT", -3, 3)
+  grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+  grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+  grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+  grip:SetScript("OnMouseDown", function()
+    f:StartSizing("BOTTOMRIGHT")
+  end)
+  grip:SetScript("OnMouseUp", function()
+    f:StopMovingOrSizing()
+    UI:SavePlacement()
+  end)
+  self.grip = grip
   W.Skin(f)
   f:Hide()
   tinsert(UISpecialFrames, "AMEMainWindow") -- Escape closes
@@ -167,7 +196,7 @@ function UI:CreateShell()
 
   -- the version, bottom right, on the same row as each tab's status line (credits are on the Guide tab)
   local footer = W.Text(f, "GameFontDisableSmall", "RIGHT")
-  footer:SetPoint("BOTTOMRIGHT", -12, 10)
+  footer:SetPoint("BOTTOMRIGHT", -22, 10) -- left of the resize grip
   footer:SetText("v" .. ns.VERSION)
   footer:SetAlpha(0.7)
   self.footer = footer
@@ -187,9 +216,108 @@ function UI:CreateShell()
   end)
 
   f:SetScript("OnShow", function()
+    UI:ApplyPlacement()
     UI:ViewChanged()
     UI:ApplyTheme()
   end)
+  self:ApplyPlacement()
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- size, position, docking
+
+local function clamp(x, lo, hi)
+  return math.max(lo, math.min(hi, x))
+end
+
+-- default size from the screen: full on big screens, compact on small ones (UIParent units, before AME's scale)
+function UI:DefaultSize()
+  local scale = ns.Settings:Get("windowScale") or 1
+  local sw, sh = (UIParent:GetWidth() or 1365) / scale, (UIParent:GetHeight() or 768) / scale
+  local w = math.min(clamp(math.floor(sw * 0.6), 900, 1100), sw)
+  local h = math.min(clamp(math.floor(sh * 0.75), 520, 640), sh)
+  return math.max(w, UI.MIN_W), math.max(h, UI.MIN_H)
+end
+
+-- placements per character: one with the auction house open, one without
+function UI:Placements()
+  AME_DB.window = AME_DB.window or {}
+  local key = (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "?")
+  AME_DB.window[key] = AME_DB.window[key] or {}
+  return AME_DB.window[key]
+end
+
+function UI:PlacementMode()
+  return ns.AME.ahOpen and "ah" or "free"
+end
+
+function UI:SavePlacement()
+  local f = self.frame or self.building
+  local left, top = f:GetLeft(), f:GetTop()
+  if not (left and top) then
+    return
+  end
+  self:Placements()[self:PlacementMode()] = { x = left, y = top, w = f:GetWidth(), h = f:GetHeight() }
+end
+
+-- the auction house window on screen (the game's or the old one)
+local function ahFrame()
+  local ah = AuctionHouseFrame or AuctionFrame
+  return ah and ah:IsShown() and ah or nil
+end
+
+-- is there room for a window this wide (in AME's scale) to the right of the auction house?
+function UI:FitsBeside(ah, w)
+  local right, screen = ah:GetRight(), UIParent:GetRight()
+  if not (right and screen) then
+    return false
+  end
+  local ui = UIParent:GetEffectiveScale()
+  local mine = (self.frame or self.building):GetEffectiveScale()
+  return right * ah:GetEffectiveScale() / ui + 6 + w * mine / ui <= screen
+end
+
+-- Size and position for now: beside the auction house when docking and there's room, else where you last put it
+-- (separately with and without the auction house), else centred at the default size.
+function UI:ApplyPlacement()
+  local f = self.frame or self.building
+  if not f then
+    return
+  end
+  f:SetScale(ns.Settings:Get("windowScale") or 1)
+  local p = self:Placements()[self:PlacementMode()]
+  local w, h = self:DefaultSize()
+  if p and p.w then
+    w, h = math.max(p.w, UI.MIN_W), math.max(p.h, UI.MIN_H)
+  end
+  f:SetSize(w, h)
+  f:ClearAllPoints()
+  local ah = ns.AME.ahOpen and ahFrame()
+  if ah and ns.Settings:Get("dockToAH") and self:FitsBeside(ah, w) then
+    f:SetPoint("TOPLEFT", ah, "TOPRIGHT", 6, 0)
+  elseif p and p.x then
+    f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
+  else
+    f:SetPoint("CENTER")
+  end
+  self:OnResize(w)
+end
+
+-- below UI.COMPACT_W the tabs use their compact layout; the title shortens to "AME"
+function UI:OnResize(w)
+  local compact = (w or UI.WIDTH) < UI.COMPACT_W
+  if compact == self.compact then
+    return
+  end
+  self.compact = compact
+  if self.frame then
+    self:ApplyTheme()
+  end
+  for _, view in pairs(self.views or {}) do
+    if view.SetCompact then
+      view:SetCompact(compact)
+    end
+  end
 end
 
 -- A market index was built or restored: refresh the open tab (the data on it may have been stale meanwhile).
@@ -292,7 +420,11 @@ function UI:ApplyTheme()
   local preferred = ns.Settings:Get("theme")
   W.SetTheme(preferred ~= "auto" and preferred or self:ViewHouse())
   local a = W.COLORS.accent
-  self.title:SetText(("|c%sAzeroth|r Mercantile Exchange"):format(W.Hex(a)))
+  if self.compact then
+    self.title:SetText(("|c%sAME|r"):format(W.Hex(a)))
+  else
+    self.title:SetText(("|c%sAzeroth|r Mercantile Exchange"):format(W.Hex(a)))
+  end
   if self.chartHolder then
     self.chartHolder:SetBackdropBorderColor(a[1], a[2], a[3], 0.22)
     W.TintInnerGlow(self.chartHolder)

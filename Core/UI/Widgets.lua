@@ -843,6 +843,71 @@ function W.Rate(perDay)
   return ("~%.1f/d"):format(perDay)
 end
 
+-- A scrolling area that fills its parent. Put the content in pane.content (as wide as the pane); its height is
+-- measured from what's in it when shown or resized (pane:Measure() after changing it). The mouse wheel scrolls, and a
+-- thin bar shows where you are when the content is taller than the pane.
+function W.ScrollPane(parent)
+  local pane = CreateFrame("ScrollFrame", nil, parent)
+  pane:SetAllPoints()
+  local content = CreateFrame("Frame", nil, pane)
+  content:SetSize(1, 1)
+  pane:SetScrollChild(content)
+  pane.content = content
+  local bar = pane:CreateTexture(nil, "OVERLAY")
+  bar:SetColorTexture(1, 1, 1, 0.25)
+  bar:SetWidth(4)
+  bar:Hide()
+
+  function pane:Range()
+    return math.max(0, (content:GetHeight() or 0) - (self:GetHeight() or 0))
+  end
+
+  function pane:SetScroll(y)
+    local max, viewH = self:Range(), self:GetHeight() or 0
+    y = math.max(0, math.min(max, y or 0))
+    self:SetVerticalScroll(y)
+    bar:SetShown(max > 0)
+    if max > 0 then
+      local h = math.max(20, viewH * viewH / (viewH + max))
+      bar:SetHeight(h)
+      bar:ClearAllPoints()
+      bar:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, -(viewH - h) * y / max)
+    end
+  end
+
+  -- the content's height: down to the lowest shown child or text, plus a margin
+  function pane:Measure()
+    local top = content:GetTop()
+    if not top then
+      return
+    end
+    local bottom = top
+    for _, list in ipairs({ { content:GetChildren() }, { content:GetRegions() } }) do
+      for _, obj in ipairs(list) do
+        local b = obj.IsShown and obj:IsShown() and obj.GetBottom and obj:GetBottom()
+        if type(b) == "number" and b < bottom then
+          bottom = b
+        end
+      end
+    end
+    content:SetHeight(math.max(1, top - bottom + 12))
+    self:SetScroll(self:GetVerticalScroll() or 0)
+  end
+
+  pane:SetScript("OnSizeChanged", function(self, w)
+    content:SetWidth(math.max(1, (w or 0) - 8))
+    self:Measure()
+  end)
+  pane:SetScript("OnShow", function(self)
+    self:Measure()
+  end)
+  pane:EnableMouseWheel(true)
+  pane:SetScript("OnMouseWheel", function(self, delta)
+    self:SetScroll((self:GetVerticalScroll() or 0) - delta * 40)
+  end)
+  return pane
+end
+
 -- section heading at a position in a panel
 function W.Heading(parent, text, x, y)
   local h = W.Text(parent, "GameFontNormal")

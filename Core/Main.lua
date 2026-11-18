@@ -485,6 +485,13 @@ function handlers.AUCTION_HOUSE_SHOW()
     ns.UI:ViewChanged()
     ns.UI:ApplyTheme()
   end
+  -- once the auction house window is up (next frame): an open AME window docks beside it, or takes its "with the
+  -- auction house" place
+  C_Timer.After(0, function()
+    if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
+      ns.UI:ApplyPlacement()
+    end
+  end)
   if ns.Settings:Get("openWithAH") and ns.UI and not (ns.UI.frame and ns.UI.frame:IsShown()) then
     ns.UI:Toggle()
     AME.openedWithAH = true -- it may close with the AH (closeWithAH)
@@ -531,6 +538,9 @@ function handlers.AUCTION_HOUSE_CLOSED()
     if ns.Settings:Get("closeWithAH") and ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
       ns.UI.frame:Hide()
     end
+  end
+  if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
+    ns.UI:ApplyPlacement() -- back to where it sits without the auction house
   end
   if ns.UI and ns.UI.RenderArbitrage then
     ns.UI:RenderArbitrage()

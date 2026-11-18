@@ -427,6 +427,140 @@ describe("addon in a stubbed client", function()
       assert.is_true(ns.UI.frame:IsShown())
     end)
 
+    describe("window", function()
+      local function last(frame)
+        return frame.points[#frame.points]
+      end
+
+      it("starts at a size that fits the screen, centred", function()
+        boot()
+        ns.UI:Toggle()
+        local win = ns.UI.frame
+        assert.are.same({ 900, 576 }, { win:GetSize() }) -- 1365x768: 60% wide (min 900), 75% high
+        assert.are.equal("CENTER", last(win)[1])
+        assert.is_false(ns.UI.compact)
+        local screen = _G.UIParent
+        screen.w, screen.h = 2560, 1440 -- a big screen: the full 1100x640
+        ns.UI:ApplyPlacement()
+        assert.are.same({ 1100, 640 }, { win:GetSize() })
+        ns.Settings:Set("windowScale", 0.8)
+        ns.UI:ApplyPlacement()
+        assert.are.equal(0.8, win:GetScale())
+      end)
+
+      it("remembers one placement with the auction house open and one without", function()
+        boot()
+        ns.UI:Toggle()
+        local win = ns.UI.frame
+        win.GetLeft = function()
+          return 40
+        end
+        win.GetTop = function()
+          return 700
+        end
+        win:SetSize(1000, 600)
+        win.scripts.OnDragStop(win) -- moved (and sized) without the auction house
+        env:fire("AUCTION_HOUSE_SHOW")
+        env:advance(0)
+        win.GetLeft = function()
+          return 300
+        end
+        win:SetSize(800, 500)
+        win.scripts.OnDragStop(win) -- moved with it open (no AH frame on screen: nothing to dock to)
+        local p = ns.UI:Placements()
+        assert.are.same({ x = 40, y = 700, w = 1000, h = 600 }, p.free)
+        assert.are.same({ x = 300, y = 700, w = 800, h = 500 }, p.ah)
+        env:fire("AUCTION_HOUSE_CLOSED") -- back to the free placement
+        assert.are.same({ 1000, 600 }, { win:GetSize() })
+        assert.are.same({ "TOPLEFT", UIParent, "BOTTOMLEFT", 40, 700 }, last(win))
+        assert.is_false(ns.UI.compact)
+        env:fire("AUCTION_HOUSE_SHOW")
+        env:advance(0)
+        assert.are.same({ 800, 500 }, { win:GetSize() })
+        assert.is_true(ns.UI.compact) -- below 900 wide
+        assert.is_truthy(ns.UI.title:GetText():find("AME|r$"))
+        win:SetSize(500, 300) -- never smaller than the minimum
+        ns.UI:SavePlacement()
+        ns.UI:ApplyPlacement()
+        assert.are.same({ ns.UI.MIN_W, ns.UI.MIN_H }, { win:GetSize() })
+      end)
+
+      it("docks beside the auction house window when there's room", function()
+        boot()
+        local ah = wow.newObject("Frame")
+        ah.GetRight = function()
+          return 400
+        end
+        _G.AuctionHouseFrame = ah
+        ns.UI:Toggle()
+        local win = ns.UI.frame
+        env:fire("AUCTION_HOUSE_SHOW")
+        env:advance(0)
+        assert.are.same({ "TOPLEFT", ah, "TOPRIGHT", 6, 0 }, last(win)) -- 400 + 6 + 900 fits in 1365
+        ah.GetRight = function()
+          return 700
+        end
+        ns.UI:ApplyPlacement()
+        assert.are.equal("CENTER", last(win)[1]) -- no room: its own place
+        ah.GetRight = function()
+          return 400
+        end
+        ns.Settings:Set("dockToAH", false)
+        ns.UI:ApplyPlacement()
+        assert.are.equal("CENTER", last(win)[1]) -- docking off
+        _G.AuctionHouseFrame = nil
+      end)
+
+      it("tables show as many rows as fit and drop low-priority columns when narrow", function()
+        seeded()
+        ns.UI:Toggle()
+        ns.UI:ShowTab("market")
+        local t = ns.UI.marketView.table
+        t:Fit(20 + 30 * t.rowH)
+        assert.are.equal(30, t.visible)
+        assert.is_true(#t.rows >= 30)
+        t:Fit(20 + 5 * t.rowH)
+        assert.are.equal(5, t.visible)
+        assert.is_false(t.rows[6]:IsShown())
+        t:Layout(2000)
+        assert.are.same({}, t.hiddenColumns)
+        t:Layout(560)
+        local keys = {}
+        for c in pairs(t.hiddenColumns) do
+          keys[#keys + 1] = t.opts.columns[c].key
+        end
+        assert.is_true(#keys > 0)
+        assert.is_true(t.hiddenColumns[1] == nil) -- the item column stays
+        for c in pairs(t.hiddenColumns) do
+          assert.is_not_nil(t.opts.columns[c].drop) -- only droppable ones go
+        end
+      end)
+
+      it("scroll panes measure their content and scroll only as far as it goes", function()
+        boot()
+        local parent = CreateFrame("Frame")
+        local pane = ns.Widgets.ScrollPane(parent)
+        pane:SetSize(300, 200)
+        local child = CreateFrame("Frame", nil, pane.content)
+        child.GetBottom = function()
+          return -488 -- content top is at 1 in the stub: 489 tall + 12 margin
+        end
+        pane.content.GetChildren = function()
+          return child
+        end
+        pane:Measure()
+        assert.are.equal(501, pane.content:GetHeight())
+        assert.are.equal(301, pane:Range())
+        pane.scripts.OnMouseWheel(pane, -1)
+        assert.are.equal(40, pane:GetVerticalScroll())
+        pane:SetScroll(9999)
+        assert.are.equal(301, pane:GetVerticalScroll())
+        child:Hide()
+        pane:Measure() -- nothing shown below the top: no scrolling
+        assert.are.equal(0, pane:GetVerticalScroll())
+      end)
+    end)
+
     it("builds the market index after scans and feeds the screener", function()
       seeded()
       assert.is_not_nil(ns.AME.index)

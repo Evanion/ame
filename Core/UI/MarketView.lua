@@ -27,9 +27,9 @@ local COLUMNS = {
       return W.Money(s["avg" .. avgDays()], true)
     end,
   },
-  { key = "change7", label = L["7d"], width = 62, format = "pct", term = "change7" },
-  { key = "vol30", label = L["Volatility"], width = 70, format = "plainpct", term = "vol30" },
-  { key = "qty", label = L["Supply"], width = 52, term = "qty" },
+  { key = "change7", drop = 4, label = L["7d"], width = 62, format = "pct", term = "change7" },
+  { key = "vol30", drop = 3, label = L["Volatility"], width = 70, format = "plainpct", term = "vol30" },
+  { key = "qty", drop = 1, label = L["Supply"], width = 52, term = "qty" },
   { key = "sellRate", label = L["Sells/d"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "signal",
@@ -40,7 +40,7 @@ local COLUMNS = {
     sortKey = "signalRank",
     ascendingFirst = true,
   },
-  { key = "score", label = L["Score"], width = 50, term = "score" },
+  { key = "score", drop = 2, label = L["Score"], width = 50, term = "score" },
 }
 local ROWS = 17
 local SIDEBAR_W = 170
@@ -294,6 +294,7 @@ function UI:CreateMarketView(parent)
   v.table = ns.DataTable.New(main, {
     columns = COLUMNS,
     rows = ROWS,
+    fill = true, -- rows fill the tab down to the status line
     top = -28,
     itemID = function(s)
       return s.itemID

@@ -137,6 +137,7 @@ L["Deposit"] = true
 L["Deposits for"] = true
 L["Depth"] = true
 L["Display"] = true
+L["Dock AME beside the auction house when there's room"] = true
 L["Dumping"] = true
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] = true
 L["Epic+"] = true
@@ -331,6 +332,7 @@ L["What you paid per unit for the units you bought on the auction house (oldest 
 L["When"] = true
 L["Where the data comes from"] = true
 L["Window colours"] = true
+L["Window scale"] = true
 L["You haven't blocked anyone."] = true
 L["You spent"] = true
 L["You'd receive (after the cut)"] = true

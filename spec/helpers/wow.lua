@@ -125,6 +125,25 @@ local function newObject(kind)
     GetParent = function(self)
       return self.parent
     end,
+    -- anchors are recorded (the last SetPoint is points[#points]); ClearAllPoints empties them
+    SetPoint = function(self, ...)
+      self.points[#self.points + 1] = { ... }
+    end,
+    ClearAllPoints = function(self)
+      self.points = {}
+    end,
+    SetScale = function(self, s)
+      self.scale = s
+    end,
+    GetScale = function(self)
+      return rawget(self, "scale") or 1
+    end,
+    SetVerticalScroll = function(self, y)
+      self.vscroll = y
+    end,
+    GetVerticalScroll = function(self)
+      return rawget(self, "vscroll") or 0
+    end,
   }
   return setmetatable(o, {
     __index = function(_, k)
@@ -200,7 +219,9 @@ function M.install(opts)
     f.parent = parent
     return f
   end)
-  set("UIParent", newObject("Frame"))
+  local screen = newObject("Frame")
+  screen.w, screen.h = 1365, 768 -- a 1080p screen at the default UI scale, in UI units
+  set("UIParent", screen)
   set("hooksecurefunc", function(tbl, name, fn)
     if type(tbl) == "string" then
       tbl, name, fn = _G, tbl, name
