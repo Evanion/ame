@@ -713,6 +713,13 @@ describe("addon in a stubbed client", function()
       assert.are.equal(7, classLine.entry.classID)
       classLine.scripts.OnClick(classLine)
       assert.are.equal(2, #ns.UI.list)
+      -- sorting by the Item header keeps the category's items (it used to filter everything out)
+      local itemHeader = v.headers[1]
+      itemHeader.scripts.OnClick(itemHeader)
+      assert.are.equal(2, #ns.UI.list)
+      assert.are.equal("__name", ns.UI.mq.sortKey)
+      itemHeader.scripts.OnClick(itemHeader) -- and back the other way
+      assert.are.equal(2, #ns.UI.list)
       -- quality dropdown: pick "Rare+" from the menu
       local rare = v.quality.menu.items[4]
       rare.scripts.OnClick(rare)
@@ -990,13 +997,13 @@ describe("addon in a stubbed client", function()
       assert.are.equal(45, r.fee) -- 15% goblin cut
       assert.are.equal(155, r.profit)
       assert.are.equal(2589, v.rows[1].itemID)
-      assert.truthy(v.status.text:find("15%% cut"))
+      assert.truthy(v.summary.text:find("15%% cut"))
       -- the first route is selected; the sidebar breaks it down: price, cut, deposit, buy, net
       local route = v.route
       assert.are.equal(2589, ns.UI.arbRoute.itemID)
       assert.are.equal(155, r.net) -- no vendor price known: no deposit
       assert.truthy(route.cut.label.text:find("15%%"))
-      assert.truthy(route.buyAge.value.text:find("today"))
+      assert.truthy(route.buyAge.value.text:find("your scan"), route.buyAge.value.text) -- source and age
       assert.truthy(route.searchHint.text:find("Visit the Horde AH")) -- we're at the goblin AH
       ns.ItemCache.Get(2589).sellPrice = 1000
       ns.UI:RefreshArbitrage(true)
@@ -1188,9 +1195,11 @@ describe("addon in a stubbed client", function()
       assert.are.equal("Item 2589", text)
       assert.is_true(started)
       _G.AuctionHouseFrame = nil
-      -- away from the auction house the buttons go away
+      -- away from the auction house the Search buttons stay, but can't be used
       env:fire("AUCTION_HOUSE_CLOSED")
-      assert.is_false(row.action:IsShown())
+      ns.UI:RenderArbitrage()
+      assert.is_true(row.action:IsShown())
+      assert.is_false(row.action.usable)
     end)
 
     it("themes the window by auction house faction", function()

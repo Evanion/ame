@@ -469,6 +469,11 @@ local function commas(n)
   local out = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
   return (out:gsub("^,", ""))
 end
+-- text without colour codes (to recolour a value as a whole)
+function W.Plain(s)
+  return (tostring(s or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+end
+
 -- a whole number with thousands separators: 12345 -> "12,345"
 function W.Thousands(n)
   return commas(math.floor((n or 0) + 0.5))

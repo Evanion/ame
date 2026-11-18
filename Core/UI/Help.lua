@@ -71,6 +71,10 @@ Help.TERMS = {
     L["Net"],
     L["Per item: what it sells for, minus the AH cut, minus the listing deposit, minus what you paid. The deposit is counted for one post of the units the route pays for (or up to 20), at least 1 silver per post - you get it back when it sells."],
   },
+  arbUnits = {
+    L["Units"],
+    L["How many units at the buy house still pay after the cut, of how many are listed there. The first number needs the item's listings: search it at the buy house (it then stays for 6 hours)."],
+  },
   arbMargin = { L["Margin"], L["Profit as a share of what you paid. 50% means every 10g spent comes back as 15g."] },
   arbSupply = {
     L["Supply"],

@@ -554,6 +554,12 @@ function DataTable:Render()
     end
     if row.action then
       row.action:SetShown(d ~= nil and (not opts.action.shown or opts.action.shown(d)) or false)
+      if d and opts.action.enabled then
+        local on = opts.action.enabled(d) and true or false
+        row.action:SetEnabled(on)
+        row.action:SetAlpha(on and 1 or 0.4)
+        row.action.usable = on
+      end
     end
     if d then
       if row.star then

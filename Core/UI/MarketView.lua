@@ -780,7 +780,7 @@ function UI:CreateMarketView(parent)
     if not v:IsShown() then
       return
     end
-    if (q.text and q.text ~= "") or q.minQuality or q.sortKey == "name" then
+    if (q.text and q.text ~= "") or q.minQuality or q.sortKey == "name" or q.sortKey == "__name" then
       UI:RefreshMarket(true)
     else
       UI:RenderMarket()

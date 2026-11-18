@@ -14,10 +14,10 @@ local HOUSES = {
   { "Neutral", L["Goblin AH"] },
 }
 local AGES = {
-  { 1, L["Seen today/yesterday"] },
-  { 3, L["Seen in 3 days"] },
-  { 7, L["Seen in 7 days"] },
-  { false, L["Any age"] },
+  { 1, L["Data up to 1 day old"] },
+  { 3, L["Data up to 3 days old"] },
+  { 7, L["Data up to 7 days old"] },
+  { false, L["Data of any age"] },
 }
 UI.ARB_SIDEBAR = 260
 UI.ARB_POST_UNITS = 20 -- deposit basis when the route's depth isn't known: one post of up to this many
@@ -34,8 +34,8 @@ UI.AgeText = ageText
 
 local COLUMNS = {
   { key = "name", label = L["Item"], width = 180, item = true, sortKey = false },
-  { key = "buy", label = L["Buy at"], width = 80, format = "money", term = "arbBuy" },
-  { key = "sell", label = L["Sells for"], width = 80, format = "money", term = "arbSell" },
+  { key = "buy", label = L["Buy"], width = 80, format = "money", term = "arbBuy" },
+  { key = "sell", label = L["Sell"], width = 80, format = "money", term = "arbSell" },
   {
     key = "net",
     money = true,
@@ -56,33 +56,23 @@ local COLUMNS = {
     end,
   },
   {
-    key = "depth",
-    drop = 4,
-    label = L["Depth"],
-    width = 90,
-    term = "arbDepth",
-    sortKey = false,
-    text = function(e)
-      return UI:DepthText(e)
-    end,
-  },
-  {
-    key = "supply",
+    -- profitable units of those listed at the buy house ("12 of 40"); "? of 40" until the item is searched there
+    key = "units",
     drop = 3,
-    label = L["Supply"],
-    width = 60,
-    term = "arbSupply",
-    sortKey = "sellQty",
+    label = L["Units"],
+    width = 72,
+    term = "arbUnits",
+    sortKey = "buyQty",
     text = function(e)
-      return ("%s / %s"):format(W.Count(e.buyQty), W.Count(e.sellQty))
+      return L["%s of %s"]:format(e.units and W.Count(e.units) or W.Dim("?"), W.Count(e.buyQty))
     end,
   },
   { key = "sellRate", drop = 2, label = L["Sales/day"], width = 58, format = "rate", term = "arbSellRate" },
   {
     key = "age",
     drop = 1,
-    label = L["Data"],
-    width = 48,
+    label = L["Data age"],
+    width = 60,
     term = "arbAge",
     text = function(e)
       return ageText(e.age)
@@ -115,7 +105,11 @@ function UI:CreateArbitrageView(parent, contentArea)
     sortKey = "net",
     ascending = false,
   }
-  local slots = UI.Slots(v, { toolbar = 22, right = UI.ARB_SIDEBAR, status = true })
+  local slots = UI.Slots(v, { toolbar = 22, chips = 14, right = UI.ARB_SIDEBAR, rightCards = true, status = true })
+  v.summary = W.Text(slots.chips, "GameFontDisableSmall")
+  v.summary:SetPoint("LEFT", 0, 0)
+  v.summary:SetPoint("RIGHT", 0, 0)
+  v.summary:SetWordWrap(false)
   v.slots = slots
   local bar = slots.toolbar
 
@@ -138,12 +132,12 @@ function UI:CreateArbitrageView(parent, contentArea)
   end, { neutral = true })
   W.Labeled(bar, L["Sell at"], v.sell):SetPoint("LEFT", v.swap, "RIGHT", 8, 0)
 
-  v.minProfit = W.GoldInput(bar, L["profit g"], function(g)
+  v.minProfit = W.GoldInput(bar, L["min profit g"], function(g)
     UI.arb.minProfit = g and g * 10000 or 1
     UI:RefreshArbitrage(true)
   end)
   v.minProfit:SetPoint("LEFT", v.sell, "RIGHT", 12, 0)
-  v.minMargin = W.GoldInput(bar, L["margin %"], function(p) -- whole percent, same box as gold
+  v.minMargin = W.GoldInput(bar, L["min margin %"], function(p) -- whole percent, same box as gold
     UI.arb.minMargin = (p or 10) / 100
     UI:RefreshArbitrage(true)
   end)
@@ -185,7 +179,7 @@ function UI:CreateArbitrageView(parent, contentArea)
     action = {
       label = L["Search"],
       width = 56,
-      shown = function()
+      enabled = function()
         return UI:AtBuyHouse()
       end,
       onClick = function(e)
@@ -202,10 +196,8 @@ function UI:CreateArbitrageView(parent, contentArea)
         UI:SelectRoute(e)
       end
     end,
-    status = true, -- the route count under the table; both houses' terms go in the window's footer
   })
   v.headers, v.rows, v.status = v.table.headers, v.table.rows, slots.status
-  v.counts = v.table.status
   self:CreateRouteSidebar(v, slots.right)
 
   function v:SetCompact(on)
@@ -231,41 +223,80 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- the selected route
 
+-- the selected route, as cards: the item and the route; what it pays (buy, sell, cut, deposit, you net); how fresh
+-- each side is and how fast it sells there; then the main button
 function UI:CreateRouteSidebar(v, side)
-  local st = UI.Stack(side.content)
+  local col = UI.Stack(side.content, 0)
   local r = {}
-  r.name = st:Text("GameFontNormal", 0)
+  local st = col:Card(0).stack
+  r.name = st:Text("GameFontNormalLarge")
+  r.name:SetWordWrap(false)
   r.hint = st:Text("GameFontDisableSmall", 4)
-  r.sell = st:Pair(L["Sells for"], "arbSell", 10)
-  r.cut = st:Pair(L["AH cut"], nil)
-  r.deposit = st:Pair(L["Deposit"], "arbDeposit")
+  st = col:Card().stack
   r.buy = st:Pair(L["Buy at"], "arbBuy")
-  r.net = st:Pair(L["Net per unit"], "arbNet", 6)
+  r.sell = st:Pair(L["Sells for"], "arbSell")
+  r.cut = st:Pair(L["AH cut"], nil)
+  r.deposit = st:Pair(L["Deposit if unsold"], "arbDeposit")
+  r.rule = st:Row(1, 6) -- a line above "You net"
+  local line = r.rule:CreateTexture(nil, "ARTWORK")
+  line:SetAllPoints()
+  W.Fill(line, W.COLORS.border)
+  r.net = st:Pair(L["You net"], "arbNet", 6)
+  r.net.label:SetFontObject("GameFontNormal")
+  r.net.value:SetFontObject("GameFontHighlight")
   r.margin = st:Pair(L["Margin"], "arbMargin")
-  st:Heading(L["Depth and speed"])
-  r.depth = st:Pair(L["Depth"], "arbDepth", 6)
-  r.rate = st:Pair(L["Sales/day"], "arbSellRate")
-  st:Heading(L["Data"])
-  r.buyAge = st:Pair("", "arbAge", 6)
-  r.sellAge = st:Pair("", "arbAge")
-  r.warn = st:Text("GameFontHighlightSmall", 6)
-  local actions = st:Row(22, 12)
-  r.search = W.Button(actions, L["Search"], 140, 22, function()
+  st = col:Card().stack
+  r.buyAge = st:Pair(L["Buy-side data"], "arbAge")
+  r.sellAge = st:Pair(L["Sell-side data"], "arbAge")
+  r.rate = st:Pair(L["Sales per day there"], "arbSellRate")
+  r.depth = st:Pair(L["Depth"], "arbDepth")
+  r.warn = st:Text("GameFontDisableSmall", 6)
+  local actions = col:Row(26, 10)
+  r.search = W.Button(actions, L["Search"], 140, 26, function()
     if UI.arbRoute then
       ns.AME:SearchAuctionHouse(UI.arbRoute.itemID)
     end
   end)
   r.search:SetPoint("LEFT")
+  r.search:SetPoint("RIGHT", -70, 0)
   r.search:SetSelected(true)
-  r.chart = W.Button(actions, L["Chart"], 80, 22, function()
+  r.chart = W.Button(actions, L["Chart"], 64, 26, function()
     if UI.arbRoute then
       UI:ShowItem(UI.arbRoute.itemID)
     end
   end)
-  r.chart:SetPoint("LEFT", r.search, "RIGHT", 6, 0)
-  r.searchHint = st:Text("GameFontDisableSmall", 6)
+  r.chart:SetPoint("RIGHT")
+  r.searchHint = col:Text("GameFontDisableSmall", 6)
   v.route = r
   v.sidebar = side
+  v.routeColumn = col
+end
+
+-- an auction house's newest full scan: { t, src } or nil
+function UI:LastFull(shard)
+  local AME = ns.AME
+  local data = AME:HistoryLoaded() and AME.history.shards[shard]
+  local full
+  for _, e in ipairs(data and data.raw or {}) do
+    if e.k == "full" and (not full or e.t > full.t) then
+      full = e
+    end
+  end
+  return full
+end
+
+-- one side's data: "your scan · 2 h", "Klydig · 1 day" (age in hours under a day)
+function UI:SideData(house, days)
+  local full = self:LastFull(ns.ShardKey(ns.AME:MarketRealmName(), house))
+  local me = UnitName("player")
+  local who = full and ((not full.src or full.src == me) and L["your scan"] or full.src) or L["searches"]
+  local age
+  if (days or 0) <= 0 and full then
+    age = W.Ago(full.t, GetServerTime())
+  else
+    age = ageText(days)
+  end
+  return who .. "  ·  " .. age
 end
 
 function UI:SelectRoute(e)
@@ -285,6 +316,7 @@ function UI:RenderRoute()
   end
   self.arbRoute = e
   local parts = { r.sell, r.cut, r.deposit, r.buy, r.net, r.margin, r.depth, r.rate, r.buyAge, r.sellAge }
+  local buyHouse, sellHouse = ns.HOUSE_LABEL[a.buy], ns.HOUSE_LABEL[a.sell]
   if not e then
     r.name:SetText(W.Dim(L["Select a route"]))
     r.hint:SetText(
@@ -297,38 +329,44 @@ function UI:RenderRoute()
     r.search:Hide()
     r.chart:Hide()
     r.searchHint:SetText("")
+    v.routeColumn:Height()
     v.sidebar.pane:Measure()
     return
   end
   local name, _, quality = W.ItemInfo(e.itemID)
   r.name:SetText(W.QualityText(quality, name or ("item:" .. e.itemID)))
-  r.hint:SetText(L["Buy at the %s, sell at the %s"]:format(ns.HOUSE_LABEL[a.buy], ns.HOUSE_LABEL[a.sell]))
+  r.hint:SetText(L["%s to %s"]:format(buyHouse, sellHouse))
+  r.buy.label:SetText(L["Buy at the %s"]:format(buyHouse))
+  r.buy.value:SetText(W.Money(e.buy))
+  r.sell.label:SetText(L["Sells at the %s"]:format(sellHouse))
   r.sell.value:SetText(W.Money(e.sell))
-  r.cut.label:SetText(L["AH cut (%d%%)"]:format(math.floor((self.arbCut or 0) * 100 + 0.5)))
+  r.cut.label:SetText(L["%d%% cut"]:format(math.floor((self.arbCut or 0) * 100 + 0.5)))
   r.cut.value:SetText(W.Color("bad", "- " .. W.Money(e.fee)))
-  r.deposit.value:SetText(e.deposit and W.Color("bad", "- " .. W.Money(e.deposit)) or W.NONE)
-  r.buy.value:SetText(W.Color("bad", "- " .. W.Money(e.buy)))
-  r.net.value:SetText(W.SignedMoney(e.net))
+  r.deposit.value:SetText(e.deposit and W.Money(e.deposit) or W.NONE)
+  r.net.value:SetText(
+    W.Color(e.net >= 0 and "good" or "bad", (e.net >= 0 and "+" or "-") .. W.Plain(W.Money(math.abs(e.net))))
+  )
   r.margin.value:SetText(W.Percent(e.margin, 0))
   r.depth.value:SetText(self:DepthText(e))
-  r.rate.value:SetText(W.Rate(e.sellRate))
-  r.buyAge.label:SetText(ns.HOUSE_LABEL[a.buy])
-  r.buyAge.value:SetText(ageText(e.buyAge))
-  r.sellAge.label:SetText(ns.HOUSE_LABEL[a.sell])
-  r.sellAge.value:SetText(ageText(e.sellAge))
+  r.rate.value:SetText(e.sellRate and ("~" .. W.Count(e.sellRate)) or W.NONE)
+  r.buyAge.value:SetText(self:SideData(a.buy, e.buyAge))
+  r.sellAge.value:SetText(self:SideData(a.sell, e.sellAge))
   local old = math.max(e.buyAge or 0, e.sellAge or 0)
-  r.warn:SetText(
-    old > UI.STALE_DAYS
-        and W.Color("warn", L["One side is %d days old: scan both auction houses before you buy."]:format(old))
-      or ""
-  )
+  if old > UI.STALE_DAYS then
+    r.warn:SetText(W.Color("warn", L["One side is %d days old: scan both auction houses before you buy."]:format(old)))
+  elseif (e.buyAge or 0) >= 1 then
+    r.warn:SetText(L["The buy price is a day or more old: search it before you travel."])
+  else
+    r.warn:SetText(L["Search the buy house to see how many units still pay (Depth)."])
+  end
   r.search:Show()
   r.chart:Show()
-  r.search.label:SetText(L["Search at %s"]:format(ns.HOUSE_LABEL[a.buy]))
+  r.search.label:SetText(L["Search at the %s"]:format(buyHouse))
   local here = self:AtBuyHouse()
   r.search:SetEnabled(here)
   r.search:SetAlpha(here and 1 or 0.5)
-  r.searchHint:SetText(here and "" or L["Visit the %s to search and buy it there."]:format(ns.HOUSE_LABEL[a.buy]))
+  r.searchHint:SetText(here and "" or L["Visit the %s to search and buy it there."]:format(buyHouse))
+  v.routeColumn:Height()
   v.sidebar.pane:Measure()
 end
 
@@ -434,7 +472,7 @@ function UI:RenderArbitrage()
   end
   local a = self.arb
   local rows = self.arbRows or {}
-  local message, status
+  local message, status, summary
   if a.buy == a.sell then
     message = L["Pick two different auction houses."]
   elseif not self.arbRows then
@@ -445,13 +483,23 @@ function UI:RenderArbitrage()
         self.arbMissing
       )
   else
-    status = L["Buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"]:format(
-      ns.HOUSE_LABEL[a.buy],
-      math.floor(ns.Settings:AuctionCut(a.buy) * 100 + 0.5),
-      ns.HOUSE_LABEL[a.sell],
-      math.floor((self.arbCut or 0) * 100 + 0.5),
-      ns.Settings:Get("listingHours")
-    )
+    summary = (#rows == 1 and L["1 route"] or L["%d routes"]:format(#rows))
+      .. W.SEP
+      .. L["buy at the %s (%d%% cut), sell at the %s (%d%% cut)"]:format(
+        ns.HOUSE_LABEL[a.buy],
+        math.floor(ns.Settings:AuctionCut(a.buy) * 100 + 0.5),
+        ns.HOUSE_LABEL[a.sell],
+        math.floor((self.arbCut or 0) * 100 + 0.5)
+      )
+      .. W.SEP
+      .. L["deposits for %d h listings counted in net"]:format(ns.Settings:Get("listingHours"))
+    status = ns.HOUSE_LABEL[a.buy]
+      .. ": "
+      .. self:SideData(a.buy, nil)
+      .. W.SEP
+      .. ns.HOUSE_LABEL[a.sell]
+      .. ": "
+      .. self:SideData(a.sell, nil)
     if self:AtBuyHouse() and #rows > 0 then
       status = status .. W.SEP .. L["you're at the buy AH: Search (or Shift-click a row) to buy"]
     end
@@ -470,6 +518,6 @@ function UI:RenderArbitrage()
   t:Render()
   t:SetMessage(message)
   v.status:SetText(status or "")
-  v.counts:SetText(message and "" or (#rows == 1 and L["1 route"] or L["%d routes"]:format(#rows)))
+  v.summary:SetText(summary or "")
   self:RenderRoute()
 end

@@ -98,6 +98,9 @@ end
 function MarketFilter.Apply(index, query, info)
   local text = query.text and query.text ~= "" and query.text:lower() or nil
   local key = query.sortKey or "score"
+  if key == "__name" then -- the Item column header (DataTable's sort key for item columns)
+    key = "name"
+  end
   local list, unnamed = {}, 0
   for itemID, s in pairs(index.items) do
     local ok = s[key] ~= nil or key == "name"
