@@ -1367,7 +1367,9 @@ describe("addon in a stubbed client", function()
       _G.AuctionFrameTab1 = nil
       advice = ns.SellAssist.advice
       assert.truthy(bar.title.text:find("Post at"))
-      assert.truthy(bar.info.text:find("after the cut"))
+      assert.truthy(bar.info.text:find("% cut", 1, true))
+      assert.truthy(bar.info.text:find("^Just under") or bar.info.text:find("listing"), bar.info.text)
+      assert.truthy(bar.conf.text:find("Confidence"))
       assert.is_false(bar.reset:IsShown())
       bar.fill.scripts.OnClick(bar.fill)
       assert.are.equal(advice.normal.price, filled)
@@ -1394,7 +1396,9 @@ describe("addon in a stubbed client", function()
       ns.SellAssist:Invalidate()
       env:update(40)
       assert.truthy(bar.title.text:find("Vendor it"))
-      assert.are.equal("Post anyway", bar.fill.label.text)
+      assert.truthy(bar.fill.label.text:find("^Post anyway at"))
+      assert.is_false(bar.quick:IsShown()) -- one button in the vendor case
+      assert.truthy(bar.info.text:find("a vendor pays"))
       ns.ItemCache.Get(2589).sellPrice = nil
       sell.GetItem = function() end -- slot emptied: the bar goes away
       env:update(40)

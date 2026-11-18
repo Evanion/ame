@@ -129,10 +129,10 @@ function Sell.Reason(advice, price)
   local book = advice.book
   for k, p in ipairs(book.prices) do
     if p > price then
-      return L["below %d listed at %s"]:format(book.qtys[k], W.Money(p))
+      return L["Just under %d listed at %s"]:format(book.qtys[k], W.Money(p))
     end
   end
-  return #book.prices > 0 and L["above every listing"] or L["no listings right now"]
+  return #book.prices > 0 and L["Above every listing"] or L["No listings right now"]
 end
 
 -- your money per unit after the cut and the deposit
@@ -145,11 +145,19 @@ end
 function Sell:Build(parent)
   local bar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
   W.Skin(bar, W.COLORS.bg or W.COLORS.panel, W.COLORS.border)
-  bar:SetHeight(46)
+  bar:SetHeight(50)
   bar.parent = parent
   Sell.Place(bar)
   bar:EnableMouse(true)
-  ns.Help.Explain(bar, "posting")
+  -- hover: what the posting price is, and the chance it sells in the listing time
+  W.Tooltip(bar, function(tip)
+    local term = ns.Help.TERMS.posting
+    W.TipText(tip, term[1], term[2])
+    if Sell.chance then
+      tip:AddLine(" ")
+      tip:AddLine(L["%d%% chance to sell in %dh"]:format(Sell.chance, Sell.advice and Sell.advice.hours or 24), 1, 1, 1)
+    end
+  end, "ANCHOR_TOP")
   local function fill(price, target)
     local src, a = Sell.src, Sell.advice
     if src and a and price then
@@ -175,13 +183,17 @@ function Sell:Build(parent)
     fill(Sell.advice and Sell.advice.normal.price)
   end)
   bar.reset:SetPoint("RIGHT", bar.quick, "LEFT", -6, 0)
-  bar.title = W.Text(bar, "GameFontNormal")
-  bar.title:SetPoint("TOPLEFT", 10, -8)
-  bar.title:SetPoint("RIGHT", bar.reset, "LEFT", -10, 0)
+  bar.tag = W.Text(bar, "GameFontNormal")
+  bar.tag:SetPoint("LEFT", 12, 0)
+  bar.tag:SetText("AME")
+  bar.conf = W.Text(bar, "GameFontDisableSmall", "RIGHT")
+  bar.title = W.Text(bar, "GameFontHighlight")
+  bar.title:SetPoint("TOPLEFT", bar.tag, "RIGHT", 14, 14)
+  bar.title:SetPoint("RIGHT", bar.conf, "LEFT", -10, 0)
   bar.title:SetWordWrap(false)
   bar.info = W.Text(bar, "GameFontDisableSmall")
   bar.info:SetPoint("TOPLEFT", bar.title, "BOTTOMLEFT", 0, -5)
-  bar.info:SetPoint("RIGHT", bar.reset, "LEFT", -10, 0)
+  bar.info:SetPoint("RIGHT", bar.conf, "LEFT", -10, 0)
   bar.info:SetWordWrap(false)
   bar:Hide()
   return bar
@@ -227,15 +239,19 @@ end
 function Sell:Draw()
   local bar, advice = self.bar, self.advice
   local pips = W.Confidence(advice and advice.confidence or "low")
+  self.chance = nil
   if not advice then
-    bar.title:SetText(pips .. " " .. W.Dim(L["Posting price: not enough data on this item yet."]))
+    bar.title:SetText(W.Dim(L["Posting price: not enough data on this item yet."]))
     bar.info:SetText(L["Search for it at the auction house, or run a full scan."])
+    bar.conf:SetText("")
     self.shown = nil
     for _, b in ipairs({ bar.fill, bar.quick, bar.patient, bar.reset }) do
       b:Hide()
     end
+    Sell.LayoutButtons(bar)
     return
   end
+  bar.conf:SetText(W.Dim(L["Confidence"]) .. " " .. pips)
   local now = GetServerTime()
   local target = self.target
   local choice, title
@@ -246,46 +262,82 @@ function Sell:Draw()
       listed = listed or p == target
     end
     choice = Sell.Evaluate(advice, listed and math.max(1, target - 1) or target, now)
-    title = (listed and L["Under that listing: post at %s per unit"] or L["Your price: %s per unit"]):format(
-      W.Money(choice.price)
-    )
+    title = (listed and L["Under that listing: post at %s"] or L["Your price: %s"]):format(W.Money(choice.price))
   else
     choice = advice.normal
-    title = L["Post at %s per unit"]:format(W.Money(choice.price))
+    title = L["Post at %s"]:format(W.Money(choice.price))
   end
+  title = title .. " " .. W.Dim(L["per unit"])
   self.shown = choice.price
   local net = Sell.Net(advice, choice.price)
   local info = ns.ItemCache.Get(self.itemID or 0)
   local vendor = info and info.sellPrice
-  local parts = { Sell.Reason(advice, choice.price) }
-  if choice.chance then
-    parts[#parts + 1] = L["%d%% chance to sell in %dh"]:format(math.floor(choice.chance * 100 + 0.5), advice.hours)
-  end
-  parts[#parts + 1] = L["sells in %s"]:format(W.Hours(choice.hours))
-  parts[#parts + 1] = L["you get %s after the cut"]:format(W.Money(net))
-  if vendor and vendor > 0 then
-    parts[#parts + 1] = L["vendor %s"]:format(W.Money(vendor))
-  end
+  self.chance = choice.chance and math.floor(choice.chance * 100 + 0.5)
+  local _, house = ns.SplitShard(ns.AME:CurrentShard())
+  local cutPct = math.floor((ns.Settings:AuctionCut(house or ns.AME:CurrentHouse()) or 0) * 100 + 0.5)
+  bar.fill:Show()
   if vendor and vendor > 0 and net < vendor then
-    -- the auction house nets less than a vendor
-    bar.title:SetText(pips .. " " .. W.Color("bad", L["Vendor it: a vendor pays more"]))
-    bar.fill.label:SetText(L["Post anyway"])
+    -- the auction house nets less than a vendor: say so; posting anyway is the only (secondary) button
+    bar.title:SetText(W.Color("vendor", L["Vendor it: a vendor pays more"]))
+    bar.info:SetText(
+      L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"]:format(
+        W.Money(net),
+        W.Money(advice.deposit or 0),
+        W.Money(vendor)
+      )
+    )
+    bar.fill.label:SetText(L["Post anyway at %s"]:format(W.Money(choice.price)))
+    bar.fill:SetSelected(false)
+    bar.quick:Hide()
+    bar.patient:Hide()
+    bar.reset:Hide()
   else
-    bar.title:SetText(pips .. " " .. W.Color("gold", title))
-    bar.fill.label:SetText(L["Fill price"])
+    local parts = { Sell.Reason(advice, choice.price) }
+    parts[#parts + 1] = L["sells in %s"]:format(W.Hours(choice.hours))
+    parts[#parts + 1] = L["you net %s after the %d%% cut"]:format(W.Money(net), cutPct)
+    if vendor and vendor > 0 then
+      parts[#parts + 1] = L["vendor pays %s"]:format(W.Money(vendor))
+    end
     if not target and advice.hold then
       parts[#parts + 1] = W.Color("bad", L["unlikely to sell soon: consider holding"])
     end
+    bar.title:SetText(title)
+    bar.info:SetText(table.concat(parts, "  ·  "))
+    bar.fill.label:SetText(L["Fill price"])
+    bar.fill:SetSelected(true)
+    local same = advice.quick.price == advice.patient.price
+    bar.quick:SetShown(not same)
+    bar.patient:SetShown(not same)
+    bar.quick.label:SetText(L["Quick %s"]:format(W.Money(advice.quick.price)))
+    bar.patient.label:SetText(L["Patient %s"]:format(W.Money(advice.patient.price)))
+    bar.reset:SetShown(target ~= nil)
+    bar.reset.label:SetText(L["Suggested %s"]:format(W.Money(advice.normal.price)))
   end
-  bar.info:SetText(table.concat(parts, "  ·  "))
-  bar.fill:Show()
-  local same = advice.quick.price == advice.patient.price
-  bar.quick:SetShown(not same)
-  bar.patient:SetShown(not same)
-  bar.quick.label:SetText(L["Quick %s"]:format(W.Money(advice.quick.price)))
-  bar.patient.label:SetText(L["Patient %s"]:format(W.Money(advice.patient.price)))
-  bar.reset:SetShown(target ~= nil)
-  bar.reset.label:SetText(L["Suggested %s"]:format(W.Money(advice.normal.price)))
+  Sell.LayoutButtons(bar)
+end
+
+-- buttons sized to their labels, right to left: Fill, Patient, Quick, Suggested; the confidence sits left of them
+function Sell.LayoutButtons(bar)
+  local prev
+  for _, b in ipairs({ bar.fill, bar.patient, bar.quick, bar.reset }) do
+    b:SetWidth(math.max(60, math.ceil(b.label:GetStringWidth() or 40) + 20))
+    b:SetHeight(24)
+    if b:IsShown() then
+      b:ClearAllPoints()
+      if prev then
+        b:SetPoint("RIGHT", prev, "LEFT", -6, 0)
+      else
+        b:SetPoint("RIGHT", -10, 0)
+      end
+      prev = b
+    end
+  end
+  bar.conf:ClearAllPoints()
+  if prev then
+    bar.conf:SetPoint("RIGHT", prev, "LEFT", -12, 0)
+  else
+    bar.conf:SetPoint("RIGHT", -10, 0)
+  end
 end
 
 function Sell:Refresh()
