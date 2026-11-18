@@ -106,6 +106,7 @@ MarketIndex.SAVED_FIELDS = {
   { "supplyTrend30", 1e6 },
   { "score", 1 },
   { "outliers", 1 },
+  { "vendorPrice", 1 }, -- what a vendor pays (copper), when the client knew it at build time
 }
 
 local function columnNames()
@@ -145,7 +146,7 @@ end
 -- string -> index (as MarketIndex.Build makes it)
 function MarketIndex.Decode(text, checkpoint)
   local day, days, outliers, body = text:match("^(%-?%d+)|(%d+)|(%d+)|(.*)$")
-  local cols = ns.Codec.Decode(columnNames(), body)
+  local cols = ns.Codec.Decode(columnNames(), body, true) -- saves from older versions lack newer columns
   local index = { day = tonumber(day), days = tonumber(days), count = 0, items = {}, outliers = tonumber(outliers) }
   for i, id in ipairs(cols.ids) do
     local s = { itemID = id }
@@ -153,8 +154,9 @@ function MarketIndex.Decode(text, checkpoint)
     s.signalRank = ns.Analytics.SIGNAL_RANK[s.signal]
     s.phase = PHASE_KEYS[cols.phase[i]]
     for _, f in ipairs(MarketIndex.SAVED_FIELDS) do
-      local v = cols[f[1]][i]
-      if v ~= NONE then
+      local col = cols[f[1]]
+      local v = col and col[i]
+      if v and v ~= NONE then
         s[f[1]] = f[2] == 1 and v or v / f[2]
       end
     end

@@ -54,6 +54,7 @@ function AME:BuildIndex(store, shard, job)
   local function vendorCheck(s)
     local vendor = ns.ItemCache.Get(s.itemID).sellPrice
     if vendor and vendor > 0 then
+      s.vendorPrice = vendor -- kept with the index (saved at logout), so a restored index has it without the client
       ns.Analytics.VendorCheck(s, vendor, cut, ns.Arbitrage.Deposit(vendor, house, hours))
     end
   end
