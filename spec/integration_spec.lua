@@ -1744,6 +1744,9 @@ describe("addon in a stubbed client", function()
       end
       local x = ns.UI.candles.xs[2]
       local lines = ns.UI.chart.hoverFormatter(ns.UI.chart, x, { candles = { x = x, y = 0, index = 2 } })
+      for k, line in ipairs(lines) do -- label / value rows
+        lines[k] = type(line) == "table" and (line[1] .. " " .. line[2]) or line
+      end
       assert.truthy(table.concat(lines, "\n"):find("Open"))
       v.style.byKey.line.scripts.OnClick(v.style.byKey.line)
       assert.is_nil(ns.UI.chart.series.candles)

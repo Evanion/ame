@@ -178,22 +178,22 @@ function UI:CreateItemView(parent)
         lines[1] =
           W.Color("white", date("%b %d", x - c.period / 2) .. " - " .. date("%b %d, %Y", x + c.period / 2 - DAY))
       end
-      lines[#lines + 1] = L["Open"] .. "  " .. W.Money(c.open[i])
-      lines[#lines + 1] = L["High"] .. "  " .. W.Money(c.high[i])
-      lines[#lines + 1] = L["Low (cheapest)"] .. "  " .. W.Money(c.low[i])
-      lines[#lines + 1] = L["Close"] .. "  " .. W.Money(c.close[i])
+      lines[#lines + 1] = { W.Dim(L["Open"]), W.Money(c.open[i]) }
+      lines[#lines + 1] = { W.Dim(L["High"]), W.Money(c.high[i]) }
+      lines[#lines + 1] = { W.Dim(L["Low (cheapest)"]), W.Money(c.low[i]) }
+      lines[#lines + 1] = { W.Dim(L["Close"]), W.Money(c.close[i]) }
     end
     if rows.market and rows.market.x == x then
-      lines[#lines + 1] = L["Market"] .. "  " .. W.Money(rows.market.y)
+      lines[#lines + 1] = { W.Dim(L["Market"]), W.Money(rows.market.y) }
     end
     if rows.min and rows.min.x == x then
-      lines[#lines + 1] = L["Lowest"] .. "  " .. W.Money(rows.min.y)
+      lines[#lines + 1] = { W.Dim(L["Lowest"]), W.Money(rows.min.y) }
     end
     if rows.sma and rows.sma.x == x then
-      lines[#lines + 1] = L["7d avg"] .. "  " .. W.Money(rows.sma.y)
+      lines[#lines + 1] = { W.Dim(L["7-day average"]), W.Money(rows.sma.y) }
     end
     if rows.qty and rows.qty.x == x then
-      lines[#lines + 1] = L["Supply"] .. "  " .. W.Count(rows.qty.y)
+      lines[#lines + 1] = { W.Dim(L["Supply"]), W.Count(rows.qty.y) }
     end
     return lines
   end)
@@ -517,7 +517,7 @@ function UI:DrawItemChart()
     legend[#legend + 1] = { { 0.4, 0.87, 0.47 }, L["Lowest"], kind = "line" }
   end
   if not intraday then -- a 7-point average of scans isn't a 7-day average
-    legend[#legend + 1] = { { 1, 0.67, 0.2 }, L["7-day average"], kind = "dash" }
+    legend[#legend + 1] = { { 1, 0.67, 0.2 }, L["7-day average"], kind = "line" }
   end
   legend[#legend + 1] = { { 0.53, 0.53, 0.67 }, L["Supply"], kind = "square" }
   if intraday then
@@ -545,7 +545,6 @@ function UI:DrawItemChart()
       axis = "price",
       color = { 1, 0.67, 0.2, 0.9 },
       width = 1.5,
-      dash = { 6, 4 }, -- told apart by its line, not only its colour
     })
   end
   chart.range = range

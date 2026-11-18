@@ -71,7 +71,6 @@ L["7 days"] = true
 L["7-day average"] = true
 L["7-day change"] = true
 L["7d"] = true
-L["7d avg"] = true
 L["7d change"] = true
 L["<1h"] = true
 L["A good time to buy, if you'll use it or can resell it."] = true

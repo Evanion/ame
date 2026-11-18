@@ -23,7 +23,7 @@ Points are downsampled with LTTB to about one per 2 px, so large series stay che
 reused between redraws.
 ]]
 
-local MAJOR, MINOR = "LibAMEChart-1.0", 4
+local MAJOR, MINOR = "LibAMEChart-1.0", 5
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
 if not lib then
   return
@@ -960,9 +960,14 @@ function Chart:SetupInteraction()
     self.label:SetBackdropBorderColor(1, 1, 1, 0.12)
   end
   self.label:SetFrameLevel(f:GetFrameLevel() + 5)
+  -- the readout: title lines on top, then label / value rows in two aligned columns (values right-aligned)
   self.label.text = self.label:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   self.label.text:SetPoint("TOPLEFT", 6, -5)
   self.label.text:SetJustifyH("LEFT")
+  self.label.left = self.label:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  self.label.left:SetJustifyH("LEFT")
+  self.label.right = self.label:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  self.label.right:SetJustifyH("RIGHT")
   self.label:Hide()
 
   f:SetScript("OnEnter", function()
@@ -1115,11 +1120,34 @@ function Chart:UpdateHover()
     end
   end
 
+  -- hover formatter lines: a string is a title line; { label, value } is a row of the two columns
   local lines = self.hoverFormatter and self.hoverFormatter(self, snapX, rows)
   if lines and #lines > 0 then
-    self.label.text:SetText(table.concat(lines, "\n"))
-    local w = self.label.text:GetStringWidth() + 12
-    local h = self.label.text:GetStringHeight() + 10
+    local titles, lefts, rights = {}, {}, {}
+    for _, line in ipairs(lines) do
+      if type(line) == "table" then
+        lefts[#lefts + 1], rights[#rights + 1] = line[1] or "", line[2] or ""
+      elseif #lefts == 0 then
+        titles[#titles + 1] = line
+      else
+        lefts[#lefts + 1], rights[#rights + 1] = line, ""
+      end
+    end
+    local l = self.label
+    l.text:SetText(table.concat(titles, "\n"))
+    l.left:SetText(table.concat(lefts, "\n"))
+    l.right:SetText(table.concat(rights, "\n"))
+    local titleH = #titles > 0 and (l.text:GetStringHeight() or 12) or 0
+    local gap = (#titles > 0 and #lefts > 0) and 3 or 0
+    l.left:ClearAllPoints()
+    l.left:SetPoint("TOPLEFT", 6, -5 - titleH - gap)
+    l.right:ClearAllPoints()
+    l.right:SetPoint("TOPRIGHT", -6, -5 - titleH - gap)
+    l.left:SetShown(#lefts > 0)
+    l.right:SetShown(#lefts > 0)
+    local colW = #lefts > 0 and ((l.left:GetStringWidth() or 0) + 16 + (l.right:GetStringWidth() or 0)) or 0
+    local w = math.max(#titles > 0 and l.text:GetStringWidth() or 0, colW) + 12
+    local h = titleH + gap + (#lefts > 0 and (l.left:GetStringHeight() or 12) or 0) + 10
     self.label:SetSize(w, h)
     self.label:ClearAllPoints()
     local side = cx + w + 16 > self.frame:GetWidth() and -(w + 12) or 12
