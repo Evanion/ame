@@ -59,6 +59,7 @@ L["(est.)"] = "(추정)"
 L["(needs LibDBIcon; included in releases)"] = "(LibDBIcon 필요; 배포판에 포함됨)"
 L["+ %d more"] = "+ %d개 더"
 L[", %d scans received"] = ", 스캔 %d회 수신"
+L["...and close it when the auction house closes"] = "...경매장을 닫으면 AME도 닫기"
 L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] =
   "/ame - 창 열기  ·  /ame <아이템 링크> - 아이템 차트  ·  창이 열린 상태에서 아이템 Shift-클릭 - 차트 보기"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
@@ -278,6 +279,7 @@ L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks 
 L["On a watchlist - click to change"] = "관심 목록에 있음 - 클릭하여 변경"
 L["Open"] = "시가"
 L["Open AME settings"] = "AME 설정 열기"
+L["Open AME together with the auction house"] = "경매장을 열 때 AME도 열기"
 L["Open item charts with"] = "아이템 차트 여는 방법"
 L["Patient %s"] = "느긋 %s"
 L["Per item: what it sells for, minus the AH cut, minus what you paid."] =

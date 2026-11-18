@@ -63,6 +63,7 @@ L["(est.)"] = "(оценка)"
 L["(needs LibDBIcon; included in releases)"] = "(нужен LibDBIcon; входит в релизы)"
 L["+ %d more"] = "+ ещё %d"
 L[", %d scans received"] = ", получено сканирований: %d"
+L["...and close it when the auction house closes"] = "...и закрывать при закрытии аукциона"
 L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] =
   "/ame - открыть окно  ·  /ame <ссылка на предмет> - график предмета  ·  Shift-клик по предмету при открытом окне - его график"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
@@ -288,6 +289,7 @@ L["On a watchlist - click to change"] =
   "В списке наблюдения - щёлкните, чтобы изменить"
 L["Open"] = "Открытие"
 L["Open AME settings"] = "Открыть настройки AME"
+L["Open AME together with the auction house"] = "Открывать AME вместе с аукционом"
 L["Open item charts with"] = "Открывать графики предметов по"
 L["Patient %s"] = "Терпеливо %s"
 L["Per item: what it sells for, minus the AH cut, minus what you paid."] =

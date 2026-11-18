@@ -57,6 +57,7 @@ L["(est.)"] = "(估算)"
 L["(needs LibDBIcon; included in releases)"] = "（需要 LibDBIcon；正式版已內含）"
 L["+ %d more"] = "+ 另外 %d 個"
 L[", %d scans received"] = "，已接收 %d 次掃描"
+L["...and close it when the auction house closes"] = "……並在關閉拍賣場時關閉"
 L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] =
   "/ame - 打開視窗  ·  /ame <物品連結> - 查看物品圖表  ·  視窗開啟時 Shift-點擊物品 - 查看其圖表"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
@@ -275,6 +276,7 @@ L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks 
 L["On a watchlist - click to change"] = "已在關注清單中 - 點擊變更"
 L["Open"] = "開盤"
 L["Open AME settings"] = "打開 AME 設定"
+L["Open AME together with the auction house"] = "開啟拍賣場時同時開啟 AME"
 L["Open item charts with"] = "打開物品圖表的方式"
 L["Patient %s"] = "耐心 %s"
 L["Per item: what it sells for, minus the AH cut, minus what you paid."] =

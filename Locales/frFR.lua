@@ -58,6 +58,7 @@ L["(est.)"] = "(est.)"
 L["(needs LibDBIcon; included in releases)"] = "(nécessite LibDBIcon ; inclus dans les versions publiées)"
 L["+ %d more"] = "+ %d de plus"
 L[", %d scans received"] = ", %d scans reçus"
+L["...and close it when the auction house closes"] = "...et le fermer à la fermeture de l'hôtel des ventes"
 L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] =
   "/ame - ouvrir la fenêtre  ·  /ame <lien d'objet> - graphique d'un objet  ·  Maj-clic sur un objet, fenêtre ouverte - son graphique"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
@@ -277,6 +278,7 @@ L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks 
 L["On a watchlist - click to change"] = "Dans une liste de suivi - cliquez pour modifier"
 L["Open"] = "Ouverture"
 L["Open AME settings"] = "Ouvrir les paramètres d'AME"
+L["Open AME together with the auction house"] = "Ouvrir AME avec l'hôtel des ventes"
 L["Open item charts with"] = "Ouvrir les graphiques avec"
 L["Patient %s"] = "Patient %s"
 L["Per item: what it sells for, minus the AH cut, minus what you paid."] =

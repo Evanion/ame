@@ -485,6 +485,10 @@ function handlers.AUCTION_HOUSE_SHOW()
     ns.UI:ViewChanged()
     ns.UI:ApplyTheme()
   end
+  if ns.Settings:Get("openWithAH") and ns.UI and not (ns.UI.frame and ns.UI.frame:IsShown()) then
+    ns.UI:Toggle()
+    AME.openedWithAH = true -- it may close with the AH (closeWithAH)
+  end
   if AME:LoadHistory() then
     AME:Backfill(false)
   end
@@ -522,6 +526,12 @@ end
 
 function handlers.AUCTION_HOUSE_CLOSED()
   AME.ahOpen = false
+  if AME.openedWithAH then
+    AME.openedWithAH = false
+    if ns.Settings:Get("closeWithAH") and ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
+      ns.UI.frame:Hide()
+    end
+  end
   if ns.UI and ns.UI.RenderArbitrage then
     ns.UI:RenderArbitrage()
   end

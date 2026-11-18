@@ -46,6 +46,7 @@ L["(est.)"] = true
 L["(needs LibDBIcon; included in releases)"] = true
 L["+ %d more"] = true
 L[", %d scans received"] = true
+L["...and close it when the auction house closes"] = true
 L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] = true
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] = true
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] = true
@@ -222,6 +223,7 @@ L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks 
 L["On a watchlist - click to change"] = true
 L["Open"] = true
 L["Open AME settings"] = true
+L["Open AME together with the auction house"] = true
 L["Open item charts with"] = true
 L["Patient %s"] = true
 L["Per item: what it sells for, minus the AH cut, minus what you paid."] = true

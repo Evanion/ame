@@ -15,6 +15,8 @@ Settings.DEFAULTS = {
   -- default: loot and raid addons (Gargul, AHDB...) use modified clicks on items and item links.
   clickModifier = "none",
   announceScans = true,
+  openWithAH = false, -- open the AME window when the auction house opens
+  closeWithAH = false, -- and close it again with the AH (only when the AH opened it)
   alertSound = true,
   cutFaction = 5, -- seller's cut in % at faction auction houses
   cutNeutral = 15, -- and at goblin (neutral) auction houses
