@@ -454,6 +454,7 @@ L["This market: %d days of history, %d recent scans kept in full"] =
   "이 시장: 기록 %d일, 최근 스캔 %d회 전체 보관"
 L["Tightening"] = "공급 축소"
 L["Time left"] = "남은 시간"
+L["Tip"] = "팁"
 L["Today"] = "오늘"
 L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."] =
   "오늘 시장가를 선택한 기간의 평균과 비교한 값입니다 (설정 > 평균 기간). -20%는 평소보다 20% 싸다는 뜻입니다."

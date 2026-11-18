@@ -366,6 +366,7 @@ L["This character"] = true
 L["This market: %d days of history, %d recent scans kept in full"] = true
 L["Tightening"] = true
 L["Time left"] = true
+L["Tip"] = true
 L["Today"] = true
 L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."] = true
 L["Tooltips"] = true

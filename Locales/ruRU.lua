@@ -471,6 +471,7 @@ L["This market: %d days of history, %d recent scans kept in full"] =
   "Этот рынок: %d дн. истории, %d недавних сканирований хранятся целиком"
 L["Tightening"] = "Сжатие предложения"
 L["Time left"] = "Осталось времени"
+L["Tip"] = "Совет"
 L["Today"] = "Сегодня"
 L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."] =
   "Сегодняшняя рыночная цена в сравнении со средней за выбранный период (Настройки > Период усреднения). -20% - на 20% дешевле обычного."

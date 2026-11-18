@@ -260,26 +260,47 @@ end
 
 -- A one-time hint: a small callout above a frame, shown until "Got it" is clicked (remembered per account under
 -- Settings "hintsSeen"). Returns the callout (nil when already seen).
-function W.Hint(anchor, key, text)
+-- Hints are information, not warnings: a calm blue-grey panel (never the faction accent, which is red for the Horde),
+-- a "Tip" label, the text, and the button on its own line under it. They open below what they explain (opts.above:
+-- above it), so they never cover the title bar.
+W.HINT_BORDER = { 0.45, 0.62, 0.8, 0.55 }
+W.HINT_BG = { 0.08, 0.1, 0.13, 0.97 }
+W.HINT_WIDTH = 320
+
+function W.Hint(anchor, key, text, opts)
   local seen = ns.Settings:Table("hintsSeen")
   if seen[key] then
     return nil
   end
   local tip = CreateFrame("Frame", nil, anchor, "BackdropTemplate")
-  W.Skin(tip, { 0.1, 0.12, 0.16, 0.97 }, W.COLORS.accent)
+  W.Skin(tip, W.HINT_BG, W.HINT_BORDER)
   tip:SetFrameStrata("DIALOG")
-  tip:SetSize(300, 64)
-  tip:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", 0, 6)
+  tip:SetWidth(W.HINT_WIDTH)
+  if opts and opts.above then
+    tip:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", 0, 6)
+  else
+    tip:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -6)
+  end
+  tip.label = W.Text(tip, "GameFontNormalSmall")
+  tip.label:SetPoint("TOPLEFT", 10, -8)
+  tip.label:SetText(W.Color("7fb2e6", L["Tip"]))
   tip.text = W.Text(tip, "GameFontHighlightSmall")
-  tip.text:SetPoint("TOPLEFT", 10, -8)
-  tip.text:SetPoint("RIGHT", -10, 0)
+  tip.text:SetPoint("TOPLEFT", tip.label, "BOTTOMLEFT", 0, -4)
+  tip.text:SetWidth(W.HINT_WIDTH - 20)
   tip.text:SetWordWrap(true)
+  tip.text:SetSpacing(2)
   tip.text:SetText(text)
-  tip.ok = W.Button(tip, L["Got it"], 60, 18, function()
+  tip.ok = W.Button(tip, L["Got it"], 64, 20, function()
     seen[key] = true
     tip:Hide()
   end)
-  tip.ok:SetPoint("BOTTOMRIGHT", -8, 6)
+  tip.ok:SetPoint("TOPRIGHT", tip.text, "BOTTOMRIGHT", 0, -8)
+  -- tall enough for the label, the wrapped text and the button
+  local function fit()
+    tip:SetHeight(8 + 14 + 4 + (tip.text:GetStringHeight() or 24) + 8 + 20 + 8)
+  end
+  fit()
+  tip:SetScript("OnShow", fit)
   tip.key = key
   return tip
 end

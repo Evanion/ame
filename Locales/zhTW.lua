@@ -446,6 +446,7 @@ L["This market: %d days of history, %d recent scans kept in full"] =
   "目前市場：%d 天歷史，完整保留 %d 次最近掃描"
 L["Tightening"] = "收緊"
 L["Time left"] = "剩餘時間"
+L["Tip"] = "提示"
 L["Today"] = "今天"
 L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."] =
   "今日市價與所選週期均價的對比（設定 > 均價週期）。-20% 表示比平時便宜 20%。"

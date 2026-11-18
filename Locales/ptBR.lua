@@ -454,6 +454,7 @@ L["This market: %d days of history, %d recent scans kept in full"] =
   "Este mercado: %d dias de histórico, %d varreduras recentes mantidas por completo"
 L["Tightening"] = "Oferta apertando"
 L["Time left"] = "Tempo restante"
+L["Tip"] = "Dica"
 L["Today"] = "Hoje"
 L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."] =
   "O preço de mercado de hoje em relação à média do período escolhido (Configurações > Período da média). -20% significa 20% mais barato que o normal."
