@@ -138,7 +138,11 @@ function UI:CreateShell()
   end)
   f:SetScript("OnSizeChanged", function(_, w)
     UI:OnResize(w)
+    if UI.sizing then
+      UI:SavePlacement() -- while you drag the grip: even a missed mouse-up keeps the new size
+    end
   end)
+
   -- resize grip, bottom right
   local grip = CreateFrame("Button", nil, f)
   grip:SetSize(16, 16)
@@ -147,10 +151,12 @@ function UI:CreateShell()
   grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
   grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
   grip:SetScript("OnMouseDown", function()
+    UI.sizing = true
     f:StartSizing("BOTTOMRIGHT")
   end)
   grip:SetScript("OnMouseUp", function()
     f:StopMovingOrSizing()
+    UI.sizing = false
     UI:SavePlacement()
   end)
   self.grip = grip
@@ -248,12 +254,20 @@ function UI:DefaultSize()
   return math.max(w, UI.MIN_W), math.max(h, UI.MIN_H)
 end
 
--- placements per character: one with the auction house open, one without
+-- Placement per character, saved across sessions (AME_DB.window): one size - whatever you last resized it to - and
+-- two positions, with the auction house open ("ah") and without ("free").
 function UI:Placements()
   AME_DB.window = AME_DB.window or {}
   local key = (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "?")
-  AME_DB.window[key] = AME_DB.window[key] or {}
-  return AME_DB.window[key]
+  local p = AME_DB.window[key] or {}
+  AME_DB.window[key] = p
+  if not p.w then -- older saves kept a size per position: take the one without the auction house
+    local old = (p.free and p.free.w and p.free) or (p.ah and p.ah.w and p.ah)
+    if old then
+      p.w, p.h = old.w, old.h
+    end
+  end
+  return p
 end
 
 function UI:PlacementMode()
@@ -262,11 +276,20 @@ end
 
 function UI:SavePlacement()
   local f = self.frame or self.building
+  if not f or self.applying then
+    return
+  end
   local left, top = f:GetLeft(), f:GetTop()
   if not (left and top) then
     return
   end
-  self:Placements()[self:PlacementMode()] = { x = left, y = top, w = f:GetWidth(), h = f:GetHeight() }
+  local p = self:Placements()
+  p.w, p.h = f:GetWidth(), f:GetHeight()
+  p[self:PlacementMode()] = { x = left, y = top }
+  -- AME places the window itself: the client's own layout cache must not move it back at the next login
+  if f.SetUserPlaced then
+    f:SetUserPlaced(false)
+  end
 end
 
 -- the auction house window on screen (the game's or the old one)
@@ -293,11 +316,13 @@ function UI:ApplyPlacement()
   if not f then
     return
   end
+  self.applying = true -- our own moves aren't the user's: don't save them
   f:SetScale(ns.Settings:Get("windowScale") or 1)
-  local p = self:Placements()[self:PlacementMode()]
+  local saved = self:Placements()
+  local p = saved[self:PlacementMode()]
   local w, h = self:DefaultSize()
-  if p and p.w then
-    w, h = math.max(p.w, UI.MIN_W), math.max(p.h, UI.MIN_H)
+  if saved.w then
+    w, h = math.max(saved.w, UI.MIN_W), math.max(saved.h, UI.MIN_H)
   end
   f:SetSize(w, h)
   f:ClearAllPoints()
@@ -309,6 +334,7 @@ function UI:ApplyPlacement()
   else
     f:SetPoint("CENTER")
   end
+  self.applying = false
   self:OnResize(w)
 end
 

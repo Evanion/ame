@@ -448,7 +448,7 @@ describe("addon in a stubbed client", function()
         assert.are.equal(0.8, win:GetScale())
       end)
 
-      it("remembers one placement with the auction house open and one without", function()
+      it("keeps the size you resize to, and a position with and without the auction house, across sessions", function()
         boot()
         ns.UI:Toggle()
         local win = ns.UI.frame
@@ -458,31 +458,58 @@ describe("addon in a stubbed client", function()
         win.GetTop = function()
           return 700
         end
+        -- resize with the grip: saved while dragging, and on release
+        ns.UI.grip.scripts.OnMouseDown(ns.UI.grip)
         win:SetSize(1000, 600)
-        win.scripts.OnDragStop(win) -- moved (and sized) without the auction house
+        win.scripts.OnSizeChanged(win, 1000, 600)
+        assert.are.equal(1000, ns.UI:Placements().w)
+        ns.UI.grip.scripts.OnMouseUp(ns.UI.grip)
+        win.scripts.OnDragStop(win) -- moved without the auction house
         env:fire("AUCTION_HOUSE_SHOW")
         env:advance(0)
+        assert.are.same({ 1000, 600 }, { win:GetSize() }) -- one size, with or without the auction house
         win.GetLeft = function()
           return 300
         end
-        win:SetSize(800, 500)
         win.scripts.OnDragStop(win) -- moved with it open (no AH frame on screen: nothing to dock to)
         local p = ns.UI:Placements()
-        assert.are.same({ x = 40, y = 700, w = 1000, h = 600 }, p.free)
-        assert.are.same({ x = 300, y = 700, w = 800, h = 500 }, p.ah)
-        env:fire("AUCTION_HOUSE_CLOSED") -- back to the free placement
-        assert.are.same({ 1000, 600 }, { win:GetSize() })
+        assert.are.same({ x = 40, y = 700 }, p.free)
+        assert.are.same({ x = 300, y = 700 }, p.ah)
+        assert.are.same({ 1000, 600 }, { p.w, p.h })
+        env:fire("AUCTION_HOUSE_CLOSED") -- back to the free position
         assert.are.same({ "TOPLEFT", UIParent, "BOTTOMLEFT", 40, 700 }, last(win))
-        assert.is_false(ns.UI.compact)
-        env:fire("AUCTION_HOUSE_SHOW")
-        env:advance(0)
-        assert.are.same({ 800, 500 }, { win:GetSize() })
+        -- next session: the saved variables bring it back
+        local saved = AME_DB
+        env:restore()
+        boot({
+          pre = function()
+            _G.AME_DB = saved
+          end,
+        })
+        ns.UI:Toggle()
+        assert.are.same({ 1000, 600 }, { ns.UI.frame:GetSize() })
+        assert.are.same({ "TOPLEFT", UIParent, "BOTTOMLEFT", 40, 700 }, last(ns.UI.frame))
+        -- narrow and never below the minimum
+        win = ns.UI.frame
+        win:SetSize(800, 500)
+        ns.UI:SavePlacement()
+        ns.UI:ApplyPlacement()
         assert.is_true(ns.UI.compact) -- below 900 wide
         assert.is_truthy(ns.UI.title:GetText():find("AME|r$"))
-        win:SetSize(500, 300) -- never smaller than the minimum
+        win:SetSize(500, 300)
         ns.UI:SavePlacement()
         ns.UI:ApplyPlacement()
         assert.are.same({ ns.UI.MIN_W, ns.UI.MIN_H }, { win:GetSize() })
+      end)
+
+      it("moves a size saved per position by the previous version over", function()
+        boot({
+          pre = function()
+            _G.AME_DB = { window = { ["Tyken-?"] = { free = { x = 1, y = 2, w = 950, h = 580 } } } }
+          end,
+        })
+        ns.UI:Toggle()
+        assert.are.same({ 950, 580 }, { ns.UI.frame:GetSize() })
       end)
 
       it("docks beside the auction house window when there's room", function()
