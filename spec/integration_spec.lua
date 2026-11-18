@@ -364,11 +364,13 @@ describe("addon in a stubbed client", function()
       drainJobs()
       -- you pick Linen to sell (any AH window searches it): the Item tab follows
       env:fire("AUCTION_HOUSE_SHOW")
-      env.ah.commodities[2589] = { { 1100, 20 } }
+      env.ah.commodities[2589] = { { 117, 20 } } -- a little above its usual ~1s
       env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
       env:advance(2)
       drainJobs()
       assert.are.equal(2589, ns.UI.itemID)
+      -- the search's listings were recorded after the page loaded: the cards show them, not the older scans
+      assert.truthy(ns.UI.itemView.cards[2].value.text:find("17"), ns.UI.itemView.cards[2].value.text) -- 1s 17c
       local trades = ns.UI.chart.series.trades
       assert.are.equal("points", trades.kind)
       assert.are.same({ 1000, 1200 }, trades.ys) -- per unit: 5000 / 5 bought, 2400 / 2 sold

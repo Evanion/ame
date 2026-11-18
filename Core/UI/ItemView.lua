@@ -409,11 +409,12 @@ function UI:DrawItemChart()
   chart:Refresh()
 end
 
--- Fresh listings for some items were recorded (a search): their posting prices can update.
+-- Fresh listings for some items were recorded (a search, e.g. the item you're about to sell): the item on screen
+-- reloads its numbers, chart and posting price in place - they may have come from an hours-old scan.
 function UI:OnItemListings(ids)
   for _, id in ipairs(ids) do
     if id == self.itemID and self.frame and self.frame:IsShown() then
-      self:UpdatePostAdvice()
+      self:ReloadItem()
     end
   end
   if ns.SellAssist and ns.SellAssist.Invalidate then
@@ -468,6 +469,22 @@ function UI:ShowItem(itemID)
       return
     end
     self:FillItem(itemID, res.series, res.latest)
+  end)
+end
+
+-- reload the item on screen without clearing it first (no "loading" flash)
+function UI:ReloadItem()
+  local itemID = self.itemID
+  if not itemID then
+    return
+  end
+  self.intraday, self.intradayItem = nil, nil
+  ns.AME:WithStore("chart-" .. itemID, self:ViewShard(), function(store)
+    return { series = store:Series(itemID), latest = store:Latest(itemID) }
+  end, function(ok, res)
+    if ok and self.itemID == itemID then
+      self:FillItem(itemID, res.series, res.latest)
+    end
   end)
 end
 
