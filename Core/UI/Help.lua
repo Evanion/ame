@@ -547,16 +547,15 @@ Help.EXAMPLES = {
 
 -- The Guide: a sidebar of articles by group (filtered by the search box) and the article on the right, scrolling
 -- when long. Narrow window: the sidebar becomes a dropdown next to the search box.
-Help.GUIDE_SIDEBAR = 210
 Help.ARTICLE_WIDTH = 640 -- longest comfortable line
 
 function Help.CreateGuide(parent, contentArea)
   local UI = ns.UI
   local v = contentArea(parent)
-  local slots = UI.Slots(v, { toolbar = 22, left = Help.GUIDE_SIDEBAR, status = true })
+  local slots = UI.Slots(v, { toolbar = 22, left = ns.UI.SIDEBAR_W, status = true })
   v.slots = slots
   slots.status:SetText(
-    L["Azeroth Mercantile Exchange %s  ·  created by Tyken Evanion  ·  PvP Horde, WoW Forever"]:format(ns.VERSION)
+    L["Created by Tyken Evanion  ·  PvP Horde, WoW Forever"] -- the name is in the title bar, the version on the right
   )
   local groups = Help.Articles()
   v.byKey, v.order, v.shownArticle = {}, {}, false
@@ -669,7 +668,7 @@ function Help.CreateGuide(parent, contentArea)
 
   -- toolbar: search, and (compact) the article dropdown
   v.search = W.Input(slots.toolbar, {
-    width = 200,
+    width = ns.UI.SIDEBAR_W, -- lines up with the sidebar under it
     hint = L["Search the guide..."],
     onChange = function(text)
       v:Filter(text)

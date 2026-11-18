@@ -15,6 +15,10 @@ local UI, W = ns.UI, ns.Widgets
 
 local GAP = 8
 UI.SLOT_GAP = GAP
+-- one width for every tab's sidebars: menus on the left (Market, Settings, Guide), details on the right (Item,
+-- Arbitrage). Left sidebars start under the toolbar, whose search box (when it has one) is as wide as them.
+UI.SIDEBAR_W = 200
+UI.SIDE_PANEL_W = 280
 
 -- a sidebar: a frame with a scroll pane; add content to frame.content (inset 10 px by convention). plain: no panel
 -- behind it (its content is cards, each with its own panel)

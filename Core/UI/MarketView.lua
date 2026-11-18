@@ -102,7 +102,7 @@ local COLUMNS = {
   },
 }
 UI.MARKET_COLUMNS = COLUMNS
-local SIDEBAR_W = 190
+local SIDEBAR_W = UI.SIDEBAR_W
 local CAT_H = 19
 local QUALITIES = {
   { nil, L["Any quality"] },
@@ -763,8 +763,10 @@ function UI:CreateMarketView(parent)
     self.search:ClearAllPoints()
     if on then
       self.search:SetPoint("LEFT", self.category, "RIGHT", 6, 0)
+      self.search:SetWidth(160)
     else
       self.search:SetPoint("LEFT", 0, 0)
+      self.search:SetWidth(SIDEBAR_W) -- lines up with the sidebar under it
     end
     for _, w in ipairs({ self.minBox, self.maxBox, self.views, self.columns }) do
       w:SetShown(not on)

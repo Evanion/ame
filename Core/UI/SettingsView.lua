@@ -15,7 +15,6 @@ end
 -- Settings
 
 UI.SETTINGS_GAP = 10 -- between cards
-UI.SETTINGS_SIDEBAR = 170
 UI.SETTINGS_WIDTH = 600 -- the section column's widest (lines stay readable on wide windows)
 
 function UI.SettingsSections()
@@ -30,7 +29,7 @@ end
 
 function UI:CreateSettingsView(parent, contentArea)
   local outer = contentArea(parent)
-  local slots = UI.Slots(outer, { toolbar = 22, left = UI.SETTINGS_SIDEBAR, status = true })
+  local slots = UI.Slots(outer, { toolbar = 22, left = UI.SIDEBAR_W, status = true })
   outer.slots = slots
   -- the chosen section scrolls when the window is shorter than it
   local pane = W.ScrollPane(slots.main)
@@ -81,6 +80,14 @@ function UI:CreateSettingsView(parent, contentArea)
     end
   end, { neutral = true })
   v.pick:SetPoint("LEFT", 0, 0)
+  -- wide: the toolbar row names the section, over its cards (the sidebar starts under it, as on every tab)
+  v.title = W.Text(slots.toolbar, "GameFontNormal")
+  v.title:SetPoint("LEFT", UI.SIDEBAR_W + UI.SLOT_GAP, 0)
+  v.title:SetText(sections[1][2])
+  v.names = {}
+  for _, sec in ipairs(sections) do
+    v.names[sec[1]] = sec[2]
+  end
 
   -- the shown section's width and height (cards measure their wrapped text at this width)
   function v:PlaceSection()
@@ -352,7 +359,8 @@ function UI:CreateSettingsView(parent, contentArea)
   end)
   function outer:SetCompact(on)
     slots:SetCompact(on)
-    slots:ShowBar(slots.toolbar, on)
+    v.pick:SetShown(on)
+    v.title:SetShown(not on)
     v:LayoutColumns()
   end
   outer:SetCompact(slots.compact)
@@ -371,6 +379,7 @@ function UI:ShowSettingsSection(key)
     v.links[k].sel:SetShown(k == key)
   end
   v.pick:SetValue(key)
+  v.title:SetText(v.names[key])
   v.pane:SetScroll(0)
   self:RefreshSettings()
 end

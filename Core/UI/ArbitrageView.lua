@@ -19,7 +19,7 @@ local AGES = {
   { 7, L["Up to 7 days"] },
   { false, L["Any age"] },
 }
-UI.ARB_SIDEBAR = 260
+UI.ARB_SIDEBAR = UI.SIDE_PANEL_W
 UI.ARB_POST_UNITS = 20 -- deposit basis when the route's depth isn't known: one post of up to this many
 
 local function ageText(days)

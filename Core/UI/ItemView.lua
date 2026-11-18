@@ -17,7 +17,7 @@ local INTRADAY = "2D"
 -- Layout (UI.Slots): header (icon, name, subtitle, search box), toolbar (ranges, Line | Candles; compact: summary and
 -- Details), main (the chart, with its legend as an overlay), right sidebar (verdict, key numbers, post at, watch and
 -- alerts), status line (data confidence, last seen, outliers).
-UI.ITEM_SIDEBAR = 280
+UI.ITEM_SIDEBAR = UI.SIDE_PANEL_W
 UI.ITEM_SUMMARY_H = 28 -- the compact layout's summary bar under the chart
 UI.CONFIDENCE_WORD = { high = L["high"], medium = L["medium"], low = L["low"] }
 
