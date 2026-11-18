@@ -306,7 +306,7 @@ Help.ARTICLE_WIDTH = 640 -- longest comfortable line
 function Help.CreateGuide(parent, contentArea)
   local UI = ns.UI
   local v = contentArea(parent)
-  local slots = UI.Slots(v, { toolbar = 22, left = Help.GUIDE_SIDEBAR, fullLeft = true, status = true })
+  local slots = UI.Slots(v, { toolbar = 22, left = Help.GUIDE_SIDEBAR, status = true })
   v.slots = slots
   slots.status:SetText(
     L["Azeroth Mercantile Exchange %s  ·  created by Tyken Evanion  ·  PvP Horde, WoW Forever"]:format(ns.VERSION)

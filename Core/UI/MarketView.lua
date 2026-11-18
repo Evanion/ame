@@ -538,7 +538,7 @@ function UI:CreateMarketView(parent)
   local v = contentArea(parent)
   self.marketView = v
   self.mq = { sortKey = "score", ascending = false, minQuality = 1 } -- Common+: hide grey junk by default
-  local slots = UI.Slots(v, { toolbar = 22, chips = 20, left = SIDEBAR_W, fullLeft = true, status = true })
+  local slots = UI.Slots(v, { toolbar = 22, chips = 20, left = SIDEBAR_W, status = true })
   v.slots = slots
   self:CreateCategories(v, slots.left)
   local bar, main = slots.toolbar, slots.main

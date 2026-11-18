@@ -52,11 +52,15 @@ W.THEMES = {
   Neutral = { 1, 0.73, 0.22 }, -- goblin auction houses
 }
 
+W.SELECTED_SHADE = 0.5
+
 function W.SetTheme(house)
   local c = W.THEMES[house] or W.THEMES.Neutral
   W.theme = W.THEMES[house] and house or "Neutral" -- the applied theme
   W.COLORS.accent = { c[1], c[2], c[3], 1 }
-  W.COLORS.selected = { c[1], c[2], c[3], 0.22 }
+  -- selected buttons: the accent at half strength, so white labels keep their contrast (full-strength red, blue or
+  -- gold behind white text is too bright to read comfortably); the border carries the full accent
+  W.COLORS.selected = { c[1] * W.SELECTED_SHADE, c[2] * W.SELECTED_SHADE, c[3] * W.SELECTED_SHADE, 1 }
   W.COLORS.rowSelected = { c[1], c[2], c[3], 0.2 }
   -- selected buttons and ticked checkboxes take the new accent
   for b in pairs(W.buttons) do
@@ -142,7 +146,7 @@ function W.Button(parent, label, width, height, onClick, opts)
     local c = on and W.COLORS.selected or W.COLORS.panel
     self:SetBackdropColor(c[1], c[2], c[3], on and 1 or c[4])
     local bc = on and W.COLORS.accent or W.COLORS.border
-    self:SetBackdropBorderColor(bc[1], bc[2], bc[3], on and 0.6 or bc[4])
+    self:SetBackdropBorderColor(bc[1], bc[2], bc[3], on and 1 or bc[4])
   end
   return b
 end

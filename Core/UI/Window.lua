@@ -171,14 +171,20 @@ function UI:CreateShell()
   local title = W.Text(f, "GameFontNormal")
   title:SetPoint("LEFT", logo, "RIGHT", 6, 0)
   self.title = title
-  self.shardText = W.Text(f, "GameFontDisableSmall")
-  self.shardText:SetPoint("LEFT", title, "RIGHT", 10, 0)
+  -- the market being viewed, as one button: "PvP · Horde AH" (a menu when there's more than one auction house)
   local houses = { { "Horde", L["Horde AH"] }, { "Alliance", L["Alliance AH"] }, { "Neutral", L["Goblin AH"] } }
-  self.viewSelect = W.Dropdown(f, 110, houses, function(value)
+  self.viewSelect = W.Dropdown(f, 150, houses, function(value)
     UI.viewHouse = value
     UI:ViewChanged()
   end, { neutral = true })
-  self.viewSelect:SetPoint("LEFT", self.shardText, "RIGHT", 8, 0)
+  self.viewSelect:SetPoint("LEFT", title, "RIGHT", 10, 0)
+  -- a line under the title bar
+  local divider = f:CreateTexture(nil, "ARTWORK")
+  divider:SetHeight(1)
+  divider:SetPoint("TOPLEFT", 1, -34)
+  divider:SetPoint("TOPRIGHT", -1, -34)
+  W.Fill(divider, W.COLORS.border)
+  self.titleDivider = divider
 
   local close = W.CloseButton(f)
   close:SetPoint("TOPRIGHT", -6, -7)
@@ -241,11 +247,11 @@ function UI:FooterText()
   local ingest, busy = ns.AME.ingest, nil
   local p = ingest and ingest.reading and ingest.progress
   if p and p.total > 0 then
-    busy = L["reading scan %s / %s"]:format(W.Thousands(p.done), W.Thousands(p.total))
+    busy = L["Reading scan %s / %s"]:format(W.Thousands(p.done), W.Thousands(p.total))
   elseif ns.AME:IndexBusy() then
-    busy = L["updating market data..."]
+    busy = L["Updating market data…"]
   end
-  return (busy and (busy .. "   ") or "") .. "v" .. ns.VERSION
+  return (busy and (W.Color("hold", busy) .. W.SEP) or "") .. "v" .. ns.VERSION
 end
 
 local function clamp(x, lo, hi)
@@ -421,7 +427,7 @@ function UI:RefreshViewOptions()
   for _, house in ipairs({ "Horde", "Alliance", "Neutral" }) do
     local hasData = AME:HasData(ns.ShardKey(realm, house))
     if house == current or hasData then
-      options[#options + 1] = { house, ns.HOUSE_LABEL[house] }
+      options[#options + 1] = { house, ns.ShardLabel(ns.ShardKey(realm, house)) }
     end
   end
   if self.viewHouse then
@@ -435,9 +441,7 @@ function UI:RefreshViewOptions()
   end
   self.viewSelect:SetOptions(options)
   self.viewSelect:SetValue(self:ViewHouse())
-  local several = #options > 1
-  self.viewSelect:SetShown(several)
-  self.shardText:SetText(several and realm or ns.ShardLabel(self:ViewShard()))
+  self.viewSelect:SetEnabled(#options > 1)
 end
 
 function UI:ViewChanged()
