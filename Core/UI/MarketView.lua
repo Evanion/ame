@@ -1,4 +1,6 @@
--- Market tab: the screener over the market index, with the category / watchlist sidebar and filters.
+-- Market tab: the screener over the market index. Layout (UI.Slots): a full-height category / watchlist sidebar on
+-- the left (a dropdown on the toolbar when the window is narrow); toolbar with search, quality, price range, saved
+-- views and the column chooser; a row with the signal filter and chips for the active filters; the table.
 local _, ns = ...
 local L = ns.L
 
@@ -10,6 +12,9 @@ local avgDays, contentArea = UI.AvgDays, UI.ContentArea
 ---------------------------------------------------------------------------------------------------------------------
 -- Market view (screener)
 
+UI.STALE_DAYS = 3 -- rows whose data is older than this fade
+
+-- optional = shown only when switched on in the column chooser (default: off unless `on`)
 local COLUMNS = {
   { key = "name", label = L["Item"], width = 190, item = true, term = "name" },
   { key = "market", label = L["Market"], width = 86, format = "money", term = "market" },
@@ -17,6 +22,7 @@ local COLUMNS = {
     key = "avg",
     width = 86,
     term = "avg",
+    optional = true,
     label = function()
       return L["%dd avg"]:format(avgDays())
     end,
@@ -27,24 +33,62 @@ local COLUMNS = {
       return W.Money(s["avg" .. avgDays()], true)
     end,
   },
-  { key = "change7", drop = 4, label = L["7d"], width = 62, format = "pct", term = "change7" },
-  { key = "vol30", drop = 3, label = L["Volatility"], width = 70, format = "plainpct", term = "vol30" },
+  { key = "vsAvg", drop = 3, label = L["vs avg"], width = 62, format = "pct", term = "vsAvg" },
+  { key = "min", label = L["Lowest"], width = 80, format = "money", term = "min", optional = true },
+  { key = "change7", drop = 6, label = L["7d"], width = 62, format = "pct", term = "change7", optional = true },
+  {
+    key = "vol30",
+    drop = 5,
+    label = L["Volatility"],
+    width = 70,
+    format = "plainpct",
+    term = "vol30",
+    optional = true,
+  },
   { key = "qty", drop = 1, label = L["Supply"], width = 52, term = "qty" },
   { key = "sellRate", label = L["Sells/d"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "signal",
     label = L["Signal"],
-    width = 50,
-    format = "signal",
+    width = 58,
     term = "signal",
     sortKey = "signalRank",
     ascendingFirst = true,
+    text = function(s)
+      return W.SignalGlyph(s.signal)
+    end,
   },
   { key = "score", drop = 2, label = L["Score"], width = 50, term = "score" },
+  {
+    key = "age",
+    drop = 7,
+    label = L["Age"],
+    width = 50,
+    optional = true,
+    sortKey = "day",
+    term = "age",
+    text = function(s)
+      local d = UI.index and UI.index.day and s.day and UI.index.day - s.day
+      if not d then
+        return W.NONE
+      end
+      return d <= 0 and L["today"] or L["%dd"]:format(d)
+    end,
+  },
+  {
+    key = "phase",
+    drop = 8,
+    label = L["Phase"],
+    width = 110,
+    optional = true,
+    term = "phase",
+    text = function(s)
+      return s.phase and ns.Analytics.PHASE_LABEL[s.phase] or W.NONE
+    end,
+  },
 }
-local ROWS = 17
-local SIDEBAR_W = 170
-local CAT_ROWS = 22
+UI.MARKET_COLUMNS = COLUMNS
+local SIDEBAR_W = 190
 local CAT_H = 19
 local QUALITIES = {
   { nil, L["Any quality"] },
@@ -58,93 +102,47 @@ local function itemInfo(itemID)
   return ns.ItemCache.Get(itemID)
 end
 
--- category sidebar: "All items", classes in AH order, the selected class's subclasses indented
-function UI:CreateCategories(v)
-  local side = CreateFrame("Frame", nil, v, "BackdropTemplate")
-  W.Skin(side, W.COLORS.panel)
-  side:SetPoint("TOPLEFT", 0, 0)
-  side:SetPoint("BOTTOMLEFT", 0, 0)
-  side:SetWidth(SIDEBAR_W)
-  side.lines = {}
-  for i = 1, CAT_ROWS do
-    local b = CreateFrame("Button", nil, side)
-    b:SetSize(SIDEBAR_W - 8, CAT_H)
-    b:SetPoint("TOPLEFT", 4, -4 - (i - 1) * CAT_H)
-    b.sel = b:CreateTexture(nil, "BACKGROUND")
-    b.sel:SetAllPoints()
-    W.Fill(b.sel, W.COLORS.rowSelected)
-    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
-    b.hl:SetAllPoints()
-    W.Fill(b.hl, W.COLORS.rowHover)
-    b.text = W.Text(b, "GameFontHighlightSmall")
-    b.text:SetPoint("LEFT", 6, 0)
-    b.text:SetPoint("RIGHT", -34, 0)
-    b.text:SetWordWrap(false)
-    b.count = W.Text(b, "GameFontDisableSmall", "RIGHT")
-    b.count:SetPoint("RIGHT", -4, 0)
-    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    b:SetScript("OnClick", function(self, button)
-      local e = self.entry
-      if not e then
-        return
-      end
-      local q = UI.mq
-      if e.newList then
-        UI:PromptNewList()
-        return
-      end
-      if e.header then
-        return
-      end
-      if e.list and button == "RightButton" then
-        UI:ListMenu(self, e.list)
-        return
-      end
-      if e.guild and button == "RightButton" then
-        W.Menu(self, {
-          {
-            text = L["Copy to my watchlists"],
-            func = function()
-              ns.AME.watch:CopyGuildList(e.guild)
-              UI:WatchChanged()
-            end,
-          },
-        })
-        return
-      end
-      q.list, q.only = nil, nil
-      if e.guild then
-        local g = ns.AME.watch.db.guild[e.guild]
-        q.classID, q.subClassID = nil, nil
-        q.list, q.only = "g:" .. e.guild, g and g.items
-      elseif e.list then
-        q.classID, q.subClassID = nil, nil
-        q.list, q.only = e.list, ns.AME.watch:Lists()[e.list].items
-      elseif e.all then
-        q.classID, q.subClassID = nil, nil
-      elseif e.subClassID then
-        q.classID, q.subClassID = e.classID, e.subClassID
-      elseif q.classID == e.classID and not q.subClassID then
-        q.classID = nil -- clicking the open class again closes it
-      else
-        q.classID, q.subClassID = e.classID, nil
-      end
-      UI.offset = 0
-      UI:RenderCategories()
-      UI:RefreshMarket(true)
-    end)
-    side.lines[i] = b
+-- Why an item has its signal, in words (row tooltips).
+function UI.SignalReasons(s, today)
+  local lines = {}
+  local avg = s.avg30
+  if s.market and avg and avg > 0 then
+    lines[#lines + 1] = L["Price %s vs its 30-day average"]:format(W.Percent(s.market / avg - 1))
   end
-  side:EnableMouseWheel(true)
-  side:SetScript("OnMouseWheel", function(_, delta)
-    UI.catOffset = math.max(0, (UI.catOffset or 0) - delta * 2)
-    UI:RenderCategories()
-  end)
-  v.side = side
+  local sig = s.signal
+  if sig == "buy" then
+    lines[#lines + 1] = L["Unusually cheap for this item, given how much its price usually moves"]
+  elseif sig == "sell" then
+    lines[#lines + 1] = L["Unusually expensive for this item, given how much its price usually moves"]
+  elseif sig == "hold" then
+    lines[#lines + 1] = L["Within its usual range"]
+  elseif sig == "wait" then
+    lines[#lines + 1] = L["Cheap, but sellers are dumping: wait for the bottom"]
+  elseif sig == "vendor" and s.vendorPrice then
+    lines[#lines + 1] = L["A vendor pays %s; listing nets %s after the cut and deposit"]:format(
+      W.Money(s.vendorPrice),
+      W.Money(s.vendorNet)
+    )
+  else
+    lines[#lines + 1] = L["Not enough history to judge yet (%d of %d days)"]:format(s.days or 0, ns.Analytics.MIN_DAYS)
+  end
+  if s.phase then
+    lines[#lines + 1] = L["Market phase: %s"]:format(ns.Analytics.PHASE_LABEL[s.phase])
+  end
+  if (s.vol30 or 0) > 0.15 then
+    lines[#lines + 1] = L["Volatile: its price swings a lot from day to day"]
+  end
+  if today and s.day and today - s.day > UI.STALE_DAYS then
+    lines[#lines + 1] = W.Color("warn", L["Data is %d days old"]:format(today - s.day))
+  end
+  return lines
 end
 
-function UI:RenderCategories()
-  local v = self.marketView
+---------------------------------------------------------------------------------------------------------------------
+-- categories: "All items", watchlists, classes in AH order, the selected class's subclasses indented
+
+-- the sidebar entries for the current index and filters
+function UI:CategoryEntries()
   local q = self.mq
   local entries = { { all = true, label = L["All items"], count = self.index and self.index.count or 0 } }
   local watch = ns.AME.watch
@@ -153,6 +151,7 @@ function UI:RenderCategories()
       entries[#entries + 1] = {
         list = i,
         label = W.StarInline(12) .. " " .. l.name .. (l.shared and " " .. W.Color("brand", L["shared"]) or ""),
+        name = l.name,
         count = watch:Count(i),
       }
     end
@@ -168,6 +167,7 @@ function UI:RenderCategories()
         entries[#entries + 1] = {
           guild = g.key,
           label = "   " .. g.name .. " " .. W.Dim("(" .. g.owner .. ")"),
+          name = g.name,
           count = n,
         }
       end
@@ -186,29 +186,140 @@ function UI:RenderCategories()
       end
     end
   end
-  self.catOffset = math.min(self.catOffset or 0, math.max(0, #entries - CAT_ROWS))
-  for i, b in ipairs(v.side.lines) do
-    local e = entries[(self.catOffset or 0) + i]
+  return entries
+end
+
+-- pick a sidebar entry (or the compact dropdown's option); anchor: for menus
+function UI:SelectCategory(e, button, anchor)
+  local q = self.mq
+  if e.newList then
+    UI:PromptNewList()
+    return
+  end
+  if e.header then
+    return
+  end
+  if e.list and button == "RightButton" then
+    UI:ListMenu(anchor, e.list)
+    return
+  end
+  if e.guild and button == "RightButton" then
+    W.Menu(anchor, {
+      {
+        text = L["Copy to my watchlists"],
+        func = function()
+          ns.AME.watch:CopyGuildList(e.guild)
+          UI:WatchChanged()
+        end,
+      },
+    })
+    return
+  end
+  q.list, q.only = nil, nil
+  if e.guild then
+    local g = ns.AME.watch.db.guild[e.guild]
+    q.classID, q.subClassID = nil, nil
+    q.list, q.only = "g:" .. e.guild, g and g.items
+  elseif e.list then
+    q.classID, q.subClassID = nil, nil
+    q.list, q.only = e.list, ns.AME.watch:Lists()[e.list].items
+  elseif e.all then
+    q.classID, q.subClassID = nil, nil
+  elseif e.subClassID then
+    q.classID, q.subClassID = e.classID, e.subClassID
+  elseif q.classID == e.classID and not q.subClassID and not e.pick then
+    q.classID = nil -- clicking the open class again closes it
+  else
+    q.classID, q.subClassID = e.classID, nil
+  end
+  self.offset = 0
+  self:RenderCategories()
+  self:RefreshMarket(true)
+end
+
+function UI:CreateCategories(v, side)
+  side.pane:Hide() -- the list pages itself (it can be long: every subclass)
+  side.lines = {}
+  local function line(i)
+    local b = CreateFrame("Button", nil, side)
+    b:SetHeight(CAT_H)
+    b:SetPoint("TOPLEFT", 4, -4 - (i - 1) * CAT_H)
+    b:SetPoint("RIGHT", -4, 0)
+    b.sel = b:CreateTexture(nil, "BACKGROUND")
+    b.sel:SetAllPoints()
+    W.Fill(b.sel, W.COLORS.rowSelected)
+    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+    b.hl:SetAllPoints()
+    W.Fill(b.hl, W.COLORS.rowHover)
+    b.text = W.Text(b, "GameFontHighlightSmall")
+    b.text:SetPoint("LEFT", 6, 0)
+    b.text:SetPoint("RIGHT", -34, 0)
+    b.text:SetWordWrap(false)
+    b.count = W.Text(b, "GameFontDisableSmall", "RIGHT")
+    b.count:SetPoint("RIGHT", -4, 0)
+    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    b:SetScript("OnClick", function(self, button)
+      if self.entry then
+        UI:SelectCategory(self.entry, button, self)
+      end
+    end)
+    side.lines[i] = b
+    return b
+  end
+  side.rows = 22
+  for i = 1, side.rows do
+    line(i)
+  end
+  -- as many lines as the sidebar's height holds
+  side:SetScript("OnSizeChanged", function(_, _, h)
+    local n = math.max(1, math.floor(((h or 0) - 8) / CAT_H))
+    for i = #side.lines + 1, n do
+      line(i)
+    end
+    side.rows = n
+    if UI.index then
+      UI:RenderCategories()
+    end
+  end)
+  side:EnableMouseWheel(true)
+  side:SetScript("OnMouseWheel", function(_, delta)
+    UI.catOffset = math.max(0, (UI.catOffset or 0) - delta * 2)
+    UI:RenderCategories()
+  end)
+  v.side = side
+end
+
+-- is entry e the current selection?
+local function selected(q, e)
+  if e.newList or e.header then
+    return false
+  elseif e.guild then
+    return q.list == "g:" .. e.guild
+  elseif e.list then
+    return q.list == e.list
+  elseif q.list then
+    return false
+  elseif e.all then
+    return q.classID == nil
+  elseif e.subClassID then
+    return q.classID == e.classID and q.subClassID == e.subClassID
+  end
+  return q.classID == e.classID and q.subClassID == nil
+end
+
+function UI:RenderCategories()
+  local v = self.marketView
+  local q = self.mq
+  local entries = self:CategoryEntries()
+  local side = v.side
+  local rows = side.rows or #side.lines
+  self.catOffset = math.min(self.catOffset or 0, math.max(0, #entries - rows))
+  for i, b in ipairs(side.lines) do
+    local e = i <= rows and entries[(self.catOffset or 0) + i] or nil
     b.entry = e
     if e then
       b:Show()
-      local selected
-      if e.newList or e.header then
-        selected = false
-      elseif e.guild then
-        selected = q.list == "g:" .. e.guild
-      elseif e.list then
-        selected = q.list == e.list
-      elseif q.list then
-        selected = false
-      elseif e.all then
-        selected = q.classID == nil
-      elseif e.subClassID then
-        selected = q.classID == e.classID and q.subClassID == e.subClassID
-      else
-        selected = q.classID == e.classID and q.subClassID == nil
-      end
-      b.sel:SetShown(selected)
+      b.sel:SetShown(selected(q, e))
       b.text:SetText(e.label)
       b.text:SetFontObject(e.subClassID and "GameFontHighlightSmall" or "GameFontNormalSmall")
       b.count:SetText(e.count)
@@ -216,22 +327,230 @@ function UI:RenderCategories()
       b:Hide()
     end
   end
+  -- the compact dropdown: lists and classes (subclasses from the sidebar when wide)
+  local options, current = {}, 1
+  for _, e in ipairs(entries) do
+    if not (e.newList or e.header or e.subClassID) then
+      options[#options + 1] = { #options + 1, e.name or e.label, entry = e }
+      if selected(q, e) or (e.classID and q.classID == e.classID) then
+        current = #options
+      end
+    end
+  end
+  v.category.entries = options
+  v.category:SetOptions(options)
+  v.category:SetValue(current)
 end
+
+---------------------------------------------------------------------------------------------------------------------
+-- columns and saved views
+
+-- the columns switched off: defaults (optional ones) overridden by the chooser (Settings "marketColumns")
+function UI:MarketHiddenColumns()
+  local chosen = ns.Settings:Table("marketColumns")
+  local hidden = {}
+  for _, col in ipairs(COLUMNS) do
+    local on = chosen[col.key]
+    if on == nil then
+      on = not col.optional
+    end
+    if not on and not col.item then
+      hidden[col.key] = true
+    end
+  end
+  return hidden
+end
+
+function UI:ApplyMarketColumns()
+  local v = self.marketView
+  v.table:SetUserHidden(self:MarketHiddenColumns())
+  self:UpdateColumnsButton()
+end
+
+function UI:UpdateColumnsButton()
+  local v = self.marketView
+  local n = v.table:HiddenCount()
+  v.columns.label:SetText(n > 0 and L["Columns (%d hidden)"]:format(n) or L["Columns"])
+end
+
+function UI:ColumnMenu(anchor)
+  local hidden = self:MarketHiddenColumns()
+  local dropped = self.marketView.table.hiddenColumns or {}
+  local entries = {}
+  for c, col in ipairs(COLUMNS) do
+    if not col.item then
+      local name = type(col.label) == "function" and col.label() or col.label
+      if dropped[c] and not hidden[col.key] then
+        name = name .. " " .. W.Dim(L["(no room)"])
+      end
+      entries[#entries + 1] = {
+        text = name,
+        checked = not hidden[col.key],
+        func = function()
+          ns.Settings:Table("marketColumns")[col.key] = hidden[col.key] and true or false
+          UI:ApplyMarketColumns()
+        end,
+      }
+    end
+  end
+  W.Menu(anchor, entries)
+end
+
+-- the filter fields a saved view keeps
+local VIEW_FIELDS = { "text", "minQuality", "minPrice", "maxPrice", "signal", "classID", "subClassID", "sortKey" }
+
+function UI:SaveMarketView(name)
+  if not name or name == "" then
+    return
+  end
+  local q, saved = self.mq, {}
+  for _, k in ipairs(VIEW_FIELDS) do
+    saved[k] = q[k]
+  end
+  saved.ascending = q.ascending or false
+  local views = ns.Settings:Table("marketViews")
+  for _, view in ipairs(views) do
+    if view.name == name then
+      view.q = saved
+      return
+    end
+  end
+  views[#views + 1] = { name = name, q = saved }
+end
+
+function UI:ApplyMarketView(view)
+  local v = self.marketView
+  local q = { minQuality = 1 }
+  for _, k in ipairs(VIEW_FIELDS) do
+    q[k] = view.q[k]
+  end
+  q.ascending = view.q.ascending
+  q.sortKey = q.sortKey or "score"
+  self.mq = q
+  v.search:SetText(q.text or "")
+  q.text = view.q.text -- SetText's handler rewrote it
+  v.minBox:SetText(q.minPrice and tostring(math.floor(q.minPrice / 10000)) or "")
+  v.maxBox:SetText(q.maxPrice and tostring(math.floor(q.maxPrice / 10000)) or "")
+  q.minPrice, q.maxPrice = view.q.minPrice, view.q.maxPrice
+  self.offset = 0
+  self:RenderCategories()
+  self:RefreshMarket(true)
+end
+
+function UI:ViewsMenu(anchor)
+  local views = ns.Settings:Table("marketViews")
+  local entries = {}
+  for _, view in ipairs(views) do
+    entries[#entries + 1] = {
+      text = view.name,
+      func = function()
+        UI:ApplyMarketView(view)
+      end,
+    }
+  end
+  entries[#entries + 1] = {
+    text = W.Color("gold", L["Save these filters as a view..."]),
+    func = function()
+      W.Prompt("AME_SAVE_VIEW", L["Name for this view:"], function(name)
+        UI:SaveMarketView(name)
+      end)
+    end,
+  }
+  for i, view in ipairs(views) do
+    entries[#entries + 1] = {
+      text = W.Dim(L["Delete %s"]:format(view.name)),
+      func = function()
+        table.remove(views, i)
+      end,
+    }
+  end
+  W.Menu(anchor, entries)
+end
+
+-- chips for the active filters (each removable), shown after the signal filter
+function UI:UpdateMarketChips()
+  local v, q = self.marketView, self.mq
+  local chips = {}
+  local function add(label, clear)
+    chips[#chips + 1] = {
+      label,
+      function()
+        clear()
+        UI.offset = 0
+        UI:RenderCategories()
+        UI:RefreshMarket(true)
+      end,
+    }
+  end
+  if q.text and q.text ~= "" then
+    add('"' .. q.text .. '"', function()
+      v.search:SetText("")
+      q.text = nil
+    end)
+  end
+  if q.minQuality ~= 1 then
+    for _, o in ipairs(QUALITIES) do
+      if o[1] == q.minQuality then
+        add(o[2], function()
+          q.minQuality = 1
+        end)
+      end
+    end
+  end
+  if q.minPrice then
+    add(L["from %s"]:format(W.Money(q.minPrice, true)), function()
+      v.minBox:SetText("")
+      q.minPrice = nil
+    end)
+  end
+  if q.maxPrice then
+    add(L["up to %s"]:format(W.Money(q.maxPrice, true)), function()
+      v.maxBox:SetText("")
+      q.maxPrice = nil
+    end)
+  end
+  if q.list then
+    for _, e in ipairs(self:CategoryEntries()) do
+      if (e.list and q.list == e.list) or (e.guild and q.list == "g:" .. e.guild) then
+        add(e.name or "", function()
+          q.list, q.only = nil, nil
+        end)
+      end
+    end
+  elseif q.classID then
+    local name = q.subClassID and ns.ItemCache.SubClassName(q.classID, q.subClassID)
+      or ns.ItemCache.ClassName(q.classID)
+    add(name, function()
+      q.classID, q.subClassID = nil, nil
+    end)
+  end
+  v.chips:Set(chips)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- the view
 
 function UI:CreateMarketView(parent)
   local v = contentArea(parent)
   self.marketView = v
   self.mq = { sortKey = "score", ascending = false, minQuality = 1 } -- Common+: hide grey junk by default
-  self:CreateCategories(v)
-
-  local main = CreateFrame("Frame", nil, v)
-  main:SetPoint("TOPLEFT", SIDEBAR_W + 10, 0)
-  main:SetPoint("BOTTOMRIGHT", 0, 0)
+  local slots = UI.Slots(v, { toolbar = 22, chips = 20, left = SIDEBAR_W, fullLeft = true })
+  v.slots = slots
+  self:CreateCategories(v, slots.left)
+  local bar, main = slots.toolbar, slots.main
   v.main = main
 
-  -- toolbar: search, quality, price range, signals, reset
-  local search = W.Input(main, {
-    width = 170,
+  -- toolbar: (compact: category), search, quality, price range ... views, columns
+  v.category = W.Dropdown(bar, 130, { { 1, L["All items"] } }, function(value)
+    local o = v.category.entries and v.category.entries[value]
+    if o then
+      local e = setmetatable({ pick = true }, { __index = o.entry })
+      UI:SelectCategory(e, "LeftButton", v.category)
+    end
+  end, { neutral = true })
+  v.category:SetPoint("LEFT", 0, 0)
+  local search = W.Input(bar, {
+    width = 160,
     hint = L["Search items..."],
     onChange = function(text) -- also on SetText: a Shift-clicked item fills the box
       UI.mq.text = text
@@ -240,7 +559,6 @@ function UI:CreateMarketView(parent)
     end,
     clearOnEscape = true,
   })
-  search:SetPoint("TOPLEFT", 6, 0)
   v.search = search
 
   local qualityOptions = {}
@@ -248,7 +566,7 @@ function UI:CreateMarketView(parent)
     local c = q[1] and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q[1]]
     qualityOptions[i] = { q[1], q[2], c and c.hex and c.hex:match("|c(%x+)") }
   end
-  local quality = W.Dropdown(main, 104, qualityOptions, function(value)
+  local quality = W.Dropdown(bar, 104, qualityOptions, function(value)
     UI.mq.minQuality = value
     UI.offset = 0
     UI:RefreshMarket(true)
@@ -256,13 +574,13 @@ function UI:CreateMarketView(parent)
   quality:SetPoint("LEFT", search, "RIGHT", 8, 0)
   v.quality = quality
 
-  local minBox = W.GoldInput(main, L["min g"], function(g)
+  local minBox = W.GoldInput(bar, L["min g"], function(g)
     UI.mq.minPrice = g and g * 10000 or nil
     UI.offset = 0
     UI:RefreshMarket(true)
   end)
-  minBox:SetPoint("LEFT", quality, "RIGHT", 10, 0)
-  local maxBox = W.GoldInput(main, L["max g"], function(g)
+  minBox:SetPoint("LEFT", quality, "RIGHT", 8, 0)
+  local maxBox = W.GoldInput(bar, L["max g"], function(g)
     UI.mq.maxPrice = g and g * 10000 or nil
     UI.offset = 0
     UI:RefreshMarket(true)
@@ -270,38 +588,52 @@ function UI:CreateMarketView(parent)
   maxBox:SetPoint("LEFT", minBox, "RIGHT", 6, 0)
   v.minBox, v.maxBox = minBox, maxBox
 
-  v.signals = W.Segmented(main, {
-    { "all", L["All"] },
-    { "buy", L["Buy"] },
-    { "hold", L["Hold"] },
-    { "sell", L["Sell"] },
-    { "vendor", L["Vendor"] },
-  }, {
-    minWidth = 46,
+  v.columns = W.Button(bar, L["Columns"], 116, 20, function(self)
+    UI:ColumnMenu(self)
+  end)
+  v.columns:SetPoint("RIGHT", 0, 0)
+  v.views = W.Button(bar, L["Views"], 64, 20, function(self)
+    UI:ViewsMenu(self)
+  end)
+  v.views:SetPoint("RIGHT", v.columns, "LEFT", -6, 0)
+
+  -- second row: signal filter (text + glyph + colour) and chips for the other active filters
+  local signals = { { "all", L["All"] } }
+  for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor" }) do
+    signals[#signals + 1] = { key, W.SignalGlyph(key) }
+  end
+  v.signals = W.Segmented(slots.chips, signals, {
+    minWidth = 40,
+    height = 20,
     onSelect = function(key)
       UI.mq.signal = key ~= "all" and key or nil
       UI.offset = 0
       UI:RefreshMarket(true)
     end,
   })
-  v.signals:SetPoint("LEFT", maxBox, "RIGHT", 10, 0)
-  local reset = W.Button(main, L["Reset"], 52, 20, function()
+  v.signals:SetPoint("LEFT", 0, 0)
+  v.chips = W.Chips(slots.chips, function()
     UI:ResetMarketFilters()
   end)
-  reset:SetPoint("LEFT", v.signals, "RIGHT", 10, 0)
+  v.chips:SetPoint("LEFT", v.signals, "RIGHT", 12, 0)
+  v.chips:SetPoint("RIGHT", 0, 0)
 
   -- the list (shared DataTable component)
   v.table = ns.DataTable.New(main, {
     columns = COLUMNS,
-    rows = ROWS,
+    rows = 17,
     fill = true, -- rows fill the tab down to the status line
-    top = -28,
+    top = 0,
     itemID = function(s)
       return s.itemID
     end,
     star = true,
     confidence = function(s)
       return ns.Analytics.Confidence(s, UI.index and UI.index.day)
+    end,
+    rowAlpha = function(s)
+      local today = UI.index and UI.index.day
+      return (today and s.day and today - s.day > UI.STALE_DAYS) and 0.5 or 1
     end,
     sort = { key = UI.mq.sortKey, ascending = UI.mq.ascending },
     onSort = function(key, ascending)
@@ -323,7 +655,12 @@ function UI:CreateMarketView(parent)
         UI:ShowItem(s.itemID)
       end
     end,
-    tooltip = function(tip)
+    tooltip = function(tip, s)
+      tip:AddLine(" ")
+      tip:AddLine(W.Signal(s.signal) .. "  " .. W.Dim(L["why:"]))
+      for _, line in ipairs(UI.SignalReasons(s, UI.index and UI.index.day)) do
+        tip:AddLine(line, 0.85, 0.85, 0.85, true)
+      end
       if ns.AME.ahOpen then
         tip:AddLine(L["Shift-click to search the auction house"], 0.6, 0.6, 0.6)
       end
@@ -331,11 +668,27 @@ function UI:CreateMarketView(parent)
     status = true,
   })
   v.headers, v.rows, v.bar, v.status = v.table.headers, v.table.rows, v.table.bar, v.table.status
+  v.table.frame:HookScript("OnSizeChanged", function()
+    UI:UpdateColumnsButton()
+  end)
+  self:ApplyMarketColumns()
 
   main:EnableMouseWheel(true)
   main:SetScript("OnMouseWheel", function(_, delta)
     v.table:Scroll(delta)
   end)
+
+  function v:SetCompact(on)
+    slots:SetCompact(on)
+    self.category:SetShown(on)
+    self.search:ClearAllPoints()
+    if on then
+      self.search:SetPoint("LEFT", self.category, "RIGHT", 8, 0)
+    else
+      self.search:SetPoint("LEFT", 0, 0)
+    end
+  end
+  v:SetCompact(slots.compact)
 
   ns.ItemCache.OnNamesChanged(function()
     local q = UI.mq
@@ -356,8 +709,10 @@ function UI:ResetMarketFilters()
   self.mq = { sortKey = self.mq.sortKey, ascending = self.mq.ascending, minQuality = 1 }
   v.quality:Reset()
   v.search:SetText("")
+  self.mq.text = nil
   v.minBox:SetText("")
   v.maxBox:SetText("")
+  self.mq.minPrice, self.mq.maxPrice = nil, nil
   self.offset = 0
   self:RenderCategories()
   self:RefreshMarket(true)
@@ -401,6 +756,11 @@ function UI:RefreshMarket(force)
     force = true
   end
   if force or not self.list then
+    local avgKey = "avg" .. avgDays()
+    for _, s in pairs(index.items) do -- "vs avg" follows the chosen average period
+      local avg = s[avgKey]
+      s.vsAvg = s.market and avg and avg > 0 and s.market / avg - 1 or nil
+    end
     self.list, self.unnamed = ns.MarketFilter.Apply(index, self.mq, itemInfo)
   end
   self:RenderMarket()
@@ -428,7 +788,7 @@ function UI:RenderMarket()
   local status = L["%d items  ·  showing %d-%d  ·  index from %s"]:format(
     total,
     math.min(total, self.offset + 1),
-    math.min(total, self.offset + ROWS),
+    math.min(total, self.offset + t.visible),
     date("%b %d", self.index.day * DAY)
   )
   if cache.warmTotal and cache.warmDone and cache.warmDone < cache.warmTotal then
@@ -446,4 +806,5 @@ function UI:RenderMarket()
     end
   end
   v.status:SetText(status)
+  self:UpdateMarketChips()
 end

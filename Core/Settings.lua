@@ -54,6 +54,16 @@ function Settings:Set(key, value)
   AME_DB.settings[key] = value
 end
 
+-- a saved table setting (created empty): column choices, saved views
+function Settings:Table(key)
+  local t = AME_DB.settings[key]
+  if type(t) ~= "table" then
+    t = {}
+    AME_DB.settings[key] = t
+  end
+  return t
+end
+
 -- seller's cut (fraction) at a house: Alliance / Horde / Neutral
 function Settings:AuctionCut(house)
   local pct = house == "Neutral" and self:Get("cutNeutral") or self:Get("cutFaction")

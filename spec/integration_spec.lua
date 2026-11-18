@@ -522,6 +522,7 @@ describe("addon in a stubbed client", function()
         t:Fit(20 + 5 * t.rowH)
         assert.are.equal(5, t.visible)
         assert.is_false(t.rows[6]:IsShown())
+        t:SetUserHidden({}) -- every column on
         t:Layout(2000)
         assert.are.same({}, t.hiddenColumns)
         t:Layout(560)
@@ -639,6 +640,77 @@ describe("addon in a stubbed client", function()
       assert.are.equal(1, ns.UI.mq.minQuality) -- back to the default: Common+ (no grey junk)
       assert.are.equal(2, v.quality.index)
       ns.MarketFilter.Apply = apply
+    end)
+
+    it("screener: chips for active filters, saved views, a column chooser, stale rows and signal reasons", function()
+      seeded()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("market")
+      local v = ns.UI.marketView
+      local t = v.table
+      -- default columns: optional ones are off, and the chooser says how many are hidden
+      local hidden = ns.UI:MarketHiddenColumns()
+      assert.is_true(hidden.avg and hidden.phase and hidden.min and true or false)
+      assert.is_nil(hidden.vsAvg)
+      assert.truthy(v.columns.label.text:find("hidden"))
+      ns.UI:ColumnMenu(v.columns)
+      local phase
+      for _, it in ipairs(ns.Widgets.menu.items) do
+        if it:IsShown() and (it.text.text or ""):find("Phase") then
+          phase = it
+        end
+      end
+      phase.scripts.OnClick(phase)
+      assert.is_true(AME_DB.settings.marketColumns.phase) -- saved
+      assert.is_nil(ns.UI:MarketHiddenColumns().phase)
+      -- chips: one per active filter, each removable; Clear all resets
+      v.maxBox:SetText("1")
+      v.maxBox.scripts.OnTextChanged(v.maxBox, true)
+      ns.UI.mq.signal = "hold"
+      ns.UI:RefreshMarket(true)
+      assert.are.equal(1, v.chips.count)
+      assert.truthy(v.chips.pool[1].label.text:find("up to"))
+      assert.are.equal("hold", v.signals:Selected())
+      -- save as a view, clear, and bring it back
+      ns.UI:SaveMarketView("Cheap")
+      v.chips.pool[1].scripts.OnClick(v.chips.pool[1])
+      assert.is_nil(ns.UI.mq.maxPrice)
+      assert.are.equal(0, v.chips.count)
+      ns.UI:ApplyMarketView(AME_DB.settings.marketViews[1])
+      assert.are.equal(10000, ns.UI.mq.maxPrice)
+      assert.are.equal("hold", ns.UI.mq.signal)
+      v.chips.clear.scripts.OnClick(v.chips.clear)
+      assert.is_nil(ns.UI.mq.maxPrice)
+      assert.is_nil(ns.UI.mq.signal)
+      -- signal filter includes Wait, with glyphs (never colour alone)
+      assert.truthy(v.signals.byKey.wait.label.text:find("~ WAIT", 1, true))
+      -- stale rows fade; row tooltips explain the signal
+      local s = ns.UI.list[1]
+      local day = s.day
+      s.day = ns.UI.index.day - 5
+      t:Render()
+      assert.are.equal(0.5, t.rows[1].alpha)
+      local reasons = table.concat(ns.UI.SignalReasons(s, ns.UI.index.day), "\n")
+      assert.truthy(reasons:find("30%-day average"))
+      assert.truthy(reasons:find("5 days old"))
+      s.day = day
+      t:Render()
+      assert.are.equal(1, t.rows[1].alpha)
+      -- narrow: the category sidebar becomes a dropdown on the toolbar
+      ns.UI:OnResize(800)
+      assert.is_false(v.side:IsShown())
+      assert.is_true(v.category:IsShown())
+      local opt
+      for i, o in ipairs(v.category.entries) do
+        if o.entry.classID == 7 then
+          opt = i
+        end
+      end
+      v.category.menu.items[opt].scripts.OnClick(v.category.menu.items[opt])
+      assert.are.equal(7, ns.UI.mq.classID)
+      ns.UI:OnResize(1000)
+      assert.is_true(v.side:IsShown())
+      assert.is_false(v.category:IsShown())
     end)
 
     it("stars items into a watchlist, shows the list and fires alerts after a scan", function()

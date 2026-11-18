@@ -311,8 +311,12 @@ function DataTable:Layout(width)
   local flexCut = math.floor(opts.columns[flex].width * 0.4)
   local total = self.width - GAP
   local hidden, order = {}, {}
+  local userHidden = self.userHidden or {}
   for c, col in ipairs(opts.columns) do
-    if col.drop then
+    if userHidden[col.key] and not col.item then -- switched off in the column chooser
+      hidden[c] = true
+      total = total - col.width - GAP
+    elseif col.drop then
       order[#order + 1] = c
     end
   end
@@ -518,6 +522,7 @@ function DataTable:Render()
     row.data = d
     row.itemID = d and opts.itemID and opts.itemID(d) or false
     row:SetShown(d ~= nil)
+    row:SetAlpha(d and opts.rowAlpha and opts.rowAlpha(d) or 1)
     if row.action then
       row.action:SetShown(d ~= nil and (not opts.action.shown or opts.action.shown(d)) or false)
     end
@@ -551,4 +556,23 @@ end
 -- the first visible index and how many rows fit (for status lines)
 function DataTable:Window()
   return self:Offset(), self.visible
+end
+
+-- Columns switched off by the user (column chooser): a set of column keys. The item column always stays.
+function DataTable:SetUserHidden(keys)
+  self.userHidden = keys or {}
+  self.layoutWidth = nil
+  self:Layout(self.frame:GetWidth())
+  if self.data then
+    self:Render()
+  end
+end
+
+-- how many columns are hidden now (switched off, or dropped because the table is narrow)
+function DataTable:HiddenCount()
+  local n = 0
+  for _ in pairs(self.hiddenColumns or {}) do
+    n = n + 1
+  end
+  return n
 end

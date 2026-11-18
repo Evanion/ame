@@ -42,6 +42,18 @@ Help.TERMS = {
       .. " "
       .. L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."],
   },
+  vsAvg = {
+    L["vs average"],
+    L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."],
+  },
+  age = {
+    L["Data age"],
+    L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."],
+  },
+  phase = {
+    L["Market phase"],
+    L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping."],
+  },
   score = {
     L["Score"],
     L["An opportunity ranking from -100 to +100. Higher means the item is further below its usual price, on a stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. Sort by it to find bargains quickly."],

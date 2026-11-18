@@ -79,17 +79,18 @@ function UI.Stack(content)
   return st
 end
 
--- v: the tab's content area. opts = { header = h, toolbar = h, left = w, right = w, status = true }
--- Returns slots: .header .toolbar .main (frames), .left .right (sidebar frames; put things in .content),
+-- v: the tab's content area. opts = { header = h, toolbar = h, chips = h, left = w, right = w, status = true,
+--   fullLeft = true: the left sidebar runs from the top, with header / toolbar / chips beside it }
+-- Returns slots: .header .toolbar .chips .main (frames), .left .right (sidebar frames; put things in .content),
 -- .status (a font string), :SetCompact(on), :ToggleDetails(), :Layout(), .compact, .details
 function UI.Slots(v, opts)
   local s = { opts = opts, compact = UI.compact or false, details = false }
   local y = 0
+  local bars = {}
   local function bar(h)
     local f = CreateFrame("Frame", nil, v)
-    f:SetPoint("TOPLEFT", 0, y)
-    f:SetPoint("TOPRIGHT", 0, y)
     f:SetHeight(h)
+    bars[#bars + 1] = { f, y }
     y = y - h - GAP
     return f
   end
@@ -98,6 +99,9 @@ function UI.Slots(v, opts)
   end
   if opts.toolbar then
     s.toolbar = bar(opts.toolbar)
+  end
+  if opts.chips then
+    s.chips = bar(opts.chips)
   end
   s.top = y
   s.bottom = 0
@@ -120,12 +124,17 @@ function UI.Slots(v, opts)
     local compact = self.compact
     local l = (self.left and not compact) and (opts.left + GAP) or 0
     local r = (self.right and not compact) and (opts.right + GAP) or 0
+    for _, b in ipairs(bars) do
+      b[1]:ClearAllPoints()
+      b[1]:SetPoint("TOPLEFT", opts.fullLeft and l or 0, b[2])
+      b[1]:SetPoint("TOPRIGHT", 0, b[2])
+    end
     self.main:ClearAllPoints()
     self.main:SetPoint("TOPLEFT", l, self.top)
     self.main:SetPoint("BOTTOMRIGHT", -r, self.bottom)
     if self.left then
       self.left:ClearAllPoints()
-      self.left:SetPoint("TOPLEFT", 0, self.top)
+      self.left:SetPoint("TOPLEFT", 0, opts.fullLeft and 0 or self.top)
       self.left:SetPoint("BOTTOMLEFT", 0, self.bottom)
       self.left:SetShown(not compact)
     end

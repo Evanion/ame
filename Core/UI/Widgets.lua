@@ -199,6 +199,45 @@ function W.Tooltip(frame, build, anchor)
   end)
 end
 
+-- Removable filter chips in a row, then "Clear all": chips:Set({ { label, onRemove }, ... }). chips.count: shown.
+function W.Chips(parent, onClearAll)
+  local row = CreateFrame("Frame", nil, parent)
+  row:SetHeight(20)
+  row.pool = {}
+  row.clear = W.Button(row, L["Clear all"], 64, 18, onClearAll)
+  function row:Set(list)
+    local x = 0
+    for i, chip in ipairs(list) do
+      local b = self.pool[i]
+      if not b then
+        b = W.Button(self, "", 60, 18, function(btn)
+          if btn.onRemove then
+            btn.onRemove()
+          end
+        end)
+        self.pool[i] = b
+      end
+      b.onRemove = chip[2]
+      b.label:SetText(chip[1] .. "  " .. W.Dim("x"))
+      local w = math.ceil(b.label:GetStringWidth() or 40) + 16
+      b:SetWidth(w)
+      b:ClearAllPoints()
+      b:SetPoint("LEFT", x, 0)
+      b:Show()
+      x = x + w + 4
+    end
+    for i = #list + 1, #self.pool do
+      self.pool[i]:Hide()
+    end
+    self.count = #list
+    self.clear:SetShown(#list > 0)
+    self.clear:ClearAllPoints()
+    self.clear:SetPoint("LEFT", x + 4, 0)
+  end
+  row:Set({})
+  return row
+end
+
 -- A one-line font string that may be cut short: hovering it shows the full text when it doesn't fit.
 function W.Truncated(fs)
   fs:SetWordWrap(false)
@@ -353,6 +392,13 @@ local SIGNALS = {
 function W.Signal(signal)
   local s = SIGNALS[signal]
   return s and W.Color(s[1], s[2]) or W.NONE
+end
+
+-- signals are never colour alone: a glyph in front of the word (plain characters every game font has)
+W.SIGNAL_GLYPH = { buy = "+", sell = "-", hold = "=", wait = "~", vendor = "$" }
+function W.SignalGlyph(signal)
+  local s = SIGNALS[signal]
+  return s and W.Color(s[1], W.SIGNAL_GLYPH[signal] .. " " .. s[2]) or W.NONE
 end
 
 -- item name/icon/quality colour; may be nil until the client has cached the item (call again after load)

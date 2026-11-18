@@ -132,6 +132,12 @@ local function newObject(kind)
     ClearAllPoints = function(self)
       self.points = {}
     end,
+    SetAlpha = function(self, a)
+      self.alpha = a
+    end,
+    GetAlpha = function(self)
+      return rawget(self, "alpha") or 1
+    end,
     SetScale = function(self, s)
       self.scale = s
     end,
