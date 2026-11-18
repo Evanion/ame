@@ -640,6 +640,7 @@ L["per unit"] = true
 L["plenty of recent scans"] = true
 L["reading full scan (%d listings) in the background..."] = true
 L["received a full scan from %s via sync (%d items, %s)"] = true
+L["recent price checks:"] = true
 L["recorded full scan: %d items from %d listings (%s)"] = true
 L["right at its %d-day average"] = true
 L["rose to %s (alert at %s)"] = true

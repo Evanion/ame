@@ -168,8 +168,35 @@ local function now()
   return GetTime and GetTime() or 0
 end
 
+-- what the price check did with recent requests, newest last (AME_DB.stats.priceCheckLog; /ame status shows it):
+-- for finding out why a request went unanswered
+PC.LOG_SIZE = 20
+function PC.Trace(what, ...)
+  local stats = AME_DB and AME_DB.stats
+  if not stats then
+    return
+  end
+  local log = stats.priceCheckLog or {}
+  stats.priceCheckLog = log
+  local ok, line = pcall(string.format, what, ...)
+  log[#log + 1] = (date and date("%H:%M:%S ") or "") .. (ok and line or what)
+  while #log > PC.LOG_SIZE do
+    table.remove(log, 1)
+  end
+end
+local trace = PC.Trace
+
+-- timers report their errors (and show up in the log) instead of failing silently
 local function after(s, fn)
-  C_Timer.After(s, fn)
+  C_Timer.After(s, function()
+    local ok, err = pcall(fn)
+    if not ok then
+      trace("error: %s", tostring(err))
+      if ns.AME and ns.AME.ReportError then
+        ns.AME:ReportError("price check", err)
+      end
+    end
+  end)
 end
 
 local function isMe(sender)
@@ -218,6 +245,9 @@ function PC:Answer(query, done)
   AME:WithStore("price-check", shard, function(store)
     return store:Latest(id)
   end, function(ok, latest)
+    if not ok then
+      trace("error finding when it was last seen: %s", tostring(latest))
+    end
     local seen = ok and latest and latest.t and math.max(0, GetServerTime() - latest.t)
     done(PC.Reply(label, s, houseLabel, today, nil, seen), seen and math.floor(seen / 60) or byDay)
   end)
@@ -287,7 +317,8 @@ function PC:Say(text, channel, target)
   if self.stats then
     self.stats.priceChecks = (self.stats.priceChecks or 0) + 1
   end
-  SendChatMessage(text, channel, nil, target)
+  local ok, err = pcall(SendChatMessage, text, channel, nil, target)
+  trace(ok and "  answered in %s" or "  couldn't send in %s: %s", channel, tostring(err))
 end
 
 function PC:SendClaim(req)
@@ -312,23 +343,31 @@ function PC:OnChat(event, msg, sender)
   -- your own !pc is answered in the channel you asked in (by you, or by whoever has fresher data), setting or not:
   -- you asked there, so it's for the group
   local mine = isMe(sender)
+  local key = PC.Key(sender, query)
+  trace("%s asked in %s: %s", tostring(sender), channel, key)
   if mine and channel == "WHISPER" then
     return
   end
   local on = mine or ns.Settings:Get(channel == "WHISPER" and "priceCheckWhisper" or "priceCheck")
-  if not on or blocked(sender) or (channel == "WHISPER" and not self:Known(sender)) then
-    return
+  if not on then
+    return trace("  not answering: price checks are off for %s", channel)
+  elseif blocked(sender) then
+    return trace("  not answering: blocked")
+  elseif channel == "WHISPER" and not self:Known(sender) then
+    return trace("  not answering: not a guild member, friend, group member or trusted player")
   end
   local t = now()
-  local key = PC.Key(sender, query)
   if self.handled[key] and t - self.handled[key] < PC.REPEAT then
-    return
+    return trace("  not answering: asked within the last %d s", PC.REPEAT)
   end
   self.handled[key] = t
   self:Answer(query, function(text, age)
+    trace("  answer ready (data %s min old)", age >= PC.NO_DATA and "-" or tostring(age))
     if channel == "WHISPER" then
       if self:CanSend() then
         self:Say(text, "WHISPER", sender)
+      else
+        trace("  not answering: cooling down")
       end
       return
     end
@@ -346,8 +385,14 @@ function PC:Race(req)
   req.round = req.round + 1
   local round = req.round
   after(PC.Wait(req.age, math.random()), function()
-    if req.done or req.round ~= round or self:Rival(req) or not self:CanSend() then
+    if req.done or req.round ~= round then
       return
+    end
+    local rival = self:Rival(req)
+    if rival then
+      return trace("  %s claimed it first", rival.name)
+    elseif not self:CanSend() then
+      return trace("  not claiming: cooling down")
     end
     req.claimed = true
     self:SendClaim(req)
@@ -355,13 +400,15 @@ function PC:Race(req)
       if req.done or req.round ~= round then
         return
       end
-      local rival = self:Rival(req)
-      if rival and PC.Wins(rival, { age = req.age, name = UnitName("player") or "" }) then
-        return -- theirs; the timeout covers them going quiet
+      local best = self:Rival(req)
+      if best and PC.Wins(best, { age = req.age, name = UnitName("player") or "" }) then
+        return trace("  %s won the claim", best.name) -- theirs; the timeout covers them going quiet
       end
       req.done = true
       if self:CanSend() then
         self:Say(req.text, req.channel)
+      else
+        trace("  not answering: cooling down")
       end
     end)
   end)
@@ -412,6 +459,7 @@ function PC:Watch(req)
     end
     local rival = self:Rival(req)
     if rival then
+      trace("  %s didn't answer: trying again", rival.name)
       req.failed[rival.name] = true
       req.retried = true
       local failed = self.claims[req.key] and self.claims[req.key][rival.name]
