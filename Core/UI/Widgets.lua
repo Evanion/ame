@@ -575,7 +575,7 @@ function W.SignalIcon(signal, size)
   end
   local hex = ns.HEX[s[1]] or "ffffff"
   local r, g, b = tonumber(hex:sub(1, 2), 16), tonumber(hex:sub(3, 4), 16), tonumber(hex:sub(5, 6), 16)
-  size = size or 10
+  size = size or 15 -- big enough to tell the dot (HOLD) from the coin (VENDOR)
   return ("|T%s%s:%d:%d:0:0:32:32:0:32:0:32:%d:%d:%d|t"):format(
     W.SIGNAL_MEDIA,
     W.SIGNAL_ICON[signal],
