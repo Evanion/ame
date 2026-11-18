@@ -822,6 +822,24 @@ describe("addon in a stubbed client", function()
       header.scripts.OnMouseUp(header, "RightButton")
       assert.are.equal("guide", ns.UI.current)
       assert.are.equal("market", ns.UI.views.guide.term)
+      -- the Guide is a documentation page: sidebar of articles by group, one article at a time, searchable
+      local guide = ns.UI.views.guide
+      assert.are.equal("Glossary", guide.crumb.text)
+      assert.truthy(guide.title.text:find("Market price"))
+      assert.is_true(guide.byKey.market.link.sel:IsShown())
+      guide.byKey.selling.link.scripts.OnClick(guide.byKey.selling.link)
+      assert.are.equal("Trading", guide.crumb.text)
+      assert.is_true(guide.paras[2]:IsShown()) -- two paragraphs
+      guide.search:SetText("deposit")
+      guide.search.scripts.OnTextChanged(guide.search, true)
+      for _, a in ipairs(guide.matches) do
+        local text = (a.title .. table.concat(a.body, " ")):lower()
+        assert.truthy(text:find("deposit"), a.key)
+      end
+      assert.is_false(guide.byKey.commands.link:IsShown()) -- doesn't mention deposits
+      guide.search:SetText("")
+      guide.search.scripts.OnTextChanged(guide.search, true)
+      assert.is_true(guide.byKey.commands.link:IsShown())
     end)
 
     it("stars items into a watchlist, shows the list and fires alerts after a scan", function()
@@ -1435,8 +1453,18 @@ describe("addon in a stubbed client", function()
       local box = ns.UI:ExportPortfolio()
       local text = box.edit:GetText()
       assert.truthy(text:find("^Item\tHeld"))
-      assert.truthy(text:find("Item 2589\t46", 1, true))
+      assert.truthy(text:find("Item 2589\t46\t", 1, true))
+      assert.truthy(text:find("Market (g)", 1, true)) -- money as gold numbers a spreadsheet can sum
+      row = ns.UI.pfRows[1]
+      assert.truthy(text:find(("%.4f"):format(row.market / 10000), 1, true))
       assert.is_nil(text:find("|c", 1, true)) -- no colour codes
+      -- CSV: commas, quoted where needed
+      box.formats.byKey.csv.scripts.OnClick(box.formats.byKey.csv)
+      text = box.edit:GetText()
+      assert.truthy(text:find("^Item,Held,"))
+      assert.truthy(text:find("Item 2589,46,", 1, true))
+      assert.truthy(box.hint.text:find("comma"))
+      box.formats.byKey.tabs.scripts.OnClick(box.formats.byKey.tabs)
       _G.C_Container, _G.GetInboxNumItems, _G.GetInboxInvoiceInfo, _G.GetInboxHeaderInfo = nil, nil, nil, nil
       _G.C_Item.GetItemInfoInstant = instant
     end)

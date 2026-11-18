@@ -613,18 +613,62 @@ function DataTable.Plain(s)
   return s
 end
 
--- The whole list as tab-separated text, header first, in the current sort: what's on screen, for copying out (WoW
--- can't write files). Hidden columns are left out.
-function DataTable:ExportText()
+-- a number for spreadsheets: gold with 4 decimals (copper exact), no thousands separators
+local function gold(copper)
+  return copper and ("%.4f"):format(copper / 10000) or ""
+end
+-- raw values for the formats that would otherwise export as display text
+local EXPORT = {
+  money = gold,
+  count = function(v)
+    return v and tostring(math.floor(v + 0.5)) or ""
+  end,
+  rate = function(v)
+    return v and ("%.1f"):format(v) or ""
+  end,
+  pct = function(v)
+    return v and ("%.1f%%"):format(v * 100) or ""
+  end,
+  plainpct = function(v)
+    return v and ("%.1f%%"):format(v * 100) or ""
+  end,
+}
+
+-- a CSV field: quoted when it holds the separator, a quote or a line break
+local function csvField(s)
+  if s:find('[,"\n]') then
+    return '"' .. s:gsub('"', '""') .. '"'
+  end
+  return s
+end
+
+-- The whole list as text, header first, in the current sort: what's on screen, for copying out (WoW can't write
+-- files). Columns you switched off are left out. format: "tabs" (default: pastes into spreadsheet columns) or "csv".
+-- Money is gold as a plain number (header marked "(g)"), quantities and rates are plain numbers, so a spreadsheet
+-- can sum and sort them. Columns can give their own raw value: col.export(d), or col.money = true for d[col.key].
+function DataTable:ExportText(format)
   local opts, plain = self.opts, DataTable.Plain
-  local hidden = self.hiddenColumns or {}
+  -- only columns you switched off are left out; ones dropped for lack of room are exported
+  local hidden = {}
+  for c, col in ipairs(opts.columns) do
+    hidden[c] = (self.userHidden or {})[col.key] and not col.item or nil
+  end
+  local sep = format == "csv" and "," or "\t"
+  local function cell(s)
+    s = plain(s)
+    if format == "csv" then
+      return csvField(s)
+    end
+    return (s:gsub("[\t\n]", " "))
+  end
   local header, lines = {}, {}
   for c, col in ipairs(opts.columns) do
     if not hidden[c] then
-      header[#header + 1] = plain(label(col))
+      local money = col.money or col.format == "money"
+      header[#header + 1] = cell(label(col) .. (money and " (g)" or ""))
     end
   end
-  lines[1] = table.concat(header, "\t")
+  lines[1] = table.concat(header, sep)
   for _, d in ipairs(self.data or {}) do
     local cells = {}
     for c, col in ipairs(opts.columns) do
@@ -633,19 +677,31 @@ function DataTable:ExportText()
         if col.item then
           local id = opts.itemID and opts.itemID(d)
           val = (id and ns.ItemCache.Name(id)) or (col.fallback and col.fallback(d)) or (id and ("item:" .. id))
+        elseif col.export or col.money then
+          local raw
+          if col.export then
+            raw = col.export(d)
+          else
+            raw = d[col.key]
+          end
+          if col.money then
+            val = type(raw) == "number" and gold(raw) or ""
+          else
+            val = raw
+          end
+        elseif col.format and EXPORT[col.format] then
+          val = EXPORT[col.format](d[col.key])
         elseif col.text then
           val = col.text(d, self)
-        elseif col.format == "count" then
-          val = d[col.key] -- exact in exports
         elseif col.format then
           val = FORMATS[col.format](d[col.key])
         else
           val = d[col.key]
         end
-        cells[#cells + 1] = plain(val)
+        cells[#cells + 1] = cell(val == nil and "" or tostring(val))
       end
     end
-    lines[#lines + 1] = table.concat(cells, "\t")
+    lines[#lines + 1] = table.concat(cells, sep)
   end
   return table.concat(lines, "\n")
 end

@@ -178,8 +178,6 @@ L["Common+"] = "일반+"
 L["Copy to my watchlists"] = "내 관심 목록에 복사"
 L["Could not load history: %s"] = "기록을 불러올 수 없음: %s"
 L["Ctrl+Alt-click"] = "Ctrl+Alt-클릭"
-L["Ctrl+C copies the selected text; paste it into a spreadsheet."] =
-  "Ctrl+C로 선택한 텍스트를 복사해 스프레드시트에 붙여 넣으세요."
 L["Customers"] = "구매자"
 L["Data"] = "데이터"
 L["Data age"] = "데이터 경과일"
@@ -217,7 +215,6 @@ L["For units you bought on the auction house: what they're worth now at market p
   "경매장에서 산 물량: 현재 시장가 가치에서 지불한 금액을 뺀 값입니다. 판매해야 실제 수익이 됩니다."
 L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
   "경매 판매에서: 경매장 수수료를 뗀 수령액에서 그 물량의 구매가를 뺀 값입니다 (먼저 산 것부터). 획득하거나 제작한 아이템의 판매는 전액 수익입니다."
-L["Glossary: %s"] = "용어집: %s"
 L["Goblin AH"] = "고블린 경매장"
 L["Goblin auction houses"] = "고블린 경매장"
 L["Goblin gold"] = "고블린 금색"

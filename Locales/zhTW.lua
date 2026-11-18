@@ -174,8 +174,6 @@ L["Common+"] = "普通+"
 L["Copy to my watchlists"] = "複製到我的關注清單"
 L["Could not load history: %s"] = "無法載入歷史：%s"
 L["Ctrl+Alt-click"] = "Ctrl+Alt-點擊"
-L["Ctrl+C copies the selected text; paste it into a spreadsheet."] =
-  "Ctrl+C 複製所選文字，然後貼到試算表中。"
 L["Customers"] = "買家"
 L["Data"] = "資料"
 L["Data age"] = "資料時效"
@@ -213,7 +211,6 @@ L["For units you bought on the auction house: what they're worth now at market p
   "對於你在拍賣場買進的物品：目前市價減去你支付的價格。賣出後才成為實際利潤。"
 L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
   "來自你的拍賣銷售：扣除拍賣場手續費後的收入，減去這些物品的買進成本（先買先賣）。拾取或製造的物品售出時全額計入。"
-L["Glossary: %s"] = "術語表：%s"
 L["Goblin AH"] = "地精拍賣場"
 L["Goblin auction houses"] = "地精拍賣場"
 L["Goblin gold"] = "地精金"

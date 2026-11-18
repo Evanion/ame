@@ -20,6 +20,10 @@ local COLUMNS = {
   { key = "market", label = L["Market"], width = 86, format = "money", term = "market" },
   {
     key = "avg",
+    money = true,
+    export = function(s)
+      return s["avg" .. avgDays()]
+    end,
     width = 86,
     term = "avg",
     optional = true,

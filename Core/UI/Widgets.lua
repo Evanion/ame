@@ -212,6 +212,7 @@ function W.Tooltip(frame, build, anchor)
 end
 
 -- A box with text to copy (exports: WoW can't write files). The text is selected; Ctrl+C copies it.
+-- text: a string, or a function(format) -> string for "tabs" / "csv" (the box then offers both)
 function W.ExportBox(title, text)
   local box = W.exportBox
   if not box then
@@ -229,9 +230,28 @@ function W.ExportBox(title, text)
     box.title:SetPoint("TOPLEFT", 12, -10)
     box.hint = W.Text(box, "GameFontDisableSmall")
     box.hint:SetPoint("TOPLEFT", box.title, "BOTTOMLEFT", 0, -4)
-    box.hint:SetText(L["Ctrl+C copies the selected text; paste it into a spreadsheet."])
+    box.hint:SetPoint("RIGHT", -12, 0)
+    box.hint:SetJustifyH("LEFT")
+    box.formats = W.Segmented(box, { { "tabs", L["Spreadsheet"] }, { "csv", L["CSV"] } }, {
+      minWidth = 60,
+      onSelect = function(format)
+        box.format = format
+        box:Fill()
+      end,
+    })
+    box.formats:SetPoint("TOPRIGHT", -12, -8)
+    function box:Fill()
+      local t = type(self.source) == "function" and self.source(self.format) or self.source
+      self.hint:SetText(
+        self.format == "csv" and L["Ctrl+C copies the selected text: comma-separated values."]
+          or L["Ctrl+C copies the selected text; paste it into a spreadsheet. Tabs show as boxes here but paste as columns."]
+      )
+      self.edit:SetText(t or "")
+      self.edit:SetFocus()
+      self.edit:HighlightText()
+    end
     local scroll = CreateFrame("ScrollFrame", nil, box, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 12, -44)
+    scroll:SetPoint("TOPLEFT", 12, -56)
     scroll:SetPoint("BOTTOMRIGHT", -32, 40)
     local edit = CreateFrame("EditBox", nil, scroll)
     edit:SetMultiLine(true)
@@ -251,10 +271,12 @@ function W.ExportBox(title, text)
     W.exportBox = box
   end
   box.title:SetText(title)
-  box.edit:SetText(text or "")
+  box.source = text
+  box.format = box.format or "tabs"
+  box.formats:SetShown(type(text) == "function")
+  box.formats:Select(box.format, true)
   box:Show()
-  box.edit:SetFocus()
-  box.edit:HighlightText()
+  box:Fill()
   return box
 end
 

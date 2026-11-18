@@ -176,8 +176,6 @@ L["Common+"] = "Commun+"
 L["Copy to my watchlists"] = "Copier dans mes listes de suivi"
 L["Could not load history: %s"] = "Impossible de charger l'historique : %s"
 L["Ctrl+Alt-click"] = "Ctrl+Alt-clic"
-L["Ctrl+C copies the selected text; paste it into a spreadsheet."] =
-  "Ctrl+C copie le texte sélectionné ; collez-le dans un tableur."
 L["Customers"] = "Clients"
 L["Data"] = "Données"
 L["Data age"] = "Âge des données"
@@ -216,7 +214,6 @@ L["For units you bought on the auction house: what they're worth now at market p
   "Pour les unités achetées à l'hôtel des ventes : leur valeur actuelle au prix du marché moins ce que vous avez payé. Cela devient un vrai profit quand vous vendez."
 L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
   "D'après vos ventes aux enchères : ce que vous avez reçu après la commission de l'HV, moins ce que vous avez payé pour ces unités (achats les plus anciens d'abord). Les ventes d'objets ramassés ou fabriqués comptent en entier."
-L["Glossary: %s"] = "Glossaire : %s"
 L["Goblin AH"] = "HV gobelin"
 L["Goblin auction houses"] = "HV gobelins"
 L["Goblin gold"] = "Or gobelin"

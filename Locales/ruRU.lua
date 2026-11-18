@@ -187,8 +187,6 @@ L["Common+"] = "Обычное+"
 L["Copy to my watchlists"] = "Копировать в мои списки"
 L["Could not load history: %s"] = "Не удалось загрузить историю: %s"
 L["Ctrl+Alt-click"] = "Ctrl+Alt-клик"
-L["Ctrl+C copies the selected text; paste it into a spreadsheet."] =
-  "Ctrl+C копирует выделенный текст; вставьте его в таблицу."
 L["Customers"] = "Покупатели"
 L["Data"] = "Данные"
 L["Data age"] = "Возраст данных"
@@ -227,7 +225,6 @@ L["For units you bought on the auction house: what they're worth now at market p
   "Для штук, купленных на аукционе: сколько они стоят сейчас по рыночной цене минус то, что вы заплатили. Становится реальной прибылью при продаже."
 L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
   "С ваших продаж на аукционе: полученное после комиссии аукциона минус то, что вы заплатили за эти штуки (сначала самые старые покупки). Продажи добытых или созданных предметов учитываются полностью."
-L["Glossary: %s"] = "Глоссарий: %s"
 L["Goblin AH"] = "Аукцион гоблинов"
 L["Goblin auction houses"] = "Аукционы гоблинов"
 L["Goblin gold"] = "Золото гоблинов"

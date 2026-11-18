@@ -21,6 +21,7 @@ local POSITION_COLS = {
   { key = "unitCost", drop = 1, label = L["Avg cost"], width = 84, format = "money", term = "pfCost" },
   {
     key = "unrealized",
+    money = true,
     label = L["Unrealized"],
     width = 92,
     term = "pfUnrealized",
@@ -169,6 +170,7 @@ local LEDGER_COLS = {
   },
   {
     key = "amount",
+    money = true,
     label = L["Price"],
     width = 92,
     text = function(e)
@@ -180,6 +182,7 @@ local LEDGER_COLS = {
   },
   {
     key = "cut",
+    money = true,
     drop = 1,
     label = L["AH cut"],
     width = 76,
@@ -189,6 +192,10 @@ local LEDGER_COLS = {
   },
   {
     key = "profit",
+    money = true,
+    export = function(e)
+      return e.kind == "sale" and UI.pfProfitOf and UI.pfProfitOf[e] or nil
+    end,
     label = L["Profit"],
     width = 92,
     term = "pfProfit",
@@ -377,7 +384,9 @@ function UI:ExportPortfolio()
   local v = self.pfView
   local tbl = v[self.pfMode]
   local title = v.modes.byKey[self.pfMode].label:GetText() or ""
-  return W.ExportBox(L["Export: %s"]:format(title), tbl:ExportText())
+  return W.ExportBox(L["Export: %s"]:format(title), function(format)
+    return tbl:ExportText(format)
+  end)
 end
 
 function UI:RefreshPortfolio()

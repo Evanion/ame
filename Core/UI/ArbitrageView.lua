@@ -38,6 +38,7 @@ local COLUMNS = {
   { key = "sell", label = L["Sells for"], width = 80, format = "money", term = "arbSell" },
   {
     key = "net",
+    money = true,
     label = L["Net"],
     width = 80,
     term = "arbNet",

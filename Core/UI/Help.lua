@@ -214,108 +214,319 @@ Help.GUIDE = {
   },
 }
 
--- The Guide: sections in two columns (each goes to the shorter one), scrolled with the mouse wheel when they don't
--- fit (translations run long). Laid out when shown: text heights are only known once the client has drawn it.
-Help.GUIDE_COLUMN, Help.GUIDE_GAP = 460, 24
+-- The Guide's articles, grouped like a documentation site. Each article: key, title, body (paragraphs). The glossary
+-- group is built from Help.TERMS (Help.GLOSSARY order), so every hover explanation has its own page.
+local function guideText(i)
+  return Help.GUIDE[i][2]
+end
 
-function Help.CreateGuide(parent, contentArea)
-  local v = contentArea(parent)
-  local scroll = CreateFrame("ScrollFrame", nil, v)
-  scroll:SetPoint("TOPLEFT", 0, 0)
-  scroll:SetPoint("BOTTOMRIGHT", -12, 0)
-  local content = CreateFrame("Frame", nil, scroll)
-  content:SetSize(2 * Help.GUIDE_COLUMN + Help.GUIDE_GAP, 1)
-  scroll:SetScrollChild(content)
-  v.scroll, v.content, v.sections = scroll, content, {}
-  local sections = {}
-  for _, section in ipairs(Help.GUIDE) do
-    sections[#sections + 1] = section
-  end
+function Help.Articles()
+  local groups = {
+    {
+      L["Getting started"],
+      {
+        {
+          key = "start",
+          title = L["Getting started"],
+          body = {
+            L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."],
+            L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."],
+            L["Open the window with /ame, the minimap button, or set it to open with the auction house (Settings > Window)."],
+          },
+        },
+        { key = "data", title = Help.GUIDE[1][1], body = { guideText(1) } },
+        {
+          key = "window",
+          title = L["The window"],
+          body = {
+            L["Drag the title bar to move the window and the bottom-right corner to resize it. AME remembers the size, and where you put it with and without the auction house open. When the auction house opens and there's room beside it, AME docks next to it (Settings > Window)."],
+            L["On a narrow window the tabs switch to a compact layout: sidebars become a dropdown or a Details button. Window scale changes AME's size without touching the rest of your UI."],
+            L["The status row at the bottom says where the numbers come from, how old they are, and when a scan is being read or market data is being updated."],
+          },
+        },
+      },
+    },
+    {
+      L["Tabs"],
+      {
+        { key = "tabMarket", title = Help.GUIDE[2][1], body = { guideText(2) } },
+        { key = "tabItem", title = Help.GUIDE[5][1], body = { guideText(5) } },
+        { key = "tabArbitrage", title = Help.GUIDE[3][1], body = { guideText(3) } },
+        { key = "tabPortfolio", title = Help.GUIDE[4][1], body = { guideText(4) } },
+        {
+          key = "tabSync",
+          title = L["Sync tab"],
+          body = {
+            L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
+            L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
+          },
+        },
+        {
+          key = "tabSettings",
+          title = L["Settings tab"],
+          body = {
+            L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."],
+          },
+        },
+      },
+    },
+    {
+      L["Trading"],
+      {
+        {
+          key = "selling",
+          title = L["Selling: posting prices"],
+          body = {
+            Help.TERMS.posting[2],
+            L["At the auction house, a bar under the sell window shows the price for the item you're posting, why, and what you'd get after the cut. Fill price puts it in the price box; you still click Post yourself. Click a listing in the sell window to aim just under it instead."],
+          },
+        },
+        { key = "numbers", title = Help.GUIDE[7][1], body = { guideText(7), Help.TERMS.signal[2] } },
+        { key = "watch", title = Help.GUIDE[6][1], body = { guideText(6) } },
+        { key = "commands", title = Help.GUIDE[8][1], body = { guideText(8) } },
+      },
+    },
+  }
+  local glossary = {}
   for _, key in ipairs(Help.GLOSSARY) do
     local term = Help.TERMS[key]
     if term then
-      sections[#sections + 1] = { L["Glossary: %s"]:format(term[1]), term[2], key = key }
+      glossary[#glossary + 1] = { key = key, title = term[1], body = { term[2] } }
     end
   end
-  v.byKey = {}
-  for _, section in ipairs(sections) do
-    local head = W.Text(content, "GameFontNormal")
-    head:SetText(section[1])
-    local body = W.Text(content, "GameFontHighlightSmall")
-    body:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -4)
-    body:SetWidth(Help.GUIDE_COLUMN)
-    body:SetJustifyH("LEFT")
-    body:SetSpacing(2)
-    body:SetText(section[2])
-    local entry = { head = head, body = body, key = section.key }
-    v.sections[#v.sections + 1] = entry
-    if section.key then
-      v.byKey[section.key] = entry
-    end
-  end
-  v.credits = W.Text(content, "GameFontDisableSmall")
-  v.credits:SetText(
+  groups[#groups + 1] = { L["Glossary"], glossary }
+  return groups
+end
+
+-- The Guide: a sidebar of articles by group (filtered by the search box) and the article on the right, scrolling
+-- when long. Narrow window: the sidebar becomes a dropdown next to the search box.
+Help.GUIDE_SIDEBAR = 210
+Help.ARTICLE_WIDTH = 640 -- longest comfortable line
+
+function Help.CreateGuide(parent, contentArea)
+  local UI = ns.UI
+  local v = contentArea(parent)
+  local slots = UI.Slots(v, { toolbar = 22, left = Help.GUIDE_SIDEBAR, fullLeft = true, status = true })
+  v.slots = slots
+  slots.status:SetText(
     L["Azeroth Mercantile Exchange %s  ·  created by Tyken Evanion  ·  PvP Horde, WoW Forever"]:format(ns.VERSION)
   )
-
-  -- a thin bar on the right shows where you are when it scrolls
-  local bar = v:CreateTexture(nil, "OVERLAY")
-  bar:SetColorTexture(1, 1, 1, 0.25)
-  bar:SetWidth(4)
-  bar:Hide()
-
-  local function range()
-    return math.max(0, (content:GetHeight() or 0) - (scroll:GetHeight() or 0))
-  end
-  local function setScroll(y)
-    y = math.max(0, math.min(range(), y))
-    scroll:SetVerticalScroll(y)
-    local max, viewH = range(), scroll:GetHeight() or 0
-    bar:SetShown(max > 0)
-    if max > 0 then
-      local total = viewH + max
-      local h = math.max(20, viewH * viewH / total)
-      bar:SetHeight(h)
-      bar:ClearAllPoints()
-      bar:SetPoint("TOPRIGHT", v, "TOPRIGHT", 0, -(viewH - h) * y / max)
+  local groups = Help.Articles()
+  v.byKey, v.order, v.shownArticle = {}, {}, false
+  for _, g in ipairs(groups) do
+    for _, a in ipairs(g[2]) do
+      a.group = g[1]
+      v.byKey[a.key] = a
+      v.order[#v.order + 1] = a
     end
   end
 
-  function v:Layout()
-    local cols = { 0, 0 } -- heights so far
-    for _, s in ipairs(self.sections) do
-      local c = cols[2] < cols[1] and 2 or 1
-      s.head:ClearAllPoints()
-      s.head:SetPoint("TOPLEFT", (c - 1) * (Help.GUIDE_COLUMN + Help.GUIDE_GAP), -cols[c])
-      s.y = cols[c]
-      cols[c] = cols[c] + (s.head:GetStringHeight() or 14) + 4 + (s.body:GetStringHeight() or 40) + 18
-    end
-    local bottom = math.max(cols[1], cols[2])
-    self.credits:ClearAllPoints()
-    self.credits:SetPoint("TOPLEFT", 0, -bottom - 4)
-    content:SetHeight(bottom + 24)
-    setScroll(scroll:GetVerticalScroll() or 0)
+  -- sidebar: group headings and article links
+  local list = slots.left.content
+  v.links = {}
+  local function heading(text)
+    local h = W.Text(list, "GameFontDisableSmall")
+    h:SetText(text:upper())
+    return { heading = true, frame = h, group = text }
   end
-  v:HookScript("OnShow", function(self)
-    self:Layout()
+  local function link(a)
+    local b = CreateFrame("Button", nil, list)
+    b:SetHeight(18)
+    b.sel = b:CreateTexture(nil, "BACKGROUND")
+    b.sel:SetAllPoints()
+    W.Fill(b.sel, W.COLORS.rowSelected)
+    b.sel:Hide()
+    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+    b.hl:SetAllPoints()
+    W.Fill(b.hl, W.COLORS.rowHover)
+    b.text = W.Text(b, "GameFontHighlightSmall")
+    b.text:SetPoint("LEFT", 8, 0)
+    b.text:SetPoint("RIGHT", -4, 0)
+    b.text:SetWordWrap(false)
+    b.text:SetText(a.title)
+    b:SetScript("OnClick", function()
+      v:ShowArticle(a.key)
+    end)
+    b.article = a
+    return { frame = b, article = a }
+  end
+  for _, g in ipairs(groups) do
+    v.links[#v.links + 1] = heading(g[1])
+    for _, a in ipairs(g[2]) do
+      local l = link(a)
+      v.links[#v.links + 1] = l
+      a.link = l.frame
+    end
+  end
+
+  -- lay the sidebar out, showing only articles matching the search (a group's heading when any of it matches)
+  local function matches(a, text)
+    if not text or text == "" then
+      return true
+    end
+    if a.title:lower():find(text, 1, true) then
+      return true
+    end
+    for _, p in ipairs(a.body) do
+      if p:lower():find(text, 1, true) then
+        return true
+      end
+    end
+    return false
+  end
+  function v:Filter(text)
+    text = text and text:lower() or nil
+    local y, shown = -8, {}
+    for _, l in ipairs(self.links) do
+      if not l.heading then
+        shown[l.article.group] = shown[l.article.group] or matches(l.article, text)
+      end
+    end
+    self.matches = {}
+    for _, l in ipairs(self.links) do
+      local f = l.frame
+      f:ClearAllPoints()
+      local on
+      if l.heading then
+        on = shown[l.group]
+        if on then
+          y = y - (y < -8 and 10 or 0)
+          f:SetPoint("TOPLEFT", 10, y)
+          y = y - 16
+        end
+      else
+        on = matches(l.article, text)
+        if on then
+          f:SetPoint("TOPLEFT", 4, y)
+          f:SetPoint("RIGHT", list, "RIGHT", -4, 0)
+          y = y - 18
+          self.matches[#self.matches + 1] = l.article
+        end
+      end
+      f:SetShown(on and true or false)
+    end
+    slots.left.pane:Measure()
+    -- the compact dropdown lists the same articles
+    local options = {}
+    for i, a in ipairs(self.matches) do
+      options[i] = { a.key, a.title }
+    end
+    if #options == 0 then
+      options[1] = { false, L["No articles match"] }
+    end
+    self.pick:SetOptions(options)
+    if self.shownArticle then
+      self.pick:SetValue(self.shownArticle.key)
+    end
+  end
+
+  -- toolbar: search, and (compact) the article dropdown
+  v.search = W.Input(slots.toolbar, {
+    width = 200,
+    hint = L["Search the guide..."],
+    onChange = function(text)
+      v:Filter(text)
+      if v.matches[1] and text ~= "" then
+        local still = false
+        for _, a in ipairs(v.matches) do
+          still = still or a == v.shownArticle
+        end
+        if not still then
+          v:ShowArticle(v.matches[1].key)
+        end
+      end
+    end,
+    clearOnEscape = true,
+  })
+  v.search:SetPoint("LEFT", 0, 0)
+  v.pick = W.Dropdown(slots.toolbar, 220, { { "start", "" } }, function(key)
+    if key then
+      v:ShowArticle(key)
+    end
+  end, { neutral = true })
+  v.pick:SetPoint("LEFT", v.search, "RIGHT", 8, 0)
+
+  -- the article
+  local pane = W.ScrollPane(slots.main)
+  local page = pane.content
+  v.pane = pane
+  v.title = W.Text(page, "GameFontNormalLarge")
+  v.title:SetPoint("TOPLEFT", 16, -10)
+  v.crumb = W.Text(page, "GameFontDisableSmall")
+  v.crumb:SetPoint("BOTTOMLEFT", v.title, "TOPLEFT", 0, 2)
+  v.paras = {}
+  local function para(i)
+    local p = v.paras[i]
+    if not p then
+      p = W.Text(page, "GameFontHighlight")
+      p:SetJustifyH("LEFT")
+      p:SetWordWrap(true)
+      p:SetSpacing(4)
+      if i == 1 then
+        p:SetPoint("TOPLEFT", v.title, "BOTTOMLEFT", 0, -12)
+      else
+        p:SetPoint("TOPLEFT", v.paras[i - 1], "BOTTOMLEFT", 0, -10)
+      end
+      v.paras[i] = p
+    end
+    return p
+  end
+  v.related = W.Text(page, "GameFontDisableSmall")
+  local function width()
+    local w = (slots.main:GetWidth() or 0) - 40
+    if w <= 0 then
+      w = Help.ARTICLE_WIDTH
+    end
+    return math.min(w, Help.ARTICLE_WIDTH)
+  end
+  function v:LayoutArticle()
+    local w = width()
+    self.title:SetWidth(w)
+    for _, p in ipairs(self.paras) do
+      p:SetWidth(w)
+    end
+    pane:Measure()
+  end
+  slots.main:SetScript("OnSizeChanged", function()
+    v:LayoutArticle()
   end)
-  -- scroll to a glossary entry and mark it
-  function v:ShowTerm(key)
-    local entry = self.byKey[key]
-    if not entry then
-      return
+
+  function v:ShowArticle(key)
+    local a = self.byKey[key] or self.order[1]
+    self.shownArticle, self.term = a, a.key
+    self.crumb:SetText(a.group)
+    self.title:SetText(a.title)
+    for i, text in ipairs(a.body) do
+      local p = para(i)
+      p:SetText(text)
+      p:Show()
     end
-    self:Layout()
-    setScroll(entry.y or 0)
-    for _, s in ipairs(self.sections) do
-      s.head:SetTextColor(1, 0.82, 0)
+    for i = #a.body + 1, #self.paras do
+      self.paras[i]:Hide()
     end
-    entry.head:SetTextColor(0.2, 0.8, 1)
-    self.term = key
+    for _, l in ipairs(self.links) do
+      if not l.heading then
+        l.frame.sel:SetShown(l.article == a)
+      end
+    end
+    self.pick:SetValue(a.key)
+    pane:SetScroll(0)
+    self:LayoutArticle()
   end
-  v:EnableMouseWheel(true)
-  v:SetScript("OnMouseWheel", function(_, delta)
-    setScroll((scroll:GetVerticalScroll() or 0) - delta * 40)
+  -- a glossary term (right-click on an explained header or number)
+  function v:ShowTerm(key)
+    self:ShowArticle(key)
+  end
+
+  function v:SetCompact(on)
+    slots:SetCompact(on)
+    self.pick:SetShown(on)
+  end
+  v:SetCompact(slots.compact)
+  v:Filter(nil)
+  v:ShowArticle("start")
+  v:HookScript("OnShow", function(self)
+    self:LayoutArticle()
   end)
   return v
 end
