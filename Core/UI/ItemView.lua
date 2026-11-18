@@ -102,8 +102,7 @@ function UI:CreateItemView(parent)
       UI:DrawItemChart()
     end,
   })
-  v.style:SetPoint("LEFT", v.ranges, "RIGHT", 12, 0)
-  ns.Help.Explain(v.style, "candles")
+  ns.Help.Explain(v.style, "candles") -- right-aligned, apart from the ranges (placed in SetCompact)
   -- compact: the sidebar's gist on the toolbar, and a button for the whole sidebar
   v.details = W.Button(bar, L["Details"], 64, 20, function()
     slots:ToggleDetails()
@@ -111,8 +110,8 @@ function UI:CreateItemView(parent)
   end)
   v.details:SetPoint("RIGHT", 0, 0)
   v.summary = W.Text(bar, "GameFontHighlightSmall", "RIGHT")
-  v.summary:SetPoint("LEFT", v.style, "RIGHT", 12, 0)
-  v.summary:SetPoint("RIGHT", v.details, "LEFT", -8, 0)
+  v.summary:SetPoint("LEFT", v.ranges, "RIGHT", 12, 0)
+  v.summary:SetPoint("RIGHT", v.style, "LEFT", -12, 0)
   v.summary:SetWordWrap(false)
 
   -- main: the chart fills it
@@ -274,6 +273,13 @@ function UI:CreateItemView(parent)
     self.summary:SetShown(on)
     self.details:SetShown(on)
     self.details:SetSelected(false)
+    -- Line | Candles at the right end; in compact, left of the Details button
+    self.style:ClearAllPoints()
+    if on then
+      self.style:SetPoint("RIGHT", self.details, "LEFT", -8, 0)
+    else
+      self.style:SetPoint("RIGHT", 0, 0)
+    end
   end
   v:SetCompact(slots.compact)
   chart:SetMessage(L["Pick an item: search above, Shift-click one anywhere, or click a row on the Market tab."])
