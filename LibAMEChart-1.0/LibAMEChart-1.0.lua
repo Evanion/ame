@@ -591,9 +591,12 @@ function Chart:Refresh()
     bg:SetPoint("BOTTOMLEFT", self.canvas, "BOTTOMLEFT", pane.x, pane.y)
     bg:SetSize(pane.w, pane.h)
   end
+  self.axisLabels = {} -- [axis] = { { text, y } }: a value tag hides the labels it would cover
   for axis, pane in pairs(panes) do
     local e = extents[axis]
     if e then
+      local labels = {}
+      self.axisLabels[axis] = labels
       local ticks = M.NiceTicks(e[1], e[2], pane.h < 80 and 2 or o.targetYTicks)
       local fmt = self.formatters[axis] or tostring
       for _, v in ipairs(ticks) do
@@ -607,6 +610,7 @@ function Chart:Refresh()
           t:SetText(fmt(v))
           t:SetTextColor(colorOf(o.axisTextColor))
           t:SetPoint("LEFT", self.canvas, "BOTTOMLEFT", pane.x + pane.w + 4, y)
+          labels[#labels + 1] = { text = t, y = y }
         end
       end
     end
@@ -809,7 +813,9 @@ function Chart:DrawPoints(s, pane, from, to, sx, sy)
   for i, x in ipairs(s.xs) do
     local y = s.ys[i]
     if x >= from and x <= to and y then
-      local px, py = sx(x), sy(y)
+      -- kept inside the plot (a trade at the very end of the range would sit on the axis labels)
+      local px = min(max(sx(x), pane.x + size / 2), pane.x + pane.w - size / 2)
+      local py = sy(y)
       if py >= pane.y and py <= pane.y + pane.h then
         local r, g, b, a = colorOf(s.colors and s.colors[i] or s.color)
         local rim = pool(self, "point")
@@ -857,6 +863,11 @@ function Chart:DrawMarker(s, pane, e, from, to)
   pill:SetColorTexture(r, g, b, 0.95)
   pill:SetPoint("LEFT", self.canvas, "BOTTOMLEFT", pane.x + pane.w + 2, y)
   pill:SetSize((text:GetStringWidth() or 30) + 8, 14)
+  for _, label in ipairs(self.axisLabels and self.axisLabels[s.axis] or {}) do
+    if abs(label.y - y) < 12 then
+      label.text:Hide()
+    end
+  end
 end
 
 ---------------------------------------------------------------------------------------------------------------------

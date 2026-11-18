@@ -95,8 +95,21 @@ function UI:CreateItemView(parent)
   v.icon:SetPoint("TOPLEFT", 0, 0)
   v.name = W.Text(v, "GameFontNormalLarge")
   v.name:SetPoint("TOPLEFT", v.icon, "TOPRIGHT", 8, -2)
+  -- subtitle: market, history, data, last seen... - stops short of the Watch button (truncated; full text on hover)
   v.sub = W.Text(v, "GameFontDisableSmall")
   v.sub:SetPoint("BOTTOMLEFT", v.icon, "BOTTOMRIGHT", 8, 2)
+  v.sub:SetPoint("RIGHT", v.watch, "LEFT", -12, 0)
+  v.sub:SetJustifyH("LEFT")
+  v.sub:SetWordWrap(false)
+  v.subHover = CreateFrame("Frame", nil, v)
+  v.subHover:SetAllPoints(v.sub)
+  v.subHover:EnableMouse(true)
+  W.Tooltip(v.subHover, function(tip)
+    if (v.sub:GetStringWidth() or 0) <= (v.sub:GetWidth() or 0) then
+      return false -- fits: nothing to add
+    end
+    tip:SetText(v.sub:GetText() or "", 1, 1, 1, 1, true)
+  end)
 
   -- stat cards
   v.cardRow = W.CardRow(v, {
@@ -134,6 +147,9 @@ function UI:CreateItemView(parent)
   ns.Help.Explain(v.style, "candles")
   v.legend = W.Text(v, "GameFontDisableSmall")
   v.legend:SetPoint("LEFT", v.style, "RIGHT", 12, 0)
+  v.legend:SetPoint("RIGHT", v, "RIGHT", 0, 0)
+  v.legend:SetJustifyH("LEFT")
+  v.legend:SetWordWrap(false)
 
   -- chart
   local holder = CreateFrame("Frame", nil, v, "BackdropTemplate")
@@ -365,12 +381,7 @@ function UI:DrawItemChart()
   if not intraday then -- a 7-point average of scans isn't a 7-day average
     legend = legend .. W.Swatch(1, 0.67, 0.2) .. " " .. L["7d average"] .. "   "
   end
-  legend = legend
-    .. W.Swatch(0.53, 0.53, 0.67)
-    .. " "
-    .. L["supply"]
-    .. "      "
-    .. L["wheel: zoom, drag: pan, double-click: reset"]
+  legend = legend .. W.Swatch(0.53, 0.53, 0.67) .. " " .. L["supply"] -- (zoom / pan / reset: hover the chart, Guide)
   if intraday then
     legend = legend .. "   " .. L["(each point is one scan)"]
   end

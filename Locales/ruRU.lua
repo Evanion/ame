@@ -568,8 +568,6 @@ L["volatility"] = "волатильность"
 L["waiting for them to approve"] = "ждём их одобрения"
 L["wants to share, %s"] = "хочет делиться, %s"
 L["well below its usual price"] = "намного ниже обычной цены"
-L["wheel: zoom, drag: pan, double-click: reset"] =
-  "колесо: масштаб, перетаскивание: сдвиг, двойной клик: сброс"
 L["whisper"] = "шёпот"
 L["window created, market tab rendered"] = "окно создано, вкладка рынка отрисована"
 L["yesterday"] = "вчера"

@@ -450,7 +450,6 @@ L["volatility"] = true
 L["waiting for them to approve"] = true
 L["wants to share, %s"] = true
 L["well below its usual price"] = true
-L["wheel: zoom, drag: pan, double-click: reset"] = true
 L["whisper"] = true
 L["window created, market tab rendered"] = true
 L["yesterday"] = true
