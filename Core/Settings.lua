@@ -18,6 +18,8 @@ Settings.DEFAULTS = {
   openWithAH = false, -- open the AME window when the auction house opens
   dockToAH = true, -- place AME beside the auction house window when there's room
   windowScale = 1, -- AME's own scale (0.7-1.2), on top of the game's UI scale
+  colorBlind = false, -- blue / orange instead of green / red for gains, losses and signals
+  settingsLevel = "basic", -- the Settings tab: "basic" | "advanced"
   closeWithAH = false, -- and close it again with the AH (only when the AH opened it)
   sellSwitchesTab = true, -- putting an item up for sale switches an open AME window to the Item tab for it
   alertSound = true,
@@ -39,6 +41,9 @@ function Settings:Init()
   end
   if ns.Launcher then
     ns.Launcher:Init()
+  end
+  if ns.Widgets and ns.Widgets.ApplyPalette then
+    ns.Widgets.ApplyPalette() -- tooltips and chat lines use it before the window exists
   end
 end
 

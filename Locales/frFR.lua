@@ -106,7 +106,6 @@ L["Asked %s to share. They'll see a request in their Sync tab."] =
 L["Asking prices"] = "Prix demandés"
 L["At market price"] = "Au prix du marché"
 L["Auction house"] = "Hôtel des ventes"
-L["Auction house cut"] = "Commission de l'HV"
 L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
   "Auctionator n'est pas installé : rien à importer (les scans sont enregistrés depuis le jeu de toute façon)"
 L["Auctions"] = "Enchères"
@@ -154,7 +153,6 @@ L['Delete the watchlist "%s"?'] = 'Supprimer la liste de suivi "%s" ?'
 L["Deposit"] = "Dépôt"
 L["Deposits for"] = "Dépôts pour"
 L["Depth"] = "Profondeur"
-L["Display"] = "Affichage"
 L["Dock AME beside the auction house when there's room"] =
   "Ancrer AME à côté de l'hôtel des ventes s'il y a de la place"
 L["Dumping"] = "Bradage"
@@ -325,7 +323,6 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "Partager avec la guilde"
 L["Share with trusted players (below)"] = "Partager avec les joueurs de confiance (ci-dessous)"
 L["Sharing"] = "Partage"
-L["Sharing settings are on the Sync tab."] = "Les paramètres de partage sont dans l'onglet Synchro."
 L["Shift-click to search the auction house"] = "Maj-clic pour chercher à l'hôtel des ventes"
 L["Shortage"] = "Pénurie"
 L["Show AME prices in item tooltips"] = "Afficher les prix AME dans les infobulles d'objet"

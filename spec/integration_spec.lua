@@ -713,6 +713,40 @@ describe("addon in a stubbed client", function()
       assert.is_false(v.category:IsShown())
     end)
 
+    it("settings: Basic / Advanced, the colour-blind palette; sync: freshness per auction house", function()
+      seeded()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("settings")
+      local s = ns.UI.settingsView
+      s.scripts.OnShow(s)
+      assert.are.equal("basic", s.level:Selected())
+      for _, obj in ipairs(s.advanced) do
+        assert.is_false(obj:IsShown())
+      end
+      s.level.byKey.advanced.scripts.OnClick(s.level.byKey.advanced)
+      assert.are.equal("advanced", AME_DB.settings.settingsLevel)
+      for _, obj in ipairs(s.advanced) do
+        assert.is_true(obj:IsShown())
+      end
+      -- colour-blind palette: gains and BUY turn blue, losses and SELL orange (text and chart colours)
+      local green = ns.HEX.good
+      s.colorBlind.scripts.OnClick(s.colorBlind)
+      assert.is_true(ns.Settings:Get("colorBlind"))
+      assert.are.equal("56b4e9", ns.HEX.good)
+      assert.truthy(ns.Widgets.Signal("buy"):find("56b4e9"))
+      assert.are.equal(0.9, ns.Widgets.COLORS.down[1])
+      s.colorBlind.scripts.OnClick(s.colorBlind)
+      assert.are.equal(green, ns.HEX.good)
+      -- sync: how fresh each auction house's data is
+      ns.UI:ShowTab("sync")
+      local v = ns.UI.syncView
+      v.scripts.OnShow(v)
+      local horde = v.fresh[2]
+      assert.truthy(horde.label.text:find("Horde"))
+      assert.truthy(horde.value.text:find("by you"), horde.value.text)
+      assert.truthy(v.fresh[1].value.text:find("No full scan"))
+    end)
+
     it("stars items into a watchlist, shows the list and fires alerts after a scan", function()
       seeded()
       ns.UI:Toggle()

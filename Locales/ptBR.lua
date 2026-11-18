@@ -106,7 +106,6 @@ L["Asked %s to share. They'll see a request in their Sync tab."] =
 L["Asking prices"] = "Preços pedidos"
 L["At market price"] = "A preço de mercado"
 L["Auction house"] = "Casa de leilões"
-L["Auction house cut"] = "Taxa da casa de leilões"
 L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
   "Auctionator não instalado: nada para importar (as varreduras são registradas pelo jogo de qualquer forma)"
 L["Auctions"] = "Leilões"
@@ -154,7 +153,6 @@ L['Delete the watchlist "%s"?'] = 'Excluir a lista de observação "%s"?'
 L["Deposit"] = "Depósito"
 L["Deposits for"] = "Depósitos de"
 L["Depth"] = "Profundidade"
-L["Display"] = "Exibição"
 L["Dock AME beside the auction house when there's room"] =
   "Encaixar o AME ao lado da casa de leilões quando houver espaço"
 L["Dumping"] = "Despejo"
@@ -325,7 +323,6 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "Compartilhar com a guilda"
 L["Share with trusted players (below)"] = "Compartilhar com jogadores confiáveis (abaixo)"
 L["Sharing"] = "Compartilhamento"
-L["Sharing settings are on the Sync tab."] = "As opções de compartilhamento estão na aba Sincronizar."
 L["Shift-click to search the auction house"] = "Shift-clique para pesquisar na casa de leilões"
 L["Shortage"] = "Escassez"
 L["Show AME prices in item tooltips"] = "Mostrar preços do AME nas dicas dos itens"

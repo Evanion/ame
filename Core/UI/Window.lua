@@ -417,6 +417,7 @@ function UI:ApplyTheme()
   if not self.frame then
     return
   end
+  W.ApplyPalette()
   local preferred = ns.Settings:Get("theme")
   W.SetTheme(preferred ~= "auto" and preferred or self:ViewHouse())
   local a = W.COLORS.accent

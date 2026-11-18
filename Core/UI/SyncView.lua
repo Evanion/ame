@@ -16,12 +16,43 @@ end
 local MAX_TRUSTED, MAX_PENDING, MAX_PEERS, MAX_BLOCKED = 9, 3, 5, 3
 local COL2 = UI.COLUMN2
 
+-- How fresh each auction house's data is: the newest full scan kept for it, when, and who ran it.
+--   { { house, t, src }, ... } for the faction houses and the goblin one
+UI.SYNC_HOUSES = { "Alliance", "Horde", "Neutral" }
+function UI:Freshness()
+  local AME, out = ns.AME, {}
+  local realm = AME:MarketRealmName()
+  for _, house in ipairs(UI.SYNC_HOUSES) do
+    local data = AME:HistoryLoaded() and AME.history.shards[ns.ShardKey(realm, house)]
+    local best
+    for _, e in ipairs(data and data.raw or {}) do
+      if e.k == "full" and (not best or e.t > best.t) then
+        best = e
+      end
+    end
+    out[#out + 1] = { house = house, t = best and best.t, src = best and best.src }
+  end
+  return out
+end
+
 function UI:CreateSyncView(parent, contentArea)
-  -- everything scrolls when the window is shorter than the tab's content
   local outer = contentArea(parent)
-  local pane = W.ScrollPane(outer)
+  local slots = UI.Slots(outer, { header = 42, status = true })
+  outer.slots = slots
+  -- header: data freshness per auction house
+  local defs = {}
+  for i, house in ipairs(UI.SYNC_HOUSES) do
+    defs[i] = { ns.HOUSE_LABEL[house] or house }
+  end
+  local cards = W.CardRow(slots.header, defs, { width = UI.WIDTH - 20 })
+  cards:SetPoint("TOPLEFT", 0, 0)
+  cards:SetPoint("RIGHT", 0, 0)
+  -- everything else scrolls when the window is shorter than the tab's content
+  local pane = W.ScrollPane(slots.main)
   local v = pane.content
   v.pane = pane
+  v.fresh = cards.cards
+  v.statusLine = slots.status
   self.syncView = v
   local svc = ns.SyncService
 
@@ -139,6 +170,24 @@ function UI:RefreshSync()
     return
   end
   local svc = ns.SyncService
+  -- freshness: green within a day, amber within 3, dim older or none
+  local me = UnitName("player")
+  local now = GetServerTime()
+  for i, f in ipairs(self:Freshness()) do
+    local card = v.fresh[i]
+    if f.t then
+      local days = (now - f.t) / ns.DAY
+      local role = days < 1 and "good" or days < 3 and "warn" or "dim"
+      local who = (not f.src or f.src == me) and L["you"] or f.src
+      card.value:SetText(W.Color(role, ago(f.t)) .. "  " .. W.Dim(L["full scan by %s"]:format(who)))
+    else
+      card.value:SetText(W.Dim(L["No full scan yet: scan there, or trust someone who does"]))
+    end
+  end
+  v.statusLine:SetText(
+    (ns.Settings:Get("syncGuild") or ns.Settings:Get("syncTrusted")) and L["Sync is on."]
+      or L["Sync is off: turn on guild or trusted sharing below."]
+  )
   v.guild:SetChecked(ns.Settings:Get("syncGuild"))
   v.trusted:SetChecked(ns.Settings:Get("syncTrusted"))
 

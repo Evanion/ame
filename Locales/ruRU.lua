@@ -114,7 +114,6 @@ L["Asked %s to share. They'll see a request in their Sync tab."] =
 L["Asking prices"] = "Цены предложения"
 L["At market price"] = "По рыночной цене"
 L["Auction house"] = "Аукцион"
-L["Auction house cut"] = "Комиссия аукциона"
 L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
   "Auctionator не установлен: импортировать нечего (сканирования всё равно записываются из игры)"
 L["Auctions"] = "Аукционы"
@@ -162,7 +161,6 @@ L['Delete the watchlist "%s"?'] = 'Удалить список наблюден�
 L["Deposit"] = "Залог"
 L["Deposits for"] = "Залог за"
 L["Depth"] = "Глубина"
-L["Display"] = "Отображение"
 L["Dock AME beside the auction house when there's room"] =
   "Пристыковывать AME рядом с аукционом, если есть место"
 L["Dumping"] = "Сброс"
@@ -337,8 +335,6 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "Делиться с гильдией"
 L["Share with trusted players (below)"] = "Делиться с доверенными игроками (ниже)"
 L["Sharing"] = "Обмен"
-L["Sharing settings are on the Sync tab."] =
-  "Настройки обмена - на вкладке «Синхронизация»."
 L["Shift-click to search the auction house"] = "Shift-клик - поиск на аукционе"
 L["Shortage"] = "Дефицит"
 L["Show AME prices in item tooltips"] = "Показывать цены AME в подсказках предметов"

@@ -22,6 +22,18 @@ W.COLORS = {
 
 -- Text colours by role ("RRGGBB"), and helpers for |c escapes (defined in Init.lua so chat lines can use them too)
 W.HEX = ns.HEX
+
+-- Colour-blind friendly palette (Settings): gains / buy in blue, losses / sell in orange (Okabe-Ito), so the two
+-- never rely on red vs green. Applied to the text roles and the chart's up / down colours.
+local PALETTES = {
+  normal = { good = "4dd973", bad = "ff6159", up = { 0.3, 0.85, 0.45, 1 }, down = { 1, 0.38, 0.35, 1 } },
+  colorBlind = { good = "56b4e9", bad = "e69f00", up = { 0.34, 0.71, 0.91, 1 }, down = { 0.9, 0.62, 0, 1 } },
+}
+function W.ApplyPalette()
+  local p = PALETTES[ns.Settings and ns.Settings:Get("colorBlind") and "colorBlind" or "normal"]
+  ns.HEX.good, ns.HEX.bad = p.good, p.bad
+  W.COLORS.up, W.COLORS.down = p.up, p.down
+end
 W.Color = ns.Color
 function W.Dim(text)
   return ns.Color("dim", text)
@@ -990,14 +1002,23 @@ function W.ScrollPane(parent)
       return
     end
     local bottom = top
-    for _, list in ipairs({ { content:GetChildren() }, { content:GetRegions() } }) do
-      for _, obj in ipairs(list) do
-        local b = obj.IsShown and obj:IsShown() and obj.GetBottom and obj:GetBottom()
-        if type(b) == "number" and b < bottom then
-          bottom = b
+    -- shown children and texts, and theirs (columns hold sections), a few levels down
+    local function scan(frame, depth)
+      for _, list in ipairs({ { frame:GetChildren() }, { frame:GetRegions() } }) do
+        for _, obj in ipairs(list) do
+          if obj.IsShown and obj:IsShown() then
+            local b = obj.GetBottom and obj:GetBottom()
+            if type(b) == "number" and b < bottom then
+              bottom = b
+            end
+            if depth > 1 and obj.GetChildren then
+              scan(obj, depth - 1)
+            end
+          end
         end
       end
     end
+    scan(content, 3)
     content:SetHeight(math.max(1, top - bottom + 12))
     self:SetScroll(self:GetVerticalScroll() or 0)
   end
