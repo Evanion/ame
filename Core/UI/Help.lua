@@ -565,7 +565,7 @@ Help.EXAMPLES = {
     f:SetHeight(24)
     local items = { { "all", L["All"] } }
     for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor" }) do
-      items[#items + 1] = { key, W.SignalGlyph(key) }
+      items[#items + 1] = { key, W.SignalGlyph(key), W.SignalTone(key) }
     end
     local seg = W.Segmented(f, items, { minWidth = 40 })
     seg:SetPoint("LEFT", 0, 0)

@@ -12,6 +12,35 @@ describe("Widgets formatters", function()
     return (s:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
   end
 
+  describe("inverted signal buttons", function()
+    it("keep their word readable: near-black on every signal colour, in both palettes (WCAG AA, 4.5:1)", function()
+      assert.are.equal(21, math.floor(W.Contrast("000000", "ffffff") + 0.5))
+      for name, palette in pairs(W.PALETTES) do
+        local roles = { good = palette.good, bad = palette.bad }
+        for _, role in ipairs({ "hold", "wait", "vendor" }) do
+          roles[role] = W.HEX[role]
+        end
+        for role, hex in pairs(roles) do
+          local ratio = W.Contrast(hex, W.INVERTED_TEXT)
+          assert.is_true(ratio >= 6, ("%s %s: %.2f:1"):format(name, role, ratio))
+        end
+      end
+    end)
+  end)
+
+  describe("selected buttons", function()
+    it("keep white labels readable on every faction theme's fill (the accent at half strength, WCAG AA)", function()
+      for house, c in pairs(W.THEMES) do
+        local fill = ""
+        for i = 1, 3 do
+          fill = fill .. ("%02x"):format(math.floor(c[i] * W.SELECTED_SHADE * 255 + 0.5))
+        end
+        local ratio = W.Contrast(fill, "ffffff")
+        assert.is_true(ratio >= 4.5, ("%s: %.2f:1"):format(house, ratio))
+      end
+    end)
+  end)
+
   describe("Money", function()
     it("shows gold, silver and copper, leaving out zero units", function()
       assert.are.equal("12g 34s", plain(W.Money(123456)))

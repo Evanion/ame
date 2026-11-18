@@ -29,6 +29,22 @@ local PALETTES = {
   normal = { good = "4dd973", bad = "ff6159", up = { 0.3, 0.85, 0.45, 1 }, down = { 1, 0.38, 0.35, 1 } },
   colorBlind = { good = "56b4e9", bad = "e69f00", up = { 0.34, 0.71, 0.91, 1 }, down = { 0.9, 0.62, 0, 1 } },
 }
+W.PALETTES = PALETTES
+
+-- WCAG contrast ratio of two "RRGGBB" colours (1 to 21; text needs 4.5, large text 3)
+function W.Contrast(a, b)
+  local function luminance(hex)
+    local l = 0
+    for i, weight in ipairs({ 0.2126, 0.7152, 0.0722 }) do
+      local c = tonumber(hex:sub(i * 2 - 1, i * 2), 16) / 255
+      c = c <= 0.03928 and c / 12.92 or ((c + 0.055) / 1.055) ^ 2.4
+      l = l + weight * c
+    end
+    return l
+  end
+  local la, lb = luminance(a), luminance(b)
+  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05)
+end
 function W.ApplyPalette()
   local p = PALETTES[ns.Settings and ns.Settings:Get("colorBlind") and "colorBlind" or "normal"]
   ns.HEX.good, ns.HEX.bad = p.good, p.bad
@@ -64,8 +80,8 @@ function W.SetTheme(house)
   W.COLORS.rowSelected = { c[1], c[2], c[3], 0.2 }
   -- selected buttons and ticked checkboxes take the new accent
   for b in pairs(W.buttons) do
-    if b.selected then
-      b:SetSelected(true)
+    if b.selected or b.tone then -- coloured choices redraw too (the colour-blind palette may have changed)
+      b:SetSelected(b.selected)
     end
   end
   for check in pairs(W.checks) do
@@ -114,6 +130,7 @@ function W.Button(parent, label, width, height, onClick, opts)
   W.Skin(b, W.COLORS.panel)
   b.selected = false
   W.buttons[b] = true
+  b.tone = false -- coloured choices (signals): set by W.Segmented
   b.label = W.Text(b, "GameFontHighlightSmall", "CENTER")
   b.label:SetText(label)
   if opts and opts.icon then
@@ -143,6 +160,16 @@ function W.Button(parent, label, width, height, onClick, opts)
   end)
   function b:SetSelected(on)
     self.selected = on
+    if self.tone then
+      -- a coloured choice (a signal): its own label normally; selected, inverted - filled with its colour, dark text
+      local text, fill = self.tone(on)
+      self.label:SetText(text)
+      if on and fill then
+        self:SetBackdropColor(fill[1], fill[2], fill[3], 1)
+        self:SetBackdropBorderColor(fill[1], fill[2], fill[3], 1)
+        return
+      end
+    end
     local c = on and W.COLORS.selected or W.COLORS.panel
     self:SetBackdropColor(c[1], c[2], c[3], on and 1 or c[4])
     local bc = on and W.COLORS.accent or W.COLORS.border
@@ -171,6 +198,7 @@ function W.Segmented(parent, items, opts)
       seg:Select(self.key)
     end)
     b.key = item[1]
+    b.tone = item[3] or false -- optional: function(selected) -> label, fill colour (W.SignalTone)
     local w = opts.width
     if not w then
       local textW = b.label:GetStringWidth() or 0
@@ -567,13 +595,13 @@ end
 W.SIGNAL_ICON = { buy = "Up", sell = "Down", hold = "Dot", wait = "Pause", vendor = "Coin" }
 W.SIGNAL_MEDIA = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Signals\\"
 
--- an icon as inline text, tinted with a text role's colour ("good", "bad", ...)
-function W.SignalIcon(signal, size)
+-- an icon as inline text, tinted with a text role's colour ("good", "bad", ...), or with hex ("RRGGBB")
+function W.SignalIcon(signal, size, hex)
   local s = SIGNALS[signal]
   if not s then
     return ""
   end
-  local hex = ns.HEX[s[1]] or "ffffff"
+  hex = hex or ns.HEX[s[1]] or "ffffff"
   local r, g, b = tonumber(hex:sub(1, 2), 16), tonumber(hex:sub(3, 4), 16), tonumber(hex:sub(5, 6), 16)
   size = size or 15 -- big enough to tell the dot (HOLD) from the coin (VENDOR)
   return ("|T%s%s:%d:%d:0:0:32:32:0:32:0:32:%d:%d:%d|t"):format(
@@ -590,6 +618,23 @@ end
 function W.SignalGlyph(signal)
   local s = SIGNALS[signal]
   return s and (W.SignalIcon(signal) .. " " .. W.Color(s[1], s[2])) or W.NONE
+end
+
+-- A signal as a selectable button (W.Segmented's item[3]): the coloured glyph normally; selected, inverted - the
+-- button filled with the signal's colour and the icon and word in near-black (6:1 or better on every signal colour,
+-- in both palettes). Worked out on each call, so it follows the colour-blind palette.
+W.INVERTED_TEXT = "141414"
+function W.SignalTone(signal)
+  return function(selected)
+    local s = SIGNALS[signal]
+    if not (selected and s) then
+      return W.SignalGlyph(signal)
+    end
+    local hex = ns.HEX[s[1]] or "ffffff"
+    local fill =
+      { tonumber(hex:sub(1, 2), 16) / 255, tonumber(hex:sub(3, 4), 16) / 255, tonumber(hex:sub(5, 6), 16) / 255 }
+    return W.SignalIcon(signal, nil, W.INVERTED_TEXT) .. " " .. ns.Color(W.INVERTED_TEXT, s[2]), fill
+  end
 end
 
 -- item name/icon/quality colour; may be nil until the client has cached the item (call again after load)

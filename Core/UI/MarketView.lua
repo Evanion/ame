@@ -625,7 +625,7 @@ function UI:CreateMarketView(parent)
   -- second row: signal filter (text + glyph + colour) and chips for the other active filters
   local signals = { { "all", L["All"] } }
   for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor" }) do
-    signals[#signals + 1] = { key, W.SignalGlyph(key) }
+    signals[#signals + 1] = { key, W.SignalGlyph(key), W.SignalTone(key) }
   end
   v.signals = W.Segmented(slots.chips, signals, {
     minWidth = 40,

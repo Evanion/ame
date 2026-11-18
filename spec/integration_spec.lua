@@ -781,6 +781,10 @@ describe("addon in a stubbed client", function()
       assert.are.equal(1, v.chips.count)
       assert.truthy(v.chips.pool[1].label.text:find("up to"))
       assert.are.equal("hold", v.signals:Selected())
+      -- the picked signal is inverted: filled with its colour, its word in near-black
+      local hold = v.signals.byKey.hold
+      assert.truthy(hold.label.text:find("|cff" .. ns.Widgets.INVERTED_TEXT .. "HOLD", 1, true), hold.label.text)
+      assert.truthy(v.signals.byKey.sell.label.text:find("|cff" .. ns.HEX.bad, 1, true)) -- the others: coloured
       -- save as a view, clear, and bring it back
       ns.UI:SaveMarketView("Cheap")
       v.chips.pool[1].scripts.OnClick(v.chips.pool[1])
