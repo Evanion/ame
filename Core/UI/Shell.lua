@@ -16,10 +16,13 @@ local UI, W = ns.UI, ns.Widgets
 local GAP = 8
 UI.SLOT_GAP = GAP
 
--- a sidebar: a skinned frame with a scroll pane; add content to frame.content (inset 10 px by convention)
-local function sidebar(parent, width)
+-- a sidebar: a frame with a scroll pane; add content to frame.content (inset 10 px by convention). plain: no panel
+-- behind it (its content is cards, each with its own panel)
+local function sidebar(parent, width, plain)
   local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-  W.Skin(f, W.COLORS.panel)
+  if not plain then
+    W.Skin(f, W.COLORS.panel)
+  end
   f:SetWidth(width)
   f.pane = W.ScrollPane(f)
   f.content = f.pane.content
@@ -31,18 +34,52 @@ UI.Sidebar = sidebar
 --   stack:Heading(text) -> font string      stack:Text(font) -> wrapping font string
 --   stack:Pair(label, term) -> row with .label (dim, left) and .value (right); term: hover explanation (Help)
 --   stack:Row(height) -> an empty frame for custom controls
-function UI.Stack(content)
-  local st = {}
+--   stack:Card(gap) -> a panel (its own stack: card.stack) that sizes itself to what's in it (card:Fit())
+--   stack:Height() -> the height of everything stacked so far (margins included)
+-- pad: the margin around the stack (10 by default; 0 for a column of cards)
+function UI.Stack(content, pad)
+  pad = pad or 10
+  local st = { items = {} }
   local last
   local function add(obj, gap)
+    gap = last and (gap or 4) or 0
     if last then
-      obj:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -(gap or 4))
+      obj:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -gap)
     else
-      obj:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
+      obj:SetPoint("TOPLEFT", content, "TOPLEFT", pad, -pad)
     end
-    obj:SetPoint("RIGHT", content, "RIGHT", -10, 0)
+    obj:SetPoint("RIGHT", content, "RIGHT", -pad, 0)
     last = obj
+    st.items[#st.items + 1] = { obj, gap }
     return obj
+  end
+  function st:Height()
+    local h = 2 * pad
+    for _, it in ipairs(self.items) do
+      local obj = it[1]
+      if obj.card then
+        obj:Fit()
+      end
+      local oh
+      if obj.GetStringHeight then
+        local text = obj:GetText()
+        oh = (text and text ~= "") and (obj:GetStringHeight() or 12) or 0
+      else
+        oh = obj:GetHeight() or 0
+      end
+      h = h + it[2] + oh
+    end
+    return h
+  end
+  function st:Card(gap)
+    local card = add(CreateFrame("Frame", nil, content, "BackdropTemplate"), gap or 8)
+    W.Skin(card, W.COLORS.panel)
+    card.card = true
+    card.stack = UI.Stack(card, 8)
+    function card:Fit()
+      self:SetHeight(self.stack:Height())
+    end
+    return card
   end
   function st:Heading(text, gap)
     local h = add(W.Text(content, "GameFontNormal"), gap or 14)
@@ -120,7 +157,7 @@ function UI.Slots(v, opts)
     s.left = sidebar(v, opts.left)
   end
   if opts.right then
-    s.right = sidebar(v, opts.right)
+    s.right = sidebar(v, opts.right, opts.rightCards)
   end
   s.main = CreateFrame("Frame", nil, v)
 

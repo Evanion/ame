@@ -21,7 +21,7 @@ UI.ITEM_SIDEBAR = 280
 
 function UI:CreateItemView(parent)
   local v = contentArea(parent)
-  local slots = UI.Slots(v, { header = 34, toolbar = 22, right = UI.ITEM_SIDEBAR, status = true })
+  local slots = UI.Slots(v, { header = 34, toolbar = 22, right = UI.ITEM_SIDEBAR, rightCards = true, status = true })
   v.slots = slots
   local head, bar, side = slots.header, slots.toolbar, slots.right
 
@@ -183,42 +183,56 @@ function UI:CreateItemView(parent)
   v.hint:SetText(L["Scroll to zoom  ·  drag to pan  ·  double-click to reset"])
   v.hint:SetAlpha(0.6)
 
-  -- right sidebar, top to bottom: verdict, key numbers, posting price, watch and alerts.
+  -- right sidebar: a column of cards - the call and why, market price, key numbers, posting price, watch and alerts.
   -- v.cards keeps the old card order (label / value): market, lowest, average, 7d change, volatility, supply, signal
-  local st = UI.Stack(side.content)
+  local col = UI.Stack(side.content, 0)
   local cards = {}
-  local verdict = st:Pair(L["Market price"], "market", 0)
-  verdict:SetHeight(14)
-  cards[1] = { label = verdict.label, value = st:Text("GameFontHighlightLarge", 2) }
+  -- the call: Buy / Hold / Sell / Wait / Vendor, a headline, and why in plain words
+  local callCard = col:Card(0)
+  local st = callCard.stack
+  v.call = st:Text("GameFontNormalHuge")
+  v.call:SetWordWrap(false)
+  v.callHead = st:Text("GameFontHighlight", 2)
+  v.callWhy = st:Text("GameFontHighlightSmall", 6)
+  v.callWhy:SetSpacing(3)
+  -- market price, with the signal and phase beside the label
+  local marketCard = col:Card()
+  st = marketCard.stack
+  cards[7] = st:Pair(L["Market price"], "signal")
+  cards[1] = { label = cards[7].label, value = st:Text("GameFontHighlightLarge", 2) }
   v.change = st:Text("GameFontHighlightSmall", 2)
-  cards[7] = st:Pair(L["Signal"], "signal", 6)
-  v.confidence = st:Pair(L["Data"], "confidence")
-  st:Heading(L["Key numbers"])
-  cards[2] = st:Pair(L["Lowest"], "min", 6)
+  v.confidence = st:Pair(L["Data"], "confidence", 4)
+  -- key numbers
+  st = col:Card().stack
+  cards[2] = st:Pair(L["Lowest"], "min")
   cards[3] = st:Pair(L["Average"], "avg")
   cards[4] = st:Pair(L["7d change"], "change7")
   cards[5] = st:Pair(L["Volatility"], "vol30")
   cards[6] = st:Pair(L["Supply  ·  sales/day"], "sellRate")
   v.cards = cards
-  -- posting price (Pricing / Posting)
-  v.postHead = st:Heading(L["Post at"])
-  v.post = st:Row(14, 6)
-  v.post:EnableMouse(true)
-  ns.Help.Explain(v.post, "posting")
-  v.post.text = W.Text(v.post, "GameFontHighlightLarge")
-  v.post.text:SetPoint("LEFT")
-  v.post.text:SetPoint("RIGHT")
-  v.post.text:SetWordWrap(false)
-  v.postNet = st:Text("GameFontHighlightSmall", 4)
+  -- posting price (Pricing / Posting): "Post at (24 h listing) ... N ahead", Normal large, then Quick / Patient
+  st = col:Card().stack
+  v.postHeadRow = st:Pair(L["Post at"], "posting")
+  v.postHead = v.postHeadRow.label
+  v.post = st:Pair(L["Normal"], "posting", 4)
+  v.post:SetHeight(20)
+  v.post.label:SetFontObject("GameFontHighlight")
+  v.post.value:SetFontObject("GameFontHighlightLarge")
+  v.post.text = v.post.value
+  v.postNet = st:Text("GameFontDisableSmall", 2)
+  v.postNet:SetJustifyH("RIGHT")
+  v.postQuick = st:Pair(L["Quick"], "posting", 4)
+  v.postPatient = st:Pair(L["Patient"], "posting")
   v.postAlt = st:Text("GameFontHighlightSmall", 4)
   v.postWarn = st:Text("GameFontHighlightSmall", 4)
   -- watch and alerts
-  st:Heading(L["Watch and alerts"])
-  local watchRow = st:Row(20, 6)
-  v.watch = W.Button(watchRow, L["Watch"], 100, 20, function(self)
+  st = col:Card().stack
+  local watchRow = st:Row(22)
+  v.watch = W.Button(watchRow, L["Watch"], 100, 22, function(self)
     UI:WatchMenu(self, UI.itemID)
   end, { icon = 14 })
   v.watch:SetPoint("LEFT")
+  v.watch:SetPoint("RIGHT")
   v.watch.star = v.watch.icon
   W.SetStar(v.watch.star, false)
   local function goldAlert(row, field, hint)
@@ -230,21 +244,29 @@ function UI:CreateItemView(parent)
     end)
   end
   local alertRow = st:Row(20, 8)
-  v.alertLabel = W.Text(alertRow, "GameFontDisableSmall")
-  v.alertLabel:SetPoint("LEFT")
-  v.alertLabel:SetText(L["Alert when"])
-  v.alertBelow = goldAlert(alertRow, "below", L["below g"])
-  v.alertBelow:SetPoint("LEFT", v.alertLabel, "RIGHT", 8, 0)
-  v.alertAbove = goldAlert(alertRow, "above", L["above g"])
-  v.alertAbove:SetPoint("LEFT", v.alertBelow, "RIGHT", 6, 0)
+  v.alertBelow = goldAlert(alertRow, "below", L["Alert below g"])
+  v.alertBelow:SetPoint("LEFT")
+  v.alertBelow:SetPoint("RIGHT", alertRow, "CENTER", -3, 0)
+  v.alertAbove = goldAlert(alertRow, "above", L["Alert above g"])
+  v.alertAbove:SetPoint("LEFT", alertRow, "CENTER", 3, 0)
+  v.alertAbove:SetPoint("RIGHT")
   local signalRow = st:Row(16, 8)
-  v.alertSignal = W.Check(signalRow, L["on buy/sell signal"], function(on)
+  v.alertSignal = W.Check(signalRow, L["Alert on a buy or sell signal"], function(on)
     if UI.itemID then
       ns.AME.watch:SetAlert(UI.itemID, { signal = on })
       UI:UpdateWatchControls()
     end
   end)
   v.alertSignal:SetPoint("LEFT")
+  v.column = col
+  -- cards size themselves to their text (which wraps with the sidebar's width)
+  function v:FitCards()
+    col:Height()
+    side.pane:Measure()
+  end
+  side.content:HookScript("OnSizeChanged", function()
+    v:FitCards()
+  end)
   v.sidebar = side
 
   function v:SetCompact(on)
@@ -603,6 +625,7 @@ function UI:FillItem(_, series, latest)
     end
     v.change:SetText("")
     v.confidence.value:SetText("-")
+    self:FillVerdict(nil)
     v.slots.status:SetText("")
     self.itemFacts = {}
     self:UpdatePostAdvice()
@@ -640,8 +663,9 @@ function UI:FillItem(_, series, latest)
       .. W.Percent(s.supplyTrend30 and s.supplyTrend30 * 7, 0)
       .. (s.sellRate and "  " .. W.Dim(W.Rate(s.sellRate)) or "")
   )
-  cards[7].label:SetText(s.phase and ns.Analytics.PHASE_LABEL[s.phase] or L["Signal"])
-  cards[7].value:SetText(W.Signal(s.signal) .. "  " .. W.Dim(("%+d"):format(s.score or 0)))
+  cards[7].value:SetText(
+    W.SignalGlyph(s.signal) .. (s.phase and W.Dim("  ·  " .. ns.Analytics.PHASE_LABEL[s.phase]:lower()) or "")
+  )
   local avg = s["avg" .. avgDays()] or s.avg30
   local market = latest and latest.market or s.market
   local change = market and avg and avg > 0 and market / avg - 1 or nil
@@ -664,7 +688,123 @@ function UI:FillItem(_, series, latest)
   end
   v.slots.status:SetText(table.concat(status, "  ·  "))
   self.itemFacts = { market = market, change = change, signal = s.signal }
+  -- the same call as the Market tab (the index knows the vendor price check); else the series' own
+  local index = self:ViewIndex()
+  local indexed = index and index.items[self.itemID]
+  self:FillVerdict(s, {
+    signal = indexed and indexed.signal or s.signal,
+    vendorPrice = indexed and indexed.vendorPrice,
+    vendorNet = indexed and indexed.vendorNet,
+    market = market,
+    avg = s.avg30,
+    today = math.floor(GetServerTime() / DAY),
+  })
+  self.itemFacts.signal = indexed and indexed.signal or s.signal
   self:UpdatePostAdvice()
+end
+
+-- The verdict in plain words. Pure: s = the item's summary, ctx = { signal, market, avg, vendorPrice, vendorNet,
+-- today }. Returns signal, headline, { sentences }.
+local PHASE_WHY = {
+  shortage = L["Supply is shrinking while the price rises: there's a shortage."],
+  demand = L["The price rises on steady supply: demand is strong."],
+  piling = L["Sellers are piling in at these higher prices: that often comes before a drop."],
+  tightening = L["Supply is shrinking at a steady price: it may start to rise."],
+  balanced = L["Price and supply are both steady."],
+  pressure = L["Supply is building up at a steady price: pressure on the price."],
+  withdrawing = L["The price falls while sellers pull out: it may be near the bottom."],
+  weak = L["The price falls on steady supply: demand is weak."],
+  dumping = L["Sellers are dumping: the price falls while supply grows."],
+}
+local HEADLINE = {
+  buy = L["Cheaper than usual"],
+  sell = L["Pricier than usual"],
+  hold = L["A normal price"],
+  wait = L["Cheap, but still falling"],
+  vendor = L["A vendor pays more"],
+}
+local ACTION = {
+  buy = L["A good time to buy, if you'll use it or can resell it."],
+  sell = L["If you hold some, a good time to post (see Post at below)."],
+  hold = L["No edge either way: keep what you have, and buy only what you need."],
+  wait = L["Wait for the price to settle before buying."],
+  vendor = L["Sell it to a vendor instead of posting it."],
+}
+
+function UI.Verdict(s, ctx)
+  ctx = ctx or {}
+  if not s then
+    return "none", L["No call yet"], { L["There's no history for this item at this auction house yet."] }
+  end
+  local signal = ctx.signal or s.signal or "none"
+  local why = {}
+  local market, avg = ctx.market or s.market, ctx.avg or s.avg30
+  if signal == "vendor" and ctx.vendorPrice then
+    why[#why + 1] = L["After the auction house cut and the deposit, a listing nets about %s; a vendor pays %s."]:format(
+      W.Money(ctx.vendorNet),
+      W.Money(ctx.vendorPrice)
+    )
+  elseif market and avg and avg > 0 then
+    local d = market / avg - 1
+    local moves = s.vol30 and math.floor(s.vol30 * 100 + 0.5)
+    local base
+    if math.abs(d) < 0.03 then
+      base = L["At %s it's right at its 30-day average."]:format(W.Money(market))
+    elseif d > 0 then
+      base = L["At %s it's %d%% above its 30-day average of %s."]:format(
+        W.Money(market),
+        math.floor(d * 100 + 0.5),
+        W.Money(avg)
+      )
+    else
+      base = L["At %s it's %d%% below its 30-day average of %s."]:format(
+        W.Money(market),
+        math.floor(-d * 100 + 0.5),
+        W.Money(avg)
+      )
+    end
+    why[#why + 1] = base
+    if moves and moves > 0 and signal ~= "none" then
+      why[#why + 1] = (
+        (signal == "hold") and L["Its price usually moves about %d%% a day, so that's within its normal range."]
+        or L["Its price usually moves only about %d%% a day, so that's unusual."]
+      ):format(moves)
+    end
+  end
+  if s.phase and PHASE_WHY[s.phase] then
+    why[#why + 1] = PHASE_WHY[s.phase]
+  end
+  if s.sellRate then
+    if s.sellRate >= 20 then
+      why[#why + 1] = L["About %s sell a day, so it sells quickly."]:format(W.Count(s.sellRate))
+    elseif s.sellRate >= 1 then
+      why[#why + 1] = L["About %s sell a day."]:format(W.Count(s.sellRate))
+    else
+      why[#why + 1] = L["It rarely sells (under one a day): selling takes time."]
+    end
+  end
+  if signal == "none" then
+    why[#why + 1] = L["It needs %d days of history for a call; it has %d."]:format(ns.Analytics.MIN_DAYS, s.days or 0)
+  end
+  local level = ns.Analytics.Confidence(s, ctx.today)
+  if level == "low" then
+    why[#why + 1] = L["Few recent scans: treat this with care, and scan again."]
+  else
+    why[#why + 1] = L["Based on %d scans in the last 7 days."]:format(s.scans7 or 0)
+  end
+  if ACTION[signal] then
+    why[#why + 1] = ACTION[signal]
+  end
+  return signal, HEADLINE[signal] or L["No call yet"], why
+end
+
+function UI:FillVerdict(s, ctx)
+  local v = self.itemView
+  local signal, head, why = UI.Verdict(s, ctx)
+  v.call:SetText(signal ~= "none" and W.SignalGlyph(signal) or W.Dim(L["No call yet"]))
+  v.callHead:SetText(signal ~= "none" and head or "")
+  v.callWhy:SetText(table.concat(why, " "))
+  v:FitCards()
 end
 
 -- the compact layout's one-line gist of the sidebar
@@ -696,17 +836,23 @@ function UI:UpdatePostAdvice()
     ns.AME:ReportError("posting price", advice)
     advice = nil
   end
-  v.postHead:SetText(L["Post at"] .. "  " .. W.Dim(L["%dh listing"]:format(hours or 24)))
+  v.postHead:SetText(L["Post at"] .. "  " .. W.Dim("(" .. L["%dh listing"]:format(hours or 24) .. ")"))
+  v.postHeadRow.value:SetText("")
   self.itemFacts = self.itemFacts or {}
   self.itemFacts.post = advice and advice.normal.price
   if not advice then
     v.post.text:SetText(W.Dim(L["not enough data yet"]))
-    v.postNet:SetText(W.Dim(L["Search for it at the auction house, or run a full scan."]))
+    v.postNet:SetText(L["Search for it at the auction house, or run a full scan."])
+    v.postQuick.value:SetText(W.NONE)
+    v.postPatient.value:SetText(W.NONE)
     v.postAlt:SetText("")
     v.postWarn:SetText("")
   else
     local n = advice.normal
     v.post.text:SetText(W.Money(n.price) .. "  " .. W.Confidence(advice.confidence))
+    v.postHeadRow.value:SetText(L["%d ahead"]:format(n.ahead))
+    v.postQuick.value:SetText(W.PostChoice(advice.quick))
+    v.postPatient.value:SetText(W.PostChoice(advice.patient))
     local _, house = ns.SplitShard(shard)
     local cut = ns.Settings:AuctionCut(house or ns.AME:CurrentHouse())
     local net = n.price * (1 - (cut or 0)) - (advice.deposit or 0) / (advice.qty or 1)
@@ -717,13 +863,7 @@ function UI:UpdatePostAdvice()
         onlyLowest and W.Dim(L["more is listed than sells in one listing time: only the lowest price sells soon"]) or ""
       )
     else
-      v.postAlt:SetText(
-        L["Quick %s"]:format(W.PostChoice(advice.quick))
-          .. "\n"
-          .. L["Patient %s"]:format(W.PostChoice(advice.patient))
-          .. "\n"
-          .. W.Dim(L["%d ahead"]:format(n.ahead))
-      )
+      v.postAlt:SetText("")
     end
     local info = ns.ItemCache.Get(self.itemID)
     local vendor = info and info.sellPrice
@@ -738,7 +878,7 @@ function UI:UpdatePostAdvice()
     end
   end
   self:UpdateItemSummary()
-  v.sidebar.pane:Measure()
+  v:FitCards()
 end
 
 ---------------------------------------------------------------------------------------------------------------------

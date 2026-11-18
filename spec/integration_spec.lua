@@ -582,6 +582,22 @@ describe("addon in a stubbed client", function()
         assert.is_true(v.sidebar:IsShown())
         assert.is_false(v.summary:IsShown())
         assert.are.same({ "BOTTOMRIGHT", -(ns.UI.ITEM_SIDEBAR + ns.UI.SLOT_GAP), 0 }, v.slots.main.points[2])
+        -- the call, with why in plain words, in the first card; every card sizes itself to its contents
+        assert.truthy(v.call.text:find("HOLD") or v.call.text:find("BUY") or v.call.text:find("SELL"), v.call.text)
+        assert.truthy(v.callWhy.text:find("30%-day average"), v.callWhy.text)
+        assert.truthy(v.callWhy.text:find("scans"))
+        for _, it in ipairs(v.column.items) do
+          assert.is_true(it[1]:GetHeight() > 20)
+        end
+        local _, head, why = ns.UI.Verdict({ days = 3, scans7 = 1, market = 100, avg30 = 100 }, { signal = "none" })
+        assert.are.equal("No call yet", head)
+        assert.truthy(table.concat(why, " "):find("needs 7 days of history"))
+        local sig, head2 = ns.UI.Verdict(
+          { days = 20, scans7 = 10, day = 5, market = 300, avg30 = 400, phase = "dumping", sellRate = 50 },
+          { signal = "wait", today = 5 }
+        )
+        assert.are.equal("wait", sig)
+        assert.are.equal("Cheap, but still falling", head2)
         -- legend: one line per series, hidden while hovering the plot
         assert.truthy(v.legend.text:find("market"))
         assert.truthy(v.legend.text:find("\n"))
