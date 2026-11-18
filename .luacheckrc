@@ -33,6 +33,7 @@ read_globals = {
   "GetServerTime", "GetNormalizedRealmName", "GetRealmName", "GetAutoCompleteRealms", "UnitName",
   "UnitFactionGroup", "IsInGuild", "C_FriendList", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "GetInboxNumItems", "GetInboxInvoiceInfo",
   "GetInboxItemLink",
+  "InCombatLockdown",
   "SettingsPanel",
   "InterfaceOptionsFrame",
   "HideUIPanel",

@@ -151,6 +151,9 @@ function AME:RebuildIndex()
       if ns.UI and ns.UI.RefreshMarket then
         ns.UI:RefreshMarket()
       end
+      if ns.UI and ns.UI.frame and ns.UI.WarmItemFacts then
+        ns.UI:WarmItemFacts() -- the window was built before this index: load its item facts now
+      end
     elseif not ok then
       say(ns.Color("bad", L["market index failed:"]) .. " %s", tostring(index))
     end

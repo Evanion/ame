@@ -10,6 +10,7 @@ ns.UI = UI
 
 -- the average period used everywhere (screener column, item card, tooltips): Settings, default 7 days
 UI.WIDTH, UI.HEIGHT = 980, 500 -- the main window; content is inset 10 px on each side
+UI.FOOTER_SPACE = 90 -- width kept free for the version at the right end of the bottom row
 UI.COLUMN2 = 490 -- x of the second column on the Sync and Settings tabs
 
 function UI.AvgDays()
@@ -21,12 +22,100 @@ end
 
 local contentArea
 
-function UI:Create()
-  if self.frame then
-    return self.frame
+-- The window is built in steps - the shell, then one tab per step, then the finishing touches - so it can be built
+-- a step at a time in idle moments after login (UI:Prebuild) instead of all at once (a stutter) the first time you
+-- open it. UI:Create() runs whatever is left; self.frame is only set once everything is there.
+UI.BUILD_STEPS = {
+  function(ui)
+    ui:CreateShell()
+  end,
+  function(ui)
+    ui.views.market = ui:CreateMarketView(ui.building)
+  end,
+  function(ui)
+    ui.views.item = ui:CreateItemView(ui.building)
+  end,
+  function(ui)
+    ui.views.arbitrage = ui:CreateArbitrageView(ui.building, contentArea)
+  end,
+  function(ui)
+    ui.views.portfolio = ui:CreatePortfolioView(ui.building, contentArea)
+  end,
+  function(ui)
+    ui.views.sync = ui:CreateSyncView(ui.building, contentArea)
+  end,
+  function(ui)
+    ui.views.settings = ui:CreateSettingsView(ui.building, contentArea)
+  end,
+  function(ui)
+    ui.views.guide = ns.Help.CreateGuide(ui.building, contentArea)
+  end,
+  function(ui)
+    ui.frame = ui.building
+    ui:RefreshViewOptions()
+    ui:ApplyTheme()
+  end,
+}
+
+-- build the next piece of the window; true once it's complete
+function UI:BuildStep()
+  self.built = self.built or 0
+  local step = UI.BUILD_STEPS[self.built + 1]
+  if step then
+    self.built = self.built + 1
+    step(self)
   end
+  return self.built >= #UI.BUILD_STEPS
+end
+
+function UI:Create()
+  while not self:BuildStep() do
+  end
+  return self.frame
+end
+
+-- Build the window a step at a time in the background (one step every few frames, never in combat), then load the
+-- item facts the Market tab filters on. Started a few seconds after login.
+function UI:Prebuild()
+  local function step()
+    if self.frame then
+      return self:WarmItemFacts()
+    end
+    if InCombatLockdown and InCombatLockdown() then
+      return C_Timer.After(2, step)
+    end
+    if self:BuildStep() then
+      return self:WarmItemFacts()
+    end
+    C_Timer.After(0.1, step)
+  end
+  step()
+end
+
+-- ItemCache facts (class, name, quality) for every item in the index, a hundred per frame, so the first Market
+-- refresh doesn't look them all up at once
+function UI:WarmItemFacts()
+  local index = ns.AME:CachedIndex(ns.AME:CurrentShard())
+  if not index or self.factsWarmed == index then
+    return
+  end
+  self.factsWarmed = index
+  ns.AME.jobs:Add("item-facts", function(job)
+    local n = 0
+    for id in pairs(index.items) do
+      ns.ItemCache.Get(id)
+      n = n + 1
+      if n % 100 == 0 then
+        job:Checkpoint()
+      end
+    end
+  end)
+end
+
+function UI:CreateShell()
   local f = CreateFrame("Frame", "AMEMainWindow", UIParent, "BackdropTemplate")
-  self.frame = f
+  self.building = f
+  self.views = {}
   f:SetSize(UI.WIDTH, UI.HEIGHT)
   f:SetPoint("CENTER")
   f:SetFrameStrata("HIGH")
@@ -76,20 +165,10 @@ function UI:Create()
   })
   self.tabBar:SetPoint("TOPRIGHT", -34, -8) -- right-aligned: long labels push the row left
 
-  self.views = {
-    item = self:CreateItemView(f),
-    market = self:CreateMarketView(f),
-    guide = ns.Help.CreateGuide(f, contentArea),
-    sync = self:CreateSyncView(f, contentArea),
-    arbitrage = self:CreateArbitrageView(f, contentArea),
-    portfolio = self:CreatePortfolioView(f, contentArea),
-    settings = self:CreateSettingsView(f, contentArea),
-  }
+  -- the version, bottom right, on the same row as each tab's status line (credits are on the Guide tab)
   local footer = W.Text(f, "GameFontDisableSmall", "RIGHT")
-  footer:SetPoint("BOTTOMRIGHT", -12, 7)
-  footer:SetText(
-    "Azeroth Mercantile Exchange " .. L["%s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"]:format(ns.VERSION)
-  )
+  footer:SetPoint("BOTTOMRIGHT", -12, 10)
+  footer:SetText("v" .. ns.VERSION)
   footer:SetAlpha(0.7)
   self.footer = footer
 
@@ -97,9 +176,6 @@ function UI:Create()
     UI:ViewChanged()
     UI:ApplyTheme()
   end)
-  self:RefreshViewOptions()
-  self:ApplyTheme()
-  return f
 end
 
 -- Which auction house the Market and Item tabs show: the one you're at, unless picked in the title bar.
@@ -226,7 +302,7 @@ end
 function contentArea(parent)
   local v = CreateFrame("Frame", nil, parent)
   v:SetPoint("TOPLEFT", 10, -36)
-  v:SetPoint("BOTTOMRIGHT", -10, 24) -- room for the footer
+  v:SetPoint("BOTTOMRIGHT", -10, 10)
   v:Hide()
   return v
 end

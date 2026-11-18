@@ -48,8 +48,6 @@ L["%d watched items have no price history here yet"] =
 L["%d-day average"] = "%d일 평균"
 L["%dd avg"] = "%d일 평균"
 L["%dx off usual"] = "평소보다 %d배 차이"
-L["%s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"] =
-  "%s  -  제작: Tyken Evanion  -  PvP 호드, WoW Forever"
 L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  기록 %d일  ·  데이터 %s %s%s%s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s: 최저 %s, 시장가 %s, 수량 %d (표본 %d개)"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
@@ -61,8 +59,6 @@ L["(est.)"] = "(추정)"
 L["(needs LibDBIcon; included in releases)"] = "(LibDBIcon 필요; 배포판에 포함됨)"
 L["+ %d more"] = "+ %d개 더"
 L[", %d scans received"] = ", 스캔 %d회 수신"
-L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"] =
-  "/ame - 창 열기  ·  /ame <아이템 링크> - 아이템 차트  ·  아이템 Alt-클릭 - 차트 보기"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
   "/ame - 창 열기.   /ame <아이템 링크> - 아이템 차트.   /ame status - 데이터 및 동기화 상태.   /ame config - 설정.   /ame selftest - 정상 작동 확인."
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
@@ -138,8 +134,6 @@ L["Buy at"] = "구매처"
 L["By your guild officers: %s"] = "길드 관리자가 차단: %s"
 L["Cancel"] = "취소"
 L["Candles"] = "캔들"
-L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."] =
-  "다른 애드온(예: AHDB)도 아이템 Alt-클릭을 사용한다면 변경하세요."
 L["Character"] = "캐릭터"
 L["Character name, e.g. First Last"] = "캐릭터 이름, 예: First Last"
 L["Chart style"] = "차트 형식"
@@ -335,8 +329,6 @@ L["Share full scans with my guild (members running AME)"] = "내 길드와 전�
 L["Share with guild"] = "길드와 공유"
 L["Share with trusted players (below)"] = "신뢰하는 플레이어와 공유 (아래)"
 L["Sharing"] = "공유"
-L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."] =
-  "공유 설정은 동기화 탭에 있습니다. 이 옵션은 게임의 애드온 설정에도 있습니다."
 L["Shift-click to search the auction house"] = "Shift-클릭으로 경매장 검색"
 L["Shortage"] = "품귀"
 L["Show AME prices in item tooltips"] = "아이템 툴팁에 AME 가격 표시"
@@ -363,8 +355,6 @@ L["The cheapest listing at the auction house you buy from - what the first units
 L["The cheapest single listing seen in the latest data."] = "최신 데이터에서 본 가장 싼 단일 매물."
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "판매할 경매장의 시장가: 그곳에서 보통 팔리는 가격입니다."
-L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
-  "가격 차트: 시장가, 최저 매물, 7일 평균, 공급량. 캔들로 바꾸면 트레이딩 화면이 됩니다. 마우스 휠로 확대, 끌어서 이동, 더블 클릭으로 초기화. 게임에서 아무 아이템이나 Alt-클릭하면 (가방, 대화, 경매장) 여기서 열립니다."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "이 시장: 기록 %d일, 최근 스캔 %d회 전체 보관"
 L["Tightening"] = "공급 축소"

@@ -11,7 +11,9 @@ Settings.DEFAULTS = {
   tooltipDetail = false, -- full tooltip without holding Shift
   chartStyle = "line", -- "line" | "candles"
   theme = "auto", -- window colours: "auto" (follow the viewed market) | "Horde" | "Alliance" | "Neutral"
-  clickModifier = "alt", -- "alt" | "altshift" | "none"
+  -- open an item's chart with a modified click on items and links: "none" | "alt" | "altshift" | "ctrlalt". Off by
+  -- default: loot and raid addons (Gargul, AHDB...) use modified clicks on items and item links.
+  clickModifier = "none",
   announceScans = true,
   alertSound = true,
   cutFaction = 5, -- seller's cut in % at faction auction houses
@@ -60,6 +62,8 @@ function Settings:ClickModifierDown()
     return IsAltKeyDown() and not IsShiftKeyDown() and not IsControlKeyDown()
   elseif mode == "altshift" then
     return IsAltKeyDown() and IsShiftKeyDown() and not IsControlKeyDown()
+  elseif mode == "ctrlalt" then
+    return IsAltKeyDown() and IsControlKeyDown() and not IsShiftKeyDown()
   end
   return false
 end

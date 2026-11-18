@@ -121,7 +121,9 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
   elseif cmd == "" then
     ns.UI:Toggle()
   elseif cmd == "help" then
-    say(L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"])
+    say(
+      L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"]
+    )
     say(L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"])
   elseif itemIDFrom(msg) then
     ns.UI:ShowItem(itemIDFrom(msg))

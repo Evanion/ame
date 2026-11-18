@@ -280,6 +280,23 @@ describe("addon in a stubbed client", function()
       drainJobs()
     end
 
+    it("builds the window in idle steps after login, so the first open doesn't stutter", function()
+      seeded()
+      assert.is_nil(rawget(ns.UI, "frame") or nil) -- not built yet
+      for _ = 1, 40 do -- the login timer starts it; each step schedules the next
+        env:advance(0.5)
+      end
+      assert.is_not_nil(ns.UI.frame)
+      assert.is_false(ns.UI.frame:IsShown()) -- built hidden
+      for _, name in ipairs({ "market", "item", "arbitrage", "portfolio", "sync", "settings", "guide" }) do
+        assert.is_not_nil(ns.UI.views[name], name)
+      end
+      drainJobs() -- item facts for the index load in the background
+      assert.is_not_nil(rawget(ns.ItemCache.info, 2589))
+      ns.UI:Toggle() -- opening is now just showing
+      assert.is_true(ns.UI.frame:IsShown())
+    end)
+
     it("builds the market index after scans and feeds the screener", function()
       seeded()
       assert.is_not_nil(ns.AME.index)
@@ -416,7 +433,7 @@ describe("addon in a stubbed client", function()
       v.swap.scripts.OnClick(v.swap)
       drainJobs()
       assert.are.equal(0, #ns.UI.arbRows)
-      assert.truthy(ns.UI.footer.text:find("Tyken Evanion"))
+      assert.truthy(ns.UI.footer.text:find(ns.VERSION, 1, true))
     end)
 
     it("views any auction house of the market from the title bar, with readable labels", function()
@@ -1337,9 +1354,14 @@ describe("addon in a stubbed client", function()
       local tooltip = s.checks[1]
       tooltip.scripts.OnClick(tooltip)
       assert.is_false(ns.Settings:Get("tooltip"))
-      local altShift = s.click.menu.items[2]
+      -- chart clicks are off by default (loot addons such as Gargul use modified clicks on items and links)
+      assert.are.equal("none", ns.Settings:Get("clickModifier"))
+      local altShift = s.click.menu.items[3]
       altShift.scripts.OnClick(altShift)
       assert.are.equal("altshift", ns.Settings:Get("clickModifier"))
+      local ctrlAlt = s.click.menu.items[4]
+      ctrlAlt.scripts.OnClick(ctrlAlt)
+      assert.are.equal("ctrlalt", ns.Settings:Get("clickModifier"))
       assert.truthy(s.storage.text:find("Market:"))
       env:slash("AZEROTHMERCANTILEEXCHANGE", "config")
       assert.are.equal("settings", ns.UI.current)

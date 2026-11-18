@@ -454,6 +454,12 @@ function handlers.PLAYER_LOGIN()
       end
     end
   end)
+  -- build the AME window in idle moments, so opening it the first time doesn't stutter
+  C_Timer.After(6, function()
+    if ns.UI and ns.UI.Prebuild then
+      ns.UI:Prebuild()
+    end
+  end)
   if ns.SyncService:Init(AME, AME.syncTransport) then
     ns.SyncService:Start()
   end

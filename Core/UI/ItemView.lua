@@ -67,7 +67,7 @@ function UI:CreateItemView(parent)
       UI:UpdateWatchControls()
     end
   end)
-  v.alertSignal:SetPoint("TOPRIGHT", -96, -24)
+  v.alertSignal:SetPoint("TOPRIGHT", -96, -25) -- inputs: 3 px under search, 5 over cards
   local function goldAlert(field, hint)
     return W.GoldInput(v, hint, function(g, user)
       if user and UI.itemID then
@@ -79,9 +79,9 @@ function UI:CreateItemView(parent)
   v.alertAbove = goldAlert("above", L["above g"])
   v.alertAbove:SetPoint("RIGHT", v.alertSignal, "LEFT", -8, 0)
   v.alertBelow = goldAlert("below", L["below g"])
-  v.alertBelow:SetPoint("RIGHT", v.alertAbove, "LEFT", -4, 0)
+  v.alertBelow:SetPoint("RIGHT", v.alertAbove, "LEFT", -8, 0)
   v.alertLabel = W.Text(v, "GameFontDisableSmall", "RIGHT")
-  v.alertLabel:SetPoint("RIGHT", v.alertBelow, "LEFT", -6, 0)
+  v.alertLabel:SetPoint("RIGHT", v.alertBelow, "LEFT", -8, 0)
   v.alertLabel:SetText(L["Alert when"])
   v.watch = W.Button(v, L["Watch"], 84, 20, function(self)
     UI:WatchMenu(self, UI.itemID)
@@ -108,7 +108,7 @@ function UI:CreateItemView(parent)
     { L["Supply  ·  sells/day"], term = "sellRate" },
     { L["Signal"], term = "signal" },
   }, { width = UI.WIDTH - 20 })
-  v.cardRow:SetPoint("TOPLEFT", v.icon, "BOTTOMLEFT", 0, -10)
+  v.cardRow:SetPoint("TOPLEFT", v.icon, "BOTTOMLEFT", 0, -16)
   v.cardRow:SetPoint("RIGHT", 0, 0)
   v.cards = v.cardRow.cards
 
@@ -146,7 +146,7 @@ function UI:CreateItemView(parent)
   -- posting price suggestion (Pricing / Posting), under the chart
   v.post = CreateFrame("Frame", nil, v)
   v.post:SetPoint("BOTTOMLEFT", 0, 0)
-  v.post:SetPoint("BOTTOMRIGHT", 0, 0)
+  v.post:SetPoint("BOTTOMRIGHT", -UI.FOOTER_SPACE, 0) -- the version sits at the right end of this row
   v.post:SetHeight(18)
   v.post:EnableMouse(true)
   ns.Help.Explain(v.post, "posting")

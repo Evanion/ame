@@ -50,14 +50,21 @@ function UI:CreateSettingsView(parent, contentArea)
   end, { neutral = true })
   W.Labeled(v, L["Chart style"], v.style, nil, 150):SetPoint("TOPLEFT", 0, -80)
 
-  local clicks = { { "alt", L["Alt-click"] }, { "altshift", L["Alt+Shift-click"] }, { "none", L["Off"] } }
+  local clicks = {
+    { "none", L["Off"] },
+    { "alt", L["Alt-click"] },
+    { "altshift", L["Alt+Shift-click"] },
+    { "ctrlalt", L["Ctrl+Alt-click"] },
+  }
   v.click = W.Dropdown(v, 120, clicks, function(value)
     ns.Settings:Set("clickModifier", value)
   end, { neutral = true })
   local clickLabel = W.Labeled(v, L["Open item charts with"], v.click, nil, 150)
   clickLabel:SetPoint("TOPLEFT", 0, -106)
-  W.Paragraph(v, L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."])
-    :SetPoint("TOPLEFT", clickLabel, "BOTTOMLEFT", 0, -14)
+  W.Paragraph(
+    v,
+    L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks on items and links. With the AME window open, Shift-click an item to chart it."]
+  ):SetPoint("TOPLEFT", clickLabel, "BOTTOMLEFT", 0, -14)
 
   v.minimap = W.Check(v, L["Show minimap button"], function(on)
     ns.Launcher:SetMinimap(on)
@@ -131,13 +138,22 @@ function UI:CreateSettingsView(parent, contentArea)
       end,
     },
   }
-  for i, a in ipairs(actions) do
+  -- each block below the previous one, so longer (translated) descriptions push the rest down instead of overlapping
+  local last
+  for _, a in ipairs(actions) do
     local b = W.Button(v, a[1], 190, 22, a[3])
-    b:SetPoint("TOPLEFT", COL2, -110 - (i - 1) * 46)
-    W.Paragraph(v, a[2]):SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -4)
+    if last then
+      b:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -10)
+    else
+      b:SetPoint("TOPLEFT", COL2, -110)
+    end
+    last = W.Paragraph(v, a[2])
+    last:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -4)
   end
-  heading(v, L["Auction house cut"], COL2, -258)
-  local function cutInput(key, label, y)
+  local cutHeading = heading(v, L["Auction house cut"], COL2, 0)
+  cutHeading:ClearAllPoints()
+  cutHeading:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -16)
+  local function cutInput(key, label, below)
     local input = W.Input(v, {
       width = 44,
       numeric = true,
@@ -147,15 +163,17 @@ function UI:CreateSettingsView(parent, contentArea)
         end
       end,
     })
-    W.Labeled(v, label, input, nil, 170):SetPoint("TOPLEFT", COL2, y)
+    local row = W.Labeled(v, label, input, nil, 170)
+    row:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 0, -14) -- the 20 px input is centred on this label: keep rows apart
+    input.row = row
     local pct = W.Text(v, "GameFontHighlightSmall")
     pct:SetPoint("LEFT", input, "RIGHT", 4, 0)
     pct:SetText("%")
     input.key = key
     return input
   end
-  v.cutFaction = cutInput("cutFaction", L["Faction auction houses"], -284)
-  v.cutNeutral = cutInput("cutNeutral", L["Goblin auction houses"], -310)
+  v.cutFaction = cutInput("cutFaction", L["Faction auction houses"], cutHeading)
+  v.cutNeutral = cutInput("cutNeutral", L["Goblin auction houses"], v.cutFaction.row)
   local hours = {
     { 2, L["%d h listings"]:format(2) },
     { 8, L["%d h listings"]:format(8) },
@@ -167,10 +185,9 @@ function UI:CreateSettingsView(parent, contentArea)
       UI:RenderArbitrage()
     end
   end, { neutral = true })
-  W.Labeled(v, L["Deposits for"], v.hours, nil, 80):SetPoint("TOPLEFT", COL2 + 250, -284)
+  W.Labeled(v, L["Deposits for"], v.hours, nil, 80):SetPoint("TOPLEFT", v.cutFaction.row, "TOPLEFT", 250, 0)
 
-  W.Paragraph(v, L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."])
-    :SetPoint("TOPLEFT", COL2, -340)
+  W.Paragraph(v, L["Sharing settings are on the Sync tab."]):SetPoint("TOPLEFT", v.cutNeutral.row, "BOTTOMLEFT", 0, -14)
 
   v:SetScript("OnShow", function()
     UI:RefreshSettings()

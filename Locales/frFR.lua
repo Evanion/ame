@@ -47,8 +47,6 @@ L["%d watched items have no price history here yet"] = "%d objets suivis n'ont p
 L["%d-day average"] = "Moyenne sur %d jours"
 L["%dd avg"] = "moy. %dj"
 L["%dx off usual"] = "%dx l'habituel"
-L["%s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"] =
-  "%s  -  créé par Tyken Evanion  -  JcJ Horde, WoW Forever"
 L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  %d jours d'historique  ·  données %s %s%s%s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s : min %s, marché %s, qté %d (%d échantillons)"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
@@ -60,8 +58,6 @@ L["(est.)"] = "(est.)"
 L["(needs LibDBIcon; included in releases)"] = "(nécessite LibDBIcon ; inclus dans les versions publiées)"
 L["+ %d more"] = "+ %d de plus"
 L[", %d scans received"] = ", %d scans reçus"
-L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"] =
-  "/ame - ouvrir la fenêtre  ·  /ame <lien d'objet> - graphique d'un objet  ·  Alt-clic sur un objet - son graphique"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
   "/ame - ouvrir la fenêtre.   /ame <lien d'objet> - graphique d'un objet.   /ame status - état des données et de la synchro.   /ame config - paramètres.   /ame selftest - vérifier que tout fonctionne."
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
@@ -137,8 +133,6 @@ L["Buy at"] = "Achat à"
 L["By your guild officers: %s"] = "Par vos officiers de guilde : %s"
 L["Cancel"] = "Annuler"
 L["Candles"] = "Bougies"
-L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."] =
-  "Changez ceci si un autre addon (p. ex. AHDB) utilise aussi Alt-clic sur les objets."
 L["Character"] = "Personnage"
 L["Character name, e.g. First Last"] = "Nom du personnage, p. ex. Prénom Nom"
 L["Chart style"] = "Style de graphique"
@@ -335,8 +329,6 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "Partager avec la guilde"
 L["Share with trusted players (below)"] = "Partager avec les joueurs de confiance (ci-dessous)"
 L["Sharing"] = "Partage"
-L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."] =
-  "Les paramètres de partage sont dans l'onglet Synchro. Ces options se trouvent aussi dans les paramètres AddOns du jeu."
 L["Shift-click to search the auction house"] = "Maj-clic pour chercher à l'hôtel des ventes"
 L["Shortage"] = "Pénurie"
 L["Show AME prices in item tooltips"] = "Afficher les prix AME dans les infobulles d'objet"
@@ -364,8 +356,6 @@ L["The cheapest single listing seen in the latest data."] =
   "L'annonce la moins chère vue dans les dernières données."
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "Le prix du marché à l'hôtel des ventes où vous vendez : ce à quoi l'objet se vend habituellement là-bas."
-L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
-  "Le graphique de prix : prix du marché, annonce la plus basse, moyenne sur 7 jours et offre. Passez aux bougies pour une vue de trading. La molette zoome, glisser déplace, double-clic réinitialise. Alt-clic sur n'importe quel objet en jeu (sacs, chat, HV) pour l'ouvrir ici."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "Ce marché : %d jours d'historique, %d scans récents conservés en entier"
 L["Tightening"] = "Resserrement"

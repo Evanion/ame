@@ -138,7 +138,7 @@ Help.GUIDE = {
   },
   {
     L["Item tab"],
-    L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."],
+    L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."],
   },
   {
     L["Watchlists and alerts"],
@@ -154,22 +154,78 @@ Help.GUIDE = {
   },
 }
 
+-- The Guide: sections in two columns (each goes to the shorter one), scrolled with the mouse wheel when they don't
+-- fit (translations run long). Laid out when shown: text heights are only known once the client has drawn it.
+Help.GUIDE_COLUMN, Help.GUIDE_GAP = 460, 24
+
 function Help.CreateGuide(parent, contentArea)
   local v = contentArea(parent)
-  local x, y, colW = 0, 0, 470
-  for i, section in ipairs(Help.GUIDE) do
-    if i == 5 then
-      x, y = colW + 20, 0
-    end
-    local head = W.Text(v, "GameFontNormal")
-    head:SetPoint("TOPLEFT", x, y)
+  local scroll = CreateFrame("ScrollFrame", nil, v)
+  scroll:SetPoint("TOPLEFT", 0, 0)
+  scroll:SetPoint("BOTTOMRIGHT", -12, 0)
+  local content = CreateFrame("Frame", nil, scroll)
+  content:SetSize(2 * Help.GUIDE_COLUMN + Help.GUIDE_GAP, 1)
+  scroll:SetScrollChild(content)
+  v.scroll, v.content, v.sections = scroll, content, {}
+  for _, section in ipairs(Help.GUIDE) do
+    local head = W.Text(content, "GameFontNormal")
     head:SetText(section[1])
-    local body = W.Text(v, "GameFontHighlightSmall")
+    local body = W.Text(content, "GameFontHighlightSmall")
     body:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -4)
-    body:SetWidth(colW)
+    body:SetWidth(Help.GUIDE_COLUMN)
+    body:SetJustifyH("LEFT")
     body:SetSpacing(2)
     body:SetText(section[2])
-    y = y - 22 - (body:GetStringHeight() or 40) - 18
+    v.sections[#v.sections + 1] = { head = head, body = body }
   end
+  v.credits = W.Text(content, "GameFontDisableSmall")
+  v.credits:SetText(
+    L["Azeroth Mercantile Exchange %s  ·  created by Tyken Evanion  ·  PvP Horde, WoW Forever"]:format(ns.VERSION)
+  )
+
+  -- a thin bar on the right shows where you are when it scrolls
+  local bar = v:CreateTexture(nil, "OVERLAY")
+  bar:SetColorTexture(1, 1, 1, 0.25)
+  bar:SetWidth(4)
+  bar:Hide()
+
+  local function range()
+    return math.max(0, (content:GetHeight() or 0) - (scroll:GetHeight() or 0))
+  end
+  local function setScroll(y)
+    y = math.max(0, math.min(range(), y))
+    scroll:SetVerticalScroll(y)
+    local max, viewH = range(), scroll:GetHeight() or 0
+    bar:SetShown(max > 0)
+    if max > 0 then
+      local total = viewH + max
+      local h = math.max(20, viewH * viewH / total)
+      bar:SetHeight(h)
+      bar:ClearAllPoints()
+      bar:SetPoint("TOPRIGHT", v, "TOPRIGHT", 0, -(viewH - h) * y / max)
+    end
+  end
+
+  function v:Layout()
+    local cols = { 0, 0 } -- heights so far
+    for _, s in ipairs(self.sections) do
+      local c = cols[2] < cols[1] and 2 or 1
+      s.head:ClearAllPoints()
+      s.head:SetPoint("TOPLEFT", (c - 1) * (Help.GUIDE_COLUMN + Help.GUIDE_GAP), -cols[c])
+      cols[c] = cols[c] + (s.head:GetStringHeight() or 14) + 4 + (s.body:GetStringHeight() or 40) + 18
+    end
+    local bottom = math.max(cols[1], cols[2])
+    self.credits:ClearAllPoints()
+    self.credits:SetPoint("TOPLEFT", 0, -bottom - 4)
+    content:SetHeight(bottom + 24)
+    setScroll(scroll:GetVerticalScroll() or 0)
+  end
+  v:HookScript("OnShow", function(self)
+    self:Layout()
+  end)
+  v:EnableMouseWheel(true)
+  v:SetScript("OnMouseWheel", function(_, delta)
+    setScroll((scroll:GetVerticalScroll() or 0) - delta * 40)
+  end)
   return v
 end

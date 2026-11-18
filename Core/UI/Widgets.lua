@@ -46,15 +46,19 @@ function W.SetTheme(house)
   W.COLORS.accent = { c[1], c[2], c[3], 1 }
   W.COLORS.selected = { c[1], c[2], c[3], 0.22 }
   W.COLORS.rowSelected = { c[1], c[2], c[3], 0.2 }
-  -- selected buttons take the new accent
+  -- selected buttons and ticked checkboxes take the new accent
   for b in pairs(W.buttons) do
     if b.selected then
       b:SetSelected(true)
     end
   end
+  for check in pairs(W.checks) do
+    check:SetChecked(check.checked)
+  end
 end
 
 W.buttons = setmetatable({}, { __mode = "k" }) -- every W.Button, for re-tinting on a theme change
+W.checks = setmetatable({}, { __mode = "k" }) -- every W.Check, likewise
 
 -- "ffRRGGBB" for |c escapes
 function W.Hex(c)
@@ -792,17 +796,19 @@ function W.Check(parent, label, onToggle)
   b.box = CreateFrame("Frame", nil, b, "BackdropTemplate")
   b.box:SetAllPoints()
   W.Skin(b.box, W.COLORS.panel)
+  -- ticked: an accent-coloured square inside the box (the game's check texture doesn't show on every client)
   b.mark = b:CreateTexture(nil, "OVERLAY")
-  b.mark:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
-  b.mark:SetPoint("CENTER")
-  b.mark:SetSize(16, 16)
+  b.mark:SetPoint("TOPLEFT", 4, -4)
+  b.mark:SetPoint("BOTTOMRIGHT", -4, 4)
   b.label = W.Text(b, "GameFontHighlightSmall")
   b.label:SetPoint("LEFT", b, "RIGHT", 5, 0)
   b.label:SetText(label)
   function b:SetChecked(on)
     self.checked = on and true or false
     self.mark:SetShown(self.checked)
-    local a = self.checked and W.COLORS.accent or W.COLORS.border
+    local accent = W.COLORS.accent
+    self.mark:SetColorTexture(accent[1], accent[2], accent[3], 1)
+    local a = self.checked and accent or W.COLORS.border
     self.box:SetBackdropBorderColor(a[1], a[2], a[3], self.checked and 0.8 or a[4])
   end
   b:SetScript("OnClick", function(self)
@@ -812,6 +818,7 @@ function W.Check(parent, label, onToggle)
     end
   end)
   b:SetChecked(false)
+  W.checks[b] = true
   return b
 end
 
@@ -987,7 +994,8 @@ W.SEP = "  ·  "
 function W.StatusLine(parent)
   local s = W.Text(parent, "GameFontDisableSmall", "LEFT")
   s:SetPoint("BOTTOMLEFT", 0, 0)
-  s:SetPoint("BOTTOMRIGHT", 0, 0)
+  s:SetPoint("BOTTOMRIGHT", -(ns.UI and ns.UI.FOOTER_SPACE or 0), 0) -- the version sits at the right end
+  s:SetWordWrap(false)
   return s
 end
 
@@ -1086,13 +1094,23 @@ function W.PostAdvice(advice)
   if not advice then
     return W.Dim(L["Posting price: not enough data on this item yet."])
   end
-  local parts = {
-    W.Confidence(advice.confidence) .. " " .. W.Color("gold", L["Post at"]),
-    L["Quick %s"]:format(W.PostChoice(advice.quick)),
-    L["Normal %s"]:format(W.PostChoice(advice.normal)),
-    L["Patient %s"]:format(W.PostChoice(advice.patient)),
-    L["%d ahead"]:format(advice.normal.ahead),
-  }
+  local head = W.Confidence(advice.confidence) .. " " .. W.Color("gold", L["Post at"])
+  local parts
+  if advice.quick.price == advice.patient.price then
+    -- one price fits all three: say why instead of repeating it
+    parts = { head, W.PostChoice(advice.normal) }
+    if advice.normal.ahead == 0 and (advice.book and #advice.book.prices or 0) > 0 then
+      parts[#parts + 1] = W.Dim(L["more is listed than sells in one listing time: only the lowest price sells soon"])
+    end
+  else
+    parts = {
+      head,
+      L["Quick %s"]:format(W.PostChoice(advice.quick)),
+      L["Normal %s"]:format(W.PostChoice(advice.normal)),
+      L["Patient %s"]:format(W.PostChoice(advice.patient)),
+      L["%d ahead"]:format(advice.normal.ahead),
+    }
+  end
   local text = table.concat(parts, "   ")
   if advice.hold then
     text = text .. "   " .. W.Color("bad", L["unlikely to sell soon: consider holding"])

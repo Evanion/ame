@@ -51,8 +51,6 @@ L["%d watched items have no price history here yet"] =
 L["%d-day average"] = "Среднее за %d дн."
 L["%dd avg"] = "Ср. %dд"
 L["%dx off usual"] = "В %d раз от обычного"
-L["%s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"] =
-  "%s  -  автор Tyken Evanion  -  PvP Орда, WoW Forever"
 L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  %d дн. истории  ·  данные %s %s%s%s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] =
   "%s %s: мин. %s, рынок %s, кол-во %d (%d замеров)"
@@ -65,8 +63,6 @@ L["(est.)"] = "(оценка)"
 L["(needs LibDBIcon; included in releases)"] = "(нужен LibDBIcon; входит в релизы)"
 L["+ %d more"] = "+ ещё %d"
 L[", %d scans received"] = ", получено сканирований: %d"
-L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"] =
-  "/ame - открыть окно  ·  /ame <ссылка на предмет> - график предмета  ·  Alt-клик по предмету - его график"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
   "/ame - открыть окно.   /ame <ссылка на предмет> - график предмета.   /ame status - состояние данных и синхронизации.   /ame config - настройки.   /ame selftest - проверить, что всё работает."
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
@@ -145,8 +141,6 @@ L["Buy at"] = "Купить в"
 L["By your guild officers: %s"] = "Офицерами вашей гильдии: %s"
 L["Cancel"] = "Отмена"
 L["Candles"] = "Свечи"
-L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."] =
-  "Измените, если другой аддон (например, AHDB) тоже использует Alt-клик по предметам."
 L["Character"] = "Персонаж"
 L["Character name, e.g. First Last"] = "Имя персонажа, например Имя Фамилия"
 L["Chart style"] = "Вид графика"
@@ -347,8 +341,6 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "Делиться с гильдией"
 L["Share with trusted players (below)"] = "Делиться с доверенными игроками (ниже)"
 L["Sharing"] = "Обмен"
-L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."] =
-  "Настройки обмена - на вкладке «Синхронизация». Эти параметры есть и в настройках модификаций игры."
 L["Shift-click to search the auction house"] = "Shift-клик - поиск на аукционе"
 L["Shortage"] = "Дефицит"
 L["Show AME prices in item tooltips"] = "Показывать цены AME в подсказках предметов"
@@ -376,8 +368,6 @@ L["The cheapest single listing seen in the latest data."] =
   "Самый дешёвый отдельный лот в последних данных."
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "Рыночная цена на аукционе, где вы продаёте: за сколько предмет обычно там продаётся."
-L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
-  "График цен: рыночная цена, самый дешёвый лот, среднее за 7 дней и предложение. Переключитесь на свечи для трейдерского вида. Колесо мыши - масштаб, перетаскивание - сдвиг, двойной клик - сброс. Alt-клик по любому предмету в игре (сумки, чат, аукцион) откроет его здесь."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "Этот рынок: %d дн. истории, %d недавних сканирований хранятся целиком"
 L["Tightening"] = "Сжатие предложения"

@@ -46,8 +46,6 @@ L["%d watched items have no price history here yet"] = "%d 件自选物品在此
 L["%d-day average"] = "%d 日均价"
 L["%dd avg"] = "%d日均"
 L["%dx off usual"] = "偏离常价 %d 倍"
-L["%s  -  created by Tyken Evanion  -  PvP Horde, WoW Forever"] =
-  "%s  -  作者 Tyken Evanion  -  PvP 部落，WoW Forever"
 L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  %d 天历史  ·  数据 %s %s%s%s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s：最低 %s，市场价 %s，数量 %d（%d 个样本）"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
@@ -59,8 +57,6 @@ L["(est.)"] = "(估算)"
 L["(needs LibDBIcon; included in releases)"] = "（需要 LibDBIcon；正式版已包含）"
 L["+ %d more"] = "+ 另外 %d 个"
 L[", %d scans received"] = "，已接收 %d 次扫描"
-L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Alt-click an item - chart it"] =
-  "/ame - 打开窗口  ·  /ame <物品链接> - 查看物品图表  ·  Alt-点击物品 - 查看其图表"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
   "/ame - 打开窗口。   /ame <物品链接> - 查看物品图表。   /ame status - 数据与同步状态。   /ame config - 设置。   /ame selftest - 检查一切是否正常。"
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
@@ -135,8 +131,6 @@ L["Buy at"] = "买入地"
 L["By your guild officers: %s"] = "被公会官员屏蔽：%s"
 L["Cancel"] = "取消"
 L["Candles"] = "K线"
-L["Change this if another addon (e.g. AHDB) also uses Alt-click on items."] =
-  "如果其他插件（如 AHDB）也使用 Alt-点击物品，请修改此项。"
 L["Character"] = "角色"
 L["Character name, e.g. First Last"] = "角色名称，例如 First Last"
 L["Chart style"] = "图表样式"
@@ -332,8 +326,6 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "与公会共享"
 L["Share with trusted players (below)"] = "与信任的玩家共享（见下方）"
 L["Sharing"] = "共享"
-L["Sharing settings are on the Sync tab. These options are also in the game's AddOns settings."] =
-  "共享设置位于同步标签页。这些选项也可在游戏的插件设置中找到。"
 L["Shift-click to search the auction house"] = "Shift-点击以搜索拍卖行"
 L["Shortage"] = "短缺"
 L["Show AME prices in item tooltips"] = "在物品鼠标提示中显示 AME 价格"
@@ -359,8 +351,6 @@ L["The cheapest listing at the auction house you buy from - what the first units
 L["The cheapest single listing seen in the latest data."] = "最新数据中最便宜的单条挂单。"
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "你卖出的拍卖行的市场价：该物品在那里的一般售价。"
-L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Alt-click any item in the game (bags, chat, the AH) to open it here."] =
-  "价格图表：市场价、最低挂单、7日均价和供应量。切换到K线可获得交易视图。鼠标滚轮缩放，拖动平移，双击重置。在游戏中 Alt-点击任何物品（背包、聊天、拍卖行）即可在此打开。"
 L["This market: %d days of history, %d recent scans kept in full"] =
   "当前市场：%d 天历史，完整保留 %d 次最近扫描"
 L["Tightening"] = "收紧"
