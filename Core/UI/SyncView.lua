@@ -189,6 +189,24 @@ function UI:CreateSyncSection(v, host)
   })
   v.pending = v.pendingList.rows
 
+  -- Price checks: answer "!pc <item>" in chat
+  st = stack:Card().stack
+  st:Heading(L["Price checks"], 0)
+  local pcIntro = st:Text("GameFontDisableSmall", 4)
+  pcIntro:SetText(
+    L["When someone types !pc and an item (link or name), AME answers with its prices at your faction's auction house. If several players run AME, only one of you answers. Your own !pc is shown only to you."]
+  )
+  row = st:Row(18, 4)
+  v.priceCheck = W.SettingCheck(row, L["Answer in guild, party and raid chat"], "priceCheck", 0, -1)
+  row = st:Row(18, 4)
+  v.priceCheckWhisper = W.SettingCheck(
+    row,
+    L["Answer whispers from guild members, friends and trusted players"],
+    "priceCheckWhisper",
+    0,
+    -1
+  )
+
   -- Blocked: what it does, the list, the last rejected scan
   st = stack:Card().stack
   st:Heading(L["Blocked"], 0)
@@ -243,6 +261,8 @@ function UI:RefreshSync()
   )
   v.guild:SetChecked(ns.Settings:Get("syncGuild"))
   v.trusted:SetChecked(ns.Settings:Get("syncTrusted"))
+  v.priceCheck:SetChecked(ns.Settings:Get("priceCheck"))
+  v.priceCheckWhisper:SetChecked(ns.Settings:Get("priceCheckWhisper"))
 
   local s = AME_DB.stats
   if not svc.enabled then

@@ -45,6 +45,7 @@ Core\Trust.lua
 Core\SyncService.lua
 Core\Trading.lua
 Core\Posting.lua
+Core\PriceCheck.lua
 Core\Main.lua
 Core\Index.lua
 Core\Commands.lua

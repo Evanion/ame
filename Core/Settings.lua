@@ -28,6 +28,8 @@ Settings.DEFAULTS = {
   outlierFactor = 4, -- ignore days priced more than this many times off their neighbours (false = off)
   syncGuild = true,
   syncTrusted = true,
+  priceCheck = false, -- answer "!pc <item>" in guild, party and raid chat (sends chat in your name)
+  priceCheckWhisper = false, -- and in whispers from guild members, friends and trusted players
   minimap = { hide = false },
 }
 
