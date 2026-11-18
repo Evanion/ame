@@ -146,8 +146,8 @@ function Sell:Build(parent)
   local bar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
   W.Skin(bar, W.COLORS.bg or W.COLORS.panel, W.COLORS.border)
   bar:SetHeight(46)
-  bar:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 0, -2)
-  bar:SetPoint("TOPRIGHT", parent, "BOTTOMRIGHT", 0, -2)
+  bar.parent = parent
+  Sell.Place(bar)
   bar:EnableMouse(true)
   ns.Help.Explain(bar, "posting")
   local function fill(price, target)
@@ -185,6 +185,42 @@ function Sell:Build(parent)
   bar.info:SetWordWrap(false)
   bar:Hide()
   return bar
+end
+
+-- The auction house's tabs (Buy / Sell / Auctions, and those other addons add) hang below its frame: the bar goes
+-- under the lowest of them. Placed again whenever it shows (addons add tabs late).
+function Sell.Tabs(parent)
+  local tabs = {}
+  for i = 1, 20 do
+    local t = _G["AuctionFrameTab" .. i]
+    if t then
+      tabs[#tabs + 1] = t
+    end
+  end
+  if type(parent.Tabs) == "table" then -- the retail-style auction house
+    for _, t in ipairs(parent.Tabs) do
+      tabs[#tabs + 1] = t
+    end
+  end
+  return tabs
+end
+
+function Sell.Place(bar)
+  local parent = bar.parent
+  local gap = 0
+  local bottom = parent.GetBottom and parent:GetBottom()
+  if bottom then
+    for _, t in ipairs(Sell.Tabs(parent)) do
+      local b = t.IsShown and t:IsShown() and t.GetBottom and t:GetBottom()
+      if type(b) == "number" and bottom - b > gap then
+        gap = bottom - b
+      end
+    end
+  end
+  bar.tabGap = gap
+  bar:ClearAllPoints()
+  bar:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 0, -(gap + 4))
+  bar:SetPoint("TOPRIGHT", parent, "BOTTOMRIGHT", 0, -(gap + 4))
 end
 
 -- redraw from Sell.advice and Sell.target
@@ -287,6 +323,9 @@ function Sell:Refresh()
   end
   self.advice = ok and advice or nil
   self:Draw()
+  if not bar:IsShown() then
+    Sell.Place(bar)
+  end
   bar:Show()
   if not self.hint then
     self.hint = W.Hint(

@@ -166,9 +166,11 @@ function UI:CreateItemView(parent)
   W.Skin(legend, { 0.06, 0.07, 0.09, 0.85 }, { 1, 1, 1, 0.08 })
   legend:SetPoint("TOPLEFT", 10, -10)
   legend:SetFrameLevel(chart.frame:GetFrameLevel() + 3)
+  -- rows of swatch + label in two aligned columns; notes (no swatch) sit under the label column, dimmed.
+  -- v.legend holds the same lines as text (hover checks and specs read it).
   v.legend = W.Text(legend, "GameFontHighlightSmall")
-  v.legend:SetPoint("TOPLEFT", 8, -6)
-  v.legend:SetSpacing(3)
+  v.legend:Hide()
+  legend.rows = {}
   v.legendBox = legend
   chart.frame:HookScript("OnEnter", function()
     legend:Hide()
@@ -366,7 +368,7 @@ function UI:DrawItemChart()
   local range = chart.range
   chart.range = nil
   chart:ClearSeries()
-  local legend = {}
+  local legend = {} -- { color, label } rows, or { note = text }
   chart:SetSeries("qty", { xs = xs, ys = qty, kind = "bars", axis = "volume", color = { 0.53, 0.53, 0.67, 1 } })
   if candles then
     local c
@@ -395,8 +397,9 @@ function UI:DrawItemChart()
       upColor = W.COLORS.up,
       downColor = W.COLORS.down,
     })
-    legend[#legend + 1] = W.Swatch(W.COLORS.up) .. " " .. L["up"] .. "  " .. W.Swatch(W.COLORS.down) .. " " .. L["down"]
-    legend[#legend + 1] = W.Dim(L["wick = cheapest listing"])
+    legend[#legend + 1] = { W.COLORS.up, L["up"] }
+    legend[#legend + 1] = { W.COLORS.down, L["down"] }
+    legend[#legend + 1] = { note = L["wick = cheapest listing"] }
   else
     self.candles = nil
     chart:SetSeries("market", {
@@ -408,15 +411,15 @@ function UI:DrawItemChart()
       marker = true,
     })
     chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = { 0.4, 0.87, 0.47, 0.9 } })
-    legend[#legend + 1] = W.Swatch(0.2, 0.8, 1) .. " " .. L["market"]
-    legend[#legend + 1] = W.Swatch(0.4, 0.87, 0.47) .. " " .. L["lowest"]
+    legend[#legend + 1] = { { 0.2, 0.8, 1 }, L["market"] }
+    legend[#legend + 1] = { { 0.4, 0.87, 0.47 }, L["lowest"] }
   end
   if not intraday then -- a 7-point average of scans isn't a 7-day average
-    legend[#legend + 1] = W.Swatch(1, 0.67, 0.2) .. " " .. L["7d average"]
+    legend[#legend + 1] = { { 1, 0.67, 0.2 }, L["7d average"] }
   end
-  legend[#legend + 1] = W.Swatch(0.53, 0.53, 0.67) .. " " .. L["supply"]
+  legend[#legend + 1] = { { 0.53, 0.53, 0.67 }, L["supply"] }
   if intraday then
-    legend[#legend + 1] = W.Dim(L["(each point is one scan)"])
+    legend[#legend + 1] = { note = L["(each point is one scan)"] }
   end
   local trades = tradePoints(self.itemID)
   if trades then
@@ -428,12 +431,10 @@ function UI:DrawItemChart()
       axis = "price",
       size = 8,
     })
-    legend[#legend + 1] = W.Swatch(UI.TRADE_COLORS.buy) .. " " .. L["you bought"]
-    legend[#legend + 1] = W.Swatch(UI.TRADE_COLORS.sale) .. " " .. L["you sold"]
+    legend[#legend + 1] = { UI.TRADE_COLORS.buy, L["you bought"] }
+    legend[#legend + 1] = { UI.TRADE_COLORS.sale, L["you sold"] }
   end
-  v.legend:SetText(table.concat(legend, "\n"))
-  v.legendBox:SetSize((v.legend:GetStringWidth() or 100) + 16, (v.legend:GetStringHeight() or 12) + 12)
-  v.legendBox:Show()
+  self:SetLegend(legend)
   if not intraday then -- a 7-point average of scans isn't a 7-day average
     chart:SetSeries("sma", {
       xs = xs,
@@ -446,6 +447,50 @@ function UI:DrawItemChart()
   end
   chart.range = range
   chart:Refresh()
+end
+
+-- The chart's legend box: entries = { { color, label }, ..., { note = text } }. Every row is the same height; the
+-- swatch column and the label column line up; notes are dim and start at the label column.
+UI.LEGEND_ROW, UI.LEGEND_SWATCH = 14, 8
+function UI:SetLegend(entries)
+  local v = self.itemView
+  local box = v.legendBox
+  local rows = box.rows
+  local lines, widest = {}, 0
+  for i, e in ipairs(entries) do
+    local r = rows[i]
+    if not r then
+      r = {}
+      r.swatch = box:CreateTexture(nil, "OVERLAY")
+      r.swatch:SetSize(UI.LEGEND_SWATCH, UI.LEGEND_SWATCH)
+      r.swatch:SetPoint("TOPLEFT", 8, -8 - (i - 1) * UI.LEGEND_ROW - 2)
+      r.text = W.Text(box, "GameFontHighlightSmall")
+      r.text:SetPoint("TOPLEFT", 8 + UI.LEGEND_SWATCH + 6, -8 - (i - 1) * UI.LEGEND_ROW)
+      r.text:SetHeight(UI.LEGEND_ROW - 2)
+      r.text:SetJustifyV("MIDDLE")
+      rows[i] = r
+    end
+    if e.note then
+      r.swatch:Hide()
+      r.text:SetText(W.Dim(e.note))
+      lines[#lines + 1] = e.note
+    else
+      local c = e[1]
+      r.swatch:SetColorTexture(c[1], c[2], c[3], 1)
+      r.swatch:Show()
+      r.text:SetText(e[2])
+      lines[#lines + 1] = e[2]
+    end
+    r.text:Show()
+    widest = math.max(widest, r.text:GetStringWidth() or 60)
+  end
+  for i = #entries + 1, #rows do
+    rows[i].swatch:Hide()
+    rows[i].text:Hide()
+  end
+  v.legend:SetText(table.concat(lines, "\n"))
+  box:SetSize(8 + UI.LEGEND_SWATCH + 6 + widest + 10, 16 + #entries * UI.LEGEND_ROW - 2)
+  box:SetShown(#entries > 0)
 end
 
 -- Fresh listings for some items were recorded (a search, e.g. the item you're about to sell): the item on screen

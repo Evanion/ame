@@ -1315,6 +1315,15 @@ describe("addon in a stubbed client", function()
       env:update(40)
       local bar = ns.SellAssist.bar
       assert.truthy(bar:IsShown())
+      -- the auction house's tabs hang below its frame: the bar sits under them, not over them
+      local tab = CreateFrame("Button")
+      tab.GetBottom = function()
+        return -30
+      end
+      _G.AuctionFrameTab1 = tab
+      ns.SellAssist.Place(bar)
+      assert.are.same({ "TOPLEFT", ahFrame, "BOTTOMLEFT", 0, -34 }, bar.points[1])
+      _G.AuctionFrameTab1 = nil
       advice = ns.SellAssist.advice
       assert.truthy(bar.title.text:find("Post at"))
       assert.truthy(bar.info.text:find("after the cut"))
