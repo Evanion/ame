@@ -58,6 +58,17 @@ describe("Arbitrage", function()
     assert.are.same({ 1, 3 }, ids(byMargin))
   end)
 
+  it("leaves out gold transfers (junk listed for thousands at the other house) and counts them", function()
+    local buy = { items = { [1] = { min = 200, market = 250 }, [2] = { min = 1000, market = 1100 } } }
+    local sell = { items = { [1] = { market = 30000000 }, [2] = { market = 3000 } } } -- 3000g for a 2s hatchet
+    local rows, transfers = A.Find(buy, sell, { cut = 0.15 })
+    assert.are.equal(1, #rows)
+    assert.are.equal(2, rows[1].itemID)
+    assert.are.equal(1, transfers)
+    rows = A.Find(buy, sell, { cut = 0.15, maxMargin = false }) -- no limit
+    assert.are.equal(2, #rows)
+  end)
+
   it("copes with missing indexes", function()
     assert.are.equal(0, #A.Find(nil, goblin, {}))
     assert.are.equal(0, #A.Find(horde, nil, {}))

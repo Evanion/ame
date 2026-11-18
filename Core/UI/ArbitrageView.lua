@@ -400,7 +400,7 @@ function UI:RefreshArbitrage(keepOffset)
       self.arbMissing = (not buyIndex and ns.HOUSE_LABEL[a.buy]) or (not sellIndex and ns.HOUSE_LABEL[a.sell]) or nil
       local cut = ns.Settings:AuctionCut(a.sell)
       self.arbCut = cut
-      local rows = ns.Arbitrage.Find(buyIndex, sellIndex, {
+      local rows, transfers = ns.Arbitrage.Find(buyIndex, sellIndex, {
         cut = cut,
         minProfit = a.minProfit,
         minMargin = a.minMargin,
@@ -426,7 +426,7 @@ function UI:RefreshArbitrage(keepOffset)
           return x.net > y.net
         end)
       end
-      self.arbRows = rows
+      self.arbRows, self.arbTransfers = rows, transfers
       self:RenderArbitrage()
     end)
   end)
@@ -493,6 +493,11 @@ function UI:RenderArbitrage()
       )
       .. W.SEP
       .. L["deposits for %d h listings counted in net"]:format(ns.Settings:Get("listingHours"))
+    if (self.arbTransfers or 0) > 0 then
+      summary = summary
+        .. W.SEP
+        .. L["%d hidden as likely gold transfers (over 2000%% margin)"]:format(self.arbTransfers)
+    end
     status = ns.HOUSE_LABEL[a.buy]
       .. ": "
       .. self:SideData(a.buy, nil)

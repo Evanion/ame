@@ -19,6 +19,7 @@ L["%d days of history"] = true
 L["%d h"] = true
 L["%d h ago"] = true
 L["%d h listing"] = true
+L["%d hidden as likely gold transfers (over 2000%% margin)"] = true
 L["%d items"] = true
 L["%d items  ·  showing %d-%d"] = true
 L["%d items from %s listings, stored %s ms after the scan request"] = true

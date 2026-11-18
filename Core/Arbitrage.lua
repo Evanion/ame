@@ -9,17 +9,22 @@ local _, ns = ...
 local Arbitrage = {}
 ns.Arbitrage = Arbitrage
 
+-- Routes paying more than this (20 = 2000%) are gold transfers between factions, not trades: junk listed at the
+-- other house for thousands of gold so a friend can "buy" it. They're left out (and counted).
+Arbitrage.MAX_MARGIN = 20 -- real routes pay a few hundred % at most; transfer listings pay 100,000%+
+
 -- seller's cut per house (classic rules: 5% at faction auction houses, 15% at the goblin ones)
 Arbitrage.DEFAULT_CUT = { Alliance = 0.05, Horde = 0.05, Neutral = 0.15 }
 
 -- buy, sell: market indexes ({ items = { [itemID] = summary } }, summaries have min, market, qty, day)
 -- opts: cut (fraction), minProfit (copper), minMargin (fraction), maxAge (days), today (day number),
---       sortKey ("profit" default), ascending
--- returns rows { itemID, buy, sell, fee, profit, margin, buyQty, sellQty, age }
+--       maxMargin (fraction, default Arbitrage.MAX_MARGIN; false: no limit), sortKey ("profit" default), ascending
+-- returns rows { itemID, buy, sell, fee, profit, margin, buyQty, sellQty, age }, and how many routes were left out
+-- as likely gold transfers
 function Arbitrage.Find(buy, sell, opts)
   opts = opts or {}
   local cut = opts.cut or 0
-  local rows = {}
+  local rows, transfers = {}, 0
   for id, b in pairs(buy and buy.items or {}) do
     local s = sell and sell.items[id]
     local cost = b.min or b.market
@@ -35,6 +40,10 @@ function Arbitrage.Find(buy, sell, opts)
       local ok = profit >= (opts.minProfit or 1)
         and margin >= (opts.minMargin or 0)
         and (not opts.maxAge or age <= opts.maxAge)
+      local maxMargin = opts.maxMargin == nil and Arbitrage.MAX_MARGIN or opts.maxMargin
+      if ok and maxMargin and margin > maxMargin then
+        ok, transfers = false, transfers + 1
+      end
       if ok then
         rows[#rows + 1] = {
           itemID = id,
@@ -64,7 +73,7 @@ function Arbitrage.Find(buy, sell, opts)
     end
     return a > b
   end)
-  return rows
+  return rows, transfers
 end
 
 -- Listing deposit: a share of the item's vendor sell price by listing length, refunded when the item sells and lost
