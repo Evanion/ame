@@ -230,6 +230,16 @@ local function guideText(i)
   return Help.GUIDE[i][2]
 end
 
+-- An article's body is a list of blocks: a string is a paragraph, { h = text } a section heading, and
+-- { example = name } one of AME's own elements drawn live (Help.EXAMPLES), so the text sits next to the thing it
+-- talks about.
+local H = function(text)
+  return { h = text }
+end
+local EX = function(name)
+  return { example = name }
+end
+
 function Help.Articles()
   local groups = {
     {
@@ -240,7 +250,9 @@ function Help.Articles()
           title = L["Getting started"],
           body = {
             L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."],
+            H(L["After your first scan"]),
             L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."],
+            H(L["Opening AME"]),
             L["Open the window with /ame, the minimap button, or set it to open with the auction house (Settings > Window)."],
           },
         },
@@ -249,8 +261,11 @@ function Help.Articles()
           key = "window",
           title = L["The window"],
           body = {
+            H(L["Moving and resizing"]),
             L["Drag the title bar to move the window and the bottom-right corner to resize it. AME remembers the size, and where you put it with and without the auction house open. When the auction house opens and there's room beside it, AME docks next to it (Settings > Window)."],
+            H(L["Narrow windows"]),
             L["On a narrow window the tabs switch to a compact layout: sidebars become a dropdown or a Details button. Window scale changes AME's size without touching the rest of your UI."],
+            H(L["The status row"]),
             L["The status row at the bottom says where the numbers come from, how old they are, and when a scan is being read or market data is being updated."],
           },
         },
@@ -259,9 +274,42 @@ function Help.Articles()
     {
       L["Tabs"],
       {
-        { key = "tabMarket", title = Help.GUIDE[2][1], label = L["Market"], body = { guideText(2) } },
-        { key = "tabItem", title = Help.GUIDE[5][1], label = L["Item"], body = { guideText(5) } },
-        { key = "tabArbitrage", title = Help.GUIDE[3][1], label = L["Arbitrage"], body = { guideText(3) } },
+        {
+          key = "tabMarket",
+          title = Help.GUIDE[2][1],
+          label = L["Market"],
+          body = {
+            guideText(2),
+            H(L["Filtering by signal"]),
+            EX("signalFilter"),
+            L["Pick a signal to see only those items. Active filters show as chips under the toolbar: click one to remove it, or Clear all."],
+          },
+        },
+        {
+          key = "tabItem",
+          title = Help.GUIDE[5][1],
+          label = L["Item"],
+          body = {
+            guideText(5),
+            H(L["The verdict"]),
+            EX("verdict"),
+            L["The sidebar opens with the call and why, in plain words: the price against its average, what supply is doing, how fast it sells and how much data it rests on."],
+            H(L["The chart"]),
+            EX("legend"),
+            L["Market price, the lowest listing, the 7-day average, supply, and your own buys and sales as dots."],
+          },
+        },
+        {
+          key = "tabArbitrage",
+          title = Help.GUIDE[3][1],
+          label = L["Arbitrage"],
+          body = {
+            guideText(3),
+            H(L["A route, broken down"]),
+            EX("route"),
+            L["Select a route to see what it pays after the cut and the deposit, and how fresh each side's price is. Routes paying over 2000% are gold transfers between factions, not trades: they're hidden and counted."],
+          },
+        },
         { key = "tabPortfolio", title = Help.GUIDE[4][1], label = L["Portfolio"], body = { guideText(4) } },
         {
           key = "tabSync",
@@ -269,6 +317,7 @@ function Help.Articles()
           label = L["Sync"],
           body = {
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
+            H(L["Keeping data honest"]),
             L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
           },
         },
@@ -289,11 +338,28 @@ function Help.Articles()
           key = "selling",
           title = L["Selling: posting prices"],
           body = {
+            H(L["The bar under the sell window"]),
+            EX("sellBar"),
+            L["Quick sells within a few hours almost surely. Normal weighs the price against the chance it sells. Patient is the highest price that still sells about half the time. Market is the item's market price. Click one to put it in the price box; you still click Post."],
+            H(L["How the price is worked out"]),
             Help.TERMS.posting[2],
-            L["At the auction house, a bar under the sell window shows the price for the item you're posting, why, and what you'd get after the cut. Fill price puts it in the price box; you still click Post yourself. Click a listing in the sell window to aim just under it instead."],
+            H(L["It learns from your sales"]),
+            L["AME remembers each listing you post and how fast it sold - or that it expired - and adjusts its estimates for that item. Items you sell often get advice of their own; others borrow from similar items."],
           },
         },
-        { key = "numbers", title = Help.GUIDE[7][1], body = { guideText(7), Help.TERMS.signal[2] } },
+        {
+          key = "numbers",
+          title = Help.GUIDE[7][1],
+          body = {
+            guideText(7),
+            H(L["Signals"]),
+            EX("signals"),
+            H(L["How much to trust a number"]),
+            EX("confidence"),
+            H(L["Market phases"]),
+            L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It shows beside the signal."],
+          },
+        },
         { key = "watch", title = Help.GUIDE[6][1], body = { guideText(6) } },
         { key = "commands", title = Help.GUIDE[8][1], body = { guideText(8) } },
       },
@@ -309,6 +375,174 @@ function Help.Articles()
   groups[#groups + 1] = { L["Glossary"], glossary }
   return groups
 end
+
+-- the text of a block (for search)
+function Help.BlockText(b)
+  if type(b) == "string" then
+    return b
+  end
+  return b.h or ""
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- examples: AME's own elements, drawn in an article. Each builder makes a frame in `parent` and returns it with
+-- its height set (width: the article's width).
+
+local function row(parent, y, left, right, leftW)
+  local a = W.Text(parent, "GameFontHighlightSmall")
+  a:SetPoint("TOPLEFT", 10, y)
+  a:SetWidth(leftW or 120)
+  a:SetText(left)
+  local b = W.Text(parent, "GameFontHighlightSmall")
+  b:SetPoint("TOPLEFT", 10 + (leftW or 120) + 8, y)
+  b:SetPoint("RIGHT", parent, "RIGHT", -10, 0)
+  b:SetWordWrap(true)
+  b:SetText(right)
+  return a, b
+end
+
+local function panel(parent, height)
+  local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+  W.Skin(f, W.COLORS.panel)
+  f:SetHeight(height)
+  return f
+end
+
+-- a label / value line like the sidebar cards
+local function pair(parent, y, label, value)
+  local a = W.Text(parent, "GameFontDisableSmall")
+  a:SetPoint("TOPLEFT", 10, y)
+  a:SetText(label)
+  local b = W.Text(parent, "GameFontHighlightSmall", "RIGHT")
+  b:SetPoint("TOPRIGHT", -10, y)
+  b:SetText(value)
+end
+
+Help.EXAMPLES = {
+  signals = function(parent)
+    local f = panel(parent, 5 * 22 + 12)
+    local rows = {
+      { "buy", L["Unusually cheap for this item, given how much its price usually moves"] },
+      { "hold", L["Within its usual range"] },
+      { "sell", L["Unusually expensive for this item, given how much its price usually moves"] },
+      { "wait", L["Cheap, but sellers are dumping: wait for the bottom"] },
+      { "vendor", L["A vendor pays more than the auction house nets after the cut and the deposit"] },
+    }
+    for k, r in ipairs(rows) do
+      row(f, -8 - (k - 1) * 22, W.SignalGlyph(r[1]), W.Dim(r[2]), 90)
+    end
+    return f
+  end,
+  confidence = function(parent)
+    local f = panel(parent, 3 * 22 + 12)
+    local rows = {
+      { "high", L["plenty of recent scans"] },
+      { "medium", L["some recent scans"] },
+      { "low", L["few or old scans: treat with care"] },
+    }
+    for k, r in ipairs(rows) do
+      row(f, -8 - (k - 1) * 22, W.Confidence(r[1]), W.Dim(r[2]), 40)
+    end
+    return f
+  end,
+  sellBar = function(parent)
+    local f = panel(parent, 50)
+    local tag = W.Text(f, "GameFontNormal")
+    tag:SetPoint("TOPLEFT", 12, -9)
+    tag:SetText("AME")
+    local title = W.Text(f, "GameFontHighlight")
+    title:SetPoint("LEFT", tag, "RIGHT", 12, 0)
+    title:SetText(L["Post at %s"]:format(W.Money(18700)) .. " " .. W.Dim(L["per unit"]) .. "  " .. W.Confidence("high"))
+    local info = W.Text(f, "GameFontDisableSmall")
+    info:SetPoint("BOTTOMLEFT", 12, 8)
+    info:SetPoint("RIGHT", -10, 0)
+    info:SetWordWrap(false)
+    info:SetText(
+      L["Just under %d listed at %s"]:format(20, W.Money(19100))
+        .. "  ·  "
+        .. L["sells in %s"]:format(W.Hours(5))
+        .. "  ·  "
+        .. L["you net %s after the %d%% cut"]:format(W.Money(17765), 5)
+    )
+    local prev
+    for _, b in ipairs({
+      { L["Market %s"]:format(W.Money(16400)) },
+      { L["Patient %s"]:format(W.Money(20900)) },
+      { L["Normal %s"]:format(W.Money(18700)), true },
+      { L["Quick %s"]:format(W.Money(13800)) },
+    }) do
+      local btn = W.Button(f, b[1], 80, 22)
+      btn:SetWidth(math.ceil(btn.label:GetStringWidth() or 60) + 20)
+      btn:SetSelected(b[2] or false)
+      if prev then
+        btn:SetPoint("RIGHT", prev, "LEFT", -6, 0)
+      else
+        btn:SetPoint("TOPRIGHT", -10, -5)
+      end
+      prev = btn
+    end
+    return f
+  end,
+  verdict = function(parent)
+    local f = panel(parent, 96)
+    pair(f, -8, L["Verdict"], W.SignalGlyph("sell"))
+    local head = W.Text(f, "GameFontHighlight")
+    head:SetPoint("TOPLEFT", 10, -28)
+    head:SetText(L["Pricier than usual"])
+    local why = W.Text(f, "GameFontHighlightSmall")
+    why:SetPoint("TOPLEFT", 10, -48)
+    why:SetPoint("RIGHT", f, "RIGHT", -10, 0)
+    why:SetWordWrap(true)
+    why:SetText(
+      L["At %s it's %d%% above its %d-day average of %s."]:format(W.Money(95700), 56, 7, W.Money(61300))
+        .. " "
+        .. L["Its price usually moves only about %d%% a day, so that's unusual."]:format(8)
+    )
+    return f
+  end,
+  legend = function(parent)
+    local rows = {
+      { { 0.2, 0.8, 1 }, L["Market"], 12, 3 },
+      { { 0.4, 0.87, 0.47 }, L["Lowest"], 12, 3 },
+      { { 1, 0.67, 0.2 }, L["7-day average"], 12, 3 },
+      { { 0.53, 0.53, 0.67 }, L["Supply"], 8, 8 },
+      { ns.UI and ns.UI.TRADE_COLORS and ns.UI.TRADE_COLORS.buy or { 0.35, 0.65, 1 }, L["You bought"], 8, 8 },
+      { ns.UI and ns.UI.TRADE_COLORS and ns.UI.TRADE_COLORS.sale or { 1, 0.45, 0.85 }, L["You sold"], 8, 8 },
+    }
+    local f = panel(parent, #rows * 16 + 12)
+    for k, r in ipairs(rows) do
+      local sw = f:CreateTexture(nil, "OVERLAY")
+      sw:SetSize(r[3], r[4])
+      sw:SetPoint("LEFT", f, "TOPLEFT", 12, -14 - (k - 1) * 16)
+      sw:SetColorTexture(r[1][1], r[1][2], r[1][3], 1)
+      local t = W.Text(f, "GameFontHighlightSmall")
+      t:SetPoint("LEFT", f, "TOPLEFT", 30, -14 - (k - 1) * 16)
+      t:SetText(r[2])
+    end
+    return f
+  end,
+  route = function(parent)
+    local f = panel(parent, 5 * 18 + 22)
+    pair(f, -8, L["Buy at the %s"]:format(L["Horde AH"]), W.Money(57500))
+    pair(f, -26, L["Sells at the %s"]:format(L["Goblin AH"]), W.Money(78500))
+    pair(f, -44, L["%d%% cut"]:format(15), W.Color("bad", "- " .. W.Plain(W.Money(11775))))
+    pair(f, -62, L["Deposit if unsold"], W.Money(10000))
+    pair(f, -86, L["You net"], W.Color("good", "+" .. W.Plain(W.Money(-0 + 9225))))
+    return f
+  end,
+  signalFilter = function(parent)
+    local f = CreateFrame("Frame", nil, parent)
+    f:SetHeight(24)
+    local items = { { "all", L["All"] } }
+    for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor" }) do
+      items[#items + 1] = { key, W.SignalGlyph(key) }
+    end
+    local seg = W.Segmented(f, items, { minWidth = 40 })
+    seg:SetPoint("LEFT", 0, 0)
+    seg:Select("buy", true)
+    return f
+  end,
+}
 
 -- The Guide: a sidebar of articles by group (filtered by the search box) and the article on the right, scrolling
 -- when long. Narrow window: the sidebar becomes a dropdown next to the search box.
@@ -379,8 +613,8 @@ function Help.CreateGuide(parent, contentArea)
     if a.title:lower():find(text, 1, true) or (a.label and a.label:lower():find(text, 1, true)) then
       return true
     end
-    for _, p in ipairs(a.body) do
-      if p:lower():find(text, 1, true) then
+    for _, b in ipairs(a.body) do
+      if Help.BlockText(b):lower():find(text, 1, true) then
         return true
       end
     end
@@ -466,7 +700,8 @@ function Help.CreateGuide(parent, contentArea)
   v.title:SetPoint("TOPLEFT", 16, -10)
   v.crumb = W.Text(page, "GameFontDisableSmall")
   v.crumb:SetPoint("BOTTOMLEFT", v.title, "TOPLEFT", 0, 2)
-  v.paras = {}
+  -- paragraphs and headings come from pools; examples are built once per article and kept
+  v.paras, v.heads, v.examples, v.blocks = {}, {}, {}, {}
   local function para(i)
     local p = v.paras[i]
     if not p then
@@ -474,14 +709,27 @@ function Help.CreateGuide(parent, contentArea)
       p:SetJustifyH("LEFT")
       p:SetWordWrap(true)
       p:SetSpacing(4)
-      if i == 1 then
-        p:SetPoint("TOPLEFT", v.title, "BOTTOMLEFT", 0, -12)
-      else
-        p:SetPoint("TOPLEFT", v.paras[i - 1], "BOTTOMLEFT", 0, -10)
-      end
       v.paras[i] = p
     end
     return p
+  end
+  local function sectionHeading(i)
+    local h = v.heads[i]
+    if not h then
+      h = W.Text(page, "GameFontNormal")
+      h:SetJustifyH("LEFT")
+      v.heads[i] = h
+    end
+    return h
+  end
+  local function example(key, index, name)
+    local id = key .. ":" .. index
+    local e = v.examples[id]
+    if not e and Help.EXAMPLES[name] then
+      e = Help.EXAMPLES[name](page)
+      v.examples[id] = e
+    end
+    return e
   end
   v.related = W.Text(page, "GameFontDisableSmall")
   local function width()
@@ -497,6 +745,9 @@ function Help.CreateGuide(parent, contentArea)
     for _, p in ipairs(self.paras) do
       p:SetWidth(w)
     end
+    for _, e in pairs(self.examples) do
+      e:SetWidth(w)
+    end
     pane:Measure()
   end
   slots.main:SetScript("OnSizeChanged", function()
@@ -508,13 +759,36 @@ function Help.CreateGuide(parent, contentArea)
     self.shownArticle, self.term = a, a.key
     self.crumb:SetText(a.group)
     self.title:SetText(a.title)
-    for i, text in ipairs(a.body) do
-      local p = para(i)
-      p:SetText(text)
-      p:Show()
+    -- lay the blocks out top to bottom: paragraphs, section headings, and live examples
+    for _, p in ipairs(self.paras) do
+      p:Hide()
     end
-    for i = #a.body + 1, #self.paras do
-      self.paras[i]:Hide()
+    for _, h in ipairs(self.heads) do
+      h:Hide()
+    end
+    for _, e in pairs(self.examples) do
+      e:Hide()
+    end
+    local prev, np, nh = self.title, 0, 0
+    for i, b in ipairs(a.body) do
+      local obj, gap
+      if type(b) == "string" then
+        np = np + 1
+        obj, gap = para(np), 10
+        obj:SetText(b)
+      elseif b.h then
+        nh = nh + 1
+        obj, gap = sectionHeading(nh), 16
+        obj:SetText(b.h)
+      elseif b.example then
+        obj, gap = example(a.key, i, b.example), 8
+      end
+      if obj then
+        obj:ClearAllPoints()
+        obj:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, prev == self.title and -12 or -gap)
+        obj:Show()
+        prev = obj
+      end
     end
     for _, l in ipairs(self.links) do
       if not l.heading then

@@ -923,7 +923,11 @@ describe("addon in a stubbed client", function()
       guide.search:SetText("deposit")
       guide.search.scripts.OnTextChanged(guide.search, true)
       for _, a in ipairs(guide.matches) do
-        local text = (a.title .. table.concat(a.body, " ")):lower()
+        local parts = { a.title }
+        for _, b in ipairs(a.body) do
+          parts[#parts + 1] = ns.Help.BlockText(b)
+        end
+        local text = table.concat(parts, " "):lower()
         assert.truthy(text:find("deposit"), a.key)
       end
       assert.is_false(guide.byKey.commands.link:IsShown()) -- doesn't mention deposits
@@ -933,6 +937,8 @@ describe("addon in a stubbed client", function()
       assert.are.equal("Market", guide.byKey.tabMarket.link.text.text) -- the sidebar label, not "Market tab"
       guide.byKey.tabMarket.link.scripts.OnClick(guide.byKey.tabMarket.link)
       assert.are.equal("Market tab", guide.title.text) -- the article keeps its full title
+      assert.is_true(guide.examples["tabMarket:3"]:IsShown()) -- a live example in the article (the signal filter)
+      assert.is_true(guide.heads[1]:IsShown()) -- and a section heading
     end)
 
     it("stars items into a watchlist, shows the list and fires alerts after a scan", function()
