@@ -93,6 +93,8 @@ L["AH cut (%d%%)"] = "Комиссия аук. (%d%%)"
 L["AME alert: %s %s"] = "Оповещение AME: %s %s"
 L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] =
   "AME слушает собственные API аукциона в игре, поэтому записывается каждое ваше сканирование и поиск - из стандартного окна аукциона или любого аддона-сканера (хорошо работает с аддонами вроде Auctionator). Ничего лишнего не сканируется. История хранится отдельно для каждого рынка (игровой мир или правила Forever) и аукциона, а члены гильдии с AME автоматически делятся полными сканированиями."
+L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
+  "AME записывает аукцион, пока вы им пользуетесь, и превращает это в историю цен, графики, сигналы и цены выставления. Настраивать ничего не нужно: откройте аукцион и запустите полное сканирование (Auctionator или встроенное в игру), и AME его запишет."
 L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
   "AME предлагает цену исходя из того, как быстро продаётся предмет, а не сбивает на 1м. «Подставить цену» вписывает её в поле; выставляете лот всё равно вы."
 L["API + database found"] = "API и база данных найдены"
@@ -107,6 +109,8 @@ L["Add to a watchlist"] = "Добавить в список наблюдения
 L["Advanced"] = "Расширенные"
 L["Advanced adds data quality and diagnostics."] =
   "Расширенные добавляют качество данных и диагностику."
+L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
+  "После одного сканирования можно просматривать вкладку «Рынок» и видеть цены выставления. Сигналам, трендам и темпам продаж нужна история: они улучшаются при сканировании раз в день и наиболее показательны через неделю."
 L["Age"] = "Возраст"
 L["Alert when"] = "Оповещать, когда"
 L["Alert:"] = "Оповещение:"
@@ -139,6 +143,8 @@ L["Asked %s to share. They'll see a request in their Sync tab."] =
   "Запрос отправлен игроку %s. Он увидит его на своей вкладке «Синхронизация»."
 L["Asking prices"] = "Цены предложения"
 L["At market price"] = "По рыночной цене"
+L["At the auction house, a bar under the sell window shows the price for the item you're posting, why, and what you'd get after the cut. Fill price puts it in the price box; you still click Post yourself. Click a listing in the sell window to aim just under it instead."] =
+  "На аукционе под окном продажи есть полоса с ценой для выставляемого предмета, её обоснованием и суммой, которую вы получите после комиссии. «Подставить цену» вписывает её в поле цены; выставляете лот всё равно вы. А можно щёлкнуть по лоту в окне продажи, чтобы встать чуть ниже него."
 L["Auction house"] = "Аукцион"
 L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
   "Auctionator не установлен: импортировать нечего (сканирования всё равно записываются из игры)"
@@ -154,12 +160,15 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
   'КУПИТЬ: сегодняшняя цена необычно низкая для этого предмета - минимум на 1,5 стандартного отклонения ниже его собственного 30-дневного среднего. ПРОДАТЬ: необычно высокая по той же мерке. ДЕРЖАТЬ: в обычном диапазоне - держите, если есть, покупать смысла нет. ЖДАТЬ: дёшево, но продавцы сбрасывают - дождитесь дна. Нужно 7+ дней истории (до тех пор "-"). Фаза рынка сопоставляет недельное движение цены с предложением: дефицит, устойчивый спрос, наплыв продавцов, сжатие предложения, равновесие, нарастающее давление, уход продавцов, слабый спрос или сброс. Предмет сравнивается сам с собой, и это подсказка, а не финансовый совет.'
 L["Balanced"] = "Равновесие"
 L["Basic"] = "Основные"
+L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."] =
+  "«Основные» охватывают окно, подсказки, графики, продажу и уведомления. «Расширенные» добавляют качество данных (как отбрасываются нелепые цены) и диагностику, например перестройку рыночных данных и самопроверку."
 L["Block"] = "Блокировать"
 L["Blocked"] = "Заблокированы"
 L["Building market index..."] = "Построение рыночного индекса..."
 L["Buy at"] = "Купить в"
 L["Buy at the %s, sell at the %s"] = "Покупка: %s, продажа: %s"
 L["By your guild officers: %s"] = "Офицерами вашей гильдии: %s"
+L["CSV"] = "CSV"
 L["Cancel"] = "Отмена"
 L["Candles"] = "Свечи"
 L["Character"] = "Персонаж"
@@ -187,6 +196,10 @@ L["Common+"] = "Обычное+"
 L["Copy to my watchlists"] = "Копировать в мои списки"
 L["Could not load history: %s"] = "Не удалось загрузить историю: %s"
 L["Ctrl+Alt-click"] = "Ctrl+Alt-клик"
+L["Ctrl+C copies the selected text: comma-separated values."] =
+  "Ctrl+C копирует выделенный текст: значения через запятую."
+L["Ctrl+C copies the selected text; paste it into a spreadsheet. Tabs show as boxes here but paste as columns."] =
+  "Ctrl+C копирует выделенный текст; вставьте его в таблицу. Табуляции здесь выглядят как квадратики, но при вставке становятся столбцами."
 L["Customers"] = "Покупатели"
 L["Data"] = "Данные"
 L["Data age"] = "Возраст данных"
@@ -208,6 +221,8 @@ L["Details"] = "Детали"
 L["Diagnostics"] = "Диагностика"
 L["Dock AME beside the auction house when there's room"] =
   "Пристыковывать AME рядом с аукционом, если есть место"
+L["Drag the title bar to move the window and the bottom-right corner to resize it. AME remembers the size, and where you put it with and without the auction house open. When the auction house opens and there's room beside it, AME docks next to it (Settings > Window)."] =
+  "Перетащите заголовок, чтобы переместить окно, и правый нижний угол, чтобы изменить размер. AME запоминает размер и положение окна — отдельно при открытом и закрытом аукционе. Когда открывается аукцион и рядом есть место, AME пристыковывается к нему (Настройки > Окно)."
 L["Dumping"] = "Сброс"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
   "Каждая свеча охватывает один или несколько дней. Она открывается по закрытию предыдущей свечи и закрывается по рыночной цене; зелёная закрылась выше, красная ниже. Тонкая тень доходит до самого дешёвого замеченного лота."
@@ -225,6 +240,8 @@ L["For units you bought on the auction house: what they're worth now at market p
   "Для штук, купленных на аукционе: сколько они стоят сейчас по рыночной цене минус то, что вы заплатили. Становится реальной прибылью при продаже."
 L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
   "С ваших продаж на аукционе: полученное после комиссии аукциона минус то, что вы заплатили за эти штуки (сначала самые старые покупки). Продажи добытых или созданных предметов учитываются полностью."
+L["Getting started"] = "Начало работы"
+L["Glossary"] = "Глоссарий"
 L["Goblin AH"] = "Аукцион гоблинов"
 L["Goblin auction houses"] = "Аукционы гоблинов"
 L["Goblin gold"] = "Золото гоблинов"
@@ -232,6 +249,8 @@ L["Gold received from auction sales (after the cut) and gold spent on auction pu
   "Золото, полученное с продаж на аукционе (после комиссии), и золото, потраченное на покупки на аукционе, за последние 30 дней."
 L["Got it"] = "Понятно"
 L["Guide"] = "Справка"
+L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."] =
+  "Согильдийцы с AME автоматически делятся полными сканированиями, так что цены у всех остаются свежими. Игроки не из вашей гильдии тоже могут делиться: добавьте их в «Доверенные игроки» — они получат запрос на подтверждение."
 L['Guild officers can block players for everyone: add a line "%s" to the guild info.'] =
   'Офицеры гильдии могут блокировать игроков для всех: добавьте строку "%s" в информацию о гильдии.'
 L["Guild watchlists"] = "Списки гильдии"
@@ -309,6 +328,7 @@ L["Net"] = "Нетто"
 L["Net per unit"] = "Нетто за шт."
 L["New list"] = "Новый список"
 L["New list..."] = "Новый список..."
+L["No articles match"] = "Нет подходящих статей"
 L["No full scan recorded yet."] = "Полное сканирование ещё не записано."
 L["No full scan yet: scan there, or trust someone who does"] =
   "Полного скана ещё нет: просканируйте там или доверьтесь тому, кто сканирует"
@@ -338,6 +358,8 @@ L["Notifications"] = "Уведомления"
 L["Off"] = "Выкл."
 L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks on items and links. With the AME window open, Shift-click an item to chart it."] =
   "По умолчанию выключено: аддоны для добычи и рейдов (например, Gargul, AHDB) используют клики с модификаторами по предметам и ссылкам. При открытом окне AME Shift-клик по предмету покажет его график."
+L["On a narrow window the tabs switch to a compact layout: sidebars become a dropdown or a Details button. Window scale changes AME's size without touching the rest of your UI."] =
+  "В узком окне вкладки переходят в компактный вид: боковые панели превращаются в выпадающий список или кнопку «Детали». «Масштаб окна» меняет размер AME, не затрагивая остальной интерфейс."
 L["On a watchlist - click to change"] =
   "В списке наблюдения - щёлкните, чтобы изменить"
 L["One side is %d days old: scan both auction houses before you buy."] =
@@ -346,6 +368,8 @@ L["Open"] = "Открытие"
 L["Open AME settings"] = "Открыть настройки AME"
 L["Open AME together with the auction house"] = "Открывать AME вместе с аукционом"
 L["Open item charts with"] = "Открывать графики предметов по"
+L["Open the window with /ame, the minimap button, or set it to open with the auction house (Settings > Window)."] =
+  "Открывайте окно командой /ame, кнопкой у миникарты или настройте его открытие вместе с аукционом (Настройки > Окно)."
 L["Patient %s"] = "Терпеливо %s"
 L["Per item: what it sells for, minus the AH cut, minus the listing deposit, minus what you paid. The deposit is counted for one post of the units the route pays for (or up to 20), at least 1 silver per post - you get it back when it sells."] =
   "За штуку: цена продажи минус комиссия аукциона, минус залог, минус цена покупки. Залог считается за один лот из выгодных по маршруту штук (до 20), минимум 1 серебряная за лот - он вернётся при продаже."
@@ -396,6 +420,8 @@ L["Run self-test"] = "Запустить самопроверку"
 L["SELL"] = "ПРОДАТЬ"
 L["SELL signal at %s"] = "Сигнал ПРОДАТЬ по %s"
 L["Save these filters as a view..."] = "Сохранить фильтры как вид..."
+L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."] =
+  "Сканирования, сильно расходящиеся с вашими ценами, отклоняются, и вы можете блокировать игроков. Офицеры гильдии могут заблокировать игрока для всей гильдии строкой в информации о гильдии. Карточки вверху показывают, насколько свежи данные каждого аукциона и кто их отсканировал."
 L["Score"] = "Оценка"
 L["Scroll to zoom  ·  drag to pan  ·  double-click to reset"] =
   "Колесо - масштаб  ·  перетаскивание - сдвиг  ·  двойной клик - сброс"
@@ -404,6 +430,7 @@ L["Search at %s"] = "Поиск: %s"
 L["Search for it at the auction house, or run a full scan."] =
   "Найдите его на аукционе или запустите полный скан."
 L["Search items..."] = "Поиск предметов..."
+L["Search the guide..."] = "Поиск по справке..."
 L["Seen in 3 days"] = "Видели за 3 дня"
 L["Seen in 7 days"] = "Видели за 7 дней"
 L["Seen today/yesterday"] = "Видели сегодня/вчера"
@@ -412,6 +439,7 @@ L["Sell at"] = "Продать в"
 L["Sellers piling in"] = "Наплыв продавцов"
 L["Sellers withdrawing"] = "Уход продавцов"
 L["Selling"] = "Продажа"
+L["Selling: posting prices"] = "Продажа: цены выставления"
 L["Sells for"] = "Продаётся за"
 L["Sells per day (estimate)"] = "Продаж в день (оценка)"
 L["Sells per day at the sell house"] = "Продаж в день на аукционе продажи"
@@ -419,6 +447,7 @@ L["Sells/d"] = "Прод./д"
 L["Settings"] = "Настройки"
 L["Settings are saved per account. Sharing settings are on the Sync tab."] =
   "Настройки сохраняются для всей учётной записи. Настройки обмена - на вкладке «Синхронизация»."
+L["Settings tab"] = "Вкладка «Настройки»"
 L["Share full scans with my guild (members running AME)"] =
   "Делиться полными сканированиями с гильдией (у кого есть AME)"
 L["Share with guild"] = "Делиться с гильдией"
@@ -435,6 +464,7 @@ L["Signals and score compare an item with its own history, so they need a week o
 L["Sold / bought"] = "Продано / куплено"
 L["Sold / bought, %s"] = "Продано / куплено, %s"
 L["Spent with you"] = "Потрачено у вас"
+L["Spreadsheet"] = "Таблица"
 L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price in gold, or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."] =
   'Отмечайте предметы звездой, чтобы добавить их в список наблюдения; создавайте новые списки кнопкой "+ Новый список" на боковой панели (ПКМ по списку - поделиться им с гильдией или удалить; общие списки членов гильдии отображаются под вашими). На странице предмета задайте оповещение: ниже или выше цены в золоте или при появлении сигнала покупки/продажи. Оповещения проверяются после каждого сканирования и выводятся в чат со звуком.'
 L["Steady demand"] = "Устойчивый спрос"
@@ -451,6 +481,8 @@ L["Sync is off: turn on guild or trusted sharing below."] =
 L["Sync is on."] = "Синхронизация включена."
 L["Sync is unavailable: the AceComm library didn't load."] =
   "Синхронизация недоступна: библиотека AceComm не загрузилась."
+L["Sync tab"] = "Вкладка «Синхронизация»"
+L["Tabs"] = "Вкладки"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
   "Средняя дневная рыночная цена за выбранный период (Настройки > Период усреднения, по умолчанию 7 дней). Сравните её с сегодняшней рыночной ценой, чтобы понять, дёшев предмет сейчас или дорог."
 L["The cheapest listing at the auction house you buy from - what the first units cost you."] =
@@ -461,8 +493,11 @@ L["The market price at the auction house you sell at: what the item typically se
   "Рыночная цена на аукционе, где вы продаёте: за сколько предмет обычно там продаётся."
 L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."] =
   "График цен: рыночная цена, самый дешёвый лот, среднее за 7 дней и предложение. Переключитесь на свечи для трейдерского вида. Колесо мыши - масштаб, перетаскивание - сдвиг, двойной клик - сброс. Shift-клик по любому предмету (сумки, чат, аукцион) при открытом окне покажет его график; клик с модификатором можно задать в настройках."
+L["The status row at the bottom says where the numbers come from, how old they are, and when a scan is being read or market data is being updated."] =
+  "Строка состояния внизу показывает, откуда взяты цифры, насколько они стары и когда читается скан или обновляются рыночные данные."
 L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping."] =
   "Движение цены за неделю в сравнении с предложением: дефицит, устойчивый спрос, наплыв продавцов, сжатие предложения, равновесие, нарастающее давление, уход продавцов, слабый спрос или сброс."
+L["The window"] = "Окно"
 L["This character"] = "Этот персонаж"
 L["This market: %d days of history, %d recent scans kept in full"] =
   "Этот рынок: %d дн. истории, %d недавних сканирований хранятся целиком"
@@ -475,6 +510,7 @@ L["Today's market price against the average over the chosen period (Settings > A
 L["Tooltips"] = "Подсказки"
 L["Top buy signals"] = "Лучшие сигналы покупки"
 L["Total"] = "Итого"
+L["Trading"] = "Торговля"
 L["Trusted"] = "Доверенные"
 L["Trusted (%d)"] = "Доверенные (%d)"
 L["Trusted players"] = "Доверенные игроки"

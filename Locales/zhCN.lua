@@ -87,6 +87,8 @@ L["AH cut (%d%%)"] = "手续费（%d%%）"
 L["AME alert: %s %s"] = "AME 提醒：%s %s"
 L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] =
   "AME 监听游戏自身的拍卖行接口，因此你进行的每次扫描和搜索都会被记录——无论来自默认拍卖行窗口还是任何扫描插件（与 Auctionator 等插件配合良好）。不会进行额外扫描。历史按市场（服务器或 Forever 规则集）和拍卖行分别保存，运行 AME 的公会成员会自动共享他们的全面扫描。"
+L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
+  "AME 会在你使用拍卖行时进行记录，并将其转化为价格历史、图表、信号和上架价格。无需任何设置：打开拍卖行并进行一次完整扫描（Auctionator 的或游戏自带的），AME 就会记录下来。"
 L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
   "AME 根据该物品的售出速度建议价格，而不是压价 1 铜。“填入价格”会把它填进输入框；上架仍需你自己点击。"
 L["API + database found"] = "已找到 API 和数据库"
@@ -98,6 +100,8 @@ L["Add"] = "添加"
 L["Add to a watchlist"] = "加入自选列表"
 L["Advanced"] = "高级"
 L["Advanced adds data quality and diagnostics."] = "高级模式额外显示数据质量和诊断。"
+L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
+  "扫描一次后，你就可以浏览市场标签页并查看上架价格。信号、趋势和售出速度需要历史数据：每天扫描一次会越来越准，一周后最有参考价值。"
 L["Age"] = "时效"
 L["Alert when"] = "提醒条件"
 L["Alert:"] = "提醒："
@@ -128,6 +132,8 @@ L["Asked %s to share. They'll see a request in their Sync tab."] =
   "已请求 %s 共享。对方会在同步标签页看到请求。"
 L["Asking prices"] = "挂单价"
 L["At market price"] = "按市场价"
+L["At the auction house, a bar under the sell window shows the price for the item you're posting, why, and what you'd get after the cut. Fill price puts it in the price box; you still click Post yourself. Click a listing in the sell window to aim just under it instead."] =
+  "在拍卖行，出售窗口下方的横条会显示你要上架物品的价格、理由，以及扣除手续费后能拿到多少。“填入价格”会把它填进价格框；上架仍需你自己点击。也可以点击出售窗口中的某个挂单，以略低于它的价格出售。"
 L["Auction house"] = "拍卖行"
 L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
   "未安装 Auctionator：无可导入内容（扫描始终会从游戏中记录）"
@@ -143,12 +149,15 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
   "买入：今日价格对该物品而言异常低——至少比其自身30日均价低 1.5 个标准差。卖出：按同一标准异常高。持有：处于正常区间——已持有可继续持有，买入无优势。观望：便宜，但卖家正在抛售——等待见底。需要 7 天以上历史（之前显示“-”）。市场阶段将本周价格变动与供应量对照解读：短缺、需求稳定、卖家涌入、收紧、平衡、压力积聚、卖家撤出、需求疲软或抛售。它只将物品与其自身比较，仅供参考，不构成投资建议。"
 L["Balanced"] = "平衡"
 L["Basic"] = "基础"
+L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."] =
+  "基础包含窗口、鼠标提示、图表、出售和通知。高级额外提供数据质量（如何忽略离谱的价格）和诊断，例如重建市场数据和自检。"
 L["Block"] = "屏蔽"
 L["Blocked"] = "已屏蔽"
 L["Building market index..."] = "正在构建市场索引..."
 L["Buy at"] = "买入地"
 L["Buy at the %s, sell at the %s"] = "在 %s 买入，在 %s 卖出"
 L["By your guild officers: %s"] = "被公会官员屏蔽：%s"
+L["CSV"] = "CSV"
 L["Cancel"] = "取消"
 L["Candles"] = "K线"
 L["Character"] = "角色"
@@ -174,6 +183,9 @@ L["Common+"] = "普通+"
 L["Copy to my watchlists"] = "复制到我的自选列表"
 L["Could not load history: %s"] = "无法加载历史：%s"
 L["Ctrl+Alt-click"] = "Ctrl+Alt-点击"
+L["Ctrl+C copies the selected text: comma-separated values."] = "Ctrl+C 复制所选文本：逗号分隔值。"
+L["Ctrl+C copies the selected text; paste it into a spreadsheet. Tabs show as boxes here but paste as columns."] =
+  "Ctrl+C 复制所选文本，然后粘贴到电子表格中。制表符在这里显示为方框，但粘贴后会分成列。"
 L["Customers"] = "买家"
 L["Data"] = "数据"
 L["Data age"] = "数据时效"
@@ -194,6 +206,8 @@ L["Depth and speed"] = "深度与速度"
 L["Details"] = "详情"
 L["Diagnostics"] = "诊断"
 L["Dock AME beside the auction house when there's room"] = "空间足够时将 AME 停靠在拍卖行旁边"
+L["Drag the title bar to move the window and the bottom-right corner to resize it. AME remembers the size, and where you put it with and without the auction house open. When the auction house opens and there's room beside it, AME docks next to it (Settings > Window)."] =
+  "拖动标题栏可移动窗口，拖动右下角可调整大小。AME 会记住大小，以及拍卖行打开和关闭时你分别放置窗口的位置。拍卖行打开且旁边有空间时，AME 会停靠在它旁边（设置 > 窗口）。"
 L["Dumping"] = "抛售"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
   "每根K线覆盖一天或多天。开盘价为前一根K线的收盘价，收盘价为市场价；绿色表示收高，红色表示收低。细影线向下延伸至所见的最低挂单价。"
@@ -211,6 +225,8 @@ L["For units you bought on the auction house: what they're worth now at market p
   "对于你在拍卖行买入的物品：当前市场价值减去你支付的价格。卖出后才成为实际利润。"
 L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
   "来自你的拍卖销售：扣除拍卖行手续费后的收入，减去这些物品的买入成本（先买先卖）。拾取或制造的物品售出时全额计入。"
+L["Getting started"] = "入门"
+L["Glossary"] = "术语表"
 L["Goblin AH"] = "地精拍卖行"
 L["Goblin auction houses"] = "地精拍卖行"
 L["Goblin gold"] = "地精金"
@@ -218,6 +234,8 @@ L["Gold received from auction sales (after the cut) and gold spent on auction pu
   "过去30天内拍卖销售收到的金币（扣除手续费后）以及拍卖购买花费的金币。"
 L["Got it"] = "知道了"
 L["Guide"] = "指南"
+L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."] =
+  "使用 AME 的公会成员会自动共享完整扫描，让大家的价格保持最新。公会以外的玩家也可以共享：在“信任的玩家”中添加他们，对方会收到一个待批准的请求。"
 L['Guild officers can block players for everyone: add a line "%s" to the guild info.'] =
   "公会官员可以为所有人屏蔽玩家：在公会信息中添加一行“%s”。"
 L["Guild watchlists"] = "公会自选列表"
@@ -293,6 +311,7 @@ L["Net"] = "净得"
 L["Net per unit"] = "单件净得"
 L["New list"] = "新列表"
 L["New list..."] = "新列表..."
+L["No articles match"] = "没有匹配的文章"
 L["No full scan recorded yet."] = "尚未记录全面扫描。"
 L["No full scan yet: scan there, or trust someone who does"] =
   "尚无完整扫描：去那里扫描，或信任会扫描的人"
@@ -321,6 +340,8 @@ L["Notifications"] = "通知"
 L["Off"] = "关闭"
 L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks on items and links. With the AME window open, Shift-click an item to chart it."] =
   "默认关闭：拾取和团队插件（如 Gargul、AHDB）会对物品和链接使用组合键点击。AME 窗口打开时，Shift-点击物品即可查看其图表。"
+L["On a narrow window the tabs switch to a compact layout: sidebars become a dropdown or a Details button. Window scale changes AME's size without touching the rest of your UI."] =
+  "窗口较窄时，各标签页会切换为紧凑布局：侧边栏变为下拉菜单或“详情”按钮。窗口缩放只改变 AME 的大小，不影响界面的其他部分。"
 L["On a watchlist - click to change"] = "已在自选列表中 - 点击更改"
 L["One side is %d days old: scan both auction houses before you buy."] =
   "一侧数据已有 %d 天：购买前请扫描两个拍卖行。"
@@ -328,6 +349,8 @@ L["Open"] = "开盘"
 L["Open AME settings"] = "打开 AME 设置"
 L["Open AME together with the auction house"] = "打开拍卖行时同时打开 AME"
 L["Open item charts with"] = "打开物品图表的方式"
+L["Open the window with /ame, the minimap button, or set it to open with the auction house (Settings > Window)."] =
+  "用 /ame 或小地图按钮打开窗口，也可以设置为随拍卖行一起打开（设置 > 窗口）。"
 L["Patient %s"] = "耐心 %s"
 L["Per item: what it sells for, minus the AH cut, minus the listing deposit, minus what you paid. The deposit is counted for one post of the units the route pays for (or up to 20), at least 1 silver per post - you get it back when it sells."] =
   "每件：售价减去拍卖行手续费、挂单保管费和你的买入价。保管费按一次挂出该路线有利可图的数量（最多 20 件）计算，每次挂单至少 1 银币——售出后退还。"
@@ -376,12 +399,15 @@ L["Run self-test"] = "运行自检"
 L["SELL"] = "卖出"
 L["SELL signal at %s"] = "%s 出现卖出信号"
 L["Save these filters as a view..."] = "将这些筛选保存为视图..."
+L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."] =
+  "与你自己的价格相差悬殊的扫描会被拒绝，你也可以屏蔽玩家。公会官员可以在公会信息中加一行，为整个公会屏蔽玩家。顶部的卡片显示每个拍卖行数据的新鲜度以及扫描者。"
 L["Score"] = "评分"
 L["Scroll to zoom  ·  drag to pan  ·  double-click to reset"] = "滚轮缩放  ·  拖动平移  ·  双击重置"
 L["Search"] = "搜索"
 L["Search at %s"] = "在 %s 搜索"
 L["Search for it at the auction house, or run a full scan."] = "在拍卖行搜索它，或进行一次完整扫描。"
 L["Search items..."] = "搜索物品..."
+L["Search the guide..."] = "搜索指南..."
 L["Seen in 3 days"] = "3天内出现"
 L["Seen in 7 days"] = "7天内出现"
 L["Seen today/yesterday"] = "今天/昨天出现"
@@ -390,6 +416,7 @@ L["Sell at"] = "卖出地"
 L["Sellers piling in"] = "卖家涌入"
 L["Sellers withdrawing"] = "卖家撤出"
 L["Selling"] = "出售"
+L["Selling: posting prices"] = "出售：上架价格"
 L["Sells for"] = "售价"
 L["Sells per day (estimate)"] = "日销量（估计）"
 L["Sells per day at the sell house"] = "卖出拍卖行的日销量"
@@ -397,6 +424,7 @@ L["Sells/d"] = "日销"
 L["Settings"] = "设置"
 L["Settings are saved per account. Sharing settings are on the Sync tab."] =
   "设置按账号保存。共享设置在同步标签页。"
+L["Settings tab"] = "设置标签页"
 L["Share full scans with my guild (members running AME)"] =
   "与我的公会共享全面扫描（运行 AME 的成员）"
 L["Share with guild"] = "与公会共享"
@@ -413,6 +441,7 @@ L["Signals and score compare an item with its own history, so they need a week o
 L["Sold / bought"] = "卖出 / 买入"
 L["Sold / bought, %s"] = "卖出 / 买入，%s"
 L["Spent with you"] = "在你处花费"
+L["Spreadsheet"] = "表格"
 L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price in gold, or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."] =
   "给物品加星标即可放入自选列表；在侧边栏用“+ 新列表”创建更多列表（右键点击列表可与公会共享或删除；公会成员共享的列表显示在你的列表下方）。在物品页面设置提醒：低于或高于某个金币价格，或出现买入/卖出信号时。每次扫描后都会检查提醒，并在聊天中发布并播放声音。"
 L["Steady demand"] = "需求稳定"
@@ -427,6 +456,8 @@ L["Sync is off: turn on guild or trusted sharing below."] =
   "同步已关闭：请在下方开启公会或信任共享。"
 L["Sync is on."] = "同步已开启。"
 L["Sync is unavailable: the AceComm library didn't load."] = "同步不可用：AceComm 库未加载。"
+L["Sync tab"] = "同步标签页"
+L["Tabs"] = "标签页"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
   "所选周期内的每日市场均价（设置 > 均价周期，默认 7 天）。与今日市场价比较，可判断物品当前是便宜还是昂贵。"
 L["The cheapest listing at the auction house you buy from - what the first units cost you."] =
@@ -436,8 +467,11 @@ L["The market price at the auction house you sell at: what the item typically se
   "你卖出的拍卖行的市场价：该物品在那里的一般售价。"
 L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."] =
   "价格图表：市场价、最低挂单、7日均价和供应量。切换到K线可获得交易视图。鼠标滚轮缩放，拖动平移，双击重置。此窗口打开时，Shift-点击任何物品（背包、聊天、拍卖行）即可查看其图表，也可在设置中指定组合键点击。"
+L["The status row at the bottom says where the numbers come from, how old they are, and when a scan is being read or market data is being updated."] =
+  "底部的状态栏会说明数字的来源、时效，以及何时正在读取扫描或更新市场数据。"
 L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping."] =
   "本周价格走势结合供应来解读：短缺、需求稳定、卖家涌入、收紧、平衡、压力积聚、卖家撤出、需求疲软或抛售。"
+L["The window"] = "窗口"
 L["This character"] = "当前角色"
 L["This market: %d days of history, %d recent scans kept in full"] =
   "当前市场：%d 天历史，完整保留 %d 次最近扫描"
@@ -450,6 +484,7 @@ L["Today's market price against the average over the chosen period (Settings > A
 L["Tooltips"] = "鼠标提示"
 L["Top buy signals"] = "热门买入信号"
 L["Total"] = "总计"
+L["Trading"] = "交易"
 L["Trusted"] = "已信任"
 L["Trusted (%d)"] = "已信任（%d）"
 L["Trusted players"] = "信任的玩家"

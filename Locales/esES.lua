@@ -87,6 +87,8 @@ L["AH cut (%d%%)"] = "Comisión CS (%d%%)"
 L["AME alert: %s %s"] = "Alerta de AME: %s %s"
 L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] =
   "AME escucha las API propias del juego para la casa de subastas, así que se registra cada escaneo y búsqueda que hagas - desde la ventana estándar de la casa de subastas o con cualquier addon de escaneo (funciona bien con addons como Auctionator). No se escanea nada extra. El historial se guarda por mercado (reino o reglas de Forever) y casa de subastas, y los miembros de la hermandad que usan AME comparten sus escaneos completos automáticamente."
+L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."] =
+  "AME registra la casa de subastas mientras la usas y lo convierte en historial de precios, gráficos, señales y precios de subasta. No hay nada que configurar: abre la casa de subastas y haz un escaneo completo (el de Auctionator o el del propio juego), y AME lo registra."
 L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."] =
   "AME sugiere un precio según lo rápido que se vende este objeto, en vez de rebajar 1c. Rellenar precio lo pone en la casilla; la subasta la sigues creando tú."
 L["API + database found"] = "API + base de datos encontradas"
@@ -99,6 +101,8 @@ L["Add"] = "Añadir"
 L["Add to a watchlist"] = "Añadir a una lista de seguimiento"
 L["Advanced"] = "Avanzado"
 L["Advanced adds data quality and diagnostics."] = "Avanzado añade la calidad de los datos y el diagnóstico."
+L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
+  "Tras un escaneo ya puedes explorar la pestaña Mercado y ver precios de subasta. Las señales, tendencias y ritmos de venta necesitan historial: mejoran con un escaneo al día y son más fiables al cabo de una semana."
 L["Age"] = "Edad"
 L["Alert when"] = "Alertar cuando"
 L["Alert:"] = "Alerta:"
@@ -130,6 +134,8 @@ L["Asked %s to share. They'll see a request in their Sync tab."] =
   "Se ha pedido a %s que comparta. Verá una solicitud en su pestaña Sincronizar."
 L["Asking prices"] = "Precios pedidos"
 L["At market price"] = "A precio de mercado"
+L["At the auction house, a bar under the sell window shows the price for the item you're posting, why, and what you'd get after the cut. Fill price puts it in the price box; you still click Post yourself. Click a listing in the sell window to aim just under it instead."] =
+  "En la casa de subastas, una barra bajo la ventana de venta muestra el precio del objeto que vas a subastar, por qué y lo que recibirías tras la comisión. Rellenar precio lo pone en la casilla del precio; la subasta la sigues creando tú. Si prefieres, haz clic en una subasta de la ventana de venta para ponerte justo por debajo."
 L["Auction house"] = "Casa de subastas"
 L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
   "Auctionator no está instalado: nada que importar (los escaneos se registran del juego igualmente)"
@@ -145,12 +151,15 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
   'COMPRAR: el precio de hoy es inusualmente bajo para este objeto - al menos 1,5 desviaciones estándar por debajo de su propia media de 30 días. VENDER: inusualmente alto según la misma medida. MANTENER: dentro de su rango normal - consérvalo si lo tienes, no hay ventaja en comprar. ESPERAR: barato, pero los vendedores están liquidando - espera a que toque fondo. Necesita 7+ días de historial ("-" hasta entonces). La fase de mercado compara el movimiento semanal del precio con la oferta: escasez, demanda estable, vendedores en masa, contracción, equilibrio, presión creciente, vendedores retirándose, demanda débil o liquidación. Compara el objeto consigo mismo, y es una pista, no un consejo financiero.'
 L["Balanced"] = "Equilibrio"
 L["Basic"] = "Básico"
+L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."] =
+  "Básico incluye la ventana, las descripciones, los gráficos, la venta y las notificaciones. Avanzado añade la calidad de los datos (cómo se ignoran los precios desorbitados) y el diagnóstico, como reconstruir los datos de mercado y la autoprueba."
 L["Block"] = "Bloquear"
 L["Blocked"] = "Bloqueados"
 L["Building market index..."] = "Construyendo índice de mercado..."
 L["Buy at"] = "Comprar en"
 L["Buy at the %s, sell at the %s"] = "Compra en la %s, vende en la %s"
 L["By your guild officers: %s"] = "Por los oficiales de tu hermandad: %s"
+L["CSV"] = "CSV"
 L["Cancel"] = "Cancelar"
 L["Candles"] = "Velas"
 L["Character"] = "Personaje"
@@ -177,6 +186,10 @@ L["Common+"] = "Común+"
 L["Copy to my watchlists"] = "Copiar a mis listas"
 L["Could not load history: %s"] = "No se pudo cargar el historial: %s"
 L["Ctrl+Alt-click"] = "Ctrl+Alt-clic"
+L["Ctrl+C copies the selected text: comma-separated values."] =
+  "Ctrl+C copia el texto seleccionado: valores separados por comas."
+L["Ctrl+C copies the selected text; paste it into a spreadsheet. Tabs show as boxes here but paste as columns."] =
+  "Ctrl+C copia el texto seleccionado; pégalo en una hoja de cálculo. Las tabulaciones se ven aquí como cuadros, pero se pegan como columnas."
 L["Customers"] = "Clientes"
 L["Data"] = "Datos"
 L["Data age"] = "Antigüedad de los datos"
@@ -197,6 +210,8 @@ L["Depth and speed"] = "Profundidad y velocidad"
 L["Details"] = "Detalles"
 L["Diagnostics"] = "Diagnóstico"
 L["Dock AME beside the auction house when there's room"] = "Acoplar AME junto a la casa de subastas cuando haya espacio"
+L["Drag the title bar to move the window and the bottom-right corner to resize it. AME remembers the size, and where you put it with and without the auction house open. When the auction house opens and there's room beside it, AME docks next to it (Settings > Window)."] =
+  "Arrastra la barra de título para mover la ventana y la esquina inferior derecha para cambiar su tamaño. AME recuerda el tamaño y dónde la colocas con y sin la casa de subastas abierta. Cuando se abre la casa de subastas y hay espacio al lado, AME se acopla junto a ella (Ajustes > Ventana)."
 L["Dumping"] = "Liquidación"
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] =
   "Cada vela cubre uno o más días. Abre en el cierre de la vela anterior y cierra en el precio de mercado; verde cerró más alto, roja más bajo. La mecha fina baja hasta el anuncio más barato visto."
@@ -214,6 +229,8 @@ L["For units you bought on the auction house: what they're worth now at market p
   "Para las unidades que compraste en la casa de subastas: lo que valen ahora a precio de mercado menos lo que pagaste. Se convierte en beneficio real cuando vendes."
 L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
   "De tus ventas en subasta: lo que recibiste tras la comisión de la CS, menos lo que pagaste por esas unidades (primero las compras más antiguas). Las ventas de objetos obtenidos como botín o fabricados cuentan íntegras."
+L["Getting started"] = "Primeros pasos"
+L["Glossary"] = "Glosario"
 L["Goblin AH"] = "CS goblin"
 L["Goblin auction houses"] = "Casas de subastas goblin"
 L["Goblin gold"] = "Oro goblin"
@@ -221,6 +238,8 @@ L["Gold received from auction sales (after the cut) and gold spent on auction pu
   "Oro recibido por ventas en subasta (tras la comisión) y oro gastado en compras en subasta en los últimos 30 días."
 L["Got it"] = "Entendido"
 L["Guide"] = "Guía"
+L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."] =
+  "Los miembros de la hermandad que usan AME comparten sus escaneos completos automáticamente, así los precios de todos se mantienen al día. Los jugadores de fuera de tu hermandad también pueden compartir: añádelos en Jugadores de confianza; recibirán una solicitud para aprobar."
 L['Guild officers can block players for everyone: add a line "%s" to the guild info.'] =
   'Los oficiales de la hermandad pueden bloquear jugadores para todos: añade una línea "%s" a la información de la hermandad.'
 L["Guild watchlists"] = "Listas de la hermandad"
@@ -296,6 +315,7 @@ L["Net"] = "Neto"
 L["Net per unit"] = "Neto por unidad"
 L["New list"] = "Nueva lista"
 L["New list..."] = "Nueva lista..."
+L["No articles match"] = "Ningún artículo coincide"
 L["No full scan recorded yet."] = "Aún no se ha registrado ningún escaneo completo."
 L["No full scan yet: scan there, or trust someone who does"] =
   "Aún no hay escaneo completo: escanea allí o confía en alguien que lo haga"
@@ -324,6 +344,8 @@ L["Notifications"] = "Notificaciones"
 L["Off"] = "Desactivado"
 L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks on items and links. With the AME window open, Shift-click an item to chart it."] =
   "Desactivado por defecto: los addons de botín y banda (p. ej. Gargul, AHDB) usan clics con modificador en objetos y enlaces. Con la ventana de AME abierta, Mayús-clic en un objeto para ver su gráfico."
+L["On a narrow window the tabs switch to a compact layout: sidebars become a dropdown or a Details button. Window scale changes AME's size without touching the rest of your UI."] =
+  "Con una ventana estrecha, las pestañas pasan a un diseño compacto: las barras laterales se convierten en un desplegable o en un botón Detalles. Escala de la ventana cambia el tamaño de AME sin tocar el resto de tu interfaz."
 L["On a watchlist - click to change"] = "En una lista de seguimiento - haz clic para cambiar"
 L["One side is %d days old: scan both auction houses before you buy."] =
   "Un lado tiene %d días: escanea ambas casas de subastas antes de comprar."
@@ -331,6 +353,8 @@ L["Open"] = "Apertura"
 L["Open AME settings"] = "Abrir ajustes de AME"
 L["Open AME together with the auction house"] = "Abrir AME junto con la casa de subastas"
 L["Open item charts with"] = "Abrir gráficos de objetos con"
+L["Open the window with /ame, the minimap button, or set it to open with the auction house (Settings > Window)."] =
+  "Abre la ventana con /ame, con el botón del minimapa o haz que se abra con la casa de subastas (Ajustes > Ventana)."
 L["Patient %s"] = "Paciente %s"
 L["Per item: what it sells for, minus the AH cut, minus the listing deposit, minus what you paid. The deposit is counted for one post of the units the route pays for (or up to 20), at least 1 silver per post - you get it back when it sells."] =
   "Por unidad: lo que se vende, menos la comisión de la CS, menos el depósito, menos lo que pagaste. El depósito se cuenta para una subasta con las unidades que la ruta rentabiliza (hasta 20), al menos 1 de plata por subasta - lo recuperas al venderse."
@@ -380,6 +404,8 @@ L["Run self-test"] = "Ejecutar autoprueba"
 L["SELL"] = "VENDER"
 L["SELL signal at %s"] = "Señal de VENTA a %s"
 L["Save these filters as a view..."] = "Guardar estos filtros como vista..."
+L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."] =
+  "Los escaneos que discrepan muchísimo de tus propios precios se rechazan, y puedes bloquear jugadores. Los oficiales de la hermandad pueden bloquear jugadores para toda la hermandad con una línea en la información de hermandad. Las tarjetas de arriba muestran lo recientes que son los datos de cada casa de subastas y quién los escaneó."
 L["Score"] = "Puntuación"
 L["Scroll to zoom  ·  drag to pan  ·  double-click to reset"] =
   "Rueda para zoom  ·  arrastra para desplazar  ·  doble clic para restablecer"
@@ -388,6 +414,7 @@ L["Search at %s"] = "Buscar en la %s"
 L["Search for it at the auction house, or run a full scan."] =
   "Búscalo en la casa de subastas o haz un escaneo completo."
 L["Search items..."] = "Buscar objetos..."
+L["Search the guide..."] = "Buscar en la guía..."
 L["Seen in 3 days"] = "Visto en 3 días"
 L["Seen in 7 days"] = "Visto en 7 días"
 L["Seen today/yesterday"] = "Visto hoy/ayer"
@@ -396,6 +423,7 @@ L["Sell at"] = "Vender en"
 L["Sellers piling in"] = "Vendedores en masa"
 L["Sellers withdrawing"] = "Vendedores retirándose"
 L["Selling"] = "Venta"
+L["Selling: posting prices"] = "Venta: precios de subasta"
 L["Sells for"] = "Se vende por"
 L["Sells per day (estimate)"] = "Ventas al día (estimación)"
 L["Sells per day at the sell house"] = "Ventas al día en la casa de venta"
@@ -403,6 +431,7 @@ L["Sells/d"] = "Ventas/d"
 L["Settings"] = "Ajustes"
 L["Settings are saved per account. Sharing settings are on the Sync tab."] =
   "Los ajustes se guardan por cuenta. Los ajustes para compartir están en la pestaña Sincronizar."
+L["Settings tab"] = "Pestaña Ajustes"
 L["Share full scans with my guild (members running AME)"] =
   "Compartir escaneos completos con mi hermandad (miembros con AME)"
 L["Share with guild"] = "Compartir con la hermandad"
@@ -419,6 +448,7 @@ L["Signals and score compare an item with its own history, so they need a week o
 L["Sold / bought"] = "Vendido / comprado"
 L["Sold / bought, %s"] = "Vendido / comprado, %s"
 L["Spent with you"] = "Gastado contigo"
+L["Spreadsheet"] = "Tabla"
 L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price in gold, or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."] =
   'Marca objetos con la estrella para ponerlos en una lista de seguimiento; crea más listas con "+ Nueva lista" en la barra lateral (clic derecho en una lista para compartirla con tu hermandad o eliminarla; las listas compartidas por miembros de la hermandad aparecen debajo de las tuyas). En la página de un objeto, configura una alerta: por debajo o por encima de un precio en oro, o cuando aparezca una señal de compra/venta. Las alertas se comprueban tras cada escaneo y se publican en el chat con un sonido.'
 L["Steady demand"] = "Demanda estable"
@@ -435,6 +465,8 @@ L["Sync is off: turn on guild or trusted sharing below."] =
 L["Sync is on."] = "La sincronización está activada."
 L["Sync is unavailable: the AceComm library didn't load."] =
   "La sincronización no está disponible: la biblioteca AceComm no se cargó."
+L["Sync tab"] = "Pestaña Sincronizar"
+L["Tabs"] = "Pestañas"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
   "El precio de mercado diario medio durante el periodo elegido (Ajustes > Periodo de la media, 7 días por defecto). Compáralo con el precio de mercado de hoy para ver si el objeto está barato o caro ahora mismo."
 L["The cheapest listing at the auction house you buy from - what the first units cost you."] =
@@ -445,8 +477,11 @@ L["The market price at the auction house you sell at: what the item typically se
   "El precio de mercado en la casa de subastas donde vendes: por lo que suele venderse el objeto allí."
 L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."] =
   "El gráfico de precios: precio de mercado, anuncio más barato, media de 7 días y oferta. Cambia a velas para una vista de trading. La rueda del ratón hace zoom, arrastrar desplaza, doble clic restablece. Mayús-clic en cualquier objeto (bolsas, chat, la CS) con esta ventana abierta para ver su gráfico, o elige un clic con modificador en Ajustes."
+L["The status row at the bottom says where the numbers come from, how old they are, and when a scan is being read or market data is being updated."] =
+  "La fila de estado de abajo indica de dónde salen las cifras, qué antigüedad tienen y cuándo se está leyendo un escaneo o actualizando los datos de mercado."
 L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping."] =
   "El movimiento de precio de la semana frente a la oferta: escasez, demanda estable, vendedores en masa, contracción, equilibrio, presión creciente, vendedores retirándose, demanda débil o liquidación."
+L["The window"] = "La ventana"
 L["This character"] = "Este personaje"
 L["This market: %d days of history, %d recent scans kept in full"] =
   "Este mercado: %d días de historial, %d escaneos recientes guardados completos"
@@ -459,6 +494,7 @@ L["Today's market price against the average over the chosen period (Settings > A
 L["Tooltips"] = "Descripciones"
 L["Top buy signals"] = "Mejores señales de compra"
 L["Total"] = "Total"
+L["Trading"] = "Comercio"
 L["Trusted"] = "De confianza"
 L["Trusted (%d)"] = "De confianza (%d)"
 L["Trusted players"] = "Jugadores de confianza"
