@@ -454,7 +454,6 @@ L["could not load history addon"] = "не удалось загрузить ад
 L["couldn't start an auction house search for %s"] =
   "не удалось начать поиск на аукционе для %s"
 L["data"] = "данные"
-L["deposit %s"] = "залог %s"
 L["done %s"] = "готово %s"
 L["dropped to %s (alert at %s)"] = "упала до %s (оповещение при %s)"
 L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =

@@ -437,7 +437,6 @@ L["could not load %s: %s"] = "%s 불러오기 실패: %s"
 L["could not load history addon"] = "기록 애드온을 불러올 수 없음"
 L["couldn't start an auction house search for %s"] = "%s의 경매장 검색을 시작할 수 없음"
 L["data"] = "데이터"
-L["deposit %s"] = "보증금 %s"
 L["done %s"] = "완료 %s"
 L["dropped to %s (alert at %s)"] = "%s(으)로 하락 (알림 기준 %s)"
 L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =

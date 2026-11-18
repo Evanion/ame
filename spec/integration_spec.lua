@@ -1057,6 +1057,9 @@ describe("addon in a stubbed client", function()
         SetAmount = function(_, v)
           filled = v
         end,
+        GetAmount = function()
+          return filled
+        end,
       }
       local ahFrame = CreateFrame("Frame")
       ahFrame.CommoditiesSellFrame = sell
@@ -1068,9 +1071,37 @@ describe("addon in a stubbed client", function()
       env:update(40)
       local bar = ns.SellAssist.bar
       assert.truthy(bar:IsShown())
-      assert.truthy(bar.buttons[2].label.text:find("Normal"))
-      bar.buttons[2].scripts.OnClick(bar.buttons[2])
-      assert.are.equal(ns.SellAssist.advice.normal.price, filled)
+      local advice = ns.SellAssist.advice
+      assert.truthy(bar.title.text:find("Post at"))
+      assert.truthy(bar.info.text:find("after the cut"))
+      assert.is_false(bar.reset:IsShown())
+      bar.fill.scripts.OnClick(bar.fill)
+      assert.are.equal(advice.normal.price, filled)
+      -- clicking a listing in the sell window puts its price in the box: the bar re-targets just under it
+      local listing = advice.book.prices[#advice.book.prices]
+      filled = listing
+      env:update(40)
+      assert.truthy(bar.title.text:find("Under that listing"), bar.title.text)
+      assert.are.equal(listing - 1, ns.SellAssist.shown)
+      assert.is_true(bar.reset:IsShown())
+      bar.fill.scripts.OnClick(bar.fill)
+      assert.are.equal(listing - 1, filled)
+      env:update(40)
+      assert.truthy(bar.title.text:find("Under that listing")) -- our own fill isn't a new target
+      filled = listing + 7 -- a price you type: judged as yours
+      env:update(40)
+      assert.truthy(bar.title.text:find("Your price"))
+      bar.reset.scripts.OnClick(bar.reset) -- back to the suggestion
+      assert.are.equal(advice.normal.price, filled)
+      env:update(40)
+      assert.truthy(bar.title.text:find("Post at"))
+      -- a vendor pays more than the auction house nets: say so
+      ns.ItemCache.Get(2589).sellPrice = 10 ^ 7
+      ns.SellAssist:Invalidate()
+      env:update(40)
+      assert.truthy(bar.title.text:find("Vendor it"))
+      assert.are.equal("Post anyway", bar.fill.label.text)
+      ns.ItemCache.Get(2589).sellPrice = nil
       sell.GetItem = function() end -- slot emptied: the bar goes away
       env:update(40)
       assert.is_false(bar:IsShown())

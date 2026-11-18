@@ -434,7 +434,6 @@ L["could not load %s: %s"] = "%s konnte nicht geladen werden: %s"
 L["could not load history addon"] = "Verlaufs-Addon konnte nicht geladen werden"
 L["couldn't start an auction house search for %s"] = "Auktionshaussuche für %s konnte nicht gestartet werden"
 L["data"] = "Daten"
-L["deposit %s"] = "Anzahlung %s"
 L["done %s"] = "fertig %s"
 L["dropped to %s (alert at %s)"] = "gefallen auf %s (Alarm bei %s)"
 L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =

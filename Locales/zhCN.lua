@@ -432,7 +432,6 @@ L["could not load %s: %s"] = "无法加载 %s：%s"
 L["could not load history addon"] = "无法加载历史插件"
 L["couldn't start an auction house search for %s"] = "无法为 %s 发起拍卖行搜索"
 L["data"] = "数据"
-L["deposit %s"] = "保管费 %s"
 L["done %s"] = "完成 %s"
 L["dropped to %s (alert at %s)"] = "跌至 %s（提醒价 %s）"
 L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
