@@ -210,6 +210,7 @@ function Sell:Build(parent)
       Sell:Draw()
     end
   end
+  -- the bar's own button: "Use X" (just under a listing you clicked) or "Post anyway at X" (a vendor pays more)
   bar.fill = W.Button(bar, L["Fill price"], 110, 24, function()
     fill(Sell.shown, Sell.target, not Sell.target and "normal" or nil)
   end)
@@ -306,9 +307,11 @@ function Sell:Draw()
       listed = listed or p == target
     end
     choice = Sell.Evaluate(advice, listed and math.max(1, target - 1) or target, now)
+    self.underListing = listed
     title = (listed and L["Under that listing: post at %s"] or L["Your price: %s"]):format(W.Money(choice.price))
   else
     choice = advice.normal
+    self.underListing = false
     title = L["Post at %s"]:format(W.Money(choice.price))
   end
   title = title .. " " .. W.Dim(L["per unit"])
@@ -347,7 +350,9 @@ function Sell:Draw()
     end
     bar.title:SetText(title)
     bar.info:SetText(table.concat(parts, "  ·  "))
-    bar.fill.label:SetText(L["Fill price"])
+    -- Quick / Normal / Patient fill their own prices; the extra button only when you clicked a listing: just under it
+    bar.fill:SetShown(target ~= nil and self.underListing and true or false)
+    bar.fill.label:SetText(L["Use %s"]:format(W.Money(choice.price)))
     bar.fill:SetSelected(true)
     -- the three prices stay put (nothing appears or disappears as you click); ONE is highlighted: the one you
     -- clicked if the box still holds its price, else the first that matches the box (Normal before Quick, Patient -

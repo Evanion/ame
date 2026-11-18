@@ -1412,7 +1412,8 @@ describe("addon in a stubbed client", function()
       assert.truthy(bar.conf.text:find("Confidence"))
       -- Quick, Normal and Patient are always there; the one in the price box is highlighted
       assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown())
-      bar.fill.scripts.OnClick(bar.fill)
+      assert.is_false(bar.fill:IsShown()) -- the choices fill their own prices: no extra button
+      bar.reset.scripts.OnClick(bar.reset)
       assert.are.equal(advice.normal.price, filled)
       assert.is_true(bar.reset.selected)
       -- one button lit even when two choices share a price (Normal = Patient here)
@@ -1426,7 +1427,7 @@ describe("addon in a stubbed client", function()
       bar.quick.scripts.OnClick(bar.quick)
       assert.are.equal(advice.quick.price, filled)
       assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown()) -- nothing disappears
-      bar.fill.scripts.OnClick(bar.fill)
+      bar.reset.scripts.OnClick(bar.reset)
       -- clicking a listing in the sell window puts its price in the box: the bar re-targets just under it
       local listing = advice.book.prices[#advice.book.prices]
       filled = listing
@@ -1434,6 +1435,8 @@ describe("addon in a stubbed client", function()
       assert.truthy(bar.title.text:find("Under that listing"), bar.title.text)
       assert.are.equal(listing - 1, ns.SellAssist.shown)
       assert.is_true(bar.reset:IsShown())
+      assert.is_true(bar.fill:IsShown()) -- "Use X": just under the listing you clicked
+      assert.truthy(bar.fill.label.text:find("^Use"))
       bar.fill.scripts.OnClick(bar.fill)
       assert.are.equal(listing - 1, filled)
       env:update(40)
@@ -1482,7 +1485,7 @@ describe("addon in a stubbed client", function()
       env:update(40)
       assert.truthy(bar:IsShown())
       assert.are.equal(5, ns.SellAssist.advice.qty)
-      bar.fill.scripts.OnClick(bar.fill)
+      bar.reset.scripts.OnClick(bar.reset)
       assert.are.equal(ns.SellAssist.advice.normal.price, unit)
       _G.AuctionatorSellingFrame = nil
       _G.AuctionHouseFrame = nil

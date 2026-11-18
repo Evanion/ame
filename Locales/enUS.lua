@@ -480,6 +480,7 @@ L["Up to 1 day"] = true
 L["Up to 3 days"] = true
 L["Up to 7 days"] = true
 L["Updating market data…"] = true
+L["Use %s"] = true
 L["VENDOR"] = true
 L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."] = true
 L["Value"] = true
