@@ -44,10 +44,11 @@ retention (60 days daily, 52 weeks weekly), O(n) ledger profits, Settings / Item
 Main split per concern, errors reported instead of swallowed. Next: shared UI components (button groups, inputs,
 cards, colours).
 
-## M15: holistic redesign (planned)
+## M15: holistic redesign (built, awaiting in-game check)
 
 Shared shell with resizable, dockable window and breakpoints; Item, sell bar, Market, Arbitrage, Portfolio, Settings,
-Sync and guidance redesigned in phases P1-P9. Spec and plan: [docs/plans/m15-redesign.md](plans/m15-redesign.md).
+Sync and guidance redesigned in phases P1-P9. Spec and plan: [docs/plans/m15-redesign.md](plans/m15-redesign.md). P1-P8 built with specs (Nov 2026); P9's
+in-game check at both sizes and the release are next.
 
 ## Later
 

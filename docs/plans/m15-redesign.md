@@ -1,6 +1,19 @@
 # M15: holistic redesign — spec and plan
 
-Status: agreed direction (Nov 2026). Mockups: the "AME redesign" design canvas. Research: competitive and user research
+Status: built (Nov 2026), P1-P8 committed with specs; in-game check and release pending (P9).
+
+### As built (differences from the plan below)
+
+- `UI.Slots` / `UI.Stack` in Core/UI/Shell.lua are the shared shell: each tab builds its slots in its content area;
+  the window frame (title bar, resizing, docking, footer) stays in Window.lua.
+- Compact mode: the right sidebar opens as a panel over the right of the main area (Details button), not under it.
+- Arbitrage has no column chooser (its columns drop by priority when narrow); Market has one.
+- Portfolio periods: Today, 7 days, 30 days, All time; "since weekly reset" left out (open question below).
+- Click-a-listing re-targeting works on the game's sell window (the price that lands in its price box).
+- Signal glyphs are plain characters every game font has: + BUY, = HOLD, - SELL, ~ WAIT, $ VENDOR.
+- Colour-blind palette: Okabe-Ito blue (#56B4E9) / orange (#E69F00) for gains, losses, signals and candles.
+
+Original status: agreed direction (Nov 2026). Mockups: the "AME redesign" design canvas. Research: competitive and user research
 report (Nov 2026, kept out of the repo).
 
 ## Why
