@@ -459,6 +459,7 @@ L["Sync is off: turn on guild or trusted sharing below"] = true
 L["Sync is on"] = true
 L["Sync is unavailable: the AceComm library didn't load."] = true
 L["Tabs"] = true
+L["That's one of your characters: they already share AME's data"] = true
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] = true
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] = true
 L["The bar under the sell window"] = true

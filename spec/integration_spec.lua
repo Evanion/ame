@@ -2130,6 +2130,28 @@ describe("addon in a stubbed client", function()
       v.input.scripts.OnEnterPressed(v.input)
       assert.truthy(v.addStatus.text:find("Asked Bob Builder"))
       assert.are.equal("hello", ns.Sync.Decode(sent[#sent].msg).type)
+      -- never yourself: WoW Forever names senders "Name Suffix", and alts on this account share AME's data
+      AME_DB.holdings["TestRealm:Altchar"] = { bags = {} }
+      deliver(ns.Sync.EncodeHello("TestRealm|Horde"), "GUILD", "Tyken Evanion")
+      deliver(ns.Sync.EncodeHello("TestRealm|Horde"), "GUILD", "Tyken-OtherRealm")
+      assert.is_nil(ns.SyncService.trust.db.peers["tyken evanion"])
+      ns.SyncService.trust:Heard("Altchar Evanion", env.now, "GUILD") -- heard before AME knew the alt
+      ns.SyncService.trust:Heard("Guild Mate", env.now, "GUILD")
+      ns.UI:RefreshSync()
+      local listed = {}
+      for _, row in ipairs(v.peers) do
+        if row.name then
+          listed[row.name] = true
+        end
+      end
+      assert.is_true(listed["Guild Mate"])
+      assert.is_nil(listed["Altchar Evanion"])
+      assert.is_nil(listed["Tyken Evanion"])
+      assert.is_nil(ns.SyncService:Block("Tyken Evanion"))
+      assert.is_nil(ns.SyncService:Block("Altchar"))
+      v.input:SetText("Altchar")
+      v.input.scripts.OnEnterPressed(v.input)
+      assert.truthy(v.addStatus.text:find("one of your characters"))
       -- turning guild sharing off stops guild announcements
       v.guild.scripts.OnClick(v.guild)
       assert.is_false(ns.Settings:Get("syncGuild"))

@@ -77,6 +77,9 @@ end
 
 -- add a trusted player and ask them to trust us back
 function Service:AddTrusted(name)
+  if self:IsMine(name) then
+    return nil, ns.L["That's one of your characters: they already share AME's data"]
+  end
   local e, why = self.trust:Add(name, GetServerTime())
   if e and self.enabled then
     self.transport:Send(Service.PREFIX, Sync.EncodeHello(self.AME:CurrentShard()), "WHISPER", e.name)
@@ -102,6 +105,9 @@ function Service:RemoveTrusted(name)
 end
 
 function Service:Block(name)
+  if self:IsMine(name) then
+    return nil
+  end
   return self.trust:Block(name, GetServerTime())
 end
 
@@ -122,9 +128,34 @@ function Service:Changed()
   end
 end
 
+-- a sender's character name: senders come as "Name", "Name-Realm", or (WoW Forever) "Name Suffix"
+local function charName(sender)
+  return type(sender) == "string" and sender:match("^%s*([^%-%s]+)") or nil
+end
+Service.CharName = charName
+
 local function isMe(sender)
-  local me = UnitName("player")
-  return sender == me or (me and sender and sender:sub(1, #me + 1) == me .. "-")
+  local me, name = UnitName("player"), charName(sender)
+  return me ~= nil and name ~= nil and name:lower() == me:lower()
+end
+
+-- one of my characters: this one, or another on this account (AME_DB.holdings: they share AME's saved data, so
+-- there's nothing to swap with them, nor to block)
+function Service:IsMine(name)
+  if type(name) ~= "string" or name == "" then
+    return false
+  end
+  if isMe(name) then
+    return true
+  end
+  local short = charName(name):lower()
+  for key in pairs(AME_DB and AME_DB.holdings or {}) do
+    local char = key:match(":([^:]+)$")
+    if char and char:lower() == short then
+      return true
+    end
+  end
+  return false
 end
 
 -- Announce the full scans we hold (our own and relayed ones) for every auction house of our market - faction AHs
@@ -227,7 +258,7 @@ function Service:Allowed(m, distribution, sender)
 end
 
 function Service:OnMessage(msg, distribution, sender)
-  if isMe(sender) or not self:Active() then
+  if self:IsMine(sender) or not self:Active() then
     return
   end
   local m = Sync.Decode(msg)

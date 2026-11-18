@@ -265,7 +265,14 @@ function UI:RefreshSync()
     v.activity:SetText(table.concat(lines, "\n"))
   end
 
-  v.peerList:SetItems(svc.trust and svc.trust:PeerList() or {}, function(row, p)
+  -- players heard from: never my own characters (heard before AME knew them, or on an alt)
+  local peers = {}
+  for _, p in ipairs(svc.trust and svc.trust:PeerList() or {}) do
+    if not svc:IsMine(p.name) then
+      peers[#peers + 1] = p
+    end
+  end
+  v.peerList:SetItems(peers, function(row, p)
     local blocked = svc.trust:IsBlocked(p.name)
     row.text:SetText(p.name)
     row.state:SetText(
