@@ -46,7 +46,6 @@ L["%d watched items have no price history here yet"] = "%d 件關注物品在此
 L["%d-day average"] = "%d 日均價"
 L["%dd avg"] = "%d日均"
 L["%dx off usual"] = "偏離常價 %d 倍"
-L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  %d 天歷史  ·  資料 %s %s%s%s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s：最低 %s，市價 %s，數量 %d（%d 個樣本）"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
   "%s 最新（%s）：最低 %s，市價 %s，%d 件，共 %d 個拍賣"
@@ -435,7 +434,6 @@ L["couldn't start an auction house search for %s"] = "無法為 %s 發起拍賣�
 L["data"] = "資料"
 L["deposit %s"] = "保證金 %s"
 L["done %s"] = "完成 %s"
-L["down  (wick = cheapest)"] = "跌  （影線 = 最低價）"
 L["dropped to %s (alert at %s)"] = "跌至 %s（提醒價 %s）"
 L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
   "編碼 %.0f 毫秒，壓縮 %.0f 毫秒，解包+解碼 %.0f 毫秒，%d KB -> %d KB"

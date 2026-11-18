@@ -536,6 +536,37 @@ describe("addon in a stubbed client", function()
         end
       end)
 
+      it("lays the item page out as chart + sidebar, and a summary + Details panel when narrow", function()
+        seeded()
+        ns.UI:ShowItem(2589)
+        drainJobs()
+        local v = ns.UI.itemView
+        assert.is_true(v.sidebar:IsShown())
+        assert.is_false(v.summary:IsShown())
+        assert.are.same({ "BOTTOMRIGHT", -(ns.UI.ITEM_SIDEBAR + ns.UI.SLOT_GAP), 20 }, v.slots.main.points[2])
+        -- legend: one line per series, hidden while hovering the plot
+        assert.truthy(v.legend.text:find("market"))
+        assert.truthy(v.legend.text:find("\n"))
+        ns.UI.chart.frame.scripts.OnEnter(ns.UI.chart.frame)
+        assert.is_false(v.legendBox:IsShown())
+        ns.UI.chart.frame.scripts.OnLeave(ns.UI.chart.frame)
+        assert.is_true(v.legendBox:IsShown())
+        -- narrow window
+        ns.UI.frame:SetSize(800, 500)
+        ns.UI:OnResize(800)
+        assert.is_false(v.sidebar:IsShown())
+        assert.is_true(v.summary:IsShown())
+        assert.truthy(v.summary.text:find("Market"))
+        assert.are.same({ "BOTTOMRIGHT", 0, 20 }, v.slots.main.points[2]) -- the chart takes the width
+        v.details.scripts.OnClick(v.details)
+        assert.is_true(v.sidebar:IsShown()) -- over the chart
+        v.details.scripts.OnClick(v.details)
+        assert.is_false(v.sidebar:IsShown())
+        ns.UI:OnResize(1000)
+        assert.is_true(v.sidebar:IsShown())
+        assert.is_false(v.summary:IsShown())
+      end)
+
       it("scroll panes measure their content and scroll only as far as it goes", function()
         boot()
         local parent = CreateFrame("Frame")
@@ -660,7 +691,7 @@ describe("addon in a stubbed client", function()
       assert.is_true(s.avg30 < 1500)
       ns.UI:ShowItem(2589)
       drainJobs()
-      assert.truthy(ns.UI.itemView.sub.text:find("1 outlier price ignored"))
+      assert.truthy(ns.UI.itemView.slots.status.text:find("1 outlier price ignored"))
     end)
 
     it("finds buy-here-sell-there routes between the faction and goblin AH after the cut", function()
@@ -916,10 +947,10 @@ describe("addon in a stubbed client", function()
       assert.are.same(times, market.xs) -- one point per scan, at the scan's time
       assert.is_nil(ns.UI.chart.series.sma)
       -- intraday candles: 2-hour candles from the scans
-      v.style.scripts.OnClick(v.style)
+      v.style.byKey.candles.scripts.OnClick(v.style.byKey.candles)
       assert.are.equal(5, #ns.UI.candles.xs)
       assert.are.equal(2 * 3600, ns.UI.candles.period)
-      v.style.scripts.OnClick(v.style)
+      v.style.byKey.line.scripts.OnClick(v.style.byKey.line)
       -- back to daily history
       local thirty = v.rangeButtons[3]
       thirty.scripts.OnClick(thirty)
@@ -1007,7 +1038,8 @@ describe("addon in a stubbed client", function()
       ns.UI:Toggle()
       ns.UI:ShowItem(2589)
       drainJobs()
-      assert.truthy(ns.UI.itemView.post.text.text:find("Post at"))
+      assert.truthy(ns.UI.itemView.postHead.text:find("Post at"))
+      assert.truthy(ns.UI.itemView.postNet.text:find("after the cut"))
 
       -- the auction house's sell window: a bar under it fills in the price you pick (you still click Post)
       local filled
@@ -1263,7 +1295,7 @@ describe("addon in a stubbed client", function()
       ns.UI:ShowItem(2589)
       drainJobs()
       local v = ns.UI.itemView
-      v.style.scripts.OnClick(v.style)
+      v.style.byKey.candles.scripts.OnClick(v.style.byKey.candles)
       assert.are.equal("candles", AME_DB.settings.chartStyle)
       assert.is_not_nil(ns.UI.chart.series.candles)
       assert.is_nil(ns.UI.chart.series.market)
@@ -1281,7 +1313,7 @@ describe("addon in a stubbed client", function()
       local x = ns.UI.candles.xs[2]
       local lines = ns.UI.chart.hoverFormatter(ns.UI.chart, x, { candles = { x = x, y = 0, index = 2 } })
       assert.truthy(table.concat(lines, "\n"):find("Open"))
-      v.style.scripts.OnClick(v.style)
+      v.style.byKey.line.scripts.OnClick(v.style.byKey.line)
       assert.is_nil(ns.UI.chart.series.candles)
       assert.is_not_nil(ns.UI.chart.series.market)
     end)

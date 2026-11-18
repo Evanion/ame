@@ -51,7 +51,6 @@ L["%d watched items have no price history here yet"] =
 L["%d-day average"] = "Среднее за %d дн."
 L["%dd avg"] = "Ср. %dд"
 L["%dx off usual"] = "В %d раз от обычного"
-L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  %d дн. истории  ·  данные %s %s%s%s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] =
   "%s %s: мин. %s, рынок %s, кол-во %d (%d замеров)"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
@@ -457,7 +456,6 @@ L["couldn't start an auction house search for %s"] =
 L["data"] = "данные"
 L["deposit %s"] = "залог %s"
 L["done %s"] = "готово %s"
-L["down  (wick = cheapest)"] = "падение  (тень = самый дешёвый)"
 L["dropped to %s (alert at %s)"] = "упала до %s (оповещение при %s)"
 L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
   "кодирование %.0f мс, сжатие %.0f мс, распаковка+декодирование %.0f мс, %d КБ -> %d КБ"

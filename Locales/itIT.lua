@@ -46,7 +46,6 @@ L["%d watched items have no price history here yet"] = "%d oggetti osservati non
 L["%d-day average"] = "Media a %d giorni"
 L["%dd avg"] = "media %dg"
 L["%dx off usual"] = "%dx dal solito"
-L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  %d giorni di storico  ·  dati %s %s%s%s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s: min %s, mercato %s, qtà %d (%d campioni)"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
   "%s ultimo (%s): min %s, mercato %s, %d unità in %d aste"
@@ -440,7 +439,6 @@ L["couldn't start an auction house search for %s"] = "impossibile avviare una ri
 L["data"] = "dati"
 L["deposit %s"] = "deposito %s"
 L["done %s"] = "fatto %s"
-L["down  (wick = cheapest)"] = "giù  (ombra = più economico)"
 L["dropped to %s (alert at %s)"] = "sceso a %s (avviso a %s)"
 L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
   "codifica %.0f ms, compressione %.0f ms, decompressione+decodifica %.0f ms, %d KB -> %d KB"

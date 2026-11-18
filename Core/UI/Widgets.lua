@@ -199,6 +199,21 @@ function W.Tooltip(frame, build, anchor)
   end)
 end
 
+-- A one-line font string that may be cut short: hovering it shows the full text when it doesn't fit.
+function W.Truncated(fs)
+  fs:SetWordWrap(false)
+  local hover = CreateFrame("Frame", nil, fs:GetParent())
+  hover:SetAllPoints(fs)
+  hover:EnableMouse(true)
+  W.Tooltip(hover, function(tip)
+    if (fs:GetStringWidth() or 0) <= (fs:GetWidth() or 0) then
+      return false -- fits: nothing to add
+    end
+    tip:SetText(fs:GetText() or "", 1, 1, 1, 1, true)
+  end)
+  return hover
+end
+
 W.TIP_LABEL = { 0.8, 0.8, 0.8 } -- left side of label / value tooltip lines (values are white)
 
 -- a tooltip's white title and a wrapped explanation under it

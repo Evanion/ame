@@ -48,7 +48,6 @@ L["%d watched items have no price history here yet"] =
 L["%d-day average"] = "%d일 평균"
 L["%dd avg"] = "%d일 평균"
 L["%dx off usual"] = "평소보다 %d배 차이"
-L["%s  ·  %d days of history  ·  data %s %s%s%s"] = "%s  ·  기록 %d일  ·  데이터 %s %s%s%s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s: 최저 %s, 시장가 %s, 수량 %d (표본 %d개)"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
   "%s 최신 (%s): 최저 %s, 시장가 %s, %d개 / 경매 %d건"
@@ -440,7 +439,6 @@ L["couldn't start an auction house search for %s"] = "%s의 경매장 검색을 
 L["data"] = "데이터"
 L["deposit %s"] = "보증금 %s"
 L["done %s"] = "완료 %s"
-L["down  (wick = cheapest)"] = "하락  (꼬리 = 최저가)"
 L["dropped to %s (alert at %s)"] = "%s(으)로 하락 (알림 기준 %s)"
 L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
   "인코딩 %.0f ms, 압축 %.0f ms, 해제+디코딩 %.0f ms, %d KB -> %d KB"
