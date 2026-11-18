@@ -1071,7 +1071,7 @@ describe("addon in a stubbed client", function()
       env:update(40)
       local bar = ns.SellAssist.bar
       assert.truthy(bar:IsShown())
-      local advice = ns.SellAssist.advice
+      advice = ns.SellAssist.advice
       assert.truthy(bar.title.text:find("Post at"))
       assert.truthy(bar.info.text:find("after the cut"))
       assert.is_false(bar.reset:IsShown())

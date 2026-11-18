@@ -42,6 +42,7 @@ read_globals = {
   "GetAuctionSellItemInfo",
   "AuctionFrameAuctions",
   "MoneyInputFrame_SetCopper",
+  "MoneyInputFrame_GetCopper",
   "BuyoutPrice",
   "StartPrice",
   "ItemLocation",
