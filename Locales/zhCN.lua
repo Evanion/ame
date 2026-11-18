@@ -112,8 +112,6 @@ L["Accept"] = "接受"
 L["Account"] = "账号"
 L["AceComm not available: sync disabled"] = "AceComm 不可用：同步已禁用"
 L["Add to a watchlist"] = "加入自选列表"
-L["Advanced"] = "高级"
-L["Advanced adds data quality settings."] = "高级模式额外提供数据质量设置。"
 L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
   "扫描一次后，你就可以浏览市场标签页并查看上架价格。信号、趋势和售出速度需要历史数据：每天扫描一次会越来越准，一周后最有参考价值。"
 L["After the auction house cut and the deposit, a listing nets about %s; a vendor pays %s."] =
@@ -169,9 +167,6 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
   "买入：今日价格对该物品而言异常低——至少比其自身30日均价低 1.5 个标准差。卖出：按同一标准异常高。持有：处于正常区间——已持有可继续持有，买入无优势。观望：便宜，但卖家正在抛售——等待见底。需要 7 天以上历史（之前显示“-”）。市场阶段将本周价格变动与供应量对照解读：短缺、需求稳定、卖家涌入、收紧、平衡、压力积聚、卖家撤出、需求疲软或抛售。它只将物品与其自身比较，仅供参考，不构成投资建议。"
 L["Balanced"] = "平衡"
 L["Based on %d scans in the last 7 days."] = "基于最近 7 天的 %d 次扫描。"
-L["Basic"] = "基础"
-L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."] =
-  "基础包含窗口、鼠标提示、图表、出售和通知。高级额外提供数据质量（如何忽略离谱的价格）和诊断，例如重建市场数据和自检。"
 L["Block"] = "屏蔽"
 L["Blocked"] = "已屏蔽"
 L["Building market index..."] = "正在构建市场索引..."
@@ -220,7 +215,6 @@ L["Customers"] = "买家"
 L["Data"] = "数据"
 L["Data age"] = "数据时效"
 L["Data is %d days old"] = "数据已有 %d 天"
-L["Data quality"] = "数据质量"
 L["Days to sell"] = "售完天数"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "如果某天的物品价格比相邻几天高（或低）这么多倍，该天将不计入筛选器、信号、提醒和图表——通常是冷门市场里一条加价 1000% 的挂单。在全面扫描中，AME 已经会忽略高价挂单：市场价只使用供应中最便宜的部分。"
@@ -243,6 +237,8 @@ L["Each candle covers one or more days. It opens at the previous candle's close 
 L["Epic+"] = "史诗+"
 L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."] =
   "在你出售的拍卖行每天预计售出的数量。与你计划买入的数量比较：如果每天卖 5 个，100 个就要卖好几周。"
+L["Every setting is on one page, in cards: the window, tooltips, charts, selling, notifications and data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored). Hover a setting for what it does."] =
+  "所有设置都在一页的卡片中：窗口、提示、图表、出售、通知和数据（从 Auctionator 导入、重建市场数据、自检，以及如何忽略离谱价格）。将鼠标悬停在设置上可查看其作用。"
 L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."] =
   "你的角色持有的所有物品——背包、银行和进行中的拍卖——按你阵营拍卖行的市场价计算。银行物品和拍卖以你上次打开银行/拍卖行时为准。"
 L["Export"] = "导出"

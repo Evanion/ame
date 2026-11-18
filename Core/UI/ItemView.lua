@@ -327,7 +327,7 @@ function UI:CreateItemView(parent)
   v.column = col
   -- cards size themselves to their text (which wraps with the sidebar's width)
   function v:FitCards()
-    col:Height()
+    col:Height(side.content:GetWidth())
     side.pane:Measure()
   end
   side.content:HookScript("OnSizeChanged", function()

@@ -113,8 +113,6 @@ L["Accept"] = "Annehmen"
 L["Account"] = "Account"
 L["AceComm not available: sync disabled"] = "AceComm nicht verfügbar: Sync deaktiviert"
 L["Add to a watchlist"] = "Zu einer Beobachtungsliste hinzufügen"
-L["Advanced"] = "Erweitert"
-L["Advanced adds data quality settings."] = "Erweitert ergänzt Einstellungen zur Datenqualität."
 L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
   "Nach einem Scan kannst du den Markt-Reiter durchstöbern und Einstellpreise sehen. Signale, Trends und Verkaufsraten brauchen Verlauf: Mit einem Scan pro Tag werden sie besser, und nach einer Woche sind sie am aussagekräftigsten."
 L["After the auction house cut and the deposit, a listing nets about %s; a vendor pays %s."] =
@@ -170,9 +168,6 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
   'KAUFEN: Der heutige Preis ist für diesen Gegenstand ungewöhnlich niedrig - mindestens 1,5 Standardabweichungen unter seinem eigenen 30-Tage-Durchschnitt. VERKAUFEN: ungewöhnlich hoch nach demselben Maß. HALTEN: im normalen Bereich - behalte ihn, wenn du ihn besitzt, kein Vorteil beim Kauf. WARTEN: günstig, aber Verkäufer werfen ab - warte auf den Boden. Benötigt 7+ Tage Verlauf ("-" bis dahin). Die Marktphase liest die Preisbewegung der Woche gegen das Angebot: Knappheit, stabile Nachfrage, Verkäufer strömen herein, Verknappung, ausgeglichen, Druck baut sich auf, Verkäufer ziehen sich zurück, schwache Nachfrage oder Abverkauf. Das Signal vergleicht den Gegenstand mit sich selbst und ist ein Hinweis, keine Finanzberatung.'
 L["Balanced"] = "Ausgeglichen"
 L["Based on %d scans in the last 7 days."] = "Basierend auf %d Scans in den letzten 7 Tagen."
-L["Basic"] = "Einfach"
-L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."] =
-  "Einfach umfasst Fenster, Tooltips, Charts, Verkaufen und Benachrichtigungen. Erweitert ergänzt Datenqualität (wie absurde Preise ignoriert werden) und Diagnose, etwa das Neuaufbauen der Marktdaten und den Selbsttest."
 L["Block"] = "Blockieren"
 L["Blocked"] = "Blockiert"
 L["Building market index..."] = "Baue Marktindex auf..."
@@ -223,7 +218,6 @@ L["Customers"] = "Kunden"
 L["Data"] = "Daten"
 L["Data age"] = "Datenalter"
 L["Data is %d days old"] = "Daten sind %d Tage alt"
-L["Data quality"] = "Datenqualität"
 L["Days to sell"] = "Tage bis Verkauf"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "Tage, an denen der Preis eines Gegenstands so viele Male über (oder unter) den Nachbartagen liegt, werden aus Screener, Signalen, Alarmen und Charts herausgenommen - typischerweise ein einzelnes Angebot, 1000% mehr als üblich, in einem dünnen Markt. Innerhalb eines vollständigen Scans ignoriert AME teure Angebote bereits: Der Marktpreis nutzt den günstigsten Teil des Angebots."
@@ -246,6 +240,8 @@ L["Each candle covers one or more days. It opens at the previous candle's close 
 L["Epic+"] = "Episch+"
 L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."] =
   "Geschätzte verkaufte Stück pro Tag dort, wo du verkaufen würdest. Vergleiche das mit der Menge, die du kaufen willst: Wenn 5 pro Tag verkauft werden, dauern 100 Wochen."
+L["Every setting is on one page, in cards: the window, tooltips, charts, selling, notifications and data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored). Hover a setting for what it does."] =
+  "Alle Einstellungen stehen auf einer Seite, in Karten: Fenster, Tooltips, Diagramme, Verkaufen, Benachrichtigungen und Daten (Import aus Auctionator, Marktdaten neu aufbauen, Selbsttest und wie unverschämte Preise ignoriert werden). Fahre über eine Einstellung, um zu sehen, was sie bewirkt."
 L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."] =
   "Alles, was deine Charaktere besitzen - Taschen, Bank und aktive Auktionen - zum Marktpreis des Auktionshauses deiner Fraktion. Bankgegenstände und Auktionen zählen mit dem Stand beim letzten Öffnen von Bank / Auktionshaus."
 L["Export"] = "Export"

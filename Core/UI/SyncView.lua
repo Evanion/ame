@@ -93,7 +93,7 @@ function UI:CreateSyncView(parent, contentArea)
     local w = math.max(120, ((self:GetWidth() or 600) - gap * (n - 1)) / n)
     for i = 1, 3 do
       cols[i]:SetWidth(w)
-      cols[i]:SetHeight(math.max(1, stacks[i]:Height()))
+      cols[i]:SetHeight(math.max(1, stacks[i]:Height(w)))
       cols[i]:ClearAllPoints()
     end
     cols[1]:SetPoint("TOPLEFT", 0, 0)

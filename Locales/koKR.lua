@@ -115,8 +115,6 @@ L["Accept"] = "수락"
 L["Account"] = "계정"
 L["AceComm not available: sync disabled"] = "AceComm 사용 불가: 동기화 비활성화됨"
 L["Add to a watchlist"] = "관심 목록에 추가"
-L["Advanced"] = "고급"
-L["Advanced adds data quality settings."] = "고급에는 데이터 품질 설정이 추가됩니다."
 L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
   "스캔 한 번이면 시장 탭을 둘러보고 등록 가격을 볼 수 있습니다. 신호, 추세, 판매 속도에는 기록이 필요합니다: 하루 한 번 스캔하면 점점 정확해지고, 일주일 뒤에 가장 의미가 있습니다."
 L["After the auction house cut and the deposit, a listing nets about %s; a vendor pays %s."] =
@@ -172,9 +170,6 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
   "매수: 오늘 가격이 이 아이템치고 이례적으로 낮습니다 - 자체 30일 평균보다 표준편차 1.5배 이상 낮음. 매도: 같은 기준으로 이례적으로 높음. 보유: 정상 범위 - 갖고 있다면 보유하고, 살 이점은 없음. 관망: 싸지만 판매자들이 투매 중 - 바닥을 기다리세요. 7일 이상의 기록이 필요합니다 (그전엔 '-'). 시장 국면은 한 주의 가격 변동을 공급과 비교해 읽습니다: 품귀, 꾸준한 수요, 판매자 몰림, 공급 축소, 균형, 압력 누적, 판매자 철수, 약한 수요, 투매. 아이템을 자기 자신과 비교하는 참고 지표일 뿐, 투자 조언이 아닙니다."
 L["Balanced"] = "균형"
 L["Based on %d scans in the last 7 days."] = "최근 7일간 스캔 %d회를 바탕으로 합니다."
-L["Basic"] = "기본"
-L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."] =
-  "기본에는 창, 툴팁, 차트, 판매, 알림이 있습니다. 고급에는 데이터 품질(터무니없는 가격을 무시하는 방식)과 시장 데이터 재구축, 자가 진단 같은 진단 기능이 추가됩니다."
 L["Block"] = "차단"
 L["Blocked"] = "차단됨"
 L["Building market index..."] = "시장 인덱스 구축 중..."
@@ -225,7 +220,6 @@ L["Customers"] = "구매자"
 L["Data"] = "데이터"
 L["Data age"] = "데이터 경과일"
 L["Data is %d days old"] = "데이터가 %d일 지났습니다"
-L["Data quality"] = "데이터 품질"
 L["Days to sell"] = "판매 소요일"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "아이템 가격이 인접한 날보다 이만큼 배 높거나 낮은 날은 스크리너, 신호, 알림, 차트에서 제외됩니다 - 보통 거래가 적은 시장에서 1000% 비싸게 올린 매물 하나 때문입니다. 전체 스캔 안에서는 AME가 이미 비싼 매물을 무시합니다: 시장가는 공급 중 가장 싼 부분을 사용합니다."
@@ -248,6 +242,8 @@ L["Each candle covers one or more days. It opens at the previous candle's close 
 L["Epic+"] = "영웅+"
 L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."] =
   "판매할 곳에서 하루에 팔리는 예상 수량입니다. 살 수량과 비교하세요: 하루 5개 팔리는데 100개를 사면 몇 주가 걸립니다."
+L["Every setting is on one page, in cards: the window, tooltips, charts, selling, notifications and data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored). Hover a setting for what it does."] =
+  "모든 설정이 한 페이지의 카드에 있습니다: 창, 툴팁, 차트, 판매, 알림, 데이터(Auctionator에서 가져오기, 시장 데이터 재구성, 자체 점검, 터무니없는 가격 무시 방법). 설정에 마우스를 올리면 설명이 나옵니다."
 L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."] =
   "캐릭터들이 가진 모든 것 - 가방, 은행, 진행 중인 경매 - 을 진영 경매장 시장가로 평가합니다. 은행 아이템과 경매는 마지막으로 은행/경매장을 열었을 때 기준입니다."
 L["Export"] = "내보내기"

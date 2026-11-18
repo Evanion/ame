@@ -120,9 +120,6 @@ L["Account"] = "Учётная запись"
 L["AceComm not available: sync disabled"] =
   "AceComm недоступен: синхронизация отключена"
 L["Add to a watchlist"] = "Добавить в список наблюдения"
-L["Advanced"] = "Расширенные"
-L["Advanced adds data quality settings."] =
-  "«Расширенные» добавляют настройки качества данных."
 L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
   "После одного сканирования можно просматривать вкладку «Рынок» и видеть цены выставления. Сигналам, трендам и темпам продаж нужна история: они улучшаются при сканировании раз в день и наиболее показательны через неделю."
 L["After the auction house cut and the deposit, a listing nets about %s; a vendor pays %s."] =
@@ -183,9 +180,6 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
 L["Balanced"] = "Равновесие"
 L["Based on %d scans in the last 7 days."] =
   "На основе сканирований за последние 7 дней: %d."
-L["Basic"] = "Основные"
-L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."] =
-  "«Основные» охватывают окно, подсказки, графики, продажу и уведомления. «Расширенные» добавляют качество данных (как отбрасываются нелепые цены) и диагностику, например перестройку рыночных данных и самопроверку."
 L["Block"] = "Блокировать"
 L["Blocked"] = "Заблокированы"
 L["Building market index..."] = "Построение рыночного индекса..."
@@ -236,7 +230,6 @@ L["Customers"] = "Покупатели"
 L["Data"] = "Данные"
 L["Data age"] = "Возраст данных"
 L["Data is %d days old"] = "Данным %d дн."
-L["Data quality"] = "Качество данных"
 L["Days to sell"] = "Дней на продажу"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "Дни, когда цена предмета во столько раз выше (или ниже) соседних дней, исключаются из скринера, сигналов, оповещений и графиков - обычно это один лот с наценкой 1000% на вялом рынке. В полном сканировании AME и так игнорирует дорогие лоты: рыночная цена берётся из самой дешёвой части предложения."
@@ -260,6 +253,8 @@ L["Each candle covers one or more days. It opens at the previous candle's close 
 L["Epic+"] = "Эпическое+"
 L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."] =
   "Оценка проданных за день штук там, где вы продаёте. Сравните с тем, сколько планируете купить: если продаётся 5 в день, 100 уйдут за недели."
+L["Every setting is on one page, in cards: the window, tooltips, charts, selling, notifications and data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored). Hover a setting for what it does."] =
+  "Все настройки на одной странице, в карточках: окно, подсказки, графики, продажа, уведомления и данные (импорт из Auctionator, пересборка рыночных данных, самопроверка и то, как игнорируются безумные цены). Наведите на настройку, чтобы узнать, что она делает."
 L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."] =
   "Всё, что есть у ваших персонажей - сумки, банк и активные аукционы - по рыночной цене аукциона вашей фракции. Предметы в банке и аукционы учитываются на момент, когда вы последний раз открывали банк / аукцион."
 L["Export"] = "Экспорт"

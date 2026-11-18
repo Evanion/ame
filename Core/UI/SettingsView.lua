@@ -18,7 +18,7 @@ UI.SETTINGS_GAP = 10 -- between columns and cards
 
 function UI:CreateSettingsView(parent, contentArea)
   local outer = contentArea(parent)
-  local slots = UI.Slots(outer, { toolbar = 22, status = true })
+  local slots = UI.Slots(outer, { status = true })
   outer.slots = slots
   -- everything scrolls when the window is shorter than the tab's content
   local pane = W.ScrollPane(slots.main)
@@ -27,20 +27,6 @@ function UI:CreateSettingsView(parent, contentArea)
   self.settingsView = v
   local checks = {}
   v.checks = checks
-  v.advanced = {} -- shown in Advanced mode only (the Data quality card)
-
-  -- Basic | Advanced
-  v.level = W.Segmented(slots.toolbar, { { "basic", L["Basic"] }, { "advanced", L["Advanced"] } }, {
-    minWidth = 70,
-    onSelect = function(key)
-      ns.Settings:Set("settingsLevel", key)
-      UI:RefreshSettings()
-    end,
-  })
-  v.level:SetPoint("LEFT", 0, 0)
-  v.levelHint = W.Text(slots.toolbar, "GameFontDisableSmall")
-  v.levelHint:SetPoint("LEFT", v.level, "RIGHT", 10, 0)
-  v.levelHint:SetText(L["Advanced adds data quality settings."])
   slots.status:SetText(L["Settings are saved per account  ·  sharing settings are on the Sync tab"])
 
   -- three columns of cards
@@ -67,7 +53,7 @@ function UI:CreateSettingsView(parent, contentArea)
     end
     for i = 1, 3 do
       cols[i]:SetWidth(w)
-      cols[i]:SetHeight(math.max(1, stacks[i]:Height()))
+      cols[i]:SetHeight(math.max(1, stacks[i]:Height(w)))
       cols[i]:ClearAllPoints()
     end
     cols[1]:SetPoint("TOPLEFT", 0, 0)
@@ -287,8 +273,6 @@ function UI:CreateSettingsView(parent, contentArea)
   end)
   v.minimap:SetPoint("TOPLEFT", 0, -1)
 
-  local quality, qst = card(3, L["Data quality"])
-  v.advanced[#v.advanced + 1] = quality
   local factors = {
     { false, L["Off"] },
     { 3, L["%dx off usual"]:format(3) },
@@ -296,7 +280,8 @@ function UI:CreateSettingsView(parent, contentArea)
     { 6, L["%dx off usual"]:format(6) },
     { 10, L["%dx off usual"]:format(10) },
   }
-  v.outliers = dropdown(qst, L["Ignore outrageous prices"], 110, factors, function(value)
+  local outlierRow
+  v.outliers, outlierRow = dropdown(st, L["Ignore outrageous prices"], 110, factors, function(value)
     ns.Settings:Set("outlierFactor", value)
     ns.AME:InvalidateIndex()
     ns.AME:RebuildIndex()
@@ -304,10 +289,14 @@ function UI:CreateSettingsView(parent, contentArea)
       UI:ShowItem(UI.itemID)
     end
   end)
-  paragraph(
-    qst,
-    L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."]
-  )
+  outlierRow:EnableMouse(true)
+  W.Tooltip(outlierRow, function(tip)
+    W.TipText(
+      tip,
+      L["Ignore outrageous prices"],
+      L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."]
+    )
+  end)
 
   v:SetScript("OnShow", function()
     UI:RefreshSettings()
@@ -337,11 +326,6 @@ function UI:RefreshSettings()
   local v = self.settingsView
   if not (v and v:IsShown()) then
     return
-  end
-  local advanced = ns.Settings:Get("settingsLevel") == "advanced"
-  v.level:Select(advanced and "advanced" or "basic", true)
-  for _, obj in ipairs(v.advanced) do
-    obj:SetShown(advanced)
   end
   for _, c in ipairs(v.checks) do
     c:SetChecked(ns.Settings:Get(c.key))

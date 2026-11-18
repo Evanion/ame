@@ -329,7 +329,7 @@ function UI:RenderRoute()
     r.search:Hide()
     r.chart:Hide()
     r.searchHint:SetText("")
-    v.routeColumn:Height()
+    v.routeColumn:Height(v.sidebar.content:GetWidth())
     v.sidebar.pane:Measure()
     return
   end
@@ -366,7 +366,7 @@ function UI:RenderRoute()
   r.search:SetEnabled(here)
   r.search:SetAlpha(here and 1 or 0.5)
   r.searchHint:SetText(here and "" or L["Visit the %s to search and buy it there."]:format(buyHouse))
-  v.routeColumn:Height()
+  v.routeColumn:Height(v.sidebar.content:GetWidth())
   v.sidebar.pane:Measure()
 end
 

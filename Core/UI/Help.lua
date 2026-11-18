@@ -277,7 +277,7 @@ function Help.Articles()
           title = L["Settings tab"],
           label = L["Settings"],
           body = {
-            L["Basic covers the window, tooltips, charts, selling and notifications. Advanced adds data quality (how outrageous prices are ignored) and diagnostics such as rebuilding market data and the self-test."],
+            L["Every setting is on one page, in cards: the window, tooltips, charts, selling, notifications and data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored). Hover a setting for what it does."],
           },
         },
       },

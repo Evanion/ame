@@ -35,33 +35,40 @@ UI.Sidebar = sidebar
 --   stack:Pair(label, term) -> row with .label (dim, left) and .value (right); term: hover explanation (Help)
 --   stack:Row(height) -> an empty frame for custom controls
 --   stack:Card(gap) -> a panel (its own stack: card.stack) that sizes itself to what's in it (card:Fit())
---   stack:Height() -> the height of everything stacked so far (margins included)
+--   stack:Height(width) -> the height of everything stacked so far (margins included). With the stack's width,
+--     wrapping texts are given their width first, so they measure right away (not one layout pass late)
 -- pad: the margin around the stack (10 by default; 0 for a column of cards)
 function UI.Stack(content, pad)
   pad = pad or 10
   local st = { items = {} }
   local last
-  local function add(obj, gap)
+  local function add(obj, gap, fixedWidth)
     gap = last and (gap or 4) or 0
     if last then
       obj:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -gap)
     else
       obj:SetPoint("TOPLEFT", content, "TOPLEFT", pad, -pad)
     end
-    obj:SetPoint("RIGHT", content, "RIGHT", -pad, 0)
+    if not fixedWidth then
+      obj:SetPoint("RIGHT", content, "RIGHT", -pad, 0)
+    end
     last = obj
     st.items[#st.items + 1] = { obj, gap }
     return obj
   end
-  function st:Height()
+  function st:Height(width)
     local h = 2 * pad
+    local inner = width and math.max(1, width - 2 * pad)
     for _, it in ipairs(self.items) do
       local obj = it[1]
       if obj.card then
-        obj:Fit()
+        obj:Fit(inner)
       end
       local oh
       if obj.GetStringHeight then
+        if inner and obj.wraps then
+          obj:SetWidth(inner) -- wrapped text measures at its real width now
+        end
         local text = obj:GetText()
         oh = (text and text ~= "") and (obj:GetStringHeight() or 12) or 0
       else
@@ -76,8 +83,8 @@ function UI.Stack(content, pad)
     W.Skin(card, W.COLORS.panel)
     card.card = true
     card.stack = UI.Stack(card, 8)
-    function card:Fit()
-      self:SetHeight(self.stack:Height())
+    function card:Fit(width)
+      self:SetHeight(self.stack:Height(width))
     end
     return card
   end
@@ -86,10 +93,13 @@ function UI.Stack(content, pad)
     h:SetText(text)
     return h
   end
+  -- wrapping text: an explicit width (from Height(width)), so its height is known as soon as it's measured
   function st:Text(font, gap)
-    local t = add(W.Text(content, font or "GameFontHighlightSmall"), gap)
+    local t = add(W.Text(content, font or "GameFontHighlightSmall"), gap, true)
     t:SetWordWrap(true)
     t:SetJustifyV("TOP")
+    t:SetWidth(200)
+    t.wraps = true
     return t
   end
   function st:Pair(label, term, gap)
