@@ -252,6 +252,7 @@ function UI:CreateItemView(parent)
     self.details:SetSelected(false)
   end
   v:SetCompact(slots.compact)
+  chart:SetMessage(L["Pick an item: search above, Shift-click one anywhere, or click a row on the Market tab."])
   self.itemView = v
   return v
 end

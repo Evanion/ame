@@ -30,25 +30,31 @@ describe("Tooltip.Lines", function()
     return (table.concat(out, "\n"):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) -- without colour codes
   end
 
-  it("is compact by default: market with 7d change, the chosen average, a Shift hint", function()
+  it("is three lines by default: market vs the chosen average, supply and sells/day, a Shift hint", function()
     local rows = T.Lines(s, { avgDays = 14 })
     assert.are.equal(3, #rows)
     local t = text(rows)
     assert.truthy(t:find("market"))
-    assert.truthy(t:find("7d"))
-    assert.truthy(t:find("14%-day average"))
-    assert.truthy(t:find("65g"))
+    assert.truthy(t:find("vs 14d avg"))
+    assert.truthy(t:find("-13.9%", 1, true)) -- 55g 98s vs 65g
+    assert.truthy(t:find("supply = 13 listed"))
     assert.truthy(t:find("Hold Shift"))
+    assert.is_nil(t:find("lowest"))
   end)
 
-  it("leaves out the 7d change when it isn't known yet (no dangling '7d')", function()
-    local young = { market = 100, avg7 = 100, signal = "none" }
-    assert.is_nil(text(T.Lines(young, {})):find("7d"))
+  it("leaves out the comparison on the first day (nothing to compare with)", function()
+    local young = { market = 100, avg7 = 100, signal = "none", days = 1 }
+    assert.is_nil(text(T.Lines(young, {})):find("avg"))
   end)
 
-  it("shows the signal even when compact", function()
-    local buy = setmetatable({ signal = "buy" }, { __index = s })
-    assert.truthy(text(T.Lines(buy, {})):find("BUY"))
+  it("shows the signal as the third line, with the Shift hint beside it", function()
+    local buy = setmetatable({ signal = "buy", sellRate = 12 }, { __index = s })
+    local rows = T.Lines(buy, {})
+    assert.are.equal(3, #rows)
+    local t = text(rows)
+    assert.truthy(t:find("BUY"))
+    assert.truthy(t:find("Shift: more"))
+    assert.truthy(t:find("~12/d"))
   end)
 
   it("adds supply, volatility, score and data age in detail - never other auction houses", function()

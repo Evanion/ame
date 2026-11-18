@@ -288,6 +288,13 @@ function Sell:Refresh()
   self.advice = ok and advice or nil
   self:Draw()
   bar:Show()
+  if not self.hint then
+    self.hint = W.Hint(
+      bar,
+      "sellBar",
+      L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Fill price puts it in the box; you still click Post."]
+    ) or false
+  end
 end
 
 -- attach to whichever auction house window the game shows (once)

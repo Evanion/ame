@@ -215,6 +215,13 @@ function UI:CreateArbitrageView(parent, contentArea)
 
   v:SetScript("OnShow", function()
     UI:RefreshArbitrage(true) -- coming back (e.g. from an item chart): keep the scroll position
+    if v.hint == nil then
+      v.hint = W.Hint(
+        slots.toolbar,
+        "arbitrage",
+        L["Routes compare two auction houses' prices. Scan both (alts count), then search the buy house before buying: the Depth column shows how many units still pay."]
+      ) or false
+    end
   end)
   return v
 end

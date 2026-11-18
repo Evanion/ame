@@ -747,6 +747,34 @@ describe("addon in a stubbed client", function()
       assert.truthy(v.fresh[1].value.text:find("No full scan"))
     end)
 
+    it("guides: scan progress, empty states, one-time hints, glossary links from explanations", function()
+      seeded()
+      ns.UI:Toggle()
+      -- a full scan being read shows its real progress in the status row
+      ns.AME.ingest.reading, ns.AME.ingest.progress = true, { done = 12345, total = 60000 }
+      assert.truthy(ns.UI:FooterText():find("12,345 / 60,000", 1, true))
+      ns.AME.ingest.reading = false
+      assert.truthy(ns.UI:FooterText():find("^v"))
+      -- empty states say what to do next
+      ns.UI:ShowTab("market")
+      ns.UI.mq.text = "nothing like this"
+      ns.UI:RefreshMarket(true)
+      assert.truthy(ns.UI.marketView.table.message.text:find("Nothing matches"))
+      ns.UI:ResetMarketFilters()
+      -- one-time hints: shown until "Got it"
+      local anchor = CreateFrame("Frame")
+      local hint = ns.Widgets.Hint(anchor, "test", "Hello")
+      assert.is_not_nil(hint)
+      hint.ok.scripts.OnClick(hint.ok)
+      assert.is_true(AME_DB.settings.hintsSeen.test)
+      assert.is_nil(ns.Widgets.Hint(anchor, "test", "Hello"))
+      -- right-clicking an explained header opens its glossary entry on the Guide tab
+      local header = ns.UI.marketView.headers[2] -- Market
+      header.scripts.OnMouseUp(header, "RightButton")
+      assert.are.equal("guide", ns.UI.current)
+      assert.are.equal("market", ns.UI.views.guide.term)
+    end)
+
     it("stars items into a watchlist, shows the list and fires alerts after a scan", function()
       seeded()
       ns.UI:Toggle()

@@ -44,7 +44,6 @@ L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
 L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] =
   "%s quer compartilhar preços de leilão com você. Abra |cffffffff/ame|r > Sincronizar para aprovar."
 L["(each point is one scan)"] = "(cada ponto é uma varredura)"
-L["(est.)"] = "(est.)"
 L["(needs LibDBIcon; included in releases)"] = "(requer LibDBIcon; incluído nas versões lançadas)"
 L["+ %d more"] = "+ %d a mais"
 L[", %d scans received"] = ", %d varreduras recebidas"
@@ -496,7 +495,6 @@ L["scan pipeline: %d requests, %d events (%d since last request), read %s, abort
   "pipeline de varredura: %d solicitações, %d eventos (%d desde a última solicitação), leitura %s, abortadas %d; ingestão requested=%s reading=%s"
 L["scan read failed:"] = "falha na leitura da varredura:"
 L["score"] = "pontuação"
-L["score %+d"] = "pontuação %+d"
 L["search"] = "pesquisar"
 L["selftest finished:\n%s\n\nReload the UI now to save the results?"] =
   "autoteste concluído:\n%s\n\nRecarregar a IU agora para salvar os resultados?"
@@ -504,7 +502,6 @@ L["selftest starting (this may pause the game for a moment)"] =
   "iniciando autoteste (o jogo pode travar por um instante)"
 L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
   "autoteste: %d aprovados, %d avisos, %d falhas. Recarregue para salvar os resultados (/reload)."
-L["sells"] = "vendas"
 L["shard"] = "fragmento"
 L["shared"] = "compartilhada"
 L["sharing"] = "compartilhamento"

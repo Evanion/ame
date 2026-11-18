@@ -44,7 +44,6 @@ L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
 L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] =
   "%s 想与你共享拍卖价格。打开 |cffffffff/ame|r > 同步 进行批准。"
 L["(each point is one scan)"] = "（每个点代表一次扫描）"
-L["(est.)"] = "(估算)"
 L["(needs LibDBIcon; included in releases)"] = "（需要 LibDBIcon；正式版已包含）"
 L["+ %d more"] = "+ 另外 %d 个"
 L[", %d scans received"] = "，已接收 %d 次扫描"
@@ -488,14 +487,12 @@ L["scan pipeline: %d requests, %d events (%d since last request), read %s, abort
   "扫描流程：%d 次请求，%d 个事件（上次请求后 %d 个），读取 %s，中止 %d；导入 requested=%s reading=%s"
 L["scan read failed:"] = "扫描读取失败："
 L["score"] = "评分"
-L["score %+d"] = "评分 %+d"
 L["search"] = "搜索"
 L["selftest finished:\n%s\n\nReload the UI now to save the results?"] =
   "自检完成：\n%s\n\n现在重载界面以保存结果吗？"
 L["selftest starting (this may pause the game for a moment)"] = "自检开始（游戏可能会短暂卡顿）"
 L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
   "自检：%d 项通过，%d 项警告，%d 项失败。重载以保存结果（/reload）。"
-L["sells"] = "销量"
 L["shard"] = "分片"
 L["shared"] = "已共享"
 L["sharing"] = "共享"

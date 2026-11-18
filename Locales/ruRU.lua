@@ -50,7 +50,6 @@ L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
 L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] =
   "%s хочет делиться с вами ценами аукциона. Откройте |cffffffff/ame|r > Синхронизация, чтобы одобрить."
 L["(each point is one scan)"] = "(каждая точка - одно сканирование)"
-L["(est.)"] = "(оценка)"
 L["(needs LibDBIcon; included in releases)"] = "(нужен LibDBIcon; входит в релизы)"
 L["+ %d more"] = "+ ещё %d"
 L[", %d scans received"] = ", получено сканирований: %d"
@@ -515,7 +514,6 @@ L["scan pipeline: %d requests, %d events (%d since last request), read %s, abort
   "конвейер сканирования: %d запросов, %d событий (%d после последнего запроса), чтение %s, прервано %d; приём requested=%s reading=%s"
 L["scan read failed:"] = "ошибка чтения сканирования:"
 L["score"] = "оценка"
-L["score %+d"] = "оценка %+d"
 L["search"] = "поиск"
 L["selftest finished:\n%s\n\nReload the UI now to save the results?"] =
   "самопроверка завершена:\n%s\n\nПерезагрузить интерфейс сейчас, чтобы сохранить результаты?"
@@ -523,7 +521,6 @@ L["selftest starting (this may pause the game for a moment)"] =
   "запуск самопроверки (игра может ненадолго замереть)"
 L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
   "самопроверка: пройдено %d, предупреждений %d, ошибок %d. Перезагрузитесь, чтобы сохранить результаты (/reload)."
-L["sells"] = "продажи"
 L["shard"] = "фрагмент"
 L["shared"] = "общий"
 L["sharing"] = "обмен"

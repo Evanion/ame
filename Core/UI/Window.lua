@@ -208,11 +208,7 @@ function UI:CreateShell()
       return
     end
     elapsed = 0
-    local busy = ns.AME:IndexBusy()
-    if busy ~= self.footerBusy then
-      self.footerBusy = busy
-      footer:SetText((busy and (L["updating market data..."] .. "   ") or "") .. "v" .. ns.VERSION)
-    end
+    footer:SetText(UI:FooterText())
   end)
 
   f:SetScript("OnShow", function()
@@ -225,6 +221,19 @@ end
 
 ---------------------------------------------------------------------------------------------------------------------
 -- size, position, docking
+
+-- the window's status row (bottom right): a scan being read with its real progress, market data being updated,
+-- and the version
+function UI:FooterText()
+  local ingest, busy = ns.AME.ingest, nil
+  local p = ingest and ingest.reading and ingest.progress
+  if p and p.total > 0 then
+    busy = L["reading scan %s / %s"]:format(W.Thousands(p.done), W.Thousands(p.total))
+  elseif ns.AME:IndexBusy() then
+    busy = L["updating market data..."]
+  end
+  return (busy and (busy .. "   ") or "") .. "v" .. ns.VERSION
+end
 
 local function clamp(x, lo, hi)
   return math.max(lo, math.min(hi, x))
@@ -436,6 +445,17 @@ function UI:ApplyTheme()
       W.Fill(line.sel, W.COLORS.rowSelected)
     end
     self:RenderMarket()
+  end
+end
+
+-- the Guide tab at a term's glossary entry
+function UI:ShowGuide(key)
+  self:Create()
+  self.frame:Show()
+  self:ShowTab("guide")
+  local guide = self.views.guide
+  if guide and guide.ShowTerm then
+    guide:ShowTerm(key)
   end
 end
 

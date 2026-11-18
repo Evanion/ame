@@ -134,8 +134,50 @@ function Help.Explain(frame, key)
   end
   W.Tooltip(frame, function(tip)
     W.TipText(tip, term[1], term[2])
+    tip:AddLine(L["Right-click: open it in the Guide's glossary"], 0.5, 0.5, 0.5)
   end, "ANCHOR_TOP")
+  -- right-click: the term's glossary entry on the Guide tab
+  frame:HookScript("OnMouseUp", function(_, button)
+    if button == "RightButton" and ns.UI and ns.UI.ShowGuide then
+      ns.UI:ShowGuide(key)
+    end
+  end)
 end
+
+-- the glossary at the end of the Guide: every explained term, in this order
+Help.GLOSSARY = {
+  "market",
+  "min",
+  "avg",
+  "vsAvg",
+  "change7",
+  "vol30",
+  "qty",
+  "sellRate",
+  "signal",
+  "score",
+  "phase",
+  "age",
+  "name",
+  "posting",
+  "candles",
+  "arbBuy",
+  "arbSell",
+  "arbNet",
+  "arbProfit",
+  "arbMargin",
+  "arbSupply",
+  "arbDeposit",
+  "arbDepth",
+  "arbSellRate",
+  "arbAge",
+  "pfValue",
+  "pfCost",
+  "pfUnrealized",
+  "pfProfit",
+  "pfFlow",
+  "pfDays",
+}
 
 Help.GUIDE = {
   {
@@ -185,7 +227,18 @@ function Help.CreateGuide(parent, contentArea)
   content:SetSize(2 * Help.GUIDE_COLUMN + Help.GUIDE_GAP, 1)
   scroll:SetScrollChild(content)
   v.scroll, v.content, v.sections = scroll, content, {}
+  local sections = {}
   for _, section in ipairs(Help.GUIDE) do
+    sections[#sections + 1] = section
+  end
+  for _, key in ipairs(Help.GLOSSARY) do
+    local term = Help.TERMS[key]
+    if term then
+      sections[#sections + 1] = { L["Glossary: %s"]:format(term[1]), term[2], key = key }
+    end
+  end
+  v.byKey = {}
+  for _, section in ipairs(sections) do
     local head = W.Text(content, "GameFontNormal")
     head:SetText(section[1])
     local body = W.Text(content, "GameFontHighlightSmall")
@@ -194,7 +247,11 @@ function Help.CreateGuide(parent, contentArea)
     body:SetJustifyH("LEFT")
     body:SetSpacing(2)
     body:SetText(section[2])
-    v.sections[#v.sections + 1] = { head = head, body = body }
+    local entry = { head = head, body = body, key = section.key }
+    v.sections[#v.sections + 1] = entry
+    if section.key then
+      v.byKey[section.key] = entry
+    end
   end
   v.credits = W.Text(content, "GameFontDisableSmall")
   v.credits:SetText(
@@ -230,6 +287,7 @@ function Help.CreateGuide(parent, contentArea)
       local c = cols[2] < cols[1] and 2 or 1
       s.head:ClearAllPoints()
       s.head:SetPoint("TOPLEFT", (c - 1) * (Help.GUIDE_COLUMN + Help.GUIDE_GAP), -cols[c])
+      s.y = cols[c]
       cols[c] = cols[c] + (s.head:GetStringHeight() or 14) + 4 + (s.body:GetStringHeight() or 40) + 18
     end
     local bottom = math.max(cols[1], cols[2])
@@ -241,6 +299,20 @@ function Help.CreateGuide(parent, contentArea)
   v:HookScript("OnShow", function(self)
     self:Layout()
   end)
+  -- scroll to a glossary entry and mark it
+  function v:ShowTerm(key)
+    local entry = self.byKey[key]
+    if not entry then
+      return
+    end
+    self:Layout()
+    setScroll(entry.y or 0)
+    for _, s in ipairs(self.sections) do
+      s.head:SetTextColor(1, 0.82, 0)
+    end
+    entry.head:SetTextColor(0.2, 0.8, 1)
+    self.term = key
+  end
   v:EnableMouseWheel(true)
   v:SetScript("OnMouseWheel", function(_, delta)
     setScroll((scroll:GetVerticalScroll() or 0) - delta * 40)

@@ -199,6 +199,7 @@ end
 -- read rows first..last (missing rows are skipped) into one full snapshot, time-sliced
 function Ingest:read(first, last, total, getInfo)
   self.reading, self.aborted = true, false
+  self.progress = { done = 0, total = total } -- read so far (the window's status row shows it)
   local t = self.now()
   if self.onReadStart then
     self.onReadStart(total)
@@ -214,12 +215,14 @@ function Ingest:read(first, last, total, getInfo)
         acc:Add(itemID, buyout, count)
       end
       if i % 64 == 0 then
+        self.progress.done = i - first + 1
         job:Checkpoint()
       end
     end
     if self.aborted then
       return nil
     end
+    self.progress.done = total
     job:Checkpoint()
     return acc:Finish()
   end, function(ok, snap)

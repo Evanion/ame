@@ -258,6 +258,32 @@ function W.ExportBox(title, text)
   return box
 end
 
+-- A one-time hint: a small callout above a frame, shown until "Got it" is clicked (remembered per account under
+-- Settings "hintsSeen"). Returns the callout (nil when already seen).
+function W.Hint(anchor, key, text)
+  local seen = ns.Settings:Table("hintsSeen")
+  if seen[key] then
+    return nil
+  end
+  local tip = CreateFrame("Frame", nil, anchor, "BackdropTemplate")
+  W.Skin(tip, { 0.1, 0.12, 0.16, 0.97 }, W.COLORS.accent)
+  tip:SetFrameStrata("DIALOG")
+  tip:SetSize(300, 64)
+  tip:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", 0, 6)
+  tip.text = W.Text(tip, "GameFontHighlightSmall")
+  tip.text:SetPoint("TOPLEFT", 10, -8)
+  tip.text:SetPoint("RIGHT", -10, 0)
+  tip.text:SetWordWrap(true)
+  tip.text:SetText(text)
+  tip.ok = W.Button(tip, L["Got it"], 60, 18, function()
+    seen[key] = true
+    tip:Hide()
+  end)
+  tip.ok:SetPoint("BOTTOMRIGHT", -8, 6)
+  tip.key = key
+  return tip
+end
+
 -- Removable filter chips in a row, then "Clear all": chips:Set({ { label, onRemove }, ... }). chips.count: shown.
 function W.Chips(parent, onClearAll)
   local row = CreateFrame("Frame", nil, parent)
@@ -395,6 +421,10 @@ local function commas(n)
   local s = tostring(n)
   local out = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
   return (out:gsub("^,", ""))
+end
+-- a whole number with thousands separators: 12345 -> "12,345"
+function W.Thousands(n)
+  return commas(math.floor((n or 0) + 0.5))
 end
 
 function W.Money(copper, short)

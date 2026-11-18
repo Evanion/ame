@@ -45,7 +45,6 @@ L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
 L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] =
   "%s möchte Auktionspreise mit dir teilen. Öffne |cffffffff/ame|r > Sync, um zuzustimmen."
 L["(each point is one scan)"] = "(jeder Punkt ist ein Scan)"
-L["(est.)"] = "(gesch.)"
 L["(needs LibDBIcon; included in releases)"] = "(benötigt LibDBIcon; in Releases enthalten)"
 L["+ %d more"] = "+ %d weitere"
 L[", %d scans received"] = ", %d Scans empfangen"
@@ -490,14 +489,12 @@ L["scan pipeline: %d requests, %d events (%d since last request), read %s, abort
   "Scan-Pipeline: %d Anfragen, %d Events (%d seit letzter Anfrage), gelesen %s, abgebrochen %d; Ingest angefordert=%s liest=%s"
 L["scan read failed:"] = "Scan-Lesen fehlgeschlagen:"
 L["score"] = "Score"
-L["score %+d"] = "Score %+d"
 L["search"] = "suchen"
 L["selftest finished:\n%s\n\nReload the UI now to save the results?"] =
   "Selbsttest abgeschlossen:\n%s\n\nUI jetzt neu laden, um die Ergebnisse zu speichern?"
 L["selftest starting (this may pause the game for a moment)"] = "Selbsttest startet (das Spiel kann kurz stocken)"
 L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
   "Selbsttest: %d bestanden, %d Warnungen, %d fehlgeschlagen. Neu laden, um die Ergebnisse zu speichern (/reload)."
-L["sells"] = "Verkäufe"
 L["shard"] = "Shard"
 L["shared"] = "geteilt"
 L["sharing"] = "Teilen"

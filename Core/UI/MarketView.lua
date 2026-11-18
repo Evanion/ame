@@ -781,7 +781,7 @@ function UI:RenderMarket()
   t.sort.key, t.sort.ascending = q.sortKey, q.ascending
   t:SetData(list)
   t:Render()
-  t:SetMessage(nil)
+  t:SetMessage(total == 0 and L["Nothing matches these filters. Clear some (chips above) or pick All items."] or nil)
   self.offset = t:Offset()
 
   local cache = ns.ItemCache

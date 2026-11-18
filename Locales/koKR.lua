@@ -46,7 +46,6 @@ L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
 L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] =
   "%s 님이 경매 가격을 공유하려 합니다. |cffffffff/ame|r > 동기화에서 승인하세요."
 L["(each point is one scan)"] = "(각 점은 스캔 1회)"
-L["(est.)"] = "(추정)"
 L["(needs LibDBIcon; included in releases)"] = "(LibDBIcon 필요; 배포판에 포함됨)"
 L["+ %d more"] = "+ %d개 더"
 L[", %d scans received"] = ", 스캔 %d회 수신"
@@ -494,7 +493,6 @@ L["scan pipeline: %d requests, %d events (%d since last request), read %s, abort
   "스캔 파이프라인: 요청 %d, 이벤트 %d (마지막 요청 후 %d), 읽기 %s, 중단 %d; 수집 requested=%s reading=%s"
 L["scan read failed:"] = "스캔 읽기 실패:"
 L["score"] = "점수"
-L["score %+d"] = "점수 %+d"
 L["search"] = "검색"
 L["selftest finished:\n%s\n\nReload the UI now to save the results?"] =
   "자가 진단 완료:\n%s\n\n결과를 저장하려면 지금 UI를 재시작할까요?"
@@ -502,7 +500,6 @@ L["selftest starting (this may pause the game for a moment)"] =
   "자가 진단 시작 (게임이 잠시 멈출 수 있음)"
 L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
   "자가 진단: 통과 %d, 경고 %d, 실패 %d. 결과를 저장하려면 재시작하세요 (/reload)."
-L["sells"] = "판매"
 L["shard"] = "샤드"
 L["shared"] = "공유됨"
 L["sharing"] = "공유"

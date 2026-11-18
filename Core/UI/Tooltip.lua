@@ -10,7 +10,9 @@ ns.Tooltip = Tooltip
 
 local Dim = W.Dim
 
--- Pure: tooltip rows for an item summary.
+-- Pure: tooltip rows for an item summary. Three lines by default - market (vs the average period), supply and
+-- sells per day, signal - and more with Shift (or the "always" setting): average, lowest, supply trend, volatility,
+-- score, data confidence and age.
 --   s       market summary (index item)
 --   opts    avgDays (3/7/14/30), detail (bool: full view), today (day number)
 -- returns { { left, right }, ... } (a row with only left is a plain line)
@@ -20,38 +22,41 @@ function Tooltip.Lines(s, opts)
   local function row(left, right)
     rows[#rows + 1] = { W.Color("brand", "AME") .. " " .. left, right }
   end
-  local change = s.change7 and ("  " .. W.Percent(s.change7) .. Dim(" " .. L["7d"])) or ""
-  row(L["market"], W.Money(s.market) .. change)
   local days = opts.avgDays or 7
   local avg = s["avg" .. days] or s.avg30
+  local vs = ""
+  if s.market and avg and avg > 0 and s.days ~= 1 then
+    vs = "  " .. W.Percent(s.market / avg - 1) .. Dim(" " .. L["vs %dd avg"]:format(days))
+  end
+  row(L["market"], W.Money(s.market) .. vs)
+  row(
+    L["supply"],
+    tostring(s.qty or 0) .. Dim(" " .. L["listed"]) .. (s.sellRate and ("  ·  " .. W.Rate(s.sellRate)) or "")
+  )
+  local phase = s.phase and ns.Analytics and ns.Analytics.PHASE_LABEL[s.phase]
+  local hint = not opts.detail and Dim("  " .. L["Shift: more"]) or ""
+  if s.signal and s.signal ~= "none" then
+    row(L["signal"], W.Signal(s.signal) .. (phase and Dim("  " .. phase:lower()) or "") .. hint)
+  elseif not opts.detail then
+    rows[#rows + 1] = { Dim(L["Hold Shift for more AME data"]) }
+  end
+  if not opts.detail then
+    return rows
+  end
   if avg then
     row(L["%d-day average"]:format(days), W.Money(avg))
   end
-  local phase = s.phase and ns.Analytics and ns.Analytics.PHASE_LABEL[s.phase]
-  if s.signal and s.signal ~= "none" then
-    row(
-      L["signal"],
-      W.Signal(s.signal)
-        .. (phase and Dim("  " .. phase:lower()) or "")
-        .. (opts.detail and Dim("  " .. L["score %+d"]:format(s.score or 0)) or "")
-    )
-  end
-  if not opts.detail then
-    rows[#rows + 1] = { Dim(L["Hold Shift for more AME data"]) }
-    return rows
-  end
   row(L["lowest"], W.Money(s.min))
-  local trend = s.supplyTrend30 and ("  " .. W.Percent(s.supplyTrend30 * 7, 0) .. Dim(L["/week"])) or ""
-  row(L["supply"], tostring(s.qty or 0) .. Dim(" " .. L["listed"]) .. trend)
-  if s.sellRate then
-    row(L["sells"], W.Rate(s.sellRate) .. Dim(" " .. L["(est.)"]))
+  if s.change7 then
+    row(L["7d change"], W.Percent(s.change7))
+  end
+  if s.supplyTrend30 then
+    row(L["supply trend"], W.Percent(s.supplyTrend30 * 7, 0) .. Dim(L["/week"]))
   end
   if s.vol30 then
     row(L["volatility"], ("%.1f%%"):format(s.vol30 * 100))
   end
-  if s.signal == "none" or not s.signal then
-    row(L["score"], ("%+d"):format(s.score or 0))
-  end
+  row(L["score"], ("%+d"):format(s.score or 0))
   local seen = ns.Widgets.DaysAgo(s.day, opts.today)
   if seen then
     local level = ns.Analytics and ns.Analytics.Confidence(s, opts.today) or nil
