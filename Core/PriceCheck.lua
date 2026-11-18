@@ -264,13 +264,13 @@ function PC:OnChat(event, msg, sender)
   if not query then
     return
   end
-  if isMe(sender) then
-    if channel ~= "WHISPER" and ns.AME then
-      ns.AME.Say("%s", (self:Answer(query))) -- your own: just for you
-    end
+  -- your own !pc is answered in the channel you asked in (by you, or by whoever has fresher data), setting or not:
+  -- you asked there, so it's for the group
+  local mine = isMe(sender)
+  if mine and channel == "WHISPER" then
     return
   end
-  local on = ns.Settings:Get(channel == "WHISPER" and "priceCheckWhisper" or "priceCheck")
+  local on = mine or ns.Settings:Get(channel == "WHISPER" and "priceCheckWhisper" or "priceCheck")
   if not on or blocked(sender) or (channel == "WHISPER" and not self:Known(sender)) then
     return
   end

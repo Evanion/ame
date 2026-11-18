@@ -257,7 +257,7 @@ describe("PriceCheck", function()
       assert.are.equal("Abe", said[1].who)
     end)
 
-    it("stays quiet when off, for its own !pc, and for repeats", function()
+    it("stays quiet when off, and for repeats", function()
       client("Abe", 0, { off = true })
       chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
       run(clock + 10)
@@ -265,15 +265,29 @@ describe("PriceCheck", function()
 
       network = {}
       client("Abe", 0)
-      chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Abe") -- my own: shown to me only
-      run(clock + 10)
-      assert.are.equal(0, #said)
-
       chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
       run(clock + 10)
       chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
       run(clock + 10)
       assert.are.equal(1, #said)
+    end)
+
+    it("your own !pc is answered in the channel you asked in, even with price checks off", function()
+      client("Abe", 0, { off = true })
+      chat("CHAT_MSG_PARTY", "!pc Linen Cloth", "Abe")
+      run(clock + 10)
+      assert.are.equal(1, #said)
+      assert.are.equal("PARTY", said[1].channel)
+      assert.are.equal("Abe", said[1].who)
+    end)
+
+    it("your own !pc: a party member with fresher data answers instead", function()
+      client("Abe", 4, { off = true })
+      client("Zed", 0)
+      chat("CHAT_MSG_PARTY", "!pc Linen Cloth", "Abe")
+      run(clock + 10)
+      assert.are.equal(1, #said)
+      assert.are.equal("Zed", said[1].who)
     end)
 
     it("whispers are answered directly, for players it knows, when whispers are on", function()

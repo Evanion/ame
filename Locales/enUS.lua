@@ -537,7 +537,7 @@ L["What the item typically sells for right now. From full listing data it's the 
 L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."] = true
 L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."] = true
 L["When"] = true
-L["When someone types !pc and an item (link or name), AME answers with its prices at your faction's auction house. If several players run AME, only one of you answers. Your own !pc is shown only to you."] = true
+L["When someone types !pc and an item (link or name), AME answers with its prices at your faction's auction house. If several players run AME, only one of you answers. Your own !pc is always answered in the channel you asked in, even with this off."] = true
 L["Where the data comes from"] = true
 L["Window"] = true
 L["Within its usual range"] = true
