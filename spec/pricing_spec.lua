@@ -93,6 +93,48 @@ describe("Pricing", function()
       P.Learn(p, nil, true) -- a listing without a recorded chance teaches nothing
       assert.are.equal(10, p.no)
     end)
+
+    it("learns how fast your listings sell against the prediction, and speeds up its estimates", function()
+      local p = P.NewProfile()
+      local base = P.Params(p, nil, { sellRate = 24 })
+      for _ = 1, 6 do
+        assert.is_true(P.LearnSpeed(p, 10, "exact", 5)) -- predicted 10 h, sold in 5 h
+      end
+      assert.truthy(p.speed > 0.5)
+      assert.are.equal(6, p.sn)
+      local faster = P.Params(p, nil, { sellRate = 24 })
+      assert.truthy(faster.demand > base.demand * 1.5) -- it sells faster than the scans alone say
+      local t = 1795000000
+      assert.truthy(P.Hours(faster, 20, t) < P.Hours(base, 20, t))
+    end)
+
+    it("slows down after expiries, and learns from mail-only sales only when they beat the prediction", function()
+      local p = P.NewProfile()
+      assert.is_true(P.LearnSpeed(p, 4, "expired", 24)) -- predicted 4 h, didn't sell in 24 h
+      assert.truthy(p.speed < 0)
+      local q = P.NewProfile()
+      assert.is_false(P.LearnSpeed(q, 30, "expired", 24)) -- it wasn't expected to sell in time
+      assert.is_false(P.LearnSpeed(q, 3, "within", 10)) -- sold within 10 h, predicted 3 h: no news
+      assert.are.equal(0, q.sn)
+      assert.is_true(P.LearnSpeed(q, 20, "within", 10)) -- sold within 10 h, predicted 20 h: faster
+      assert.truthy(q.speed > 0)
+      assert.is_false(P.LearnSpeed(q, nil, "exact", 3)) -- a listing without a prediction teaches nothing
+      for _ = 1, 50 do
+        P.LearnSpeed(q, 100, "exact", 0.1)
+      end
+      assert.are.equal(P.SPEED_LIMIT, q.speed) -- kept within bounds
+    end)
+
+    it("lends a category's speed to items without outcomes of their own", function()
+      local fast = P.NewProfile()
+      for _ = 1, 5 do
+        P.LearnSpeed(fast, 10, "exact", 4)
+      end
+      local prior = P.Prior({ fast })
+      assert.truthy(prior.speed > 0)
+      local fresh = P.Params(P.NewProfile(), prior, { sellRate = 24 })
+      assert.truthy(fresh.demand > 1) -- 24/day = 1/h, sped up by the category
+    end)
   end)
 
   describe("blending with the category", function()
@@ -184,12 +226,16 @@ describe("Pricing", function()
     P.Observe(p, obs(MONDAY_NOON + 2 * H, 95, { 4, 4, 6, 16, 26 }))
     P.Observe(p, obs(MONDAY_NOON + 4 * H, 95, { 2, 2, 4, 14, 24 }))
     P.Learn(p, 0.6, true)
+    P.LearnSpeed(p, 12, "exact", 6)
     local s = P.Encode(p)
     assert.truthy(#s < 200)
     local q = P.Decode(s)
     assert.are.equal(p.n, q.n)
     assert.near(p.demand, q.demand, p.demand * 1e-3)
     assert.near(p.calib, q.calib, 1e-3)
+    assert.near(p.speed, q.speed, 1e-3)
+    assert.are.equal(1, q.sn)
+    assert.are.equal(0, P.Decode("3,1,0,0,0,0,0;;;;").sn) -- profiles saved before speed learning
     assert.are.same(p.last.ladder, q.last.ladder)
     assert.are.equal(p.hn, q.hn)
     assert.near(p.hd[15] or 1, q.hd[15], 1e-3)

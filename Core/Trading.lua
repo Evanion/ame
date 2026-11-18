@@ -342,6 +342,9 @@ function Trading:ScanMail()
       }
       if self.ledger:AddInvoice(entry, claimed) then
         added = added + 1
+        if entry.kind == "sale" and ns.Posting then
+          ns.Posting:OnOutcome(itemName, true, t) -- sold some time before this mail arrived
+        end
       end
     end
   end

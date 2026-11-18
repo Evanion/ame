@@ -9,8 +9,9 @@
 --
 -- Adaptive: every item has a profile learned from consecutive scans (sales rate, how fast and how deep it gets
 -- undercut, which hours and weekdays it sells in) and from your own listings (did items posted at a suggested
--- chance actually sell?). Items with little data borrow their category's behaviour until their own numbers take
--- over (shrinkage), so a new item gets sensible advice and a well-known one gets its own.
+-- chance actually sell? and how fast, against how fast the model expected - Pricing.LearnSpeed). Items with
+-- little data borrow their category's behaviour until their own numbers take over (shrinkage), so a new item gets
+-- sensible advice and a well-known one gets its own.
 --
 --   obs     = { t, min, qty, ladder = { units at or below min * (1 + band) for each of BANDS } }   one scan
 --   profile = Pricing.NewProfile(), updated by Pricing.Observe(profile, obs) and Pricing.Learn(profile, chance, sold)
@@ -31,6 +32,9 @@ Pricing.PRIOR_WEIGHT = 5 -- observations before an item's own rates outweigh its
 Pricing.SHAPE_WEIGHT = 20 -- same for the hour-of-day shape (weekday: half of it)
 Pricing.OUTCOME_WEIGHT = 5 -- same for the calibration from your own listings
 Pricing.LEARN_RATE = 0.3 -- calibration step per listing outcome
+Pricing.SPEED_RATE = 0.3 -- speed step per listing outcome (in log units: 0.3 of the log of predicted / actual hours)
+Pricing.SPEED_WEIGHT = 5 -- listing outcomes before an item's own speed outweighs its category's
+Pricing.SPEED_LIMIT = 2 -- speed factor kept within e^-2 .. e^2 (about 7x slower .. 7x faster than the scans say)
 Pricing.QUICK_HOURS, Pricing.QUICK_CHANCE = 4, 0.85 -- "Quick": sells within this many hours this surely
 Pricing.PATIENT_CHANCE = 0.5 -- "Patient": the highest price that still sells within the listing time half the time
 Pricing.HOLD_CHANCE = 0.25 -- below this at the best price: advise holding
@@ -50,7 +54,21 @@ local function weekdayOf(t)
 end
 
 function Pricing.NewProfile()
-  return { n = 0, demand = 0, inflow = 0, cut = 0, cuts = 0, calib = 0, no = 0, hn = 0, wn = 0, hd = {}, wd = {} }
+  return {
+    n = 0,
+    demand = 0,
+    inflow = 0,
+    cut = 0,
+    cuts = 0,
+    calib = 0,
+    no = 0,
+    speed = 0, -- log factor on the sales rate, learned from how fast your listings sold
+    sn = 0, -- listing outcomes behind it
+    hn = 0,
+    wn = 0,
+    hd = {},
+    wd = {},
+  }
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -187,6 +205,40 @@ function Pricing.Learn(p, chance, sold)
   p.no = p.no + 1
 end
 
+-- How fast one of your listings sold, against how fast the model expected (hours to sell, predicted when posting):
+--   kind "exact":   it sold after `hours` (the game said so while you were online)
+--   kind "within":  it sold within `hours` (learned from the auction mail later: the exact time is unknown)
+--   kind "expired": it didn't sell within its `hours` of listing time
+-- The item's speed moves toward what happened, as a factor on its sales rate: sold twice as fast as predicted, a
+-- few times over, and its sales rate (and so every "sells in" and the posting prices) doubles. A bound only
+-- teaches when the prediction was on the wrong side of it.
+function Pricing.LearnSpeed(p, expected, kind, hours)
+  if not (expected and expected > 0 and hours) then
+    return false
+  end
+  hours = max(hours, 0.05)
+  local r
+  if kind == "exact" then
+    r = log(expected / hours)
+  elseif kind == "within" then
+    if expected <= hours then
+      return false -- it sold in time, as predicted: no news
+    end
+    r = log(expected / hours) -- faster than predicted, at least this much
+  elseif kind == "expired" then
+    if expected >= hours then
+      return false -- predicted not to sell in time: no news
+    end
+    r = log(expected / hours) -- slower than predicted, at least this much (negative)
+  else
+    return false
+  end
+  r = clamp(r, -log(8), log(8))
+  p.speed = clamp((p.speed or 0) + Pricing.SPEED_RATE * r, -Pricing.SPEED_LIMIT, Pricing.SPEED_LIMIT)
+  p.sn = (p.sn or 0) + 1
+  return true
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- category behaviour and the blend
 
@@ -194,6 +246,7 @@ end
 -- sold), undercut size, calibration, and hour / weekday shapes.
 function Pricing.Prior(profiles)
   local comp, cw, cut, kw, calib, no = 0, 0, 0, 0, 0, 0
+  local speed, sn = 0, 0
   local hd, hw, wd, ww = {}, 0, {}, 0
   for _, p in ipairs(profiles) do
     if p.n >= 3 and p.demand > 0 then
@@ -204,6 +257,9 @@ function Pricing.Prior(profiles)
     end
     if p.no > 0 then
       calib, no = calib + p.calib * p.no, no + p.no
+    end
+    if (p.sn or 0) > 0 then
+      speed, sn = speed + p.speed * p.sn, sn + p.sn
     end
     if p.hn >= 5 then
       for h = 1, 24 do
@@ -223,6 +279,7 @@ function Pricing.Prior(profiles)
     comp = cw > 0 and comp / cw or d.comp,
     cut = kw > 0 and cut / kw or d.cut,
     calib = no > 0 and calib / no or d.calib,
+    speed = sn > 0 and speed / sn or 0,
     hd = {},
     wd = {},
     n = cw,
@@ -251,6 +308,10 @@ function Pricing.Params(p, prior, summary)
   else
     demand = longRun or 0
   end
+  -- how fast your own listings sold against the model's expectation (the item's own, blended with its category's)
+  local sw = (p.sn or 0) / ((p.sn or 0) + Pricing.SPEED_WEIGHT)
+  local speed = sw * (p.speed or 0) + (1 - sw) * (prior.speed or 0)
+  demand = demand * exp(speed)
   local comp = prior.comp
   if p.n > 0 and p.demand > 0 then
     comp = w * min(p.inflow / p.demand, 3) + (1 - w) * prior.comp
@@ -260,6 +321,7 @@ function Pricing.Params(p, prior, summary)
     inflow = comp * demand,
     cut = p.cut > 0 and (w * p.cut + (1 - w) * prior.cut) or prior.cut,
     cuts = p.cuts,
+    speed = speed,
     hd = {},
     wd = {},
     n = p.n,
@@ -451,7 +513,17 @@ end
 function Pricing.Encode(p)
   local l = p.last or {}
   return table.concat({
-    table.concat({ num(p.n), num(p.demand), num(p.inflow), num(p.cut), num(p.cuts), num(p.calib), num(p.no) }, ","),
+    table.concat({
+      num(p.n),
+      num(p.demand),
+      num(p.inflow),
+      num(p.cut),
+      num(p.cuts),
+      num(p.calib),
+      num(p.no),
+      num(p.speed),
+      num(p.sn),
+    }, ","),
     table.concat({ num(l.t), num(l.min), num(l.qty) }, ","),
     l.ladder and list(l.ladder, #Pricing.BANDS, 0) or "",
     p.hn > 0 and (num(p.hn) .. "," .. list(p.hd, 24, 1)) or "",
@@ -487,6 +559,7 @@ function Pricing.Decode(s)
   local p = Pricing.NewProfile()
   p.n, p.demand, p.inflow, p.cut, p.cuts, p.calib, p.no =
     a[1] or 0, a[2] or 0, a[3] or 0, a[4] or 0, a[5] or 0, a[6] or 0, a[7] or 0
+  p.speed, p.sn = a[8] or 0, a[9] or 0
   if l[1] and l[1] > 0 then
     p.last = { t = l[1], min = l[2], qty = l[3], ladder = #ladder > 0 and ladder or nil }
   end

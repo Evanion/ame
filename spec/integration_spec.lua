@@ -1354,10 +1354,20 @@ describe("addon in a stubbed client", function()
       assert.are.equal(1, #AME_DB.listings)
       assert.are.equal(24, AME_DB.listings[1].hours)
       assert.is_number(AME_DB.listings[1].chance)
-      -- it sold: the outcome calibrates the item
+      local expect = AME_DB.listings[1].expect
+      assert.is_number(expect) -- the hours it should take, as predicted when posted
+      -- it sold right away: the outcome calibrates the item, and the speed learns it sells faster than predicted
+      env.now = env.now + 60
       env:fire("CHAT_MSG_SYSTEM", "A buyer has been found for your auction of Item 2589.")
       assert.are.equal(0, #AME_DB.listings)
-      assert.are.equal(1, ns.Posting:Profile(shard, 2589).no)
+      local learned = ns.Posting:Profile(shard, 2589)
+      assert.are.equal(1, learned.no)
+      assert.are.equal(1, learned.sn)
+      assert.truthy(learned.speed > 0)
+      -- a sale found only in the auction mail (you were offline): it sold some time before the mail
+      C_AuctionHouse.PostCommodity({ itemID = 2589 }, 3, 5, advice.normal.price)
+      assert.is_not_nil(ns.Posting:OnOutcome("Item 2589", true, env.now + 3600))
+      assert.are.equal(0, #AME_DB.listings)
 
       -- the item view shows it under the chart
       ns.UI:Toggle()

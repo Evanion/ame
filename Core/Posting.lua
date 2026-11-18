@@ -181,14 +181,19 @@ function Posting:Suggest(shard, itemID, qty, hours)
 end
 
 -- the model's chance that a post at `price` sells within its listing time (recorded with each listing you make)
+-- and the hours it should take to sell (nil: not within a week)
 function Posting:ChanceAt(shard, itemID, qty, hours, price)
   local advice = self:Suggest(shard, itemID, qty, hours)
   if not advice then
     return nil
   end
   local need = ns.Pricing.Ahead(advice.book, price) + qty
-  return ns.Pricing.Chance(advice.params, need, hours, now())
+  local t = now()
+  return ns.Pricing.Chance(advice.params, need, hours, t), ns.Pricing.Hours(advice.params, need, t)
 end
+
+Posting.WEEK_HOURS = 168
+Posting.KEEP_LISTING = 31 * 86400 -- listings wait this long for word (auction mail is kept 30 days)
 
 ---------------------------------------------------------------------------------------------------------------------
 -- your listings and how they went
@@ -199,7 +204,7 @@ function Posting:Record(itemID, unit, qty, hours)
   end
   local shard = ns.AME:CurrentShard()
   -- never let a model error get in the way of posting: record the listing without its chance, and report it
-  local ok, chance = pcall(self.ChanceAt, self, shard, itemID, qty or 1, hours, unit)
+  local ok, chance, expect = pcall(self.ChanceAt, self, shard, itemID, qty or 1, hours, unit)
   if not ok then
     ns.AME:ReportError("posting price", chance)
   end
@@ -212,25 +217,38 @@ function Posting:Record(itemID, unit, qty, hours)
     t = now(),
     shard = shard,
     chance = ok and chance or nil,
+    expect = ok and chance and (expect or Posting.WEEK_HOURS) or nil, -- hours to sell, as predicted when posted
   })
 end
 
--- the game said an auction of `name` sold (or expired): learn from the oldest matching listing
-function Posting:OnOutcome(name, sold)
+-- An auction of `name` sold (or expired): learn from the oldest matching listing - whether it sold (calibration)
+-- and how fast (speed).
+--   mailTime: the sale came from the auction mail (sold some time before then: only a bound), not from the chat
+--             message the game shows the moment it sells
+function Posting:OnOutcome(name, sold, mailTime)
   local list = AME_DB.listings
   local t = now()
-  for i = #list, 1, -1 do -- listings past their time (+ a margin) ended without word: cancelled, or missed
-    local l = list[i]
-    if t - l.t > (l.hours or 48) * 3600 + 3600 then
+  for i = #list, 1, -1 do -- listings that never got word (cancelled, or the mail was never opened)
+    if t - list[i].t > Posting.KEEP_LISTING then
       table.remove(list, i)
     end
   end
   for i, l in ipairs(list) do
     l.name = l.name or itemName(l.itemID)
-    if l.name == name then
+    local ends = l.t + (l.hours or 48) * 3600 + 3600
+    -- live news only matches a listing still running; mail matches one posted before the mail
+    local fits = mailTime and l.t <= mailTime or (not mailTime and t <= ends)
+    if l.name == name and fits then
       table.remove(list, i)
       local p = self:Profile(l.shard, l.itemID)
       ns.Pricing.Learn(p, l.chance, sold)
+      if sold and mailTime then
+        ns.Pricing.LearnSpeed(p, l.expect, "within", (mailTime - l.t) / 3600)
+      elseif sold then
+        ns.Pricing.LearnSpeed(p, l.expect, "exact", (t - l.t) / 3600)
+      else
+        ns.Pricing.LearnSpeed(p, l.expect, "expired", l.hours or 48)
+      end
       self:Save(l.shard, l.itemID, p)
       self.priors[l.shard] = nil
       return l
