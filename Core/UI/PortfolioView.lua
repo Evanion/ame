@@ -32,9 +32,12 @@ local POSITION_COLS = {
   {
     key = "signal",
     label = L["Signal"],
-    width = 50,
-    format = "signal",
+    width = 64,
+    align = "LEFT",
     term = "signal",
+    text = function(e)
+      return W.SignalGlyph(e.signal)
+    end,
     sortKey = "signalRank",
     ascendingFirst = true,
   },
@@ -244,7 +247,7 @@ function UI:CreatePortfolioView(parent, contentArea)
   local v = contentArea(parent)
   self.pfView = v
   self.pfMode, self.pfScope, self.pfPeriod = "positions", "account", 30
-  local slots = UI.Slots(v, { header = 42, toolbar = 22, status = true })
+  local slots = UI.Slots(v, { header = 42, headerBelow = true, toolbar = 22, status = true })
   v.slots = slots
   v.cardRow = W.CardRow(slots.header, {
     { L["Holdings value"], term = "pfValue" },
@@ -256,6 +259,9 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.cardRow:SetPoint("TOPLEFT", 0, 0)
   v.cardRow:SetPoint("RIGHT", 0, 0)
   v.cards = v.cardRow.cards
+  -- the listed card: the count as a small line beside the value
+  v.cards[2].sub = W.Text(v.cards[2], "GameFontDisableSmall")
+  v.cards[2].sub:SetPoint("LEFT", v.cards[2].value, "RIGHT", 6, 0)
   -- listed: per-character breakdown on hover
   W.Tooltip(v.cards[2], function(tip)
     local l = UI.pfListed
@@ -310,6 +316,28 @@ function UI:CreatePortfolioView(parent, contentArea)
     UI:RefreshPortfolio()
   end, { neutral = true })
   v.scope:SetPoint("RIGHT", v.period, "LEFT", -6, 0)
+  v.periodSeg = W.Segmented(bar, PERIODS, {
+    onSelect = function(value)
+      UI.pfPeriod, UI.pfOffset = value, 0
+      UI:RefreshPortfolio()
+    end,
+  })
+  v.periodSeg:SetPoint("RIGHT", v.export, "LEFT", -10, 0)
+  v.scopeSeg = W.Segmented(bar, { { "account", L["Account"] }, { "char", L["This character"] } }, {
+    onSelect = function(value)
+      UI.pfScope, UI.pfOffset = value, 0
+      UI:RefreshPortfolio()
+    end,
+  })
+  v.scopeSeg:SetPoint("RIGHT", v.periodSeg, "LEFT", -10, 0)
+  function v:SetCompact(on)
+    slots:SetCompact(on)
+    self.scope:SetShown(on)
+    self.period:SetShown(on)
+    self.scopeSeg:SetShown(not on)
+    self.periodSeg:SetShown(not on)
+  end
+  v:SetCompact(slots.compact)
 
   local main = slots.main
   local function itemID(e)
@@ -444,15 +472,15 @@ function UI:RenderPortfolio()
   end
   v.period:SetValue(self.pfPeriod)
   v.scope:SetValue(self.pfScope)
+  v.periodSeg:Select(self.pfPeriod, true)
+  v.scopeSeg:Select(self.pfScope, true)
   v.cards[1].value:SetText(W.Money(t.value, true))
-  v.cards[2].value:SetText(
-    l.count > 0 and W.Money(l.value, true) .. "  " .. W.Dim(L["%d auctions"]:format(l.count))
-      or W.Color("none", L["none"])
-  )
+  v.cards[2].value:SetText(l.count > 0 and W.Money(l.value, true) or W.Color("none", L["none"]))
+  v.cards[2].sub:SetText(l.count > 0 and L["%d auctions"]:format(l.count) or "")
   v.cards[3].value:SetText(W.SignedMoney(t.unrealized))
-  v.cards[4].label:SetText(L["Realized profit, %s"]:format(periodLabel or ""))
+  v.cards[4].label:SetText(L["Realized profit  ·  %s"]:format(periodLabel or ""))
   v.cards[4].value:SetText(W.SignedMoney(sum.profit))
-  v.cards[5].label:SetText(L["Sold / bought, %s"]:format(periodLabel or ""))
+  v.cards[5].label:SetText(L["Sold / bought  ·  %s"]:format(periodLabel or ""))
   v.cards[5].value:SetText(W.Money(sum.income or 0, true) .. " / " .. W.Money(sum.spent or 0, true))
   local mode = self.pfMode
   local ledgerMode, auctionsMode = mode == "ledger", mode == "auctions"

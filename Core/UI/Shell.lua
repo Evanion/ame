@@ -131,11 +131,14 @@ function UI.Slots(v, opts)
     y = y - h - GAP
     return f
   end
-  if opts.header then
+  if opts.header and not opts.headerBelow then
     s.header = bar(opts.header)
   end
   if opts.toolbar then
     s.toolbar = bar(opts.toolbar)
+  end
+  if opts.header and opts.headerBelow then -- under the toolbar
+    s.header = bar(opts.header)
   end
   if opts.chips then
     s.chips = bar(opts.chips)
