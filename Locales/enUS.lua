@@ -252,6 +252,7 @@ L["Last received: %d items from %s, %s"] = true
 L["Last rejected:"] = true
 L["Ledger"] = true
 L["Left-click: window   Right-click: settings"] = true
+L["Legend"] = true
 L["LibAMEChart-1.0 not loaded"] = true
 L["LibDeflate not loaded"] = true
 L["Line"] = true

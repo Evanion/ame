@@ -315,6 +315,7 @@ L["Last received: %d items from %s, %s"] = "上次接收：%d 件物品，來自
 L["Last rejected:"] = "上次拒絕："
 L["Ledger"] = "帳本"
 L["Left-click: window   Right-click: settings"] = "左鍵：視窗   右鍵：設定"
+L["Legend"] = "圖例"
 L["LibAMEChart-1.0 not loaded"] = "LibAMEChart-1.0 未載入"
 L["LibDeflate not loaded"] = "LibDeflate 未載入"
 L["Line"] = "折線"

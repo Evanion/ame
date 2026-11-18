@@ -580,7 +580,7 @@ describe("addon in a stubbed client", function()
         drainJobs()
         local v = ns.UI.itemView
         assert.is_true(v.sidebar:IsShown())
-        assert.is_false(v.summary:IsShown())
+        assert.is_false(v.summaryBar:IsShown())
         assert.are.same({ "BOTTOMRIGHT", -(ns.UI.ITEM_SIDEBAR + ns.UI.SLOT_GAP), 0 }, v.slots.main.points[2])
         -- the call, with why in plain words, in the first card; every card sizes itself to its contents
         assert.truthy(v.call.text:find("HOLD") or v.call.text:find("BUY") or v.call.text:find("SELL"), v.call.text)
@@ -609,16 +609,24 @@ describe("addon in a stubbed client", function()
         ns.UI.frame:SetSize(800, 500)
         ns.UI:OnResize(800)
         assert.is_false(v.sidebar:IsShown())
-        assert.is_true(v.summary:IsShown())
+        assert.is_true(v.summaryBar:IsShown())
         assert.truthy(v.summary.text:find("Market"))
+        assert.truthy(v.summary.text:find("Post at"))
         assert.are.same({ "BOTTOMRIGHT", 0, 0 }, v.slots.main.points[2]) -- the chart takes the width
+        local hp = ns.UI.chartHolder.points
+        assert.are.same({ "BOTTOMRIGHT", 0, ns.UI.ITEM_SUMMARY_H + 6 }, hp[#hp]) -- above the summary bar
+        -- the legend folds into a button on the small chart
+        assert.is_true(v.legendToggle:IsShown())
+        assert.is_false(v.legendBox:IsShown())
+        v.legendToggle.scripts.OnClick(v.legendToggle)
+        assert.is_true(v.legendBox:IsShown())
         v.details.scripts.OnClick(v.details)
         assert.is_true(v.sidebar:IsShown()) -- over the chart
         v.details.scripts.OnClick(v.details)
         assert.is_false(v.sidebar:IsShown())
         ns.UI:OnResize(1000)
         assert.is_true(v.sidebar:IsShown())
-        assert.is_false(v.summary:IsShown())
+        assert.is_false(v.summaryBar:IsShown())
       end)
 
       it("the footer is the window's: each tab's status text on the left, version on the right", function()

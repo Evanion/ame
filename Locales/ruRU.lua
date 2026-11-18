@@ -336,6 +336,7 @@ L["Last received: %d items from %s, %s"] = "Последнее полученн�
 L["Last rejected:"] = "Последнее отклонённое:"
 L["Ledger"] = "Журнал"
 L["Left-click: window   Right-click: settings"] = "ЛКМ: окно   ПКМ: настройки"
+L["Legend"] = "Легенда"
 L["LibAMEChart-1.0 not loaded"] = "LibAMEChart-1.0 не загружена"
 L["LibDeflate not loaded"] = "LibDeflate не загружена"
 L["Line"] = "Линия"

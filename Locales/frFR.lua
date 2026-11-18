@@ -319,6 +319,7 @@ L["Last received: %d items from %s, %s"] = "Dernière réception : %d objets de 
 L["Last rejected:"] = "Dernier rejet :"
 L["Ledger"] = "Journal"
 L["Left-click: window   Right-click: settings"] = "Clic gauche : fenêtre   Clic droit : paramètres"
+L["Legend"] = "Légende"
 L["LibAMEChart-1.0 not loaded"] = "LibAMEChart-1.0 non chargée"
 L["LibDeflate not loaded"] = "LibDeflate non chargée"
 L["Line"] = "Ligne"

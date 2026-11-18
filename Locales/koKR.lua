@@ -320,6 +320,7 @@ L["Last received: %d items from %s, %s"] = "마지막 수신: 아이템 %d개, %
 L["Last rejected:"] = "마지막 거부:"
 L["Ledger"] = "거래 장부"
 L["Left-click: window   Right-click: settings"] = "왼쪽 클릭: 창   오른쪽 클릭: 설정"
+L["Legend"] = "범례"
 L["LibAMEChart-1.0 not loaded"] = "LibAMEChart-1.0 불러오지 못함"
 L["LibDeflate not loaded"] = "LibDeflate 불러오지 못함"
 L["Line"] = "선"

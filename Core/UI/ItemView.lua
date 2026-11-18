@@ -18,6 +18,7 @@ local INTRADAY = "2D"
 -- Details), main (the chart, with its legend as an overlay), right sidebar (verdict, key numbers, post at, watch and
 -- alerts), status line (data confidence, last seen, outliers).
 UI.ITEM_SIDEBAR = 280
+UI.ITEM_SUMMARY_H = 28 -- the compact layout's summary bar under the chart
 
 function UI:CreateItemView(parent)
   local v = contentArea(parent)
@@ -103,22 +104,32 @@ function UI:CreateItemView(parent)
     end,
   })
   ns.Help.Explain(v.style, "candles") -- right-aligned, apart from the ranges (placed in SetCompact)
-  -- compact: the sidebar's gist on the toolbar, and a button for the whole sidebar
-  v.details = W.Button(bar, L["Details"], 64, 20, function()
+  v.style:SetPoint("RIGHT", 0, 0)
+
+  -- compact: a bar under the chart with the sidebar's gist (market, change, signal, post at) and a Details button
+  -- that opens the sidebar over the chart (the bar stays above it, so Details can close it again)
+  local sumBar = CreateFrame("Frame", nil, slots.main, "BackdropTemplate")
+  W.Skin(sumBar, W.COLORS.panel)
+  sumBar:SetHeight(UI.ITEM_SUMMARY_H)
+  sumBar:SetPoint("BOTTOMLEFT", 0, 0)
+  sumBar:SetPoint("BOTTOMRIGHT", 0, 0)
+  v.summaryBar = sumBar
+  v.details = W.Button(sumBar, L["Details"], 70, 20, function()
     slots:ToggleDetails()
     v.details:SetSelected(slots.details)
   end)
-  v.details:SetPoint("RIGHT", 0, 0)
-  v.summary = W.Text(bar, "GameFontHighlightSmall", "RIGHT")
-  v.summary:SetPoint("LEFT", v.ranges, "RIGHT", 12, 0)
-  v.summary:SetPoint("RIGHT", v.style, "LEFT", -12, 0)
+  v.details:SetPoint("RIGHT", -4, 0)
+  v.summary = W.Text(sumBar, "GameFontHighlightSmall")
+  v.summary:SetPoint("LEFT", 10, 0)
+  v.summary:SetPoint("RIGHT", v.details, "LEFT", -8, 0)
   v.summary:SetWordWrap(false)
 
   -- main: the chart fills it
   local holder = CreateFrame("Frame", nil, slots.main, "BackdropTemplate")
   W.Skin(holder, { 0.07, 0.08, 0.1, 1 }, W.COLORS.border)
   W.InnerGlow(holder)
-  holder:SetAllPoints()
+  holder:SetPoint("TOPLEFT")
+  holder:SetPoint("BOTTOMRIGHT") -- above the summary bar when narrow (SetCompact)
   self.chartHolder = holder
   local chart = LibStub("LibAMEChart-1.0"):New(holder, {
     panes = { { axis = "price", weight = 3 }, { axis = "volume", weight = 1 } },
@@ -171,11 +182,31 @@ function UI:CreateItemView(parent)
   v.legend:Hide()
   legend.rows = {}
   v.legendBox = legend
+  -- narrow: the legend folds into a small "Legend" button in the corner (the chart is small); click to open it
+  v.legendToggle = W.Button(holder, L["Legend"], 64, 18, function()
+    v.legendOpen = not v.legendOpen
+    v:ShowLegend()
+  end)
+  v.legendToggle:SetPoint("TOPLEFT", 10, -10)
+  v.legendToggle:SetFrameLevel(chart.frame:GetFrameLevel() + 3)
+  v.legendOpen = false
+  function v:ShowLegend(hovering)
+    local has = self.legend:GetText() ~= nil and self.legend:GetText() ~= ""
+    local compact = slots.compact
+    self.legendToggle:SetShown(compact and has and not hovering)
+    self.legendBox:ClearAllPoints()
+    if compact then
+      self.legendBox:SetPoint("TOPLEFT", self.legendToggle, "BOTTOMLEFT", 0, -4)
+    else
+      self.legendBox:SetPoint("TOPLEFT", 10, -10)
+    end
+    self.legendBox:SetShown(has and not hovering and (not compact or self.legendOpen))
+  end
   chart.frame:HookScript("OnEnter", function()
-    legend:Hide()
+    v:ShowLegend(true)
   end)
   chart.frame:HookScript("OnLeave", function()
-    legend:SetShown(v.legend:GetText() ~= nil and v.legend:GetText() ~= "")
+    v:ShowLegend(false)
   end)
   v.hint = W.Text(holder, "GameFontDisableSmall")
   v.hint:SetPoint("BOTTOMLEFT", 12, 26)
@@ -270,16 +301,18 @@ function UI:CreateItemView(parent)
 
   function v:SetCompact(on)
     slots:SetCompact(on)
-    self.summary:SetShown(on)
-    self.details:SetShown(on)
+    self.summaryBar:SetShown(on)
     self.details:SetSelected(false)
-    -- Line | Candles at the right end; in compact, left of the Details button
-    self.style:ClearAllPoints()
-    if on then
-      self.style:SetPoint("RIGHT", self.details, "LEFT", -8, 0)
-    else
-      self.style:SetPoint("RIGHT", 0, 0)
-    end
+    self.summaryBar:SetFrameLevel((slots.right:GetFrameLevel() or 1) + 5) -- above the Details panel
+    holder:ClearAllPoints()
+    holder:SetPoint("TOPLEFT")
+    holder:SetPoint("BOTTOMRIGHT", 0, on and (UI.ITEM_SUMMARY_H + 6) or 0)
+    -- the Details panel stops above the summary bar
+    slots.right:ClearAllPoints()
+    slots.right:SetPoint("TOPRIGHT", 0, slots.top)
+    slots.right:SetPoint("BOTTOMRIGHT", 0, slots.bottom + (on and (UI.ITEM_SUMMARY_H + 6) or 0))
+    self.legendOpen = false
+    self:ShowLegend()
   end
   v:SetCompact(slots.compact)
   chart:SetMessage(L["Pick an item: search above, Shift-click one anywhere, or click a row on the Market tab."])
@@ -380,7 +413,7 @@ function UI:DrawItemChart()
   if not series or #series == 0 then
     chart:ClearSeries()
     v.legend:SetText("")
-    v.legendBox:Hide()
+    v:ShowLegend()
     return
   end
   local candles = ns.Settings:Get("chartStyle") == "candles"
@@ -518,7 +551,7 @@ function UI:SetLegend(entries)
   end
   v.legend:SetText(table.concat(lines, "\n"))
   box:SetSize(8 + UI.LEGEND_SWATCH + 6 + widest + 10, 16 + #entries * UI.LEGEND_ROW - 2)
-  box:SetShown(#entries > 0)
+  v:ShowLegend()
 end
 
 -- Fresh listings for some items were recorded (a search, e.g. the item you're about to sell): the item on screen
@@ -816,17 +849,18 @@ end
 -- the compact layout's one-line gist of the sidebar
 function UI:UpdateItemSummary()
   local v, facts = self.itemView, self.itemFacts or {}
-  local parts = { L["Market"] .. " " .. W.Money(facts.market) }
-  if facts.change then
-    parts[#parts + 1] = W.Percent(facts.change)
-  end
-  if facts.signal then
-    parts[#parts + 1] = W.Signal(facts.signal)
+  local parts =
+    { W.Dim(L["Market"]) .. " " .. W.Money(facts.market) .. (facts.change and " " .. W.Percent(facts.change) or "") }
+  if facts.signal and facts.signal ~= "none" then
+    parts[#parts + 1] = W.SignalGlyph(facts.signal)
   end
   if facts.post then
-    parts[#parts + 1] = L["Post at"] .. " " .. W.Money(facts.post)
+    parts[#parts + 1] = W.Dim(L["Post at"])
+      .. " "
+      .. W.Money(facts.post)
+      .. (facts.postHours and " " .. W.Dim(W.Hours(facts.postHours)) or "")
   end
-  v.summary:SetText(table.concat(parts, "  ·  "))
+  v.summary:SetText(table.concat(parts, "     "))
 end
 
 -- what to post the viewed item at (one unit, your usual listing time) at the viewed auction house
@@ -846,6 +880,7 @@ function UI:UpdatePostAdvice()
   v.postHeadRow.value:SetText("")
   self.itemFacts = self.itemFacts or {}
   self.itemFacts.post = advice and advice.normal.price
+  self.itemFacts.postHours = advice and advice.normal.hours
   if not advice then
     v.post.text:SetText(W.Dim(L["not enough data yet"]))
     v.postNet:SetText(L["Search for it at the auction house, or run a full scan."])
