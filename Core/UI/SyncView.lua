@@ -265,14 +265,17 @@ function UI:RefreshSync()
     v.activity:SetText(table.concat(lines, "\n"))
   end
 
-  -- players heard from: never my own characters (heard before AME knew them, or on an alt)
-  local peers = {}
-  for _, p in ipairs(svc.trust and svc.trust:PeerList() or {}) do
-    if not svc:IsMine(p.name) then
-      peers[#peers + 1] = p
+  -- every list leaves out my own characters (this account's: listed before AME knew them, or heard on an alt)
+  local function others(list)
+    local out = {}
+    for _, e in ipairs(list or {}) do
+      if not svc:IsMine(e.name) then
+        out[#out + 1] = e
+      end
     end
+    return out
   end
-  v.peerList:SetItems(peers, function(row, p)
+  v.peerList:SetItems(others(svc.trust and svc.trust:PeerList()), function(row, p)
     local blocked = svc.trust:IsBlocked(p.name)
     row.text:SetText(p.name)
     row.state:SetText(
@@ -303,12 +306,12 @@ function UI:RefreshSync()
       )
   end
   v.guildBlocked:SetText(blockedText)
-  v.blockedList:SetItems(svc.trust and svc.trust:BlockedList() or {}, function(row, b)
+  v.blockedList:SetItems(others(svc.trust and svc.trust:BlockedList()), function(row, b)
     row.text:SetText(b.name .. "  " .. W.Dim(L["blocked %s"]:format(ago(b.at))))
   end)
   v.lastRejected:SetText(s.lastSyncRejection and (L["Last rejected:"] .. " " .. s.lastSyncRejection) or "")
 
-  v.trustedList:SetItems(svc.trust and svc.trust:TrustedList() or {}, function(row, e)
+  v.trustedList:SetItems(others(svc.trust and svc.trust:TrustedList()), function(row, e)
     row.text:SetText(e.name)
     local heard = svc.trust:LastHeard(e.name)
     row.state:SetText(
@@ -316,7 +319,7 @@ function UI:RefreshSync()
         or W.Dim(L["waiting for them to approve"])
     )
   end)
-  local pending = svc.trust and svc.trust:PendingList() or {}
+  local pending = others(svc.trust and svc.trust:PendingList())
   v.pendingList:SetItems(pending, function(row, p)
     row.text:SetText(p.name .. "  " .. W.Dim(L["wants to share, %s"]:format(ago(p.at))))
   end)
