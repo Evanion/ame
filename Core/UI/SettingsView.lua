@@ -1,6 +1,6 @@
--- Settings tab: every AME setting, storage figures and data actions, as cards in three scrolling columns:
--- Window | Tooltips, Charts | Selling, Notifications, Data (Advanced adds Data quality). Basic shows what most
--- players change. Narrow windows stack the third column under the second.
+-- Settings tab: a sidebar of sections (like the Guide) and the chosen section's cards in one readable column.
+-- Sections: General (window, notifications), Tooltips & charts, Selling, Sharing (guild and trusted players, built
+-- by SyncView), Data. Narrow windows pick the section from a dropdown instead of the sidebar.
 local _, ns = ...
 local L = ns.L
 
@@ -14,63 +14,98 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Settings
 
-UI.SETTINGS_GAP = 10 -- between columns and cards
+UI.SETTINGS_GAP = 10 -- between cards
+UI.SETTINGS_SIDEBAR = 170
+UI.SETTINGS_WIDTH = 600 -- the section column's widest (lines stay readable on wide windows)
+
+function UI.SettingsSections()
+  return {
+    { "general", L["General"] },
+    { "display", L["Tooltips & charts"] },
+    { "selling", L["Selling"] },
+    { "sharing", L["Sharing"] },
+    { "data", L["Data"] },
+  }
+end
 
 function UI:CreateSettingsView(parent, contentArea)
   local outer = contentArea(parent)
-  local slots = UI.Slots(outer, { status = true })
+  local slots = UI.Slots(outer, { toolbar = 22, left = UI.SETTINGS_SIDEBAR, status = true })
   outer.slots = slots
-  -- everything scrolls when the window is shorter than the tab's content
+  -- the chosen section scrolls when the window is shorter than it
   local pane = W.ScrollPane(slots.main)
   local v = pane.content
   v.pane = pane
+  v.slots = slots
   self.settingsView = v
   local checks = {}
   v.checks = checks
-  slots.status:SetText(L["Settings are saved per account  ·  sharing settings are on the Sync tab"])
+  v.sections, v.links = {}, {}
+  v.current = "general"
+  slots.status:SetText(L["Settings are saved per account"])
+  local sections = UI.SettingsSections()
 
-  -- three columns of cards
-  local cols, stacks = {}, {}
-  for i = 1, 3 do
-    cols[i] = CreateFrame("Frame", nil, v)
-    cols[i]:SetHeight(1)
-    stacks[i] = UI.Stack(cols[i], 0)
-  end
-  v.columns, v.stacks = cols, stacks
-  function v:LayoutColumns()
-    UI.Relayout(self, function()
-      self:PlaceColumns()
-      self.pane:Measure()
+  -- sidebar: the sections (narrow windows: a dropdown on the toolbar)
+  local list = slots.left.content
+  for k, sec in ipairs(sections) do
+    local b = CreateFrame("Button", nil, list)
+    b:SetHeight(20)
+    b:SetPoint("TOPLEFT", 4, -8 - (k - 1) * 22)
+    b:SetPoint("RIGHT", list, "RIGHT", -4, 0)
+    b.sel = b:CreateTexture(nil, "BACKGROUND")
+    b.sel:SetAllPoints()
+    W.Fill(b.sel, W.COLORS.rowSelected)
+    b.sel:SetShown(k == 1)
+    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+    b.hl:SetAllPoints()
+    W.Fill(b.hl, W.COLORS.rowHover)
+    b.text = W.Text(b, "GameFontHighlightSmall")
+    b.text:SetPoint("LEFT", 8, 0)
+    b.text:SetPoint("RIGHT", -4, 0)
+    b.text:SetWordWrap(false)
+    b.text:SetText(sec[2])
+    b:SetScript("OnClick", function()
+      UI:ShowSettingsSection(sec[1])
     end)
+    v.links[sec[1]] = b
+    -- each section: a frame in the scroll pane holding a column of cards
+    local frame = CreateFrame("Frame", nil, v)
+    frame:SetPoint("TOPLEFT", 0, 0)
+    frame:SetHeight(1)
+    frame:SetShown(k == 1)
+    v.sections[sec[1]] = { frame = frame, stack = UI.Stack(frame, 0) }
   end
-  function v:PlaceColumns()
-    local gap = UI.SETTINGS_GAP
-    local narrow = UI.compact
-    local n = narrow and 2 or 3
-    local w = math.max(120, ((self:GetWidth() or 600) - gap * (n - 1)) / n)
-    if self.FlowActions then
+  v.pick = W.Dropdown(slots.toolbar, 180, sections, function(key)
+    if key then
+      UI:ShowSettingsSection(key)
+    end
+  end, { neutral = true })
+  v.pick:SetPoint("LEFT", 0, 0)
+
+  -- the shown section's width and height (cards measure their wrapped text at this width)
+  function v:PlaceSection()
+    local sec = self.sections[self.current]
+    local w = math.max(200, math.min(UI.SETTINGS_WIDTH, self:GetWidth() or UI.SETTINGS_WIDTH))
+    sec.frame:SetWidth(w)
+    if self.current == "data" and self.FlowActions then
       self:FlowActions(w - 16)
     end
-    for i = 1, 3 do
-      cols[i]:SetWidth(w)
-      cols[i]:SetHeight(math.max(1, stacks[i]:Height(w)))
-      cols[i]:ClearAllPoints()
-    end
-    cols[1]:SetPoint("TOPLEFT", 0, 0)
-    cols[2]:SetPoint("TOPLEFT", cols[1], "TOPRIGHT", gap, 0)
-    if narrow then
-      cols[3]:SetPoint("TOPLEFT", cols[2], "BOTTOMLEFT", 0, -gap)
-    else
-      cols[3]:SetPoint("TOPLEFT", cols[2], "TOPRIGHT", gap, 0)
-    end
+    local h = sec.measure and sec.measure(w) or sec.stack:Height(w)
+    sec.frame:SetHeight(math.max(1, h))
+  end
+  function v:LayoutColumns()
+    UI.Relayout(self, function()
+      self:PlaceSection()
+      self.pane:Measure()
+    end)
   end
   v:HookScript("OnSizeChanged", function()
     v:LayoutColumns()
   end)
 
   -- a card: its heading, then rows
-  local function card(col, title, gap)
-    local c = stacks[col]:Card(gap or UI.SETTINGS_GAP)
+  local function card(section, title, gap)
+    local c = v.sections[section].stack:Card(gap or UI.SETTINGS_GAP)
     c.stack:Heading(title, 0)
     return c, c.stack
   end
@@ -99,8 +134,8 @@ function UI:CreateSettingsView(parent, contentArea)
     return p
   end
 
-  -- column 1: Window
-  local _, st = card(1, L["Window"], 0)
+  -- General: the window, notifications
+  local _, st = card("general", L["Window"], 0)
   local scales = {}
   for pct = 70, 120, 10 do
     scales[#scales + 1] = { pct / 100, ("%d%%"):format(pct) }
@@ -131,9 +166,17 @@ function UI:CreateSettingsView(parent, contentArea)
     W.ApplyPalette()
     UI:PaletteChanged()
   end)
+  local minimapRow = st:Row(18, 6)
+  v.minimap = W.Check(minimapRow, L["Show minimap button"], function(on)
+    ns.Launcher:SetMinimap(on)
+  end)
+  v.minimap:SetPoint("TOPLEFT", 0, -1)
+  _, st = card("general", L["Notifications"])
+  check(st, L["Announce recorded full scans"], "announceScans")
+  check(st, L["Sound when an alert fires"], "alertSound")
 
-  -- column 2: Tooltips, Charts
-  _, st = card(2, L["Tooltips"], 0)
+  -- Tooltips & charts
+  _, st = card("display", L["Tooltips"], 0)
   local tooltipCheck = check(st, L["Show AME prices in item tooltips"], "tooltip")
   table.remove(checks)
   table.insert(checks, 1, tooltipCheck) -- checks[1]: the tooltip switch
@@ -153,8 +196,7 @@ function UI:CreateSettingsView(parent, contentArea)
     UI.list = nil
   end)
   check(st, L["Always show details (otherwise hold Shift)"], "tooltipDetail")
-
-  _, st = card(2, L["Charts"])
+  _, st = card("display", L["Charts"])
   local styles = { { "line", L["Line"] }, { "candles", L["Candles"] } }
   v.style = dropdown(st, L["Style"], 100, styles, function(value)
     ns.Settings:Set("chartStyle", value)
@@ -173,8 +215,8 @@ function UI:CreateSettingsView(parent, contentArea)
   end)
   paragraph(st, L["Off by default: loot addons use modified clicks. With AME open, Shift-click an item."])
 
-  -- column 3: Selling, Notifications, Data (+ Data quality)
-  _, st = card(3, L["Selling"], 0)
+  -- Selling
+  _, st = card("selling", L["Selling"], 0)
   local function cutInput(key, label)
     local row = st:Row(22, 6)
     local pct = W.Text(row, "GameFontHighlightSmall")
@@ -212,14 +254,11 @@ function UI:CreateSettingsView(parent, contentArea)
     end
   end)
 
-  _, st = card(3, L["Notifications"])
-  check(st, L["Announce recorded full scans"], "announceScans")
-  check(st, L["Sound when an alert fires"], "alertSound")
-
-  _, st = card(3, L["Data"])
+  -- Data
+  _, st = card("data", L["Data"], 0)
   v.storage = st:Text("GameFontDisableSmall", 6)
   v.storage:SetSpacing(2)
-  -- the data actions in one row, sized to their labels; what each does is on its tooltip
+  -- the data actions in a row, sized to their labels (wrapping when narrow); what each does is on its tooltip
   local actions = st:Row(22, 8)
   v.actionsRow = actions
   local buttons = {}
@@ -267,12 +306,6 @@ function UI:CreateSettingsView(parent, contentArea)
     end
     actions:SetHeight(22 - y)
   end
-  local minimapRow = st:Row(18, 8)
-  v.minimap = W.Check(minimapRow, L["Show minimap button"], function(on)
-    ns.Launcher:SetMinimap(on)
-  end)
-  v.minimap:SetPoint("TOPLEFT", 0, -1)
-
   local factors = {
     { false, L["Off"] },
     { 3, L["%dx off usual"]:format(3) },
@@ -298,17 +331,48 @@ function UI:CreateSettingsView(parent, contentArea)
     )
   end)
 
+  -- Sharing: guild and trusted players (SyncView builds it into its section)
+  local sharing = v.sections.sharing
+  local syncView = self:CreateSyncSection(sharing.frame, {
+    pane = pane,
+    status = slots.status,
+    relayout = function()
+      v:LayoutColumns()
+    end,
+  })
+  sharing.measure = function(w)
+    return syncView:Measure(w)
+  end
+
   v:SetScript("OnShow", function()
     UI:RefreshSettings()
   end)
   outer:HookScript("OnShow", function()
     UI:RefreshSettings()
   end)
-  function outer:SetCompact()
+  function outer:SetCompact(on)
+    slots:SetCompact(on)
+    slots:ShowBar(slots.toolbar, on)
     v:LayoutColumns()
-    v.pane:Measure()
   end
+  outer:SetCompact(slots.compact)
   return outer
+end
+
+-- show one section (highlighted in the sidebar, picked in the narrow dropdown)
+function UI:ShowSettingsSection(key)
+  local v = self.settingsView
+  if not (v and v.sections[key]) then
+    return
+  end
+  v.current = key
+  for k, sec in pairs(v.sections) do
+    sec.frame:SetShown(k == key)
+    v.links[k].sel:SetShown(k == key)
+  end
+  v.pick:SetValue(key)
+  v.pane:SetScroll(0)
+  self:RefreshSettings()
 end
 
 -- the colour-blind palette changed: redraw what's coloured
@@ -327,6 +391,7 @@ function UI:RefreshSettings()
   if not (v and v:IsShown()) then
     return
   end
+  v.pick:SetValue(v.current)
   for _, c in ipairs(v.checks) do
     c:SetChecked(ns.Settings:Get(c.key))
   end
@@ -350,10 +415,10 @@ function UI:RefreshSettings()
   local AME = ns.AME
   local parts = { L["Market: %s"]:format(ns.ShardLabel(AME:CurrentShard())) }
   if AME:HistoryLoaded() then
-    local shards, bytes = 0, 0
+    local bytes = 0
     for _, data in pairs(AME.history.shards) do
       local _, b = ns.Store.Footprint(data)
-      shards, bytes = shards + 1, bytes + b
+      bytes = bytes + b
     end
     local here = AME.history.shards[AME:CurrentShard()]
     local hereDays = ns.Store.Footprint(here)
@@ -365,6 +430,12 @@ function UI:RefreshSettings()
   local f = AME_DB.stats.lastFull
   parts[#parts + 1] = f and L["last full scan %s"]:format(ago(f.at)) or L["No full scan recorded yet."]
   v.storage:SetText(table.concat(parts, "  ·  "))
+
+  -- the footer: Sharing says whether sync is on; the other sections, where settings are kept
+  if v.current == "sharing" then
+    self:RefreshSync()
+  else
+    v.slots.status:SetText(L["Settings are saved per account"])
+  end
   v:LayoutColumns()
-  v.pane:Measure()
 end

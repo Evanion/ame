@@ -312,21 +312,22 @@ function Help.Articles()
         },
         { key = "tabPortfolio", title = Help.GUIDE[4][1], label = L["Portfolio"], body = { guideText(4) } },
         {
-          key = "tabSync",
-          title = L["Sync tab"],
-          label = L["Sync"],
-          body = {
-            L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
-            H(L["Keeping data honest"]),
-            L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
-          },
-        },
-        {
           key = "tabSettings",
           title = L["Settings tab"],
           label = L["Settings"],
           body = {
-            L["Every setting is on one page, in cards: the window, tooltips, charts, selling, notifications and data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored). Hover a setting for what it does."],
+            L["Pick a section on the left: General (the window and notifications), Tooltips & charts, Selling, Sharing and Data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored). Hover a setting for what it does."],
+          },
+        },
+        {
+          key = "tabSync",
+          title = L["Sharing prices"],
+          label = L["Sharing"],
+          body = {
+            L["Sharing is a section of the Settings tab."],
+            L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
+            H(L["Keeping data honest"]),
+            L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
           },
         },
       },

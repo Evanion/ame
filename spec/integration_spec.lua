@@ -288,7 +288,7 @@ describe("addon in a stubbed client", function()
       end
       assert.is_not_nil(ns.UI.frame)
       assert.is_false(ns.UI.frame:IsShown()) -- built hidden
-      for _, name in ipairs({ "market", "item", "arbitrage", "portfolio", "sync", "settings", "guide" }) do
+      for _, name in ipairs({ "market", "item", "arbitrage", "portfolio", "settings", "guide" }) do
         assert.is_not_nil(ns.UI.views[name], name)
       end
       drainJobs() -- item facts for the index load in the background
@@ -658,6 +658,15 @@ describe("addon in a stubbed client", function()
         assert.are.equal(arb.status.text, ns.UI.footerLeft.text) -- the tab's text, shown by the window
         assert.is_not_nil(arb.counts)
         ns.UI:ShowTab("settings")
+        assert.truthy(ns.UI.footerLeft.text:find("saved per account"))
+        -- sharing is a section of Settings: the old Sync tab opens it
+        assert.is_nil(ns.UI.views.sync)
+        ns.UI:ShowTab("sync")
+        assert.are.equal("settings", ns.UI.current)
+        assert.are.equal("sharing", ns.UI.settingsView.current)
+        assert.is_true(ns.UI.settingsView.sections.sharing.frame:IsShown())
+        assert.is_false(ns.UI.settingsView.sections.general.frame:IsShown())
+        ns.UI:ShowSettingsSection("data")
         assert.truthy(ns.UI.footerLeft.text:find("saved per account"))
         assert.truthy(ns.UI.footer.text:find(ns.VERSION, 1, true))
       end)

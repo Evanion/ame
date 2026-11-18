@@ -1,4 +1,5 @@
--- Sync tab: how fresh each auction house's data is, then three cards - Guild sharing, Trusted players, Blocked.
+-- Sharing (shown in the Settings tab): how fresh each auction house's data is, then Guild sharing, Trusted players,
+-- Blocked.
 local _, ns = ...
 local L = ns.L
 
@@ -44,18 +45,22 @@ function UI:Freshness()
   return out
 end
 
-function UI:CreateSyncView(parent, contentArea)
-  local outer = contentArea(parent)
-  local slots = UI.Slots(outer, { header = 56, status = true })
-  outer.slots = slots
-  -- header: data freshness per auction house - the age large, then the source
+-- The Sharing section of the Settings tab (Settings builds it into its section frame `v`): the freshness of each
+-- auction house's data, then three cards - Guild sharing, Trusted players, Blocked - in one column.
+--   host: { pane = the settings scroll pane, status = the window footer's text for this tab }
+function UI:CreateSyncSection(v, host)
+  local svc = ns.SyncService
+  v.pane = host.pane
+  v.statusLine = host.status
+  self.syncView = v
+  -- freshness per auction house - the age large, then the source
   local defs = {}
-  for i, house in ipairs(self:SyncHouses()) do
-    defs[i] = { ns.HOUSE_LABEL[house] or house }
+  for k, house in ipairs(self:SyncHouses()) do
+    defs[k] = { ns.HOUSE_LABEL[house] or house }
   end
-  local cards = W.CardRow(slots.header, defs, { width = UI.WIDTH - 28, height = 56, gap = UI.SETTINGS_GAP or 10 })
+  local cards = W.CardRow(v, defs, { width = 560, height = 56, gap = UI.SETTINGS_GAP or 10 })
   cards:SetPoint("TOPLEFT", 0, 0)
-  cards:SetPoint("RIGHT", -8, 0)
+  cards:SetPoint("RIGHT", 0, 0)
   for _, c in ipairs(cards.cards) do
     c.value:SetFontObject("GameFontHighlightLarge")
     c.value:ClearAllPoints()
@@ -65,48 +70,25 @@ function UI:CreateSyncView(parent, contentArea)
     c.sub:SetPoint("RIGHT", -8, 0)
     c.sub:SetWordWrap(false)
   end
-  -- everything else scrolls when the window is shorter than the tab's content
-  local pane = W.ScrollPane(slots.main)
-  local v = pane.content
-  v.pane = pane
   v.fresh = cards.cards
-  v.statusLine = slots.status
-  self.syncView = v
-  local svc = ns.SyncService
 
-  -- three columns, one card each (narrow: the third goes under the first)
-  local cols, stacks = {}, {}
-  for i = 1, 3 do
-    cols[i] = CreateFrame("Frame", nil, v)
-    cols[i]:SetHeight(1)
-    stacks[i] = UI.Stack(cols[i], 0)
+  -- the cards, one column under the freshness row
+  local column = CreateFrame("Frame", nil, v)
+  column:SetPoint("TOPLEFT", 0, -(56 + (UI.SETTINGS_GAP or 10)))
+  column:SetPoint("RIGHT", 0, 0)
+  column:SetHeight(1)
+  local stack = UI.Stack(column, 0)
+  -- the section's height: the freshness row and the cards (the settings tab places the section)
+  function v:Measure(width)
+    local h = stack:Height(width)
+    column:SetHeight(math.max(1, h))
+    return 56 + (UI.SETTINGS_GAP or 10) + h
   end
   function v:LayoutColumns()
-    UI.Relayout(self, function()
-      self:PlaceColumns()
-      self.pane:Measure()
-    end)
-  end
-  function v:PlaceColumns()
-    local gap = UI.SETTINGS_GAP or 10
-    local n = UI.compact and 2 or 3
-    local w = math.max(120, ((self:GetWidth() or 600) - gap * (n - 1)) / n)
-    for i = 1, 3 do
-      cols[i]:SetWidth(w)
-      cols[i]:SetHeight(math.max(1, stacks[i]:Height(w)))
-      cols[i]:ClearAllPoints()
-    end
-    cols[1]:SetPoint("TOPLEFT", 0, 0)
-    cols[2]:SetPoint("TOPLEFT", cols[1], "TOPRIGHT", gap, 0)
-    if UI.compact then
-      cols[3]:SetPoint("TOPLEFT", cols[1], "BOTTOMLEFT", 0, -gap)
-    else
-      cols[3]:SetPoint("TOPLEFT", cols[2], "TOPRIGHT", gap, 0)
+    if host.relayout then
+      host.relayout()
     end
   end
-  v:HookScript("OnSizeChanged", function()
-    v:LayoutColumns()
-  end)
   local function act(method)
     return function(item)
       svc[method](svc, item.name)
@@ -137,7 +119,7 @@ function UI:CreateSyncView(parent, contentArea)
   end
 
   -- Guild sharing: the switch, one line of activity, the players heard from
-  local st = stacks[1]:Card(0).stack
+  local st = stack:Card(0).stack
   st:Heading(L["Guild sharing"], 0)
   local row = st:Row(18, 6)
   v.guild = W.SettingCheck(row, L["Share full scans with my guild"], "syncGuild", 0, -1)
@@ -161,8 +143,8 @@ function UI:CreateSyncView(parent, contentArea)
   })
   v.peers = v.peerList.rows
 
-  -- Trusted players: intro, ask by name, the list, then requests
-  st = stacks[2]:Card(0).stack
+  -- Trusted players: intro, the switch, ask by name, the list, then requests
+  st = stack:Card().stack
   st:Heading(L["Trusted players"], 0)
   local intro = st:Text("GameFontDisableSmall", 4)
   intro:SetText(L["Swap scans with friends, or your own characters on other accounts."])
@@ -173,7 +155,7 @@ function UI:CreateSyncView(parent, contentArea)
     local e, why = svc:AddTrusted(input:GetText())
     if e then
       input:SetText("")
-      v.addStatus:SetText(L["Asked %s to share. They'll see a request in their Sync tab."]:format(e.name))
+      v.addStatus:SetText(L["Asked %s to share. They'll see a request under Settings, Sharing."]:format(e.name))
     else
       v.addStatus:SetText(W.Color("bad", why))
     end
@@ -208,7 +190,7 @@ function UI:CreateSyncView(parent, contentArea)
   v.pending = v.pendingList.rows
 
   -- Blocked: what it does, the list, the last rejected scan
-  st = stacks[3]:Card(0).stack
+  st = stack:Card().stack
   st:Heading(L["Blocked"], 0)
   v.guildBlocked = st:Text("GameFontDisableSmall", 4)
   v.guildBlocked:SetSpacing(2)
@@ -222,14 +204,10 @@ function UI:CreateSyncView(parent, contentArea)
   v:SetScript("OnShow", function()
     UI:RefreshSync()
   end)
-  function outer:SetCompact()
-    v:LayoutColumns()
-    pane:Measure()
-  end
   svc.onChange = function()
     UI:RefreshSync()
   end
-  return outer
+  return v
 end
 
 function UI:RefreshSync()

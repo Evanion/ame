@@ -1,5 +1,5 @@
 -- Main window shell: frame, header, tabs, which auction house is viewed, and theme. The tabs live in ItemView,
--- MarketView, ArbitrageView, PortfolioView, Watchlists, SyncView and SettingsView.
+-- MarketView, ArbitrageView, PortfolioView, Watchlists and SettingsView (with SyncView's Sharing section).
 local _, ns = ...
 local L = ns.L
 
@@ -41,9 +41,6 @@ UI.BUILD_STEPS = {
   end,
   function(ui)
     ui.views.portfolio = ui:CreatePortfolioView(ui.building, contentArea)
-  end,
-  function(ui)
-    ui.views.sync = ui:CreateSyncView(ui.building, contentArea)
   end,
   function(ui)
     ui.views.settings = ui:CreateSettingsView(ui.building, contentArea)
@@ -185,7 +182,6 @@ function UI:CreateShell()
     { "arbitrage", L["Arbitrage"] },
     { "portfolio", L["Portfolio"] },
     { "item", L["Item"] },
-    { "sync", L["Sync"] },
     { "settings", L["Settings"] },
     { "guide", L["Guide"] },
   }, {
@@ -514,6 +510,10 @@ end
 
 function UI:ShowTab(name)
   self:Create()
+  local section
+  if name == "sync" then -- sharing is a section of Settings
+    name, section = "settings", "sharing"
+  end
   W.HideMenu() -- a menu opened on the tab you leave goes with it
   for n, v in pairs(self.views) do
     v:SetShown(n == name)
@@ -523,6 +523,8 @@ function UI:ShowTab(name)
   self:UpdateFooter()
   if name == "market" then
     self:RefreshMarket()
+  elseif section then
+    self:ShowSettingsSection(section)
   end
 end
 
