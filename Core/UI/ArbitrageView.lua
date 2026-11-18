@@ -115,7 +115,7 @@ function UI:CreateArbitrageView(parent, contentArea)
     sortKey = "net",
     ascending = false,
   }
-  local slots = UI.Slots(v, { toolbar = 22, right = UI.ARB_SIDEBAR })
+  local slots = UI.Slots(v, { toolbar = 22, right = UI.ARB_SIDEBAR, status = true })
   v.slots = slots
   local bar = slots.toolbar
 
@@ -202,9 +202,9 @@ function UI:CreateArbitrageView(parent, contentArea)
         UI:SelectRoute(e)
       end
     end,
-    status = true,
+    status = false, -- the tab's status row (slots.status) spans the window under the sidebar
   })
-  v.headers, v.rows, v.status = v.table.headers, v.table.rows, v.table.status
+  v.headers, v.rows, v.status = v.table.headers, v.table.rows, slots.status
   self:CreateRouteSidebar(v, slots.right)
 
   function v:SetCompact(on)

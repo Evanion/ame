@@ -605,6 +605,20 @@ describe("addon in a stubbed client", function()
         assert.is_false(v.summary:IsShown())
       end)
 
+      it("every tab's sidebars stop above the status row, which spans the window (version on the right)", function()
+        seeded()
+        ns.UI:Toggle()
+        for _, name in ipairs({ "item", "market", "arbitrage", "guide" }) do
+          local slots = ns.UI.views[name].slots
+          local side = slots.right or slots.left
+          assert.are.equal(20, slots.bottom, name)
+          assert.are.equal(20, side.points[#side.points][3], name) -- BOTTOM* anchor, 20 up
+          assert.is_not_nil(slots.status, name)
+        end
+        assert.are.equal(ns.UI.views.market.slots.status, ns.UI.marketView.status)
+        assert.are.equal(ns.UI.views.arbitrage.slots.status, ns.UI.arbView.status)
+      end)
+
       it("scroll panes measure their content and scroll only as far as it goes", function()
         boot()
         local parent = CreateFrame("Frame")

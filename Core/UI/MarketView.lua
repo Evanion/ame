@@ -538,7 +538,7 @@ function UI:CreateMarketView(parent)
   local v = contentArea(parent)
   self.marketView = v
   self.mq = { sortKey = "score", ascending = false, minQuality = 1 } -- Common+: hide grey junk by default
-  local slots = UI.Slots(v, { toolbar = 22, chips = 20, left = SIDEBAR_W, fullLeft = true })
+  local slots = UI.Slots(v, { toolbar = 22, chips = 20, left = SIDEBAR_W, fullLeft = true, status = true })
   v.slots = slots
   self:CreateCategories(v, slots.left)
   local bar, main = slots.toolbar, slots.main
@@ -669,9 +669,9 @@ function UI:CreateMarketView(parent)
         tip:AddLine(L["Shift-click to search the auction house"], 0.6, 0.6, 0.6)
       end
     end,
-    status = true,
+    status = false, -- the tab's status row (slots.status) spans the window under the sidebar
   })
-  v.headers, v.rows, v.bar, v.status = v.table.headers, v.table.rows, v.table.bar, v.table.status
+  v.headers, v.rows, v.bar, v.status = v.table.headers, v.table.rows, v.table.bar, slots.status
   v.table.frame:HookScript("OnSizeChanged", function()
     UI:UpdateColumnsButton()
   end)
