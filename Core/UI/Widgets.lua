@@ -641,6 +641,32 @@ function W.SignalTone(signal)
 end
 
 -- item name/icon/quality colour; may be nil until the client has cached the item (call again after load)
+-- An item's name (and icon) that shows the game's item tooltip on hover: an invisible frame over them, sized to
+-- what's shown. first: the leftmost piece (the icon, or the name), text: the name's font string.
+--   hover:SetItem(itemID) after setting the name; false hides it
+function W.ItemHover(parent, first, text)
+  local f = CreateFrame("Frame", nil, parent)
+  f:SetPoint("TOPLEFT", first, "TOPLEFT", 0, 0)
+  f:SetPoint("BOTTOM", first, "BOTTOM", 0, 0)
+  f:EnableMouse(true)
+  f.itemID = false
+  function f:SetItem(itemID)
+    self.itemID = itemID or false
+    -- where the name starts (before the first layout pass: the icon's width and the usual 8 px gap)
+    local left, right = first:GetLeft(), text:GetLeft()
+    local offset = (left and right) and (right - left) or (first ~= text and (first:GetWidth() or 0) + 8 or 0)
+    self:SetWidth(math.max(1, offset + (text:GetStringWidth() or 0)))
+    self:SetShown(itemID and true or false)
+  end
+  W.Tooltip(f, function(tip, self)
+    if not self.itemID then
+      return false
+    end
+    tip:SetItemByID(self.itemID)
+  end)
+  return f
+end
+
 function W.ItemInfo(itemID)
   local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
   local name, link, quality, _, _, _, _, _, _, icon = getInfo(itemID)

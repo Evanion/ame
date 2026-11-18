@@ -231,6 +231,7 @@ function UI:CreateRouteSidebar(v, side)
   local st = col:Card(0).stack
   r.name = st:Text("GameFontNormalLarge")
   r.name:SetWordWrap(false)
+  r.nameHover = W.ItemHover(side.content, r.name, r.name) -- the game's item tooltip over the name
   r.hint = st:Text("GameFontDisableSmall", 4)
   st = col:Card().stack
   r.buy = st:Pair(L["Buy at"], "arbBuy")
@@ -319,6 +320,7 @@ function UI:RenderRoute()
   local buyHouse, sellHouse = ns.HOUSE_LABEL[a.buy], ns.HOUSE_LABEL[a.sell]
   if not e then
     r.name:SetText(W.Dim(L["Select a route"]))
+    r.nameHover:SetItem(false)
     r.hint:SetText(
       L["Click a row to see what the route pays after the cut and the deposit, and how fresh both prices are."]
     )
@@ -335,6 +337,7 @@ function UI:RenderRoute()
   end
   local name, _, quality = W.ItemInfo(e.itemID)
   r.name:SetText(W.QualityText(quality, name or ("item:" .. e.itemID)))
+  r.nameHover:SetItem(e.itemID)
   r.hint:SetText(L["%s to %s"]:format(buyHouse, sellHouse))
   r.buy.label:SetText(L["Buy at the %s"]:format(buyHouse))
   r.buy.value:SetText(W.Money(e.buy))
