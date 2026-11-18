@@ -49,6 +49,9 @@ local FORMATS = {
   rate = function(v)
     return W.Rate(v)
   end,
+  count = function(v)
+    return W.Count(v)
+  end,
   signal = function(v)
     return W.Signal(v)
   end,
@@ -617,6 +620,8 @@ function DataTable:ExportText()
           val = (id and ns.ItemCache.Name(id)) or (col.fallback and col.fallback(d)) or (id and ("item:" .. id))
         elseif col.text then
           val = col.text(d, self)
+        elseif col.format == "count" then
+          val = d[col.key] -- exact in exports
         elseif col.format then
           val = FORMATS[col.format](d[col.key])
         else

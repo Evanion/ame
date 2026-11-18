@@ -427,29 +427,55 @@ function W.Thousands(n)
   return commas(math.floor((n or 0) + 0.5))
 end
 
+-- Money: each unit in its coin's colour, number and letter together ("12g" gold, "34s" silver, "5c" copper), so
+-- amounts read at a glance. Every gold amount in AME goes through here.
+W.COIN_HEX = { g = "ffd100", s = "c7c7cf", c = "eda55f" }
+local function coin(n, unit)
+  return "|cff" .. W.COIN_HEX[unit] .. n .. unit .. "|r"
+end
+
 function W.Money(copper, short)
   if not copper then
     return W.NONE
   end
   copper = math.floor(copper + 0.5)
   local g, s, c = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
-  local G, S, C = W.Color("gold", "g"), "|cffc7c7cfs|r", "|cffeda55fc|r"
   -- short (narrow columns): whole gold from 100g up, rounded; below that silver still matters (2g 98s, not 2g).
   -- Zero lower units are left out: "18s", not "18s 0c".
   if g >= 1000 or (short and g >= 100) then
-    return commas(math.floor(copper / 10000 + 0.5)) .. G
+    return coin(commas(math.floor(copper / 10000 + 0.5)), "g")
   elseif g > 0 then
     if s == 0 then
-      return commas(g) .. G
+      return coin(commas(g), "g")
     end
-    return ("%s%s %d%s"):format(commas(g), G, s, S)
+    return coin(commas(g), "g") .. " " .. coin(s, "s")
   elseif s > 0 then
     if c == 0 then
-      return ("%d%s"):format(s, S)
+      return coin(s, "s")
     end
-    return ("%d%s %d%s"):format(s, S, c, C)
+    return coin(s, "s") .. " " .. coin(c, "c")
   end
-  return ("%d%s"):format(c, C)
+  return coin(c, "c")
+end
+
+-- Quantities, abbreviated when large: 950, 1k, 4.5k, 12k, 1.2M (exact numbers stay in exports and tooltips' detail)
+function W.Count(n)
+  if not n then
+    return W.NONE
+  end
+  n = math.floor(n + 0.5)
+  local a = math.abs(n)
+  local out
+  if a < 1000 then
+    return tostring(n)
+  elseif a < 10000 then
+    out = ("%.1fk"):format(n / 1000)
+  elseif a < 1000000 then
+    out = ("%dk"):format(math.floor(n / 1000 + 0.5))
+  else
+    out = ("%.1fM"):format(n / 1000000)
+  end
+  return (out:gsub("%.0([kM])", "%1"))
 end
 
 -- profit / loss: green "+12g", red "-3g 5s", "-" for nothing

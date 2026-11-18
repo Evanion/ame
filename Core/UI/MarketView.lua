@@ -45,7 +45,7 @@ local COLUMNS = {
     term = "vol30",
     optional = true,
   },
-  { key = "qty", drop = 1, label = L["Supply"], width = 52, term = "qty" },
+  { key = "qty", drop = 1, label = L["Supply"], width = 52, format = "count", term = "qty" },
   { key = "sellRate", label = L["Sells/d"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "signal",

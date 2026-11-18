@@ -31,7 +31,7 @@ function Tooltip.Lines(s, opts)
   row(L["market"], W.Money(s.market) .. vs)
   row(
     L["supply"],
-    tostring(s.qty or 0) .. Dim(" " .. L["listed"]) .. (s.sellRate and ("  ·  " .. W.Rate(s.sellRate)) or "")
+    W.Count(s.qty or 0) .. Dim(" " .. L["listed"]) .. (s.sellRate and ("  ·  " .. W.Rate(s.sellRate)) or "")
   )
   local phase = s.phase and ns.Analytics and ns.Analytics.PHASE_LABEL[s.phase]
   local hint = not opts.detail and Dim("  " .. L["Shift: more"]) or ""

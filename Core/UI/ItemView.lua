@@ -130,7 +130,7 @@ function UI:CreateItemView(parent)
     return W.Money(val, true)
   end)
   chart:SetAxisFormatter("volume", function(val)
-    return val >= 1000 and ("%.1fk"):format(val / 1000) or tostring(math.floor(val))
+    return W.Count(val)
   end)
   chart:SetHoverFormatter(function(_, x, rows)
     local lines = { W.Color("white", date(UI.intradayMode and "%a %b %d, %H:%M" or "%a %b %d, %Y", x)) }
@@ -156,7 +156,7 @@ function UI:CreateItemView(parent)
       lines[#lines + 1] = L["7d avg"] .. "  " .. W.Money(rows.sma.y)
     end
     if rows.qty and rows.qty.x == x then
-      lines[#lines + 1] = L["Supply"] .. "  " .. rows.qty.y
+      lines[#lines + 1] = L["Supply"] .. "  " .. W.Count(rows.qty.y)
     end
     return lines
   end)
@@ -590,7 +590,7 @@ function UI:FillItem(_, series, latest)
   cards[4].value:SetText(W.Percent(s.change7))
   cards[5].value:SetText(s.vol30 and ("%.1f%%"):format(s.vol30 * 100) or "-")
   cards[6].value:SetText(
-    tostring(latest and latest.qty or s.qty or 0)
+    W.Count(latest and latest.qty or s.qty or 0)
       .. " "
       .. W.Percent(s.supplyTrend30 and s.supplyTrend30 * 7, 0)
       .. (s.sellRate and "  " .. W.Dim(W.Rate(s.sellRate)) or "")

@@ -15,7 +15,7 @@ end
 
 local POSITION_COLS = {
   { key = "name", label = L["Item"], width = 210, item = true, ascendingFirst = true },
-  { key = "qty", label = L["Held"], width = 50 },
+  { key = "qty", label = L["Held"], width = 50, format = "count" },
   { key = "market", drop = 2, label = L["Market"], width = 84, format = "money" },
   { key = "value", label = L["Value"], width = 92, format = "money" },
   { key = "unitCost", drop = 1, label = L["Avg cost"], width = 84, format = "money", term = "pfCost" },
@@ -64,7 +64,7 @@ end
 
 local AUCTION_COLS = {
   { key = "name", label = L["Item"], width = 230, item = true, ascendingFirst = true },
-  { key = "qty", label = L["Qty"], width = 50 },
+  { key = "qty", label = L["Qty"], width = 50, format = "count" },
   { key = "unit", label = L["Price each"], width = 92, format = "money" },
   { key = "total", label = L["Total"], width = 96, format = "money" },
   {

@@ -73,7 +73,7 @@ local COLUMNS = {
     term = "arbSupply",
     sortKey = "sellQty",
     text = function(e)
-      return ("%s / %s"):format(tostring(e.buyQty or "-"), tostring(e.sellQty or "-"))
+      return ("%s / %s"):format(W.Count(e.buyQty), W.Count(e.sellQty))
     end,
   },
   { key = "sellRate", drop = 2, label = L["Sells/d"], width = 58, format = "rate", term = "arbSellRate" },
