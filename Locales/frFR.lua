@@ -460,6 +460,7 @@ L["Sync is off: turn on guild or trusted sharing below"] = "La synchro est désa
 L["Sync is on"] = "La synchro est activée"
 L["Sync is unavailable: the AceComm library didn't load."] = "Synchro indisponible : la bibliothèque AceComm n'a pas été chargée."
 L["Tabs"] = "Onglets"
+L["That's one of your characters: they already share AME's data"] = "C'est l'un de vos personnages : il partage déjà les données d'AME"
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] = "L'HV rapporte %s l'unité après la commission et le dépôt de %s  ·  un marchand paie %s"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] = "Le prix du marché quotidien moyen sur la période choisie (Paramètres > Période de la moyenne, 7 jours par défaut). Comparez-le au prix du marché du jour pour voir si l'objet est bon marché ou cher en ce moment."
 L["The bar under the sell window"] = "La barre sous la fenêtre de vente"

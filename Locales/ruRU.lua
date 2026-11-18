@@ -460,6 +460,7 @@ L["Sync is off: turn on guild or trusted sharing below"] = "Синхрониза
 L["Sync is on"] = "Синхронизация включена"
 L["Sync is unavailable: the AceComm library didn't load."] = "Синхронизация недоступна: библиотека AceComm не загрузилась."
 L["Tabs"] = "Вкладки"
+L["That's one of your characters: they already share AME's data"] = "Это ваш персонаж: он уже делится данными AME"
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] = "Аукцион даст %s за шт. после комиссии и залога %s  ·  торговец платит %s"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] = "Средняя дневная рыночная цена за выбранный период (Настройки > Период усреднения, по умолчанию 7 дней). Сравните её с сегодняшней рыночной ценой, чтобы понять, дёшев предмет сейчас или дорог."
 L["The bar under the sell window"] = "Полоса под окном продажи"

@@ -460,6 +460,7 @@ L["Sync is off: turn on guild or trusted sharing below"] = "동기화 꺼짐: �
 L["Sync is on"] = "동기화 켜짐"
 L["Sync is unavailable: the AceComm library didn't load."] = "동기화 사용 불가: AceComm 라이브러리를 불러오지 못했습니다."
 L["Tabs"] = "탭"
+L["That's one of your characters: they already share AME's data"] = "내 캐릭터입니다: 이미 AME 데이터를 공유하고 있습니다"
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] = "경매장 개당 순수익 %s (수수료와 보증금 %s 제외)  ·  상인은 %s"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] = "선택한 기간의 일별 평균 시장가입니다 (설정 > 평균 기간, 기본 7일). 오늘 시장가와 비교해 지금 싼지 비싼지 확인하세요."
 L["The bar under the sell window"] = "판매 창 아래 막대"

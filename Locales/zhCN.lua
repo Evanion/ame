@@ -460,6 +460,7 @@ L["Sync is off: turn on guild or trusted sharing below"] = "同步已关闭：�
 L["Sync is on"] = "同步已开启"
 L["Sync is unavailable: the AceComm library didn't load."] = "同步不可用：AceComm 库未加载。"
 L["Tabs"] = "标签页"
+L["That's one of your characters: they already share AME's data"] = "这是你自己的角色：已经共享 AME 的数据"
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] = "拍卖行每件净得 %s（已扣除手续费和 %s 保管费）  ·  商人收购价 %s"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] = "所选周期内的每日市场均价（设置 > 均价周期，默认 7 天）。与今日市场价比较，可判断物品当前是便宜还是昂贵。"
 L["The bar under the sell window"] = "出售窗口下方的横条"
