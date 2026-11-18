@@ -10,7 +10,7 @@ Status: built (Nov 2026), P1-P8 committed with specs; in-game check and release 
 - Arbitrage has no column chooser (its columns drop by priority when narrow); Market has one.
 - Portfolio periods: Today, 7 days, 30 days, All time; "since weekly reset" left out (open question below).
 - Click-a-listing re-targeting works on the game's sell window (the price that lands in its price box).
-- Signal glyphs are plain characters every game font has: + BUY, = HOLD, - SELL, ~ WAIT, $ VENDOR.
+- Signals show a small tinted icon before the word (up / down triangle, dot, pause, coin): the game fonts lack ▲▼●.
 - Colour-blind palette: Okabe-Ito blue (#56B4E9) / orange (#E69F00) for gains, losses, signals and candles.
 
 Original status: agreed direction (Nov 2026). Mockups: the "AME redesign" design canvas. Research: competitive and user research
