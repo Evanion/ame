@@ -57,6 +57,8 @@ L["(est.)"] = "(估算)"
 L["(needs LibDBIcon; included in releases)"] = "（需要 LibDBIcon；正式版已內含）"
 L["+ %d more"] = "+ 另外 %d 個"
 L[", %d scans received"] = "，已接收 %d 次掃描"
+L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] =
+  "/ame - 打開視窗  ·  /ame <物品連結> - 查看物品圖表  ·  視窗開啟時 Shift-點擊物品 - 查看其圖表"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
   "/ame - 打開視窗。   /ame <物品連結> - 查看物品圖表。   /ame status - 資料與同步狀態。   /ame config - 設定。   /ame selftest - 檢查一切是否正常。"
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
@@ -118,6 +120,8 @@ L["Auctions"] = "拍賣"
 L["Average"] = "均價"
 L["Average cost"] = "平均成本"
 L["Avg cost"] = "均成本"
+L["Azeroth Mercantile Exchange %s  ·  created by Tyken Evanion  ·  PvP Horde, WoW Forever"] =
+  "Azeroth Mercantile Exchange %s  ·  作者 Tyken Evanion  ·  PvP 部落，WoW Forever"
 L["BUY"] = "買進"
 L["BUY signal at %s"] = "%s 出現買進訊號"
 L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] =
@@ -144,6 +148,7 @@ L["Commands"] = "指令"
 L["Common+"] = "普通+"
 L["Copy to my watchlists"] = "複製到我的關注清單"
 L["Could not load history: %s"] = "無法載入歷史：%s"
+L["Ctrl+Alt-click"] = "Ctrl+Alt-點擊"
 L["Customers"] = "買家"
 L["Data"] = "資料"
 L["Data quality"] = "資料品質"
@@ -265,6 +270,8 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
   "尚未接收到任何內容——與你分享的人進行完整掃描時，掃描就會送達。"
 L["Notifications"] = "通知"
 L["Off"] = "關閉"
+L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks on items and links. With the AME window open, Shift-click an item to chart it."] =
+  "預設關閉：拾取和團隊插件（如 Gargul、AHDB）會對物品和連結使用組合鍵點擊。AME 視窗開啟時，Shift-點擊物品即可查看其圖表。"
 L["On a watchlist - click to change"] = "已在關注清單中 - 點擊變更"
 L["Open"] = "開盤"
 L["Open AME settings"] = "打開 AME 設定"
@@ -326,6 +333,7 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "與公會分享"
 L["Share with trusted players (below)"] = "與信任的玩家分享（見下方）"
 L["Sharing"] = "分享"
+L["Sharing settings are on the Sync tab."] = "分享設定位於同步分頁。"
 L["Shift-click to search the auction house"] = "Shift-點擊以搜尋拍賣場"
 L["Shortage"] = "短缺"
 L["Show AME prices in item tooltips"] = "在物品滑鼠提示中顯示 AME 價格"
@@ -351,6 +359,8 @@ L["The cheapest listing at the auction house you buy from - what the first units
 L["The cheapest single listing seen in the latest data."] = "最新資料中最便宜的單筆上架。"
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "你賣出的拍賣場的市價：該物品在那裡的一般售價。"
+L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."] =
+  "價格圖表：市價、最低上架、7日均價和供應量。切換到K線可獲得交易檢視。滑鼠滾輪縮放，拖曳平移，雙擊重設。此視窗開啟時，Shift-點擊任何物品（背包、聊天、拍賣場）即可查看其圖表，也可在設定中指定組合鍵點擊。"
 L["This market: %d days of history, %d recent scans kept in full"] =
   "目前市場：%d 天歷史，完整保留 %d 次最近掃描"
 L["Tightening"] = "收緊"
@@ -457,6 +467,8 @@ L["market %s, history %s"] = "市場 %s，歷史 %s"
 L["market index"] = "市場索引"
 L["max g"] = "最高(金)"
 L["min g"] = "最低(金)"
+L["more is listed than sells in one listing time: only the lowest price sells soon"] =
+  "上架量超過一個拍賣時限內的銷量：只有最低價能很快售出"
 L["never"] = "從未"
 L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"] =
   "尚未記錄完整掃描：請打開拍賣場並進行一次完整掃描（使用掃描插件或遊戲內建功能）"
@@ -512,6 +524,7 @@ L["turned off in settings"] = "已在設定中關閉"
 L["unknown command, try /ame help"] = "未知指令，請嘗試 /ame help"
 L["unlikely to sell soon: consider holding"] = "短期內不太可能售出：考慮持有"
 L["up"] = "漲"
+L["updating market data..."] = "正在更新市場資料..."
 L["usage: /ame item <item link or itemID>"] = "用法：/ame item <物品連結或物品ID>"
 L["via %s, %s"] = "透過%s，%s"
 L["volatility"] = "波動率"
@@ -522,6 +535,8 @@ L["wheel: zoom, drag: pan, double-click: reset"] = "滾輪：縮放，拖曳：�
 L["whisper"] = "密語"
 L["window created, market tab rendered"] = "視窗已建立，市場分頁已繪製"
 L["yesterday"] = "昨天"
+L["you bought"] = "你的買入"
+L["you sold"] = "你的賣出"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "你在買進拍賣場：點擊搜尋（或 Shift-點擊某列）即可購買"
 L["~%d days"] = "~%d 天"

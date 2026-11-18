@@ -59,6 +59,8 @@ L["(est.)"] = "(추정)"
 L["(needs LibDBIcon; included in releases)"] = "(LibDBIcon 필요; 배포판에 포함됨)"
 L["+ %d more"] = "+ %d개 더"
 L[", %d scans received"] = ", 스캔 %d회 수신"
+L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] =
+  "/ame - 창 열기  ·  /ame <아이템 링크> - 아이템 차트  ·  창이 열린 상태에서 아이템 Shift-클릭 - 차트 보기"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
   "/ame - 창 열기.   /ame <아이템 링크> - 아이템 차트.   /ame status - 데이터 및 동기화 상태.   /ame config - 설정.   /ame selftest - 정상 작동 확인."
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
@@ -121,6 +123,8 @@ L["Auctions"] = "경매"
 L["Average"] = "평균"
 L["Average cost"] = "평균 단가"
 L["Avg cost"] = "평균 단가"
+L["Azeroth Mercantile Exchange %s  ·  created by Tyken Evanion  ·  PvP Horde, WoW Forever"] =
+  "Azeroth Mercantile Exchange %s  ·  제작: Tyken Evanion  ·  PvP 호드, WoW Forever"
 L["BUY"] = "매수"
 L["BUY signal at %s"] = "%s에 매수 신호"
 L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] =
@@ -147,6 +151,7 @@ L["Commands"] = "명령어"
 L["Common+"] = "일반+"
 L["Copy to my watchlists"] = "내 관심 목록에 복사"
 L["Could not load history: %s"] = "기록을 불러올 수 없음: %s"
+L["Ctrl+Alt-click"] = "Ctrl+Alt-클릭"
 L["Customers"] = "구매자"
 L["Data"] = "데이터"
 L["Data quality"] = "데이터 품질"
@@ -268,6 +273,8 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
   "아직 받은 것이 없습니다 - 공유 상대가 전체 스캔을 실행하면 스캔이 도착합니다."
 L["Notifications"] = "알림"
 L["Off"] = "끄기"
+L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks on items and links. With the AME window open, Shift-click an item to chart it."] =
+  "기본값은 꺼짐: 전리품·공격대 애드온(예: Gargul, AHDB)이 아이템과 링크에 조합 클릭을 사용합니다. AME 창이 열려 있을 때 아이템을 Shift-클릭하면 차트를 볼 수 있습니다."
 L["On a watchlist - click to change"] = "관심 목록에 있음 - 클릭하여 변경"
 L["Open"] = "시가"
 L["Open AME settings"] = "AME 설정 열기"
@@ -329,6 +336,7 @@ L["Share full scans with my guild (members running AME)"] = "내 길드와 전�
 L["Share with guild"] = "길드와 공유"
 L["Share with trusted players (below)"] = "신뢰하는 플레이어와 공유 (아래)"
 L["Sharing"] = "공유"
+L["Sharing settings are on the Sync tab."] = "공유 설정은 동기화 탭에 있습니다."
 L["Shift-click to search the auction house"] = "Shift-클릭으로 경매장 검색"
 L["Shortage"] = "품귀"
 L["Show AME prices in item tooltips"] = "아이템 툴팁에 AME 가격 표시"
@@ -355,6 +363,8 @@ L["The cheapest listing at the auction house you buy from - what the first units
 L["The cheapest single listing seen in the latest data."] = "최신 데이터에서 본 가장 싼 단일 매물."
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "판매할 경매장의 시장가: 그곳에서 보통 팔리는 가격입니다."
+L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."] =
+  "가격 차트: 시장가, 최저 매물, 7일 평균, 공급량. 캔들로 바꾸면 트레이딩 화면이 됩니다. 마우스 휠로 확대, 끌어서 이동, 더블 클릭으로 초기화. 이 창이 열려 있을 때 아무 아이템이나 Shift-클릭하면 (가방, 대화, 경매장) 차트가 열리며, 설정에서 조합 클릭을 지정할 수도 있습니다."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "이 시장: 기록 %d일, 최근 스캔 %d회 전체 보관"
 L["Tightening"] = "공급 축소"
@@ -462,6 +472,8 @@ L["market %s, history %s"] = "시장 %s, 기록 %s"
 L["market index"] = "시장 인덱스"
 L["max g"] = "최대(골드)"
 L["min g"] = "최소(골드)"
+L["more is listed than sells in one listing time: only the lowest price sells soon"] =
+  "등록 기간 동안 팔리는 양보다 매물이 많음: 최저가만 곧 팔림"
 L["never"] = "없음"
 L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"] =
   "아직 기록된 전체 스캔 없음: 경매장을 열고 전체 스캔을 실행하세요 (스캔 애드온 또는 게임 기본 기능)"
@@ -518,6 +530,7 @@ L["turned off in settings"] = "설정에서 꺼짐"
 L["unknown command, try /ame help"] = "알 수 없는 명령어, /ame help를 입력해 보세요"
 L["unlikely to sell soon: consider holding"] = "곧 팔리기 어려움: 보유 고려"
 L["up"] = "상승"
+L["updating market data..."] = "시장 데이터 갱신 중..."
 L["usage: /ame item <item link or itemID>"] = "사용법: /ame item <아이템 링크 또는 itemID>"
 L["via %s, %s"] = "%s 경유, %s"
 L["volatility"] = "변동성"
@@ -528,6 +541,8 @@ L["wheel: zoom, drag: pan, double-click: reset"] = "휠: 확대, 끌기: 이동,
 L["whisper"] = "귓속말"
 L["window created, market tab rendered"] = "창 생성됨, 시장 탭 렌더링됨"
 L["yesterday"] = "어제"
+L["you bought"] = "내 구매"
+L["you sold"] = "내 판매"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "구매 경매장에 있습니다: 검색(또는 행 Shift-클릭)으로 구매하세요"
 L["~%d days"] = "~%d일"

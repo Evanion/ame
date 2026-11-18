@@ -63,6 +63,8 @@ L["(est.)"] = "(оценка)"
 L["(needs LibDBIcon; included in releases)"] = "(нужен LibDBIcon; входит в релизы)"
 L["+ %d more"] = "+ ещё %d"
 L[", %d scans received"] = ", получено сканирований: %d"
+L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] =
+  "/ame - открыть окно  ·  /ame <ссылка на предмет> - график предмета  ·  Shift-клик по предмету при открытом окне - его график"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
   "/ame - открыть окно.   /ame <ссылка на предмет> - график предмета.   /ame status - состояние данных и синхронизации.   /ame config - настройки.   /ame selftest - проверить, что всё работает."
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
@@ -128,6 +130,8 @@ L["Auctions"] = "Аукционы"
 L["Average"] = "Среднее"
 L["Average cost"] = "Средняя цена покупки"
 L["Avg cost"] = "Ср. цена пок."
+L["Azeroth Mercantile Exchange %s  ·  created by Tyken Evanion  ·  PvP Horde, WoW Forever"] =
+  "Azeroth Mercantile Exchange %s  ·  автор Tyken Evanion  ·  PvP Орда, WoW Forever"
 L["BUY"] = "КУПИТЬ"
 L["BUY signal at %s"] = "Сигнал КУПИТЬ по %s"
 L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] =
@@ -154,6 +158,7 @@ L["Commands"] = "Команды"
 L["Common+"] = "Обычное+"
 L["Copy to my watchlists"] = "Копировать в мои списки"
 L["Could not load history: %s"] = "Не удалось загрузить историю: %s"
+L["Ctrl+Alt-click"] = "Ctrl+Alt-клик"
 L["Customers"] = "Покупатели"
 L["Data"] = "Данные"
 L["Data quality"] = "Качество данных"
@@ -277,6 +282,8 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
   "Пока ничего не получено - сканирования приходят, когда кто-то, с кем вы делитесь, выполняет полное сканирование."
 L["Notifications"] = "Уведомления"
 L["Off"] = "Выкл."
+L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks on items and links. With the AME window open, Shift-click an item to chart it."] =
+  "По умолчанию выключено: аддоны для добычи и рейдов (например, Gargul, AHDB) используют клики с модификаторами по предметам и ссылкам. При открытом окне AME Shift-клик по предмету покажет его график."
 L["On a watchlist - click to change"] =
   "В списке наблюдения - щёлкните, чтобы изменить"
 L["Open"] = "Открытие"
@@ -341,6 +348,8 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "Делиться с гильдией"
 L["Share with trusted players (below)"] = "Делиться с доверенными игроками (ниже)"
 L["Sharing"] = "Обмен"
+L["Sharing settings are on the Sync tab."] =
+  "Настройки обмена - на вкладке «Синхронизация»."
 L["Shift-click to search the auction house"] = "Shift-клик - поиск на аукционе"
 L["Shortage"] = "Дефицит"
 L["Show AME prices in item tooltips"] = "Показывать цены AME в подсказках предметов"
@@ -368,6 +377,8 @@ L["The cheapest single listing seen in the latest data."] =
   "Самый дешёвый отдельный лот в последних данных."
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "Рыночная цена на аукционе, где вы продаёте: за сколько предмет обычно там продаётся."
+L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."] =
+  "График цен: рыночная цена, самый дешёвый лот, среднее за 7 дней и предложение. Переключитесь на свечи для трейдерского вида. Колесо мыши - масштаб, перетаскивание - сдвиг, двойной клик - сброс. Shift-клик по любому предмету (сумки, чат, аукцион) при открытом окне покажет его график; клик с модификатором можно задать в настройках."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "Этот рынок: %d дн. истории, %d недавних сканирований хранятся целиком"
 L["Tightening"] = "Сжатие предложения"
@@ -481,6 +492,8 @@ L["market %s, history %s"] = "рынок %s, история %s"
 L["market index"] = "рыночный индекс"
 L["max g"] = "макс. g"
 L["min g"] = "мин. g"
+L["more is listed than sells in one listing time: only the lowest price sells soon"] =
+  "выставлено больше, чем продаётся за время лота: скоро продастся только самая низкая цена"
 L["never"] = "никогда"
 L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"] =
   "полное сканирование ещё не записано: откройте аукцион и выполните полное сканирование (вашего аддона-сканера или игры)"
@@ -539,6 +552,7 @@ L["unknown command, try /ame help"] = "неизвестная команда, п
 L["unlikely to sell soon: consider holding"] =
   "вряд ли продастся скоро: лучше придержать"
 L["up"] = "рост"
+L["updating market data..."] = "обновление рыночных данных..."
 L["usage: /ame item <item link or itemID>"] =
   "использование: /ame item <ссылка на предмет или itemID>"
 L["via %s, %s"] = "через %s, %s"
@@ -551,6 +565,8 @@ L["wheel: zoom, drag: pan, double-click: reset"] =
 L["whisper"] = "шёпот"
 L["window created, market tab rendered"] = "окно создано, вкладка рынка отрисована"
 L["yesterday"] = "вчера"
+L["you bought"] = "ваши покупки"
+L["you sold"] = "ваши продажи"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "вы на аукционе покупки: «Поиск» (или Shift-клик по строке), чтобы купить"
 L["~%d days"] = "~%d дн."

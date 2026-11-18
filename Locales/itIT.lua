@@ -57,6 +57,8 @@ L["(est.)"] = "(stima)"
 L["(needs LibDBIcon; included in releases)"] = "(richiede LibDBIcon; incluso nelle release)"
 L["+ %d more"] = "+ altri %d"
 L[", %d scans received"] = ", %d scansioni ricevute"
+L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"] =
+  "/ame - apri la finestra  ·  /ame <link oggetto> - grafico di un oggetto  ·  Maiusc-clic su un oggetto a finestra aperta - il suo grafico"
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."] =
   "/ame - apri la finestra.   /ame <link oggetto> - grafico di un oggetto.   /ame status - stato di dati e sync.   /ame config - impostazioni.   /ame selftest - verifica che tutto funzioni."
 L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"] =
@@ -119,6 +121,8 @@ L["Auctions"] = "Aste"
 L["Average"] = "Media"
 L["Average cost"] = "Costo medio"
 L["Avg cost"] = "Costo medio"
+L["Azeroth Mercantile Exchange %s  ·  created by Tyken Evanion  ·  PvP Horde, WoW Forever"] =
+  "Azeroth Mercantile Exchange %s  ·  creato da Tyken Evanion  ·  PvP Orda, WoW Forever"
 L["BUY"] = "COMPRA"
 L["BUY signal at %s"] = "Segnale COMPRA a %s"
 L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] =
@@ -145,6 +149,7 @@ L["Commands"] = "Comandi"
 L["Common+"] = "Comune+"
 L["Copy to my watchlists"] = "Copia nelle mie watchlist"
 L["Could not load history: %s"] = "Impossibile caricare lo storico: %s"
+L["Ctrl+Alt-click"] = "Ctrl+Alt-clic"
 L["Customers"] = "Clienti"
 L["Data"] = "Dati"
 L["Data quality"] = "Qualità dei dati"
@@ -266,6 +271,8 @@ L["Nothing received yet - scans arrive when someone you share with runs a full s
   "Ancora nulla ricevuto - le scansioni arrivano quando qualcuno con cui condividi esegue una scansione completa."
 L["Notifications"] = "Notifiche"
 L["Off"] = "Disattivato"
+L["Off by default: loot and raid addons (e.g. Gargul, AHDB) use modified clicks on items and links. With the AME window open, Shift-click an item to chart it."] =
+  "Disattivato di default: gli addon di bottino e incursione (es. Gargul, AHDB) usano i clic con modificatore su oggetti e link. Con la finestra di AME aperta, Maiusc-clic su un oggetto per vederne il grafico."
 L["On a watchlist - click to change"] = "In una watchlist - clicca per cambiare"
 L["Open"] = "Apertura"
 L["Open AME settings"] = "Apri impostazioni di AME"
@@ -328,6 +335,7 @@ L["Share full scans with my guild (members running AME)"] =
 L["Share with guild"] = "Condividi con la gilda"
 L["Share with trusted players (below)"] = "Condividi con i giocatori fidati (sotto)"
 L["Sharing"] = "Condivisione"
+L["Sharing settings are on the Sync tab."] = "Le impostazioni di condivisione sono nella scheda Sync."
 L["Shift-click to search the auction house"] = "Maiusc-clic per cercare alla casa d'aste"
 L["Shortage"] = "Scarsità"
 L["Show AME prices in item tooltips"] = "Mostra i prezzi AME nei tooltip degli oggetti"
@@ -355,6 +363,8 @@ L["The cheapest single listing seen in the latest data."] =
   "L'inserzione singola più economica vista negli ultimi dati."
 L["The market price at the auction house you sell at: what the item typically sells for there."] =
   "Il prezzo di mercato alla casa d'aste dove vendi: quanto si vende di solito l'oggetto lì."
+L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."] =
+  "Il grafico dei prezzi: prezzo di mercato, inserzione più bassa, media a 7 giorni e offerta. Passa alle candele per una vista da trading. La rotellina fa zoom, trascinare sposta, doppio clic ripristina. Maiusc-clic su qualsiasi oggetto (borse, chat, casa d'aste) con questa finestra aperta per vederne il grafico, o imposta un clic con modificatore in Impostazioni."
 L["This market: %d days of history, %d recent scans kept in full"] =
   "Questo mercato: %d giorni di storico, %d scansioni recenti conservate per intero"
 L["Tightening"] = "Restringimento"
@@ -462,6 +472,8 @@ L["market %s, history %s"] = "mercato %s, storico %s"
 L["market index"] = "indice di mercato"
 L["max g"] = "max (o)"
 L["min g"] = "min (o)"
+L["more is listed than sells in one listing time: only the lowest price sells soon"] =
+  "in vendita più di quanto si vende in una durata d'inserzione: solo il prezzo più basso venderà presto"
 L["never"] = "mai"
 L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"] =
   "nessuna scansione completa registrata: apri la casa d'aste ed esegui una scansione completa (del tuo addon di scansione o del gioco)"
@@ -519,6 +531,7 @@ L["turned off in settings"] = "disattivato nelle impostazioni"
 L["unknown command, try /ame help"] = "comando sconosciuto, prova /ame help"
 L["unlikely to sell soon: consider holding"] = "difficile che venda presto: valuta di tenerlo"
 L["up"] = "su"
+L["updating market data..."] = "aggiornamento dati di mercato..."
 L["usage: /ame item <item link or itemID>"] = "uso: /ame item <link oggetto o ID oggetto>"
 L["via %s, %s"] = "via %s, %s"
 L["volatility"] = "volatilità"
@@ -529,6 +542,8 @@ L["wheel: zoom, drag: pan, double-click: reset"] = "rotellina: zoom, trascina: s
 L["whisper"] = "sussurro"
 L["window created, market tab rendered"] = "finestra creata, scheda Mercato disegnata"
 L["yesterday"] = "ieri"
+L["you bought"] = "i tuoi acquisti"
+L["you sold"] = "le tue vendite"
 L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
   "sei alla CdA di acquisto: Cerca (o Maiusc-clic su una riga) per comprare"
 L["~%d days"] = "~%d giorni"
