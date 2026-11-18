@@ -773,7 +773,8 @@ describe("addon in a stubbed client", function()
       assert.is_nil(ns.UI.mq.maxPrice)
       assert.is_nil(ns.UI.mq.signal)
       -- signal filter includes Wait, with glyphs (never colour alone)
-      assert.truthy(v.signals.byKey.wait.label.text:find("~ WAIT", 1, true))
+      assert.truthy(v.signals.byKey.wait.label.text:find("Signals\\Pause", 1, true)) -- an icon, then the word
+      assert.truthy(v.signals.byKey.wait.label.text:find("WAIT", 1, true))
       -- stale rows fade; row tooltips explain the signal
       local s = ns.UI.list[1]
       local day = s.day

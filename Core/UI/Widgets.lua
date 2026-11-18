@@ -561,11 +561,35 @@ function W.Signal(signal)
   return s and W.Color(s[1], s[2]) or W.NONE
 end
 
--- signals are never colour alone: a glyph in front of the word (plain characters every game font has)
-W.SIGNAL_GLYPH = { buy = "+", sell = "-", hold = "=", wait = "~", vendor = "$" }
+-- Signals are never colour alone: an icon in front of the word (media/Signals, drawn by
+-- scripts/make-signal-icons.lua): up triangle BUY, down triangle SELL, dot HOLD, pause WAIT, coin VENDOR. The white
+-- icons take the signal's colour, so they follow the colour-blind palette too.
+W.SIGNAL_ICON = { buy = "Up", sell = "Down", hold = "Dot", wait = "Pause", vendor = "Coin" }
+W.SIGNAL_MEDIA = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Signals\\"
+
+-- an icon as inline text, tinted with a text role's colour ("good", "bad", ...)
+function W.SignalIcon(signal, size)
+  local s = SIGNALS[signal]
+  if not s then
+    return ""
+  end
+  local hex = ns.HEX[s[1]] or "ffffff"
+  local r, g, b = tonumber(hex:sub(1, 2), 16), tonumber(hex:sub(3, 4), 16), tonumber(hex:sub(5, 6), 16)
+  size = size or 10
+  return ("|T%s%s:%d:%d:0:0:32:32:0:32:0:32:%d:%d:%d|t"):format(
+    W.SIGNAL_MEDIA,
+    W.SIGNAL_ICON[signal],
+    size,
+    size,
+    r,
+    g,
+    b
+  )
+end
+
 function W.SignalGlyph(signal)
   local s = SIGNALS[signal]
-  return s and W.Color(s[1], W.SIGNAL_GLYPH[signal] .. " " .. s[2]) or W.NONE
+  return s and (W.SignalIcon(signal) .. " " .. W.Color(s[1], s[2])) or W.NONE
 end
 
 -- item name/icon/quality colour; may be nil until the client has cached the item (call again after load)
