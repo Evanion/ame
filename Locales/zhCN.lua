@@ -8,14 +8,10 @@ if not L then
   return
 end
 
-L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
-  "过去90天内共有 %d 笔拍卖行买卖。AME 通过拍卖邮件记录它们：打开邮箱即可记录新的交易。"
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
   "你的角色共有 %d 个进行中的拍卖（以各角色上次打开拍卖行时为准）。售出会立即显示在账本中，并在收到拍卖邮件时结算。"
 L["%d ahead"] = "前方 %d 件"
 L["%d auctions"] = "%d 个拍卖"
-L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
-  "过去90天内的 %d 位买家，按在你这里花费的金币排序（来自拍卖邮件）。"
 L["%d days"] = "%d 天"
 L["%d days ago"] = "%d 天前"
 L["%d h ago"] = "%d 小时前"
@@ -38,8 +34,6 @@ L["%d positions on %d characters. Bags update as you play; open your bank and th
   "%d 个持仓，分布在 %d 个角色上。背包会随游戏实时更新；打开银行和拍卖行即可计入银行物品和进行中的拍卖。"
 L["%d scans in 7 days"] = "7天内扫描 %d 次"
 L["%d scans/7d, %s"] = "%d 次扫描/7天，%s"
-L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =
-  "过去90天内的 %d 位卖家，按你在他们那里花费的金币排序（来自拍卖邮件）。"
 L["%d watched items have no price history here yet"] = "%d 件自选物品在此尚无价格历史"
 L["%d-day average"] = "%d 日均价"
 L["%dd avg"] = "%d日均"
@@ -63,7 +57,6 @@ L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /am
   "/ame item <链接> - 输出历史  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
 L["/week"] = "/周"
 L["1 day"] = "1 天"
-L["30 days: sold / bought"] = "30天：卖出 / 买入"
 L["7-day change"] = "7日涨跌"
 L["7d"] = "7天"
 L["7d average"] = "7日均价"
@@ -298,7 +291,6 @@ L["Quick %s"] = "快速 %s"
 L["Rare+"] = "精良+"
 L["Reading the numbers"] = "解读数据"
 L["Realized profit"] = "已实现利润"
-L["Realized profit, 7 days"] = "已实现利润（7天）"
 L["Rebuild market index"] = "重建市场索引"
 L["Recently heard from"] = "最近联系"
 L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."] =

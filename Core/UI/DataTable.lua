@@ -587,3 +587,45 @@ function DataTable:HiddenCount()
   end
   return n
 end
+
+-- text without colour codes, textures or atlases (exports)
+function DataTable.Plain(s)
+  s = tostring(s or "")
+  s = s:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", "")
+  return s
+end
+
+-- The whole list as tab-separated text, header first, in the current sort: what's on screen, for copying out (WoW
+-- can't write files). Hidden columns are left out.
+function DataTable:ExportText()
+  local opts, plain = self.opts, DataTable.Plain
+  local hidden = self.hiddenColumns or {}
+  local header, lines = {}, {}
+  for c, col in ipairs(opts.columns) do
+    if not hidden[c] then
+      header[#header + 1] = plain(label(col))
+    end
+  end
+  lines[1] = table.concat(header, "\t")
+  for _, d in ipairs(self.data or {}) do
+    local cells = {}
+    for c, col in ipairs(opts.columns) do
+      if not hidden[c] then
+        local val
+        if col.item then
+          local id = opts.itemID and opts.itemID(d)
+          val = (id and ns.ItemCache.Name(id)) or (col.fallback and col.fallback(d)) or (id and ("item:" .. id))
+        elseif col.text then
+          val = col.text(d, self)
+        elseif col.format then
+          val = FORMATS[col.format](d[col.key])
+        else
+          val = d[col.key]
+        end
+        cells[#cells + 1] = plain(val)
+      end
+    end
+    lines[#lines + 1] = table.concat(cells, "\t")
+  end
+  return table.concat(lines, "\n")
+end

@@ -209,16 +209,42 @@ local LEDGER_COLS = {
   },
 }
 
+-- Layout (UI.Slots): header = KPI cards; toolbar = modes, account / this character, period, Export; the table of the
+-- mode; status line.
+local PERIODS = {
+  { "today", L["Today"] },
+  { 7, L["7 days"] },
+  { 30, L["30 days"] },
+  { "all", L["All time"] },
+}
+local SCOPES = {
+  { "account", L["All characters"] },
+  { "char", L["This character"] },
+}
+
+-- the start of the period (server time): today = since midnight (server day), else n days back, all = everything
+function UI:PortfolioSince(now)
+  local p = self.pfPeriod
+  if p == "today" then
+    return ns.Today(now) * DAY
+  elseif p == "all" then
+    return 0
+  end
+  return now - (p or 30) * DAY
+end
+
 function UI:CreatePortfolioView(parent, contentArea)
   local v = contentArea(parent)
   self.pfView = v
-  self.pfMode = "positions"
-  v.cardRow = W.CardRow(v, {
+  self.pfMode, self.pfScope, self.pfPeriod = "positions", "account", 30
+  local slots = UI.Slots(v, { header = 42, toolbar = 22, status = true })
+  v.slots = slots
+  v.cardRow = W.CardRow(slots.header, {
     { L["Holdings value"], term = "pfValue" },
     { L["Listed on the AH now"] }, -- its own tooltip: below
     { L["Unrealized profit"], term = "pfUnrealized" },
-    { L["Realized profit, 7 days"], term = "pfProfit" },
-    { L["30 days: sold / bought"], term = "pfFlow" },
+    { L["Realized profit"], term = "pfProfit" },
+    { L["Sold / bought"], term = "pfFlow" },
   }, { width = UI.WIDTH - 20 })
   v.cardRow:SetPoint("TOPLEFT", 0, 0)
   v.cardRow:SetPoint("RIGHT", 0, 0)
@@ -246,40 +272,58 @@ function UI:CreatePortfolioView(parent, contentArea)
       end
     end
   end, "ANCHOR_BOTTOM")
-  v.modes = W.Segmented(v, {
+
+  local bar = slots.toolbar
+  v.modes = W.Segmented(bar, {
     { "positions", L["Positions"] },
     { "ledger", L["Ledger"] },
     { "auctions", L["Auctions"] },
     { "customers", L["Customers"] },
     { "suppliers", L["Suppliers"] },
   }, {
-    minWidth = 80,
+    minWidth = 70,
     onSelect = function(mode)
       UI.pfMode, UI.pfOffset = mode, 0
       UI:RefreshPortfolio()
     end,
   })
-  v.modes:SetPoint("TOPLEFT", v.cardRow, "BOTTOMLEFT", 0, -10)
+  v.modes:SetPoint("LEFT", 0, 0)
   v.ledgerButton, v.auctionsButton = v.modes.byKey.ledger, v.modes.byKey.auctions -- shortcuts (specs)
+  v.export = W.Button(bar, L["Export"], 64, 20, function()
+    UI:ExportPortfolio()
+  end)
+  v.export:SetPoint("RIGHT", 0, 0)
+  v.period = W.Dropdown(bar, 96, PERIODS, function(value)
+    UI.pfPeriod, UI.pfOffset = value, 0
+    UI:RefreshPortfolio()
+  end, { neutral = true, default = 30 })
+  v.period:SetPoint("RIGHT", v.export, "LEFT", -6, 0)
+  v.scope = W.Dropdown(bar, 120, SCOPES, function(value)
+    UI.pfScope, UI.pfOffset = value, 0
+    UI:RefreshPortfolio()
+  end, { neutral = true })
+  v.scope:SetPoint("RIGHT", v.period, "LEFT", -6, 0)
+
+  local main = slots.main
   local function itemID(e)
     return e.itemID
   end
-  v.positions = ns.DataTable.New(v, {
+  local offset = {
+    get = function()
+      return UI.pfOffset
+    end,
+    set = function(n)
+      UI.pfOffset = n
+    end,
+  }
+  v.positions = ns.DataTable.New(main, {
     columns = POSITION_COLS,
     rows = ROWS,
     fill = true,
-    bottom = 20, -- above the shared status line
-    top = -80,
+    top = 0,
     itemID = itemID,
     sort = { key = "value", ascending = false },
-    offset = {
-      get = function()
-        return UI.pfOffset
-      end,
-      set = function(n)
-        UI.pfOffset = n
-      end,
-    },
+    offset = offset,
     tooltip = function(tip, e)
       if e.chars then
         tip:AddLine(" ")
@@ -289,54 +333,51 @@ function UI:CreatePortfolioView(parent, contentArea)
       end
     end,
   })
-  v.auctions = ns.DataTable.New(v, {
+  v.auctions = ns.DataTable.New(main, {
     columns = AUCTION_COLS,
     rows = ROWS,
     fill = true,
-    bottom = 20, -- above the shared status line
-    top = -80,
+    top = 0,
     itemID = itemID,
     sort = { key = "total", ascending = false },
   })
-  v.customers = ns.DataTable.New(v, {
+  v.customers = ns.DataTable.New(main, {
     columns = counterpartyCols(L["Spent with you"], L["Purchases"]),
     rows = ROWS,
     fill = true,
-    bottom = 20, -- above the shared status line
-    top = -80,
+    top = 0,
     sort = { key = "amount", ascending = false },
   })
-  v.suppliers = ns.DataTable.New(v, {
+  v.suppliers = ns.DataTable.New(main, {
     columns = counterpartyCols(L["You spent"], L["Purchases"]),
     rows = ROWS,
     fill = true,
-    bottom = 20, -- above the shared status line
-    top = -80,
+    top = 0,
     sort = { key = "amount", ascending = false },
   })
-  v.ledger = ns.DataTable.New(v, {
+  v.ledger = ns.DataTable.New(main, {
     columns = LEDGER_COLS,
     rows = ROWS,
     fill = true,
-    bottom = 20, -- above the shared status line
-    top = -80,
+    top = 0,
     itemID = itemID,
     sort = { key = "t", ascending = false }, -- newest first
-    offset = {
-      get = function()
-        return UI.pfOffset
-      end,
-      set = function(n)
-        UI.pfOffset = n
-      end,
-    },
+    offset = offset,
   })
-  v.status = W.StatusLine(v) -- one for all five tables
+  v.status = slots.status -- one for all five tables
   v:SetScript("OnShow", function()
     ns.Trading:ScanBags()
     UI:RefreshPortfolio()
   end)
   return v
+end
+
+-- the table on screen as text to copy
+function UI:ExportPortfolio()
+  local v = self.pfView
+  local tbl = v[self.pfMode]
+  local title = v.modes.byKey[self.pfMode].label:GetText() or ""
+  return W.ExportBox(L["Export: %s"]:format(title), tbl:ExportText())
 end
 
 function UI:RefreshPortfolio()
@@ -348,20 +389,28 @@ function UI:RefreshPortfolio()
   local index = AME:FactionIndex()
   ns.Trading:ResolveLedger() -- entries recorded before their item was known: icons and average cost need the ID
   local basis = AME.ledger and AME.ledger:CostBasis() or {}
-  self.pfRows, self.pfTotals = ns.Portfolio.Build(ns.Trading:Holdings(), basis, index and index.items or {})
-  self.pfListed = ns.Portfolio.Listed(ns.Trading:Holdings(), function(house)
+  -- scope: every character, or this one (holdings by "<market>:<name>", ledger entries by name)
+  local holdings, char = ns.Trading:Holdings(), nil
+  if self.pfScope == "char" then
+    local key = ns.Trading.CharKey()
+    holdings = { [key] = holdings[key] }
+    char = UnitName("player")
+  end
+  self.pfRows, self.pfTotals = ns.Portfolio.Build(holdings, basis, index and index.items or {})
+  self.pfListed = ns.Portfolio.Listed(holdings, function(house)
     return ns.Settings:AuctionCut(house)
   end, index and index.items or {})
   local now = GetServerTime()
-  self.pfWeek = AME.ledger and AME.ledger:Summary(now - 7 * DAY) or {}
-  self.pfMonth = AME.ledger and AME.ledger:Summary(now - 30 * DAY) or {}
-  self.pfLedger = AME.ledger and AME.ledger:Recent(now - 90 * DAY) or {}
-  self.pfAuctions = ns.Trading:ActiveAuctions()
-  self.pfCustomers = AME.ledger and AME.ledger:Counterparties("sale", now - 90 * DAY) or {}
-  self.pfSuppliers = AME.ledger and AME.ledger:Counterparties("buy", now - 90 * DAY) or {}
+  local since = self:PortfolioSince(now)
+  local ledger = AME.ledger
+  self.pfSummary = ledger and ledger:Summary(since, char) or {}
+  self.pfLedger = ledger and ledger:Recent(since, nil, char) or {}
+  self.pfAuctions = ns.Trading:ActiveAuctions(holdings)
+  self.pfCustomers = ledger and ledger:Counterparties("sale", since, char) or {}
+  self.pfSuppliers = ledger and ledger:Counterparties("buy", since, char) or {}
   -- does this client's auction mail name the other player at all?
   self.pfNamesSeen = false
-  for _, e in ipairs(AME.ledger and AME.ledger.db.entries or {}) do
+  for _, e in ipairs(ledger and ledger.db.entries or {}) do
     if e.counterparty then
       self.pfNamesSeen = true
       break
@@ -376,16 +425,26 @@ function UI:RenderPortfolio()
   if not (v and v:IsShown() and self.pfRows) then
     return
   end
-  local t, w, m = self.pfTotals, self.pfWeek, self.pfMonth
+  local t, sum = self.pfTotals, self.pfSummary
   local l = self.pfListed
+  local periodLabel
+  for _, p in ipairs(PERIODS) do
+    if p[1] == self.pfPeriod then
+      periodLabel = p[2]
+    end
+  end
+  v.period:SetValue(self.pfPeriod)
+  v.scope:SetValue(self.pfScope)
   v.cards[1].value:SetText(W.Money(t.value, true))
   v.cards[2].value:SetText(
     l.count > 0 and W.Money(l.value, true) .. "  " .. W.Dim(L["%d auctions"]:format(l.count))
       or W.Color("none", L["none"])
   )
   v.cards[3].value:SetText(W.SignedMoney(t.unrealized))
-  v.cards[4].value:SetText(W.SignedMoney(w.profit))
-  v.cards[5].value:SetText(W.Money(m.income or 0, true) .. " / " .. W.Money(m.spent or 0, true))
+  v.cards[4].label:SetText(L["Realized profit, %s"]:format(periodLabel or ""))
+  v.cards[4].value:SetText(W.SignedMoney(sum.profit))
+  v.cards[5].label:SetText(L["Sold / bought, %s"]:format(periodLabel or ""))
+  v.cards[5].value:SetText(W.Money(sum.income or 0, true) .. " / " .. W.Money(sum.spent or 0, true))
   local mode = self.pfMode
   local ledgerMode, auctionsMode = mode == "ledger", mode == "auctions"
   local customersMode, suppliersMode = mode == "customers", mode == "suppliers"
@@ -408,9 +467,8 @@ function UI:RenderPortfolio()
   tbl:SetData(list)
   tbl:Render()
 
-  local h = ns.Trading:Holdings()
   local chars = 0
-  for _ in pairs(h) do
+  for _ in pairs(self.pfScope == "char" and { 1 } or ns.Trading:Holdings()) do
     chars = chars + 1
   end
   local status, message
@@ -419,9 +477,8 @@ function UI:RenderPortfolio()
       message =
         L["Your auction mail doesn't name the other player on this client (the auction house keeps them anonymous), so there's no one to list."]
     else
-      status = customersMode
-          and L["%d customers in the last 90 days, by gold spent with you (from auction mail)."]:format(#list)
-        or L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."]:format(#list)
+      status = customersMode and L["%d customers, by gold spent with you (from auction mail)."]:format(#list)
+        or L["%d suppliers, by gold you spent with them (from auction mail)."]:format(#list)
     end
   elseif auctionsMode then
     status =
@@ -430,9 +487,12 @@ function UI:RenderPortfolio()
       )
   elseif ledgerMode then
     status =
-      L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."]:format(
+      L["%d AH sales and purchases. AME records them from auction mail: open your mailbox to catch new ones."]:format(
         #list
       )
+    if #list == 0 then
+      message = L["No sales or purchases in this period yet. AME records them from auction mail."]
+    end
   else
     if chars == 1 then
       status =

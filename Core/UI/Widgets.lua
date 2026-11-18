@@ -199,6 +199,53 @@ function W.Tooltip(frame, build, anchor)
   end)
 end
 
+-- A box with text to copy (exports: WoW can't write files). The text is selected; Ctrl+C copies it.
+function W.ExportBox(title, text)
+  local box = W.exportBox
+  if not box then
+    box = CreateFrame("Frame", "AMEExportBox", UIParent, "BackdropTemplate")
+    box:SetSize(560, 360)
+    box:SetPoint("CENTER")
+    box:SetFrameStrata("DIALOG")
+    box:EnableMouse(true)
+    box:SetMovable(true)
+    box:RegisterForDrag("LeftButton")
+    box:SetScript("OnDragStart", box.StartMoving)
+    box:SetScript("OnDragStop", box.StopMovingOrSizing)
+    W.Skin(box)
+    box.title = W.Text(box, "GameFontNormal")
+    box.title:SetPoint("TOPLEFT", 12, -10)
+    box.hint = W.Text(box, "GameFontDisableSmall")
+    box.hint:SetPoint("TOPLEFT", box.title, "BOTTOMLEFT", 0, -4)
+    box.hint:SetText(L["Ctrl+C copies the selected text; paste it into a spreadsheet."])
+    local scroll = CreateFrame("ScrollFrame", nil, box, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 12, -44)
+    scroll:SetPoint("BOTTOMRIGHT", -32, 40)
+    local edit = CreateFrame("EditBox", nil, scroll)
+    edit:SetMultiLine(true)
+    edit:SetFontObject("ChatFontSmall")
+    edit:SetWidth(500)
+    edit:SetAutoFocus(false)
+    edit:SetScript("OnEscapePressed", function()
+      box:Hide()
+    end)
+    scroll:SetScrollChild(edit)
+    box.edit = edit
+    local close = W.Button(box, L["Close"], 80, 22, function()
+      box:Hide()
+    end)
+    close:SetPoint("BOTTOMRIGHT", -12, 10)
+    tinsert(UISpecialFrames, "AMEExportBox")
+    W.exportBox = box
+  end
+  box.title:SetText(title)
+  box.edit:SetText(text or "")
+  box:Show()
+  box.edit:SetFocus()
+  box.edit:HighlightText()
+  return box
+end
+
 -- Removable filter chips in a row, then "Clear all": chips:Set({ { label, onRemove }, ... }). chips.count: shown.
 function W.Chips(parent, onClearAll)
   local row = CreateFrame("Frame", nil, parent)

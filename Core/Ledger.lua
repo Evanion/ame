@@ -146,12 +146,18 @@ local function match(entries)
   return lots, profits
 end
 
--- totals since a time: income (sales after the cut), spent (purchases), profit (realized), counts
-function Ledger:Summary(since)
+-- an entry belongs to a character (nil: any; entries without a character count for everyone)
+local function byChar(e, char)
+  return not char or not e.char or e.char == char
+end
+
+-- totals since a time (optionally one character's): income (sales after the cut), spent (purchases), profit
+-- (realized), counts
+function Ledger:Summary(since, char)
   local _, profits = match(self.db.entries)
   local s = { income = 0, spent = 0, profit = 0, sales = 0, buys = 0 }
   for _, e in ipairs(self.db.entries) do
-    if e.t >= (since or 0) then
+    if e.t >= (since or 0) and byChar(e, char) then
       if e.kind == "sale" then
         s.income = s.income + e.amount - (e.cut or 0)
         s.profit = s.profit + (profits[e] or 0)
@@ -202,10 +208,10 @@ end
 -- Who you trade with: kind "sale" -> your customers (buyers), "buy" -> your suppliers (sellers). Only entries whose
 -- mail named the other player count. Sorted by gold, biggest first:
 --   { { name, trades, amount, units, last, favourite = item name }, ... }
-function Ledger:Counterparties(kind, since)
+function Ledger:Counterparties(kind, since, char)
   local by = {}
   for _, e in ipairs(self.db.entries) do
-    if e.kind == kind and e.counterparty and e.t >= (since or 0) then
+    if e.kind == kind and e.counterparty and e.t >= (since or 0) and byChar(e, char) then
       local c = by[e.counterparty]
       if not c then
         c = { name = e.counterparty, trades = 0, amount = 0, units = 0, last = 0, items = {} }
@@ -237,8 +243,8 @@ function Ledger:Counterparties(kind, since)
   return out
 end
 
--- newest first, optionally since a time
-function Ledger:Recent(since, limit)
+-- newest first, optionally since a time and for one character
+function Ledger:Recent(since, limit, char)
   local out = {}
   local list = self.db.entries
   for k = #list, 1, -1 do
@@ -246,7 +252,9 @@ function Ledger:Recent(since, limit)
     if e.t < (since or 0) or (limit and #out >= limit) then
       break
     end
-    out[#out + 1] = e
+    if byChar(e, char) then
+      out[#out + 1] = e
+    end
   end
   return out
 end

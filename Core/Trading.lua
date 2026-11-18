@@ -31,6 +31,11 @@ function Trading:Holdings()
   return AME_DB.holdings
 end
 
+-- this character's key in the holdings ("<market>:<name>")
+function Trading.CharKey()
+  return charKey()
+end
+
 local function mine()
   local key = charKey()
   local h = AME_DB.holdings[key]
@@ -138,9 +143,9 @@ function Trading:ScanAuctions()
 end
 
 -- every active auction on all characters: { itemID, qty, unit, total, timeLeft, char, house, seen }
-function Trading:ActiveAuctions()
+function Trading:ActiveAuctions(holdings)
   local out = {}
-  for char, h in pairs(AME_DB.holdings) do
+  for char, h in pairs(holdings or AME_DB.holdings) do
     for _, a in ipairs(h.auctionList or {}) do
       local e = {}
       for k, v in pairs(a) do

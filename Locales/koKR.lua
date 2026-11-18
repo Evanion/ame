@@ -8,14 +8,10 @@ if not L then
   return
 end
 
-L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
-  "최근 90일간 경매장 판매 및 구매 %d건. AME는 경매 우편에서 이를 기록합니다: 우편함을 열면 새 거래가 기록됩니다."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
   "캐릭터들의 진행 중인 경매 %d건 (각 캐릭터가 마지막으로 경매장을 열었을 때 기준). 판매는 거래 장부에 바로 표시되며 경매 우편이 도착하면 정산됩니다."
 L["%d ahead"] = "앞에 %d개"
 L["%d auctions"] = "경매 %d건"
-L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
-  "최근 90일간 구매자 %d명, 당신에게 쓴 골드 순 (경매 우편 기준)."
 L["%d days"] = "%d일"
 L["%d days ago"] = "%d일 전"
 L["%d h ago"] = "%d시간 전"
@@ -39,8 +35,6 @@ L["%d positions on %d characters. Bags update as you play; open your bank and th
   "보유 종목 %d개, 캐릭터 %d명. 가방은 플레이 중 갱신됩니다. 은행과 경매장을 열면 은행 아이템과 진행 중인 경매도 포함됩니다."
 L["%d scans in 7 days"] = "7일간 스캔 %d회"
 L["%d scans/7d, %s"] = "스캔 %d회/7일, %s"
-L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =
-  "최근 90일간 판매자 %d명, 당신이 쓴 골드 순 (경매 우편 기준)."
 L["%d watched items have no price history here yet"] =
   "관심 아이템 %d개는 아직 이곳 가격 기록이 없습니다"
 L["%d-day average"] = "%d일 평균"
@@ -65,7 +59,6 @@ L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /am
   "/ame item <링크> - 기록 출력  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
 L["/week"] = "/주"
 L["1 day"] = "1일"
-L["30 days: sold / bought"] = "30일: 판매 / 구매"
 L["7-day change"] = "7일 변동"
 L["7d"] = "7일"
 L["7d average"] = "7일 평균"
@@ -302,7 +295,6 @@ L["Quick %s"] = "빠름 %s"
 L["Rare+"] = "희귀+"
 L["Reading the numbers"] = "수치 읽는 법"
 L["Realized profit"] = "실현 수익"
-L["Realized profit, 7 days"] = "실현 수익, 7일"
 L["Rebuild market index"] = "시장 인덱스 재구축"
 L["Recently heard from"] = "최근 연락"
 L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."] =

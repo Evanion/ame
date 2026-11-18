@@ -1293,6 +1293,39 @@ describe("addon in a stubbed client", function()
       v.ledgerButton.scripts.OnClick(v.ledgerButton)
       assert.are.equal("ledger", ns.UI.pfMode)
       assert.truthy(v.ledger.rows[1].cells[2].text:find("sold"))
+      -- periods: the KPI cards and the ledger follow them
+      assert.truthy(v.cards[4].label.text:find("30 days"))
+      local all = #ns.UI.pfLedger
+      ns.UI.pfPeriod = "today"
+      env.now = env.now + 2 * 86400 -- two days later: nothing happened today
+      ns.UI:RefreshPortfolio()
+      assert.are.equal(0, #ns.UI.pfLedger)
+      assert.truthy(v.cards[4].label.text:find("Today"))
+      assert.truthy(v.ledger.message.text:find("No sales"))
+      ns.UI.pfPeriod = "all"
+      ns.UI:RefreshPortfolio()
+      assert.are.equal(all, #ns.UI.pfLedger)
+      -- this character only: another character's holdings and trades drop out
+      AME_DB.holdings["TestRealm:Altchar"] = { bags = { [4306] = 3 } }
+      ledger.db.entries[#ledger.db.entries + 1] =
+        { t = env.now, kind = "buy", itemID = 4306, name = "Item 4306", qty = 3, amount = 300, char = "Altchar" }
+      ns.UI:RefreshPortfolio()
+      local n = #ns.UI.pfLedger
+      ns.UI.pfScope = "char"
+      ns.UI:RefreshPortfolio()
+      assert.are.equal(n - 1, #ns.UI.pfLedger)
+      for _, e in ipairs(ns.UI.pfLedger) do
+        assert.are_not.equal("Altchar", e.char)
+      end
+      ns.UI.pfScope = "account"
+      -- export: the table as tab-separated text in a copy box
+      ns.UI.pfMode = "positions"
+      ns.UI:RefreshPortfolio()
+      local box = ns.UI:ExportPortfolio()
+      local text = box.edit:GetText()
+      assert.truthy(text:find("^Item\tHeld"))
+      assert.truthy(text:find("Item 2589\t46", 1, true))
+      assert.is_nil(text:find("|c", 1, true)) -- no colour codes
       _G.C_Container, _G.GetInboxNumItems, _G.GetInboxInvoiceInfo, _G.GetInboxHeaderInfo = nil, nil, nil, nil
       _G.C_Item.GetItemInfoInstant = instant
     end)

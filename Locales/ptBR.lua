@@ -8,14 +8,10 @@ if not L then
   return
 end
 
-L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
-  "%d vendas e compras na CL nos últimos 90 dias. O AME as registra a partir do correio de leilão: abra sua caixa de correio para capturar as novas."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
   "%d leilões ativos nos seus personagens, desde a última vez que cada um abriu a casa de leilões. As vendas aparecem no extrato na hora e são liquidadas quando chega o correio do leilão."
 L["%d ahead"] = "%d à frente"
 L["%d auctions"] = "%d leilões"
-L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
-  "%d clientes nos últimos 90 dias, por ouro gasto com você (pelo correio de leilão)."
 L["%d days"] = "%d dias"
 L["%d days ago"] = "há %d dias"
 L["%d h ago"] = "há %d h"
@@ -38,8 +34,6 @@ L["%d positions on %d characters. Bags update as you play; open your bank and th
   "%d posições em %d personagens. As bolsas se atualizam enquanto você joga; abra seu banco e a casa de leilões para incluir itens do banco e leilões ativos."
 L["%d scans in 7 days"] = "%d varreduras em 7 dias"
 L["%d scans/7d, %s"] = "%d varreduras/7d, %s"
-L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =
-  "%d fornecedores nos últimos 90 dias, por ouro que você gastou com eles (pelo correio de leilão)."
 L["%d watched items have no price history here yet"] = "%d itens observados ainda não têm histórico de preços aqui"
 L["%d-day average"] = "Média de %d dias"
 L["%dd avg"] = "Méd. %dd"
@@ -63,7 +57,6 @@ L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /am
   "/ame item <link> - mostrar histórico  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
 L["/week"] = "/semana"
 L["1 day"] = "1 dia"
-L["30 days: sold / bought"] = "30 dias: vendido / comprado"
 L["7-day change"] = "Variação em 7 dias"
 L["7d"] = "7d"
 L["7d average"] = "Média de 7 dias"
@@ -302,7 +295,6 @@ L["Quick %s"] = "Rápido %s"
 L["Rare+"] = "Raro+"
 L["Reading the numbers"] = "Como ler os números"
 L["Realized profit"] = "Lucro realizado"
-L["Realized profit, 7 days"] = "Lucro realizado, 7 dias"
 L["Rebuild market index"] = "Reconstruir índice de mercado"
 L["Recently heard from"] = "Contatos recentes"
 L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."] =

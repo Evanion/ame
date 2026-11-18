@@ -8,14 +8,10 @@ if not L then
   return
 end
 
-L["%d AH sales and purchases in the last 90 days. AME records them from auction mail: open your mailbox to catch new ones."] =
-  "Продаж и покупок на аукционе за последние 90 дней: %d. AME записывает их по почте аукциона: откройте почтовый ящик, чтобы учесть новые."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
   "Активных аукционов на ваших персонажах: %d (на момент, когда каждый из них последний раз открывал аукцион). Продажи сразу появляются в журнале и закрываются, когда приходит письмо с аукциона."
 L["%d ahead"] = "%d впереди"
 L["%d auctions"] = "Аукционов: %d"
-L["%d customers in the last 90 days, by gold spent with you (from auction mail)."] =
-  "Покупателей за последние 90 дней: %d, по золоту, потраченному у вас (по почте аукциона)."
 L["%d days"] = "%d дн."
 L["%d days ago"] = "%d дн. назад"
 L["%d h ago"] = "%d ч назад"
@@ -42,8 +38,6 @@ L["%d positions on %d characters. Bags update as you play; open your bank and th
   "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
 L["%d scans in 7 days"] = "%d сканирований за 7 дней"
 L["%d scans/7d, %s"] = "%d скан./7д, %s"
-L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =
-  "Поставщиков за последние 90 дней: %d, по золоту, которое вы у них потратили (по почте аукциона)."
 L["%d watched items have no price history here yet"] =
   "У %d отслеживаемых предметов здесь пока нет истории цен"
 L["%d-day average"] = "Среднее за %d дн."
@@ -69,7 +63,6 @@ L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /am
   "/ame item <ссылка> - вывести историю  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
 L["/week"] = "/нед."
 L["1 day"] = "1 день"
-L["30 days: sold / bought"] = "30 дней: продано / куплено"
 L["7-day change"] = "Изменение за 7 дней"
 L["7d"] = "7д"
 L["7d average"] = "Среднее за 7 дней"
@@ -314,7 +307,6 @@ L["Quick %s"] = "Быстро %s"
 L["Rare+"] = "Редкое+"
 L["Reading the numbers"] = "Как читать цифры"
 L["Realized profit"] = "Реализованная прибыль"
-L["Realized profit, 7 days"] = "Реализованная прибыль, 7 дней"
 L["Rebuild market index"] = "Перестроить рыночный индекс"
 L["Recently heard from"] = "Недавно на связи"
 L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."] =
