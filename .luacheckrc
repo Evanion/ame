@@ -20,7 +20,7 @@ read_globals = {
   -- Lua extensions provided by WoW
   "strsplit", "strtrim", "strjoin", "wipe", "tinsert", "tremove", "debugprofilestop", "date", "time",
   -- frames, timers, UI
-  "CreateFrame", "C_Timer", "UIParent", "GameTooltip", "hooksecurefunc", "DEFAULT_CHAT_FRAME", "ReloadUI",
+  "CreateFrame", "C_Timer", "UIParent", "GameTooltip", "ChatFrame_OpenChat", "hooksecurefunc", "DEFAULT_CHAT_FRAME", "ReloadUI",
   "GetCoinTextureString", "SecondsToTime", "BackdropTemplateMixin", "GameFontNormal", "GameFontHighlight",
   "GameFontHighlightSmall", "GameFontNormalLarge", "GameFontDisableSmall", "UISpecialFrames", "GetCursorPosition",
   "StaticPopup_Show", "RELOADUI", "CANCEL", "ACCEPT", "DELETE", "UIErrorsFrame", "PlaySound", "SOUNDKIT", "C_Texture", "ERR_AUCTION_SOLD_S", "ERR_AUCTION_EXPIRED_S",

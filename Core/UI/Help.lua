@@ -377,6 +377,35 @@ function Help.Articles()
   return groups
 end
 
+-- Slash commands in article text become links: coloured like code, and a click puts the command in the chat box
+-- (the player presses Enter; addons can't run slash commands for them). Commands aren't translated, so they're
+-- found in any language's text: "/ame", or "/ame" and one of its words.
+Help.CODE_COLOR = "8fd0ff"
+local SUBCOMMANDS = { status = true, config = true, selftest = true, backfill = true, help = true, item = true }
+function Help.CommandLink(cmd)
+  return ("|Hamecmd:%s|h|cff%s%s|r|h"):format(cmd, Help.CODE_COLOR, cmd)
+end
+function Help.LinkCommands(text)
+  return (
+    text:gsub("/ame( ?)(%a*)", function(space, word)
+      if space == " " and SUBCOMMANDS[word:lower()] then
+        return Help.CommandLink("/ame " .. word)
+      end
+      return Help.CommandLink("/ame") .. space .. word
+    end)
+  )
+end
+-- the command in a link (nil for other links)
+function Help.LinkedCommand(link)
+  return type(link) == "string" and link:match("^amecmd:(.+)$") or nil
+end
+-- put a command in the chat box, ready to send
+function Help.PrefillChat(cmd)
+  if ChatFrame_OpenChat then
+    ChatFrame_OpenChat(cmd)
+  end
+end
+
 -- the text of a block (for search)
 function Help.BlockText(b)
   if type(b) == "string" then
@@ -698,6 +727,28 @@ function Help.CreateGuide(parent, contentArea)
   v.pane = pane
   v.title = W.Text(page, "GameFontNormalLarge")
   v.title:SetPoint("TOPLEFT", 16, -10)
+  -- slash commands in paragraphs are links (Help.LinkCommands): hover tells what a click does
+  if page.SetHyperlinksEnabled then
+    page:SetHyperlinksEnabled(true)
+  end
+  page:SetScript("OnHyperlinkClick", function(_, href)
+    local cmd = Help.LinkedCommand(href)
+    if cmd then
+      Help.PrefillChat(cmd)
+    end
+  end)
+  page:SetScript("OnHyperlinkEnter", function(self, href)
+    local cmd = Help.LinkedCommand(href)
+    if cmd then
+      GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+      GameTooltip:SetText(cmd, 1, 1, 1)
+      GameTooltip:AddLine(L["Click to put it in your chat box"], nil, nil, nil, true)
+      GameTooltip:Show()
+    end
+  end)
+  page:SetScript("OnHyperlinkLeave", function()
+    GameTooltip:Hide()
+  end)
   v.crumb = W.Text(page, "GameFontDisableSmall")
   v.crumb:SetPoint("BOTTOMLEFT", v.title, "TOPLEFT", 0, 2)
   -- paragraphs and headings come from pools; examples are built once per article and kept
@@ -775,7 +826,7 @@ function Help.CreateGuide(parent, contentArea)
       if type(b) == "string" then
         np = np + 1
         obj, gap = para(np), 10
-        obj:SetText(b)
+        obj:SetText(Help.LinkCommands(b))
       elseif b.h then
         nh = nh + 1
         obj, gap = sectionHeading(nh), 16

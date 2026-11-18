@@ -948,6 +948,18 @@ describe("addon in a stubbed client", function()
       assert.are.equal("Market tab", guide.title.text) -- the article keeps its full title
       assert.is_true(guide.examples["tabMarket:3"]:IsShown()) -- a live example in the article (the signal filter)
       assert.is_true(guide.heads[1]:IsShown()) -- and a section heading
+      -- slash commands are links: a click puts the command in the chat box
+      guide.byKey.commands.link.scripts.OnClick(guide.byKey.commands.link)
+      local text = guide.paras[1].text
+      assert.truthy(text:find("|Hamecmd:/ame status|h", 1, true), text)
+      assert.truthy(text:find("|Hamecmd:/ame|h", 1, true)) -- "/ame <item link>": just /ame
+      local typed
+      _G.ChatFrame_OpenChat = function(t)
+        typed = t
+      end
+      guide.pane.content.scripts.OnHyperlinkClick(guide.pane.content, "amecmd:/ame selftest")
+      assert.are.equal("/ame selftest", typed)
+      _G.ChatFrame_OpenChat = nil
     end)
 
     it("stars items into a watchlist, shows the list and fires alerts after a scan", function()

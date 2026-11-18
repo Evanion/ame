@@ -54,7 +54,7 @@ L["%s latest (%s): min %s, market %s, %d units in %d auctions"] = true
 L["%s of %s"] = true
 L["%s old"] = true
 L["%s to %s"] = true
-L["%s wants to share auction prices with you. Open |cffffffff/ame|r > Sync to approve."] = true
+L["%s wants to share auction prices with you. Type |cffffffff/ame config|r and open Sharing to approve."] = true
 L["(each point is one scan)"] = true
 L["(needs LibDBIcon; included in releases)"] = true
 L["(no room)"] = true
@@ -165,6 +165,7 @@ L["Clear all"] = true
 L["Clear all filters"] = true
 L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] = true
 L["Click a row to see what the route pays after the cut and the deposit, and how fresh both prices are."] = true
+L["Click to put it in your chat box"] = true
 L["Close"] = true
 L["Colour-blind friendly palette"] = true
 L["Colours"] = true
