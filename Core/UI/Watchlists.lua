@@ -138,7 +138,13 @@ function UI:UpdateWatchControls(keepInputs)
   for i in ipairs(watch:Lists()) do
     inList = inList or watch:Has(i, id)
   end
-  v.watch.label:SetText(inList and L["Watching"] or L["Watch"])
+  local listName
+  for i, l in ipairs(watch:Lists()) do
+    if not listName and watch:Has(i, id) then
+      listName = l.name
+    end
+  end
+  v.watch.label:SetText(inList and (L["Watching"] .. (listName and "  ·  " .. listName or "")) or L["Watch"])
   v.watch:SetSelected(inList)
   W.SetStar(v.watch.star, inList)
   local a = watch:Alert(id) or {}

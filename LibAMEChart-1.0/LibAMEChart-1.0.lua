@@ -23,7 +23,7 @@ Points are downsampled with LTTB to about one per 2 px, so large series stay che
 reused between redraws.
 ]]
 
-local MAJOR, MINOR = "LibAMEChart-1.0", 3
+local MAJOR, MINOR = "LibAMEChart-1.0", 4
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
 if not lib then
   return
@@ -323,6 +323,9 @@ local DEFAULTS = {
   padding = { left = 8, right = 64, top = 8, bottom = 18 }, -- right side holds the y-axis labels
   paneGap = 6,
   gridColor = { 1, 1, 1, 0.045 },
+  xGrid = true, -- vertical grid lines at the time ticks (false: horizontal lines only)
+  axisRule = false, -- a line between the plot and the y-axis labels
+  axisRuleColor = { 1, 1, 1, 0.12 },
   axisTextColor = { 0.75, 0.75, 0.75, 1 },
   crosshairColor = { 1, 1, 1, 0.3 },
   lineWidth = 2,
@@ -627,10 +630,20 @@ function Chart:Refresh()
     t:SetText(tfmt(tick.t, tick.unit))
     t:SetTextColor(colorOf(o.axisTextColor))
     t:SetPoint("TOP", self.canvas, "BOTTOMLEFT", x, lastPane.y - 3)
+    if o.xGrid then
+      for _, pane in pairs(panes) do
+        local g = pool(self, "grid")
+        g:SetColorTexture(colorOf(o.gridColor))
+        g:SetPoint("BOTTOMLEFT", self.canvas, "BOTTOMLEFT", x, pane.y)
+        g:SetSize(1, pane.h)
+      end
+    end
+  end
+  if o.axisRule then
     for _, pane in pairs(panes) do
       local g = pool(self, "grid")
-      g:SetColorTexture(colorOf(o.gridColor))
-      g:SetPoint("BOTTOMLEFT", self.canvas, "BOTTOMLEFT", x, pane.y)
+      g:SetColorTexture(colorOf(o.axisRuleColor))
+      g:SetPoint("BOTTOMLEFT", self.canvas, "BOTTOMLEFT", pane.x + pane.w, pane.y)
       g:SetSize(1, pane.h)
     end
   end
@@ -734,6 +747,37 @@ function Chart:DrawSeries(s, pane, e, from, to, sx, maxPoints)
   end
 
   local width = s.width or o.lineWidth
+  if s.dash then
+    -- dashed (s.dash = { on, off } in pixels): walk the polyline, drawing only the "on" stretches
+    local on, off = s.dash[1], s.dash[2]
+    local period, walked = on + off, 0
+    for k = 1, #px - 1 do
+      local x1, y1, x2, y2 = px[k], py[k], px[k + 1], py[k + 1]
+      local len = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
+      local t = 0
+      while t < len do
+        local phase = walked % period
+        local step
+        if phase < on then
+          step = math.min(len - t, on - phase)
+          local line = pool(self, "line")
+          line:SetColorTexture(r, g, b, a or 1)
+          line:SetThickness(width)
+          line:SetStartPoint("BOTTOMLEFT", self.canvas, x1 + (x2 - x1) * t / len, y1 + (y2 - y1) * t / len)
+          line:SetEndPoint(
+            "BOTTOMLEFT",
+            self.canvas,
+            x1 + (x2 - x1) * (t + step) / len,
+            y1 + (y2 - y1) * (t + step) / len
+          )
+        else
+          step = math.min(len - t, period - phase)
+        end
+        t, walked = t + step, walked + step
+      end
+    end
+    return
+  end
   if o.glow and o.lineTexture and s.glow ~= false then
     for k = 1, #px - 1 do
       local glow = pool(self, "glow")
