@@ -669,9 +669,10 @@ function UI:CreateMarketView(parent)
         tip:AddLine(L["Shift-click to search the auction house"], 0.6, 0.6, 0.6)
       end
     end,
-    status = false, -- the tab's status row (slots.status) spans the window under the sidebar
+    status = true, -- counts under the table; where the data comes from goes in the window's footer
   })
   v.headers, v.rows, v.bar, v.status = v.table.headers, v.table.rows, v.table.bar, slots.status
+  v.counts = v.table.status
   v.table.frame:HookScript("OnSizeChanged", function()
     UI:UpdateColumnsButton()
   end)
@@ -739,6 +740,7 @@ function UI:RefreshMarket(force)
     end
     v.table:SetMessage(text)
     v.status:SetText("")
+    v.counts:SetText("")
     for _, row in ipairs(v.rows) do
       row:Hide()
     end
@@ -789,12 +791,15 @@ function UI:RenderMarket()
   self.offset = t:Offset()
 
   local cache = ns.ItemCache
-  local status = L["%d items  ·  showing %d-%d  ·  index from %s"]:format(
-    total,
-    math.min(total, self.offset + 1),
-    math.min(total, self.offset + t.visible),
-    date("%b %d", self.index.day * DAY)
+  v.counts:SetText(
+    L["%d items  ·  showing %d-%d"]:format(
+      total,
+      math.min(total, self.offset + 1),
+      math.min(total, self.offset + t.visible)
+    )
   )
+  local status =
+    L["%s  ·  market data from %s"]:format(ns.ShardLabel(self:ViewShard()), date("%b %d", self.index.day * DAY))
   if cache.warmTotal and cache.warmDone and cache.warmDone < cache.warmTotal then
     status = status .. W.SEP .. L["loading item names %d/%d"]:format(cache.warmDone, cache.warmTotal)
   elseif (self.unnamed or 0) > 0 then

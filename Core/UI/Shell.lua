@@ -5,7 +5,7 @@
 --   left     (optional, fixed width)    full-height scrolling sidebar (categories, lists)
 --   main                                stretches both ways (chart, table)
 --   right    (optional, fixed width)    full-height scrolling sidebar (verdict, details)
---   status   (optional)                 one line at the bottom, left of the version
+--   status   (optional)                 the tab's text in the window's footer (where the numbers come from)
 --
 -- Compact mode (window narrower than UI.COMPACT_W): sidebars leave the layout and main takes the width. The left one
 -- is replaced by the tab's own control (e.g. a dropdown in the toolbar); the right one opens as a Details panel over
@@ -106,11 +106,15 @@ function UI.Slots(v, opts)
   s.top = y
   s.bottom = 0
   if opts.status then
-    s.status = W.Text(v, "GameFontDisableSmall")
-    s.status:SetPoint("BOTTOMLEFT", 0, 2)
-    s.status:SetPoint("BOTTOMRIGHT", -UI.FOOTER_SPACE, 2)
-    s.status:SetWordWrap(false)
-    s.bottom = 20
+    -- the footer belongs to the window (it stays put, sidebars end above it): the tab only sets its text
+    s.status = { text = "" }
+    function s.status:SetText(text)
+      self.text = text or ""
+      UI:UpdateFooter()
+    end
+    function s.status:GetText()
+      return self.text
+    end
   end
   if opts.left then
     s.left = sidebar(v, opts.left)

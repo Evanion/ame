@@ -20,7 +20,7 @@ L["%d days ago"] = "hace %d días"
 L["%d h ago"] = "hace %d h"
 L["%d h listings"] = "subastas de %d h"
 L["%d items"] = "%d objetos"
-L["%d items  ·  showing %d-%d  ·  index from %s"] = "%d objetos  ·  mostrando %d-%d  ·  índice de %s"
+L["%d items  ·  showing %d-%d"] = "%d objetos  ·  mostrando %d-%d"
 L["%d items from %s listings, stored %s ms after the scan request"] =
   "%d objetos de %s anuncios, guardados %s ms tras la petición de escaneo"
 L["%d items not searchable yet (names loading)"] = "%d objetos aún no se pueden buscar (cargando nombres)"
@@ -36,8 +36,7 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "%d posiciones en %d personaje. Las bolsas se actualizan mientras juegas; abre tu banco y la casa de subastas para incluir los objetos del banco y las subastas activas."
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "%d posiciones en %d personajes. Las bolsas se actualizan mientras juegas; abre tu banco y la casa de subastas para incluir los objetos del banco y las subastas activas."
-L["%d routes  ·  buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"] =
-  "%d rutas  ·  compra en la %s (%d%% de comisión), venta en la %s (%d%% de comisión)  ·  depósitos para una subasta de %d h"
+L["%d routes"] = "%d rutas"
 L["%d scans in 7 days"] = "%d escaneos en 7 días"
 L["%d scans/7d, %s"] = "%d escaneos/7d, %s"
 L["%d suppliers, by gold you spent with them (from auction mail)."] =
@@ -50,6 +49,7 @@ L["%dd avg"] = "Media %dd"
 L["%dh listing"] = "subasta de %d h"
 L["%dx off usual"] = "%dx de lo habitual"
 L["%s  ·  %d days of history"] = "%s  ·  %d días de historial"
+L["%s  ·  market data from %s"] = "%s  ·  datos de mercado del %s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s: mín. %s, mercado %s, cant. %d (%d muestras)"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
   "%s último (%s): mín. %s, mercado %s, %d unidades en %d subastas"
@@ -70,6 +70,7 @@ L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /am
   "/ame item <enlace> - mostrar historial  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
 L["/week"] = "/semana"
 L["1 day"] = "1 día"
+L["1 route"] = "1 ruta"
 L["30 days"] = "30 días"
 L["7 days"] = "7 días"
 L["7-day change"] = "Cambio en 7 días"
@@ -157,6 +158,8 @@ L["Block"] = "Bloquear"
 L["Blocked"] = "Bloqueados"
 L["Building market index..."] = "Construyendo índice de mercado..."
 L["Buy at"] = "Comprar en"
+L["Buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"] =
+  "Compra en %s (%d%% de comisión), venta en %s (%d%% de comisión)  ·  depósitos para una subasta de %d h"
 L["Buy at the %s, sell at the %s"] = "Compra en la %s, vende en la %s"
 L["By your guild officers: %s"] = "Por los oficiales de tu hermandad: %s"
 L["CSV"] = "CSV"

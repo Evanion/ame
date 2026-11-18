@@ -1296,7 +1296,7 @@ W.SEP = "  ·  "
 function W.StatusLine(parent)
   local s = W.Text(parent, "GameFontDisableSmall", "LEFT")
   s:SetPoint("BOTTOMLEFT", 0, 0)
-  s:SetPoint("BOTTOMRIGHT", -(ns.UI and ns.UI.FOOTER_SPACE or 0), 0) -- the version sits at the right end
+  s:SetPoint("BOTTOMRIGHT", 0, 0)
   s:SetWordWrap(false)
   return s
 end

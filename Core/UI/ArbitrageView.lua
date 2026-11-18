@@ -202,9 +202,10 @@ function UI:CreateArbitrageView(parent, contentArea)
         UI:SelectRoute(e)
       end
     end,
-    status = false, -- the tab's status row (slots.status) spans the window under the sidebar
+    status = true, -- the route count under the table; both houses' terms go in the window's footer
   })
   v.headers, v.rows, v.status = v.table.headers, v.table.rows, slots.status
+  v.counts = v.table.status
   self:CreateRouteSidebar(v, slots.right)
 
   function v:SetCompact(on)
@@ -444,8 +445,7 @@ function UI:RenderArbitrage()
         self.arbMissing
       )
   else
-    status = L["%d routes  ·  buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"]:format(
-      #rows,
+    status = L["Buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"]:format(
       ns.HOUSE_LABEL[a.buy],
       math.floor(ns.Settings:AuctionCut(a.buy) * 100 + 0.5),
       ns.HOUSE_LABEL[a.sell],
@@ -470,5 +470,6 @@ function UI:RenderArbitrage()
   t:Render()
   t:SetMessage(message)
   v.status:SetText(status or "")
+  v.counts:SetText(message and "" or (#rows == 1 and L["1 route"] or L["%d routes"]:format(#rows)))
   self:RenderRoute()
 end

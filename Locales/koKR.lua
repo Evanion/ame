@@ -21,7 +21,7 @@ L["%d days ago"] = "%d일 전"
 L["%d h ago"] = "%d시간 전"
 L["%d h listings"] = "%d시간 등록"
 L["%d items"] = "아이템 %d개"
-L["%d items  ·  showing %d-%d  ·  index from %s"] = "아이템 %d개  ·  %d-%d 표시 중  ·  인덱스 기준 %s"
+L["%d items  ·  showing %d-%d"] = "%d개 아이템  ·  %d-%d 표시"
 L["%d items from %s listings, stored %s ms after the scan request"] =
   "아이템 %d개 (등록 %s건), 검색 요청 후 %s ms에 저장됨"
 L["%d items not searchable yet (names loading)"] = "아이템 %d개 아직 검색 불가 (이름 불러오는 중)"
@@ -37,8 +37,7 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "보유 종목 %d개, 캐릭터 %d명. 가방은 플레이 중 갱신됩니다. 은행과 경매장을 열면 은행 아이템과 진행 중인 경매도 포함됩니다."
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "보유 종목 %d개, 캐릭터 %d명. 가방은 플레이 중 갱신됩니다. 은행과 경매장을 열면 은행 아이템과 진행 중인 경매도 포함됩니다."
-L["%d routes  ·  buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"] =
-  "경로 %d개  ·  구매: %s (수수료 %d%%), 판매: %s (수수료 %d%%)  ·  %d시간 등록 1회 보증금 기준"
+L["%d routes"] = "%d개 경로"
 L["%d scans in 7 days"] = "7일간 스캔 %d회"
 L["%d scans/7d, %s"] = "스캔 %d회/7일, %s"
 L["%d suppliers, by gold you spent with them (from auction mail)."] =
@@ -52,6 +51,7 @@ L["%dd avg"] = "%d일 평균"
 L["%dh listing"] = "%d시간 등록"
 L["%dx off usual"] = "평소보다 %d배 차이"
 L["%s  ·  %d days of history"] = "%s  ·  %d일치 기록"
+L["%s  ·  market data from %s"] = "%s  ·  %s 시장 데이터"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s: 최저 %s, 시장가 %s, 수량 %d (표본 %d개)"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
   "%s 최신 (%s): 최저 %s, 시장가 %s, %d개 / 경매 %d건"
@@ -72,6 +72,7 @@ L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /am
   "/ame item <링크> - 기록 출력  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
 L["/week"] = "/주"
 L["1 day"] = "1일"
+L["1 route"] = "1개 경로"
 L["30 days"] = "30일"
 L["7 days"] = "7일"
 L["7-day change"] = "7일 변동"
@@ -158,6 +159,8 @@ L["Block"] = "차단"
 L["Blocked"] = "차단됨"
 L["Building market index..."] = "시장 인덱스 구축 중..."
 L["Buy at"] = "구매처"
+L["Buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"] =
+  "%s에서 구매 (수수료 %d%%), %s에서 판매 (수수료 %d%%)  ·  %d시간 등록 1회 보증금"
 L["Buy at the %s, sell at the %s"] = "%s에서 사서 %s에서 파세요"
 L["By your guild officers: %s"] = "길드 관리자가 차단: %s"
 L["CSV"] = "CSV"

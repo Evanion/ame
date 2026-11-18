@@ -581,7 +581,7 @@ describe("addon in a stubbed client", function()
         local v = ns.UI.itemView
         assert.is_true(v.sidebar:IsShown())
         assert.is_false(v.summary:IsShown())
-        assert.are.same({ "BOTTOMRIGHT", -(ns.UI.ITEM_SIDEBAR + ns.UI.SLOT_GAP), 20 }, v.slots.main.points[2])
+        assert.are.same({ "BOTTOMRIGHT", -(ns.UI.ITEM_SIDEBAR + ns.UI.SLOT_GAP), 0 }, v.slots.main.points[2])
         -- legend: one line per series, hidden while hovering the plot
         assert.truthy(v.legend.text:find("market"))
         assert.truthy(v.legend.text:find("\n"))
@@ -595,7 +595,7 @@ describe("addon in a stubbed client", function()
         assert.is_false(v.sidebar:IsShown())
         assert.is_true(v.summary:IsShown())
         assert.truthy(v.summary.text:find("Market"))
-        assert.are.same({ "BOTTOMRIGHT", 0, 20 }, v.slots.main.points[2]) -- the chart takes the width
+        assert.are.same({ "BOTTOMRIGHT", 0, 0 }, v.slots.main.points[2]) -- the chart takes the width
         v.details.scripts.OnClick(v.details)
         assert.is_true(v.sidebar:IsShown()) -- over the chart
         v.details.scripts.OnClick(v.details)
@@ -605,18 +605,26 @@ describe("addon in a stubbed client", function()
         assert.is_false(v.summary:IsShown())
       end)
 
-      it("every tab's sidebars stop above the status row, which spans the window (version on the right)", function()
+      it("the footer is the window's: each tab's status text on the left, version on the right", function()
         seeded()
         ns.UI:Toggle()
-        for _, name in ipairs({ "item", "market", "arbitrage", "guide" }) do
-          local slots = ns.UI.views[name].slots
-          local side = slots.right or slots.left
-          assert.are.equal(20, slots.bottom, name)
-          assert.are.equal(20, side.points[#side.points][3], name) -- BOTTOM* anchor, 20 up
-          assert.is_not_nil(slots.status, name)
-        end
-        assert.are.equal(ns.UI.views.market.slots.status, ns.UI.marketView.status)
-        assert.are.equal(ns.UI.views.arbitrage.slots.status, ns.UI.arbView.status)
+        -- tabs end above the footer, so no sidebar reaches it
+        local area = ns.UI.views.market
+        assert.are.same({ "BOTTOMRIGHT", -10, 10 + ns.UI.FOOTER_H }, area.points[#area.points])
+        ns.UI:ShowTab("market")
+        ns.UI:RefreshMarket(true)
+        -- where the data comes from in the footer; the table's own counts under the table
+        assert.truthy(ns.UI.footerLeft.text:find("market data from"), ns.UI.footerLeft.text)
+        assert.truthy(ns.UI.marketView.counts.text:find("2 items"))
+        ns.UI:ShowTab("arbitrage")
+        local arb = ns.UI.arbView
+        arb.scripts.OnShow(arb)
+        drainJobs()
+        assert.are.equal(arb.status.text, ns.UI.footerLeft.text) -- the tab's text, shown by the window
+        assert.is_not_nil(arb.counts)
+        ns.UI:ShowTab("settings")
+        assert.truthy(ns.UI.footerLeft.text:find("saved per account"))
+        assert.truthy(ns.UI.footer.text:find(ns.VERSION, 1, true))
       end)
 
       it("scroll panes measure their content and scroll only as far as it goes", function()

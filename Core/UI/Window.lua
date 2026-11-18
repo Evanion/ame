@@ -12,7 +12,7 @@ ns.UI = UI
 UI.WIDTH, UI.HEIGHT = 980, 500 -- design width the fixed-size pieces were laid out for; the window itself resizes
 UI.MIN_W, UI.MIN_H = 760, 460 -- the smallest window every tab still works in
 UI.COMPACT_W = 900 -- below this width tabs use their compact layout (UI.compact)
-UI.FOOTER_SPACE = 90 -- width kept free for the version at the right end of the bottom row
+UI.FOOTER_H = 22 -- the window's footer row, under every tab
 UI.COLUMN2 = 490 -- x of the second column on the Sync and Settings tabs
 
 function UI.AvgDays()
@@ -200,12 +200,19 @@ function UI:CreateShell()
   })
   self.tabBar:SetPoint("TOPRIGHT", -34, -8) -- right-aligned: long labels push the row left
 
-  -- the version, bottom right, on the same row as each tab's status line (credits are on the Guide tab)
+  -- The footer, part of the window like the title bar: on the left, where the tab's numbers come from (each tab
+  -- sets it through its slots.status); on the right, what AME is busy with and the version. Tabs end above it.
   local footer = W.Text(f, "GameFontDisableSmall", "RIGHT")
   footer:SetPoint("BOTTOMRIGHT", -22, 10) -- left of the resize grip
   footer:SetText("v" .. ns.VERSION)
   footer:SetAlpha(0.7)
   self.footer = footer
+  local footerLeft = W.Text(f, "GameFontDisableSmall", "LEFT")
+  footerLeft:SetPoint("BOTTOMLEFT", 12, 10)
+  footerLeft:SetPoint("RIGHT", footer, "LEFT", -16, 0)
+  footerLeft:SetWordWrap(false)
+  self.footerLeft = footerLeft
+  W.Truncated(footerLeft)
   -- while a market index is rebuilt, the (older) data on screen is marked as updating
   local elapsed = 0
   f:HookScript("OnUpdate", function(_, dt)
@@ -493,6 +500,7 @@ function UI:ShowTab(name)
   end
   self.tabBar:Select(name, true)
   self.current = name
+  self:UpdateFooter()
   if name == "market" then
     self:RefreshMarket()
   end
@@ -514,8 +522,18 @@ end
 function contentArea(parent)
   local v = CreateFrame("Frame", nil, parent)
   v:SetPoint("TOPLEFT", 10, -36)
-  v:SetPoint("BOTTOMRIGHT", -10, 10)
+  v:SetPoint("BOTTOMRIGHT", -10, 10 + UI.FOOTER_H) -- above the window's footer
   v:Hide()
   return v
 end
 UI.ContentArea = contentArea
+
+-- the footer's left side: the current tab's status text
+function UI:UpdateFooter()
+  if not self.footerLeft then
+    return
+  end
+  local view = self.views and self.views[self.current]
+  local status = view and view.slots and view.slots.status
+  self.footerLeft:SetText(status and status.text or "")
+end

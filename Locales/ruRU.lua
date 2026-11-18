@@ -21,8 +21,7 @@ L["%d days ago"] = "%d дн. назад"
 L["%d h ago"] = "%d ч назад"
 L["%d h listings"] = "лоты на %d ч"
 L["%d items"] = "%d предметов"
-L["%d items  ·  showing %d-%d  ·  index from %s"] =
-  "Предметов: %d  ·  показаны %d-%d  ·  индекс от %s"
+L["%d items  ·  showing %d-%d"] = "%d предметов  ·  показаны %d-%d"
 L["%d items from %s listings, stored %s ms after the scan request"] =
   "%d предметов из %s лотов, сохранено через %s мс после запроса сканирования"
 L["%d items not searchable yet (names loading)"] =
@@ -40,8 +39,7 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
-L["%d routes  ·  buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"] =
-  "Маршрутов: %d  ·  покупка: %s (комиссия %d%%), продажа: %s (комиссия %d%%)  ·  залог за один лот на %d ч"
+L["%d routes"] = "Маршрутов: %d"
 L["%d scans in 7 days"] = "%d сканирований за 7 дней"
 L["%d scans/7d, %s"] = "%d скан./7д, %s"
 L["%d suppliers, by gold you spent with them (from auction mail)."] =
@@ -55,6 +53,7 @@ L["%dd avg"] = "Ср. %dд"
 L["%dh listing"] = "лот на %d ч"
 L["%dx off usual"] = "В %d раз от обычного"
 L["%s  ·  %d days of history"] = "%s  ·  история за %d дн."
+L["%s  ·  market data from %s"] = "%s  ·  данные рынка от %s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] =
   "%s %s: мин. %s, рынок %s, кол-во %d (%d замеров)"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
@@ -76,6 +75,7 @@ L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /am
   "/ame item <ссылка> - вывести историю  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
 L["/week"] = "/нед."
 L["1 day"] = "1 день"
+L["1 route"] = "1 маршрут"
 L["30 days"] = "30 дней"
 L["7 days"] = "7 дней"
 L["7-day change"] = "Изменение за 7 дней"
@@ -166,6 +166,8 @@ L["Block"] = "Блокировать"
 L["Blocked"] = "Заблокированы"
 L["Building market index..."] = "Построение рыночного индекса..."
 L["Buy at"] = "Купить в"
+L["Buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"] =
+  "Покупка: %s (сбор %d%%), продажа: %s (сбор %d%%)  ·  залог за одно выставление на %d ч"
 L["Buy at the %s, sell at the %s"] = "Покупка: %s, продажа: %s"
 L["By your guild officers: %s"] = "Офицерами вашей гильдии: %s"
 L["CSV"] = "CSV"

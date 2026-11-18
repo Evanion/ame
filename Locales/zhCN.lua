@@ -21,7 +21,7 @@ L["%d days ago"] = "%d 天前"
 L["%d h ago"] = "%d 小时前"
 L["%d h listings"] = "%d 小时挂单"
 L["%d items"] = "%d 件物品"
-L["%d items  ·  showing %d-%d  ·  index from %s"] = "%d 件物品  ·  显示 %d-%d  ·  索引来自 %s"
+L["%d items  ·  showing %d-%d"] = "%d 件物品  ·  显示 %d-%d"
 L["%d items from %s listings, stored %s ms after the scan request"] =
   "%d 件物品，来自 %s 条挂单，扫描请求后 %s 毫秒存储"
 L["%d items not searchable yet (names loading)"] = "%d 件物品暂时无法搜索（名称加载中）"
@@ -36,8 +36,7 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "%d 个持仓，分布在 %d 个角色上。背包会随游戏实时更新；打开银行和拍卖行即可计入银行物品和进行中的拍卖。"
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "%d 个持仓，分布在 %d 个角色上。背包会随游戏实时更新；打开银行和拍卖行即可计入银行物品和进行中的拍卖。"
-L["%d routes  ·  buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"] =
-  "%d 条路线  ·  在 %s 买入（手续费 %d%%），在 %s 卖出（手续费 %d%%）  ·  按一次 %d 小时挂单计保管费"
+L["%d routes"] = "%d 条路线"
 L["%d scans in 7 days"] = "7天内扫描 %d 次"
 L["%d scans/7d, %s"] = "%d 次扫描/7天，%s"
 L["%d suppliers, by gold you spent with them (from auction mail)."] =
@@ -50,6 +49,7 @@ L["%dd avg"] = "%d日均"
 L["%dh listing"] = "%d 小时挂单"
 L["%dx off usual"] = "偏离常价 %d 倍"
 L["%s  ·  %d days of history"] = "%s  ·  %d 天历史"
+L["%s  ·  market data from %s"] = "%s  ·  市场数据日期 %s"
 L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s：最低 %s，市场价 %s，数量 %d（%d 个样本）"
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
   "%s 最新（%s）：最低 %s，市场价 %s，%d 件，共 %d 个拍卖"
@@ -70,6 +70,7 @@ L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /am
   "/ame item <链接> - 输出历史  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"
 L["/week"] = "/周"
 L["1 day"] = "1 天"
+L["1 route"] = "1 条路线"
 L["30 days"] = "30 天"
 L["7 days"] = "7 天"
 L["7-day change"] = "7日涨跌"
@@ -155,6 +156,8 @@ L["Block"] = "屏蔽"
 L["Blocked"] = "已屏蔽"
 L["Building market index..."] = "正在构建市场索引..."
 L["Buy at"] = "买入地"
+L["Buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"] =
+  "在%s购买（%d%% 手续费），在%s出售（%d%% 手续费）  ·  按一次 %d 小时上架计算保证金"
 L["Buy at the %s, sell at the %s"] = "在 %s 买入，在 %s 卖出"
 L["By your guild officers: %s"] = "被公会官员屏蔽：%s"
 L["CSV"] = "CSV"
