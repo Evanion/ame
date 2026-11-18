@@ -18,6 +18,8 @@
 --                                                   -- otherwise the table sorts its rows itself on header clicks
 --     offset = { get = fn, set = fn },              -- optional: owner keeps the scroll position
 --     onClick = function(d, button) end, tooltip = function(tip, d) end,
+--     selected = function(d) return bool end,       -- highlight the selected row
+--     rowAlpha = function(d) return 0.5 end,        -- fade rows (stale data)
 --     status = true,                                -- t.status: the status line at the bottom of parent
 --   })
 --   t:SetData(list); t:Render()
@@ -129,6 +131,12 @@ function DataTable.New(parent, opts)
     row.hl = row:CreateTexture(nil, "HIGHLIGHT")
     row.hl:SetAllPoints()
     W.Fill(row.hl, W.COLORS.rowHover)
+    if opts.selected then -- the selected row (e.g. the route in the sidebar)
+      row.selTex = row:CreateTexture(nil, "BACKGROUND")
+      row.selTex:SetAllPoints()
+      W.Fill(row.selTex, W.COLORS.rowSelected)
+      row.selTex:Hide()
+    end
     row.cells = {}
     row.star, row.icon, row.conf, row.action = false, false, false, false -- optional parts, set below
     for c, col in ipairs(opts.columns) do
@@ -523,6 +531,9 @@ function DataTable:Render()
     row.itemID = d and opts.itemID and opts.itemID(d) or false
     row:SetShown(d ~= nil)
     row:SetAlpha(d and opts.rowAlpha and opts.rowAlpha(d) or 1)
+    if opts.selected then
+      row.selTex:SetShown(d ~= nil and opts.selected(d) or false)
+    end
     if row.action then
       row.action:SetShown(d ~= nil and (not opts.action.shown or opts.action.shown(d)) or false)
     end

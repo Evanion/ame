@@ -796,6 +796,27 @@ describe("addon in a stubbed client", function()
       assert.are.equal(155, r.profit)
       assert.are.equal(2589, v.rows[1].itemID)
       assert.truthy(v.status.text:find("15%% cut"))
+      -- the first route is selected; the sidebar breaks it down: price, cut, deposit, buy, net
+      local route = v.route
+      assert.are.equal(2589, ns.UI.arbRoute.itemID)
+      assert.are.equal(155, r.net) -- no vendor price known: no deposit
+      assert.truthy(route.cut.label.text:find("15%%"))
+      assert.truthy(route.buyAge.value.text:find("today"))
+      assert.truthy(route.searchHint.text:find("Visit the Horde AH")) -- we're at the goblin AH
+      ns.ItemCache.Get(2589).sellPrice = 1000
+      ns.UI:RefreshArbitrage(true)
+      drainJobs()
+      r = ns.UI.arbRows[1]
+      -- one post of 10 at the goblin AH: 60% x 5 of the vendor price per unit = 3000 per unit
+      assert.are.equal(3000, r.deposit)
+      assert.are.equal(155 - 3000, r.net)
+      assert.truthy(route.deposit.value.text:find("30"))
+      ns.ItemCache.Get(2589).sellPrice = nil
+      r.sellAge = 5
+      ns.UI:RenderRoute()
+      assert.truthy(route.warn.text:find("5 days old"))
+      v.rows[1].scripts.OnClick(v.rows[1]) -- a click selects (the Chart button opens the item)
+      assert.are.equal(2589, ns.UI.arbSelected)
       -- the other way round finds nothing
       v.swap.scripts.OnClick(v.swap)
       drainJobs()

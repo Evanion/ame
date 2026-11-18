@@ -36,8 +36,6 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "%d 個部位，分布在 %d 個角色上。背包會隨遊戲即時更新；打開銀行和拍賣場即可計入銀行物品和進行中的拍賣。"
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "%d 個部位，分布在 %d 個角色上。背包會隨遊戲即時更新；打開銀行和拍賣場即可計入銀行物品和進行中的拍賣。"
-L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
-  "%d 條路線  ·  在%s買進，在%s賣出：%d%% 手續費，以 %d 小時上架計算保證金"
 L["%d scans in 7 days"] = "7天內掃描 %d 次"
 L["%d scans/7d, %s"] = "%d 次掃描/7天，%s"
 L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =

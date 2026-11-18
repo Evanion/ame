@@ -67,6 +67,10 @@ Help.TERMS = {
     L["The market price at the auction house you sell at: what the item typically sells for there."],
   },
   arbProfit = { L["Profit"], L["Per item: what it sells for, minus the AH cut, minus what you paid."] },
+  arbNet = {
+    L["Net"],
+    L["Per item: what it sells for, minus the AH cut, minus the listing deposit, minus what you paid. The deposit is counted for one post of the units the route pays for (or up to 20), at least 1 silver per post - you get it back when it sells."],
+  },
   arbMargin = { L["Margin"], L["Profit as a share of what you paid. 50% means every 10g spent comes back as 15g."] },
   arbSupply = {
     L["Supply"],

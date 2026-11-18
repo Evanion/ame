@@ -1,4 +1,7 @@
--- Arbitrage tab: items to buy at one auction house and sell at another, after the selling house's cut.
+-- Arbitrage tab: items to buy at one auction house and sell at another, after the selling house's cut and deposit.
+-- Layout (UI.Slots): toolbar (buy ⇄ sell, minimum profit and margin, data age), the routes table, and a right
+-- sidebar for the selected route (price → cut → deposit → net, each side's age, sell rate, Search at the buy house).
+-- Narrow window: the sidebar opens over the table from a Details button.
 local _, ns = ...
 local L = ns.L
 
@@ -16,6 +19,8 @@ local AGES = {
   { 7, L["Seen in 7 days"] },
   { false, L["Any age"] },
 }
+UI.ARB_SIDEBAR = 260
+UI.ARB_POST_UNITS = 20 -- deposit basis when the route's depth isn't known: one post of up to this many
 
 local function ageText(days)
   if not days or days <= 0 then
@@ -25,27 +30,39 @@ local function ageText(days)
   end
   return L["%d days"]:format(days)
 end
+UI.AgeText = ageText
 
 local COLUMNS = {
   { key = "name", label = L["Item"], width = 180, item = true, sortKey = false },
-  { key = "buy", label = L["Buy at"], width = 86, format = "money", term = "arbBuy" },
-  { key = "sell", label = L["Sells for"], width = 86, format = "money", term = "arbSell" },
+  { key = "buy", label = L["Buy at"], width = 80, format = "money", term = "arbBuy" },
+  { key = "sell", label = L["Sells for"], width = 80, format = "money", term = "arbSell" },
   {
-    key = "profit",
-    label = L["Profit"],
-    width = 86,
-    term = "arbProfit",
+    key = "net",
+    label = L["Net"],
+    width = 80,
+    term = "arbNet",
     text = function(e)
-      return W.SignedMoney(e.profit)
+      return W.SignedMoney(e.net)
     end,
   },
   {
     key = "margin",
     label = L["Margin"],
-    width = 60,
+    width = 56,
     term = "arbMargin",
     text = function(e)
       return W.Percent(e.margin, 0)
+    end,
+  },
+  {
+    key = "depth",
+    drop = 4,
+    label = L["Depth"],
+    width = 90,
+    term = "arbDepth",
+    sortKey = false,
+    text = function(e)
+      return UI:DepthText(e)
     end,
   },
   {
@@ -57,30 +74,6 @@ local COLUMNS = {
     sortKey = "sellQty",
     text = function(e)
       return ("%s / %s"):format(tostring(e.buyQty or "-"), tostring(e.sellQty or "-"))
-    end,
-  },
-  {
-    key = "deposit",
-    drop = 4,
-    label = L["Deposit"],
-    width = 70,
-    term = "arbDeposit",
-    sortKey = false,
-    text = function(e)
-      local info = ns.ItemCache.Get(e.itemID)
-      local dep = ns.Arbitrage.Deposit(info.sellPrice, UI.arb.sell, ns.Settings:Get("listingHours"))
-      return dep and W.Money(dep, true) or "-"
-    end,
-  },
-  {
-    key = "depth",
-    drop = 5,
-    label = L["Depth"],
-    width = 90,
-    term = "arbDepth",
-    sortKey = false,
-    text = function(e)
-      return UI:DepthText(e)
     end,
   },
   { key = "sellRate", drop = 2, label = L["Sells/d"], width = 58, format = "rate", term = "arbSellRate" },
@@ -95,7 +88,18 @@ local COLUMNS = {
     end,
   },
 }
-local ROWS = 16
+
+-- deposit per unit at the sell house: one post of the route's profitable units (or up to UI.ARB_POST_UNITS)
+function UI:ArbDeposit(e)
+  local info = ns.ItemCache.Get(e.itemID)
+  if not info.sellPrice then
+    return nil
+  end
+  local n = e.units or math.min(e.buyQty or 1, UI.ARB_POST_UNITS)
+  n = math.max(1, n)
+  local dep = ns.Arbitrage.Deposit(info.sellPrice * n, self.arb.sell, ns.Settings:Get("listingHours"))
+  return dep / n
+end
 
 function UI:CreateArbitrageView(parent, contentArea)
   local v = contentArea(parent)
@@ -107,48 +111,59 @@ function UI:CreateArbitrageView(parent, contentArea)
     minProfit = 1,
     minMargin = 0.1,
     maxAge = 3,
-    sortKey = "profit",
+    sortKey = "net",
     ascending = false,
   }
+  local slots = UI.Slots(v, { toolbar = 22, right = UI.ARB_SIDEBAR })
+  v.slots = slots
+  local bar = slots.toolbar
 
-  v.buy = W.Dropdown(v, 104, HOUSES, function(value)
+  v.buy = W.Dropdown(bar, 104, HOUSES, function(value)
     UI.arb.buy = value
     UI:RefreshArbitrage()
   end, { neutral = true })
-  W.Labeled(v, L["Buy at"], v.buy):SetPoint("TOPLEFT", 0, -4)
-  v.swap = W.Button(v, L["Swap"], 50, 20, function()
+  W.Labeled(bar, L["Buy at"], v.buy):SetPoint("LEFT", 0, 0)
+  v.swap = W.Button(bar, "<>", 30, 20, function()
     UI.arb.buy, UI.arb.sell = UI.arb.sell, UI.arb.buy
     UI:RefreshArbitrage()
   end)
+  W.Tooltip(v.swap, function(tip)
+    W.TipText(tip, L["Swap"])
+  end)
   v.swap:SetPoint("LEFT", v.buy, "RIGHT", 6, 0)
-  v.sell = W.Dropdown(v, 104, HOUSES, function(value)
+  v.sell = W.Dropdown(bar, 104, HOUSES, function(value)
     UI.arb.sell = value
     UI:RefreshArbitrage()
   end, { neutral = true })
-  W.Labeled(v, L["Sell at"], v.sell):SetPoint("LEFT", v.swap, "RIGHT", 10, 0)
+  W.Labeled(bar, L["Sell at"], v.sell):SetPoint("LEFT", v.swap, "RIGHT", 8, 0)
 
-  v.minProfit = W.GoldInput(v, L["profit g"], function(g)
+  v.minProfit = W.GoldInput(bar, L["profit g"], function(g)
     UI.arb.minProfit = g and g * 10000 or 1
     UI:RefreshArbitrage(true)
   end)
-  v.minProfit:SetPoint("LEFT", v.sell, "RIGHT", 16, 0)
-  v.minMargin = W.GoldInput(v, L["margin %"], function(p) -- whole percent, same box as gold
+  v.minProfit:SetPoint("LEFT", v.sell, "RIGHT", 12, 0)
+  v.minMargin = W.GoldInput(bar, L["margin %"], function(p) -- whole percent, same box as gold
     UI.arb.minMargin = (p or 10) / 100
     UI:RefreshArbitrage(true)
   end)
   v.minMargin:SetPoint("LEFT", v.minProfit, "RIGHT", 6, 0)
-  v.age = W.Dropdown(v, 140, AGES, function(value)
+  v.age = W.Dropdown(bar, 136, AGES, function(value)
     UI.arb.maxAge = value
     UI:RefreshArbitrage(true)
   end, { neutral = true })
   v.age:SetPoint("LEFT", v.minMargin, "RIGHT", 6, 0)
+  v.details = W.Button(bar, L["Details"], 64, 20, function()
+    slots:ToggleDetails()
+    v.details:SetSelected(slots.details)
+  end)
+  v.details:SetPoint("RIGHT", 0, 0)
 
   -- the list (shared DataTable component)
-  v.table = ns.DataTable.New(v, {
+  v.table = ns.DataTable.New(slots.main, {
     columns = COLUMNS,
-    rows = ROWS,
+    rows = 16,
     fill = true, -- rows fill the tab down to the status line
-    top = -32,
+    top = 0,
     itemID = function(e)
       return e.itemID
     end,
@@ -176,21 +191,136 @@ function UI:CreateArbitrageView(parent, contentArea)
         ns.AME:SearchAuctionHouse(e.itemID)
       end,
     },
+    selected = function(e)
+      return UI.arbSelected == e.itemID
+    end,
     onClick = function(e)
       if IsShiftKeyDown() and UI:AtBuyHouse() then
         ns.AME:SearchAuctionHouse(e.itemID)
       else
-        UI:ShowItem(e.itemID)
+        UI:SelectRoute(e)
       end
     end,
     status = true,
   })
   v.headers, v.rows, v.status = v.table.headers, v.table.rows, v.table.status
+  self:CreateRouteSidebar(v, slots.right)
+
+  function v:SetCompact(on)
+    slots:SetCompact(on)
+    self.details:SetShown(on)
+    self.details:SetSelected(false)
+  end
+  v:SetCompact(slots.compact)
 
   v:SetScript("OnShow", function()
     UI:RefreshArbitrage(true) -- coming back (e.g. from an item chart): keep the scroll position
   end)
   return v
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- the selected route
+
+function UI:CreateRouteSidebar(v, side)
+  local st = UI.Stack(side.content)
+  local r = {}
+  r.name = st:Text("GameFontNormal", 0)
+  r.hint = st:Text("GameFontDisableSmall", 4)
+  r.sell = st:Pair(L["Sells for"], "arbSell", 10)
+  r.cut = st:Pair(L["AH cut"], nil)
+  r.deposit = st:Pair(L["Deposit"], "arbDeposit")
+  r.buy = st:Pair(L["Buy at"], "arbBuy")
+  r.net = st:Pair(L["Net per unit"], "arbNet", 6)
+  r.margin = st:Pair(L["Margin"], "arbMargin")
+  st:Heading(L["Depth and speed"])
+  r.depth = st:Pair(L["Depth"], "arbDepth", 6)
+  r.rate = st:Pair(L["Sells/d"], "arbSellRate")
+  st:Heading(L["Data"])
+  r.buyAge = st:Pair("", "arbAge", 6)
+  r.sellAge = st:Pair("", "arbAge")
+  r.warn = st:Text("GameFontHighlightSmall", 6)
+  local actions = st:Row(22, 12)
+  r.search = W.Button(actions, L["Search"], 140, 22, function()
+    if UI.arbRoute then
+      ns.AME:SearchAuctionHouse(UI.arbRoute.itemID)
+    end
+  end)
+  r.search:SetPoint("LEFT")
+  r.search:SetSelected(true)
+  r.chart = W.Button(actions, L["Chart"], 80, 22, function()
+    if UI.arbRoute then
+      UI:ShowItem(UI.arbRoute.itemID)
+    end
+  end)
+  r.chart:SetPoint("LEFT", r.search, "RIGHT", 6, 0)
+  r.searchHint = st:Text("GameFontDisableSmall", 6)
+  v.route = r
+  v.sidebar = side
+end
+
+function UI:SelectRoute(e)
+  self.arbSelected = e and e.itemID or nil
+  self:RenderRoute()
+  self.arbView.table:Render()
+end
+
+function UI:RenderRoute()
+  local v = self.arbView
+  local r, a = v.route, self.arb
+  local e
+  for _, row in ipairs(self.arbRows or {}) do
+    if row.itemID == self.arbSelected then
+      e = row
+    end
+  end
+  self.arbRoute = e
+  local parts = { r.sell, r.cut, r.deposit, r.buy, r.net, r.margin, r.depth, r.rate, r.buyAge, r.sellAge }
+  if not e then
+    r.name:SetText(W.Dim(L["Select a route"]))
+    r.hint:SetText(
+      L["Click a row to see what the route pays after the cut and the deposit, and how fresh both prices are."]
+    )
+    for _, p in ipairs(parts) do
+      p.value:SetText("-")
+    end
+    r.warn:SetText("")
+    r.search:Hide()
+    r.chart:Hide()
+    r.searchHint:SetText("")
+    v.sidebar.pane:Measure()
+    return
+  end
+  local name, _, quality = W.ItemInfo(e.itemID)
+  r.name:SetText(W.QualityText(quality, name or ("item:" .. e.itemID)))
+  r.hint:SetText(L["Buy at the %s, sell at the %s"]:format(ns.HOUSE_LABEL[a.buy], ns.HOUSE_LABEL[a.sell]))
+  r.sell.value:SetText(W.Money(e.sell))
+  r.cut.label:SetText(L["AH cut (%d%%)"]:format(math.floor((self.arbCut or 0) * 100 + 0.5)))
+  r.cut.value:SetText(W.Color("bad", "- " .. W.Money(e.fee)))
+  r.deposit.value:SetText(e.deposit and W.Color("bad", "- " .. W.Money(e.deposit)) or W.NONE)
+  r.buy.value:SetText(W.Color("bad", "- " .. W.Money(e.buy)))
+  r.net.value:SetText(W.SignedMoney(e.net))
+  r.margin.value:SetText(W.Percent(e.margin, 0))
+  r.depth.value:SetText(self:DepthText(e))
+  r.rate.value:SetText(W.Rate(e.sellRate))
+  r.buyAge.label:SetText(ns.HOUSE_LABEL[a.buy])
+  r.buyAge.value:SetText(ageText(e.buyAge))
+  r.sellAge.label:SetText(ns.HOUSE_LABEL[a.sell])
+  r.sellAge.value:SetText(ageText(e.sellAge))
+  local old = math.max(e.buyAge or 0, e.sellAge or 0)
+  r.warn:SetText(
+    old > UI.STALE_DAYS
+        and W.Color("warn", L["One side is %d days old: scan both auction houses before you buy."]:format(old))
+      or ""
+  )
+  r.search:Show()
+  r.chart:Show()
+  r.search.label:SetText(L["Search at %s"]:format(ns.HOUSE_LABEL[a.buy]))
+  local here = self:AtBuyHouse()
+  r.search:SetEnabled(here)
+  r.search:SetAlpha(here and 1 or 0.5)
+  r.searchHint:SetText(here and "" or L["Visit the %s to search and buy it there."]:format(ns.HOUSE_LABEL[a.buy]))
+  v.sidebar.pane:Measure()
 end
 
 -- Load both houses' indexes (built in the background if needed), then compute the routes.
@@ -223,15 +353,33 @@ function UI:RefreshArbitrage(keepOffset)
       self.arbMissing = (not buyIndex and ns.HOUSE_LABEL[a.buy]) or (not sellIndex and ns.HOUSE_LABEL[a.sell]) or nil
       local cut = ns.Settings:AuctionCut(a.sell)
       self.arbCut = cut
-      self.arbRows = ns.Arbitrage.Find(buyIndex, sellIndex, {
+      local rows = ns.Arbitrage.Find(buyIndex, sellIndex, {
         cut = cut,
         minProfit = a.minProfit,
         minMargin = a.minMargin,
         maxAge = a.maxAge or nil,
         today = ns.Today(GetServerTime()),
-        sortKey = a.sortKey,
+        sortKey = a.sortKey == "net" and "profit" or a.sortKey,
         ascending = a.ascending,
       })
+      -- what's left after the deposit too
+      for _, e in ipairs(rows) do
+        e.units = self:DepthUnits(e)
+        e.deposit = self:ArbDeposit(e)
+        e.net = e.profit - (e.deposit or 0)
+      end
+      if a.sortKey == "net" then
+        table.sort(rows, function(x, y)
+          if x.net == y.net then
+            return x.itemID < y.itemID
+          end
+          if a.ascending then
+            return x.net < y.net
+          end
+          return x.net > y.net
+        end)
+      end
+      self.arbRows = rows
       self:RenderArbitrage()
     end)
   end)
@@ -240,14 +388,25 @@ end
 -- How far the route goes at the buy house, from its latest order book (a search there in the last 6 hours):
 -- "37 +12g" = buy 37 units for 12g profit. "-" until the item has been searched there.
 UI.DEPTH_MAX_AGE = 6 * 3600
-function UI:DepthText(e)
-  local a = self.arb
-  local shard = ns.ShardKey(ns.AME:MarketRealmName(), a.buy)
+function UI:DepthRoute(e)
+  local shard = ns.ShardKey(ns.AME:MarketRealmName(), self.arb.buy)
   local book = ns.AME:BookFor(shard, e.itemID, UI.DEPTH_MAX_AGE)
   if not book then
+    return nil
+  end
+  return ns.Depth.Route(book, e.sell * (1 - (self.arbCut or 0)))
+end
+
+function UI:DepthUnits(e)
+  local units = self:DepthRoute(e)
+  return units and units > 0 and units or nil
+end
+
+function UI:DepthText(e)
+  local units, _, profit = self:DepthRoute(e)
+  if not units then
     return W.Color("none", L["search"])
   end
-  local units, _, profit = ns.Depth.Route(book, e.sell * (1 - (self.arbCut or 0)))
   if units == 0 then
     return W.Color("bad", "0")
   end
@@ -277,9 +436,10 @@ function UI:RenderArbitrage()
         self.arbMissing
       )
   else
-    status = L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"]:format(
+    status = L["%d routes  ·  buy at %s (%d%% cut), sell at %s (%d%% cut)  ·  deposits for one %dh post"]:format(
       #rows,
       ns.HOUSE_LABEL[a.buy],
+      math.floor(ns.Settings:AuctionCut(a.buy) * 100 + 0.5),
       ns.HOUSE_LABEL[a.sell],
       math.floor((self.arbCut or 0) * 100 + 0.5),
       ns.Settings:Get("listingHours")
@@ -288,10 +448,19 @@ function UI:RenderArbitrage()
       status = status .. W.SEP .. L["you're at the buy AH: Search (or Shift-click a row) to buy"]
     end
   end
+  -- keep the selection when it's still a route; else pick the first
+  local keep = false
+  for _, e in ipairs(rows) do
+    keep = keep or e.itemID == self.arbSelected
+  end
+  if not keep then
+    self.arbSelected = rows[1] and rows[1].itemID or nil
+  end
   local t = v.table
   t.sort.key, t.sort.ascending = a.sortKey, a.ascending
   t:SetData(message and {} or rows)
   t:Render()
   t:SetMessage(message)
   v.status:SetText(status or "")
+  self:RenderRoute()
 end

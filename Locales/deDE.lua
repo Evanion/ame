@@ -37,8 +37,6 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "%d Positionen auf %d Charakter. Taschen werden beim Spielen aktualisiert; öffne deine Bank und das Auktionshaus, um Bankgegenstände und aktive Auktionen einzubeziehen."
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "%d Positionen auf %d Charakteren. Taschen werden beim Spielen aktualisiert; öffne deine Bank und das Auktionshaus, um Bankgegenstände und aktive Auktionen einzubeziehen."
-L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
-  "%d Routen  ·  Kauf im %s, Verkauf im %s: %d%% Gebühr, Anzahlung für %d-Std.-Auktionen"
 L["%d scans in 7 days"] = "%d Scans in 7 Tagen"
 L["%d scans/7d, %s"] = "%d Scans/7T, %s"
 L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =

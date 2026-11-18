@@ -27,9 +27,10 @@ function Arbitrage.Find(buy, sell, opts)
       local fee = s.market * cut
       local profit = s.market - fee - cost
       local margin = profit / cost
-      local age = 0
+      local age, buyAge, sellAge = 0, nil, nil
       if opts.today then
-        age = math.max(opts.today - (b.day or opts.today), opts.today - (s.day or opts.today))
+        buyAge, sellAge = opts.today - (b.day or opts.today), opts.today - (s.day or opts.today)
+        age = math.max(buyAge, sellAge)
       end
       local ok = profit >= (opts.minProfit or 1)
         and margin >= (opts.minMargin or 0)
@@ -46,6 +47,8 @@ function Arbitrage.Find(buy, sell, opts)
           sellQty = s.qty,
           sellRate = s.sellRate,
           age = age,
+          buyAge = buyAge,
+          sellAge = sellAge,
         }
       end
     end

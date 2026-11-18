@@ -37,8 +37,6 @@ L["%d positions on %d character. Bags update as you play; open your bank and the
   "보유 종목 %d개, 캐릭터 %d명. 가방은 플레이 중 갱신됩니다. 은행과 경매장을 열면 은행 아이템과 진행 중인 경매도 포함됩니다."
 L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
   "보유 종목 %d개, 캐릭터 %d명. 가방은 플레이 중 갱신됩니다. 은행과 경매장을 열면 은행 아이템과 진행 중인 경매도 포함됩니다."
-L["%d routes  ·  buy at %s, sell at %s: %d%% cut, deposits for %dh listings"] =
-  "경로 %d개  ·  구매: %s, 판매: %s: 수수료 %d%%, %d시간 등록 기준 보증금"
 L["%d scans in 7 days"] = "7일간 스캔 %d회"
 L["%d scans/7d, %s"] = "스캔 %d회/7일, %s"
 L["%d suppliers in the last 90 days, by gold you spent with them (from auction mail)."] =
