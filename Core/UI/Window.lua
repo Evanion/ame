@@ -171,11 +171,44 @@ function UI:CreateShell()
   footer:SetText("v" .. ns.VERSION)
   footer:SetAlpha(0.7)
   self.footer = footer
+  -- while a market index is rebuilt, the (older) data on screen is marked as updating
+  local elapsed = 0
+  f:HookScript("OnUpdate", function(_, dt)
+    elapsed = elapsed + dt
+    if elapsed < 0.5 then
+      return
+    end
+    elapsed = 0
+    local busy = ns.AME:IndexBusy()
+    if busy ~= self.footerBusy then
+      self.footerBusy = busy
+      footer:SetText((busy and (L["updating market data..."] .. "   ") or "") .. "v" .. ns.VERSION)
+    end
+  end)
 
   f:SetScript("OnShow", function()
     UI:ViewChanged()
     UI:ApplyTheme()
   end)
+end
+
+-- A market index was built or restored: refresh the open tab (the data on it may have been stale meanwhile).
+function UI:OnIndexReady(shard)
+  if not self.frame then
+    return
+  end
+  self:WarmItemFacts()
+  if not self.frame:IsShown() then
+    return
+  end
+  self:RefreshViewOptions()
+  if self.current == "market" and shard == self:ViewShard() then
+    self:RefreshMarket(true)
+  elseif self.current == "arbitrage" then
+    self:RefreshArbitrage(true)
+  elseif self.current == "portfolio" then
+    self:RefreshPortfolio()
+  end
 end
 
 -- Which auction house the Market and Item tabs show: the one you're at, unless picked in the title bar.
@@ -200,8 +233,7 @@ function UI:ViewIndex()
   if AME:HistoryLoaded() and self.viewLoading ~= shard then
     self.viewLoading = shard
     AME:IndexFor(shard, function()
-      self.viewLoading = nil
-      self:RefreshMarket(true)
+      self.viewLoading = nil -- UI:OnIndexReady refreshes the tab
     end)
   end
   return nil, "loading"

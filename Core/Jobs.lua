@@ -16,7 +16,7 @@ local Job = {}
 Job.__index = Job
 
 function Job:Checkpoint()
-  if self.runner.clock() - self.runner.tickStart >= self.runner.budgetMs then
+  if self.runner.clock() - self.runner.tickStart >= (self.budgetMs or self.runner.budgetMs) then
     coroutine.yield()
   end
 end
@@ -30,8 +30,9 @@ function Jobs.New(opts)
   }, Jobs)
 end
 
-function Jobs:Add(name, fn, onDone)
-  local job = setmetatable({ name = name, runner = self, onDone = onDone }, Job)
+-- budgetMs (optional): this job's time per frame instead of the runner's - smaller for low-priority work
+function Jobs:Add(name, fn, onDone, budgetMs)
+  local job = setmetatable({ name = name, runner = self, onDone = onDone, budgetMs = budgetMs }, Job)
   job.co = coroutine.create(function()
     return fn(job)
   end)

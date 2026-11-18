@@ -53,12 +53,18 @@ function AME:BuildIndex(store, shard, job)
   end, ns.Settings:Get("outlierFactor"), current)
 end
 
--- Market index for any auction house (e.g. the goblin AH while you're at your faction's): cached per shard,
--- dropped when that shard gets new data. cb(index or nil).
+-- Market indexes, one per auction house, built in the background. An index is never dropped while a new one is built:
+-- the old one stays in use (stale but shown; the footer says data is updating) and is swapped when the new one is
+-- ready, which also refreshes the open tab. Indexes are saved at logout and restored at login, so the screener and
+-- tooltips have data right away; a shard is rebuilt only when its history changed since (Store rev) or the day moved.
 AME.indexes = {}
 AME.indexWaiters = {}
+AME.indexBuilding = {} -- [shard] = true while a build runs
+AME.indexAgain = {} -- [shard] = true: rebuild once more after the running build (new data arrived meanwhile)
+AME.indexStarted = {} -- [shard] = true once the queued build has begun reading history
+AME.INDEX_LOW_BUDGET = 3 -- ms per frame for rebuilds while an older index is shown (normal jobs: 8)
 
--- a shard's market index if it's built (nil otherwise; nothing is started)
+-- a shard's market index if there is one (nil otherwise; nothing is started)
 function AME:CachedIndex(shard)
   if shard == self.indexShard and self.index then
     return self.index
@@ -66,6 +72,67 @@ function AME:CachedIndex(shard)
   return self.indexes[shard]
 end
 
+function AME:IndexBusy()
+  return next(self.indexBuilding) ~= nil
+end
+
+-- Build a fresh index for a shard in the background (low priority when an older one is shown meanwhile).
+function AME:RefreshIndex(shard)
+  shard = shard or self:CurrentShard()
+  if self.indexBuilding[shard] then
+    -- a build that hasn't started yet will see the new data anyway
+    if self.indexStarted[shard] then
+      self.indexAgain[shard] = true
+    end
+    return
+  end
+  if not self:LoadHistory() or not self.history.shards[shard] then
+    return
+  end
+  local shown = self:CachedIndex(shard) ~= nil
+  self.indexBuilding[shard] = true
+  local t0 = debugprofilestop()
+  self:WithStore("index-" .. shard, shard, function(store, job)
+    AME.indexStarted[shard] = true
+    local rev = store.data.rev or 0
+    local index = AME:BuildIndex(store, shard, job)
+    index.rev = rev
+    return index
+  end, function(ok, index)
+    self.indexBuilding[shard], self.indexStarted[shard] = nil, nil
+    if ok and index then
+      self:SetIndex(shard, index)
+      if shard == self:CurrentShard() then
+        AME_DB.stats.indexBuild = { ms = math.floor(debugprofilestop() - t0), items = index.count }
+      end
+    elseif not ok then
+      self:ReportError("market index", index)
+    end
+    local cbs = self.indexWaiters[shard] or {}
+    self.indexWaiters[shard] = nil
+    for _, cb in ipairs(cbs) do
+      cb(ok and index or nil)
+    end
+    if self.indexAgain[shard] then
+      self.indexAgain[shard] = nil
+      self:RefreshIndex(shard)
+    end
+  end, shown and AME.INDEX_LOW_BUDGET or nil)
+end
+
+-- put an index in use (built, or restored at login) and tell whoever shows it
+function AME:SetIndex(shard, index)
+  self.indexes[shard] = index
+  if shard == self:CurrentShard() then
+    self.index, self.indexShard = index, shard
+    self:CheckAlerts(index)
+  end
+  if ns.UI and ns.UI.OnIndexReady then
+    ns.UI:OnIndexReady(shard)
+  end
+end
+
+-- cb(index or nil): right away when there is one (a stale one is refreshed in the background), else once built
 function AME:IndexFor(shard, cb)
   local cached = self:CachedIndex(shard)
   if cached then
@@ -74,26 +141,10 @@ function AME:IndexFor(shard, cb)
   if not self:LoadHistory() or not self.history.shards[shard] then
     return cb(nil)
   end
-  local waiting = self.indexWaiters[shard]
-  if waiting then
-    waiting[#waiting + 1] = cb
-    return
-  end
-  self.indexWaiters[shard] = { cb }
-  self:WithStore("index-" .. shard, shard, function(store, job)
-    return AME:BuildIndex(store, shard, job)
-  end, function(ok, index)
-    local cbs = self.indexWaiters[shard] or {}
-    self.indexWaiters[shard] = nil
-    if ok and index then
-      self.indexes[shard] = index
-    elseif not ok then
-      self:ReportError("market index", index)
-    end
-    for _, f in ipairs(cbs) do
-      f(ok and index or nil)
-    end
-  end)
+  local waiting = self.indexWaiters[shard] or {}
+  self.indexWaiters[shard] = waiting
+  waiting[#waiting + 1] = cb
+  self:RefreshIndex(shard)
 end
 
 -- Your faction's auction house index (the market you trade in): tooltips and the portfolio value things here, never
@@ -119,47 +170,67 @@ function AME:BookFor(shard, itemID, maxAge)
   return self:Store(shard):Book(itemID, maxAge)
 end
 
+-- New data for a shard (nil: every shard, e.g. a changed outlier setting): rebuild in the background, keeping the
+-- current index in use meanwhile.
 function AME:InvalidateIndex(shard)
   if shard then
-    self.indexes[shard] = nil
-  else
-    self.indexes = {}
+    if self:CachedIndex(shard) or self.indexWaiters[shard] then
+      self:RefreshIndex(shard)
+    end
+    return
+  end
+  for key in pairs(self.indexes) do
+    self:RefreshIndex(key)
   end
 end
 
--- Rebuild the market index (30-day summary per item) in the background; tooltips and the screener read it.
+-- the index of the auction house you're at
 function AME:RebuildIndex()
-  if self.indexing then
-    self.indexPending = true
-    return
-  end
-  local shard = self:CurrentShard()
-  self.indexing = true
-  local t0 = debugprofilestop()
-  self:WithStore("index", shard, function(store, job)
-    return AME:BuildIndex(store, shard, job)
-  end, function(ok, index)
-    self.indexing = false
-    if ok and index then
-      self.index = index
-      self.indexShard = shard
-      self.indexes[shard] = index
-      if shard == self:CurrentShard() then
-        self:CheckAlerts(index)
-      end
-      AME_DB.stats.indexBuild = { ms = math.floor(debugprofilestop() - t0), items = index.count }
-      if ns.UI and ns.UI.RefreshMarket then
-        ns.UI:RefreshMarket()
-      end
-      if ns.UI and ns.UI.frame and ns.UI.WarmItemFacts then
-        ns.UI:WarmItemFacts() -- the window was built before this index: load its item facts now
-      end
-    elseif not ok then
-      say(ns.Color("bad", L["market index failed:"]) .. " %s", tostring(index))
+  self:RefreshIndex(self:CurrentShard())
+end
+
+-- Saved indexes: written at logout, read back at login (MarketIndex.Encode / Decode).
+function AME:SaveIndexes()
+  local saved = {}
+  for shard, index in pairs(self.indexes) do
+    local ok, text = pcall(ns.MarketIndex.Encode, index)
+    if ok then
+      saved[shard] = { rev = index.rev or 0, s = text }
     end
-    if self.indexPending then
-      self.indexPending = false
-      self:RebuildIndex()
+  end
+  AME_DB.indexCache = saved
+end
+
+-- Login: put the saved indexes in use, then rebuild (low priority) those whose history changed or day moved on, and
+-- build the ones with history but nothing saved.
+function AME:RestoreIndexes()
+  local saved = AME_DB.indexCache or {}
+  AME_DB.indexCache = nil -- in memory now; written again at logout
+  local today = ns.Today(GetServerTime())
+  self:WithStore("index-restore", self:CurrentShard(), function(_, job)
+    local restored = {}
+    for shard, entry in pairs(saved) do
+      if self.history.shards[shard] then
+        local ok, index = pcall(ns.MarketIndex.Decode, entry.s)
+        if ok and index then
+          index.rev = entry.rev
+          restored[shard] = index
+        end
+        job:Checkpoint()
+      end
+    end
+    return restored
+  end, function(ok, restored)
+    for shard, index in pairs(ok and restored or {}) do
+      self:SetIndex(shard, index)
+    end
+    for shard, data in pairs(self.history.shards) do
+      local index = self.indexes[shard]
+      if not index or index.rev ~= (data.rev or 0) or index.day ~= today then
+        if index or shard == self:CurrentShard() or self:HasData(shard) then
+          self:RefreshIndex(shard)
+        end
+      end
     end
   end)
 end

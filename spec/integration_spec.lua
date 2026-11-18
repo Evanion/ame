@@ -297,6 +297,50 @@ describe("addon in a stubbed client", function()
       assert.is_true(ns.UI.frame:IsShown())
     end)
 
+    it("saves market indexes at logout and uses them at the next login, rebuilding only what changed", function()
+      seeded()
+      local shard = ns.AME:CurrentShard()
+      local built = ns.AME:CachedIndex(shard)
+      assert.is_not_nil(built)
+      env:fire("PLAYER_LOGOUT")
+      assert.truthy(AME_DB.indexCache[shard].s:find("|"))
+
+      -- next session, nothing new since: the saved index is used as is, no rebuild
+      local AME = ns.AME
+      AME.indexes, AME.index, AME.indexShard = {}, nil, nil
+      AME:RestoreIndexes()
+      drainJobs()
+      local restored = AME:CachedIndex(shard)
+      assert.are.equal(built.count, restored.count)
+      assert.are.equal(built.items[2589].market, restored.items[2589].market)
+      assert.is_false(AME:IndexBusy())
+
+      -- the history changed since it was saved: shown right away (stale), rebuilt in the background
+      AME:SaveIndexes()
+      fullScan({ { 2589, 2000, 10 } })
+      drainJobs()
+      AME.indexes, AME.index, AME.indexShard = {}, nil, nil
+      AME:RestoreIndexes()
+      local steps = 0
+      while not AME:CachedIndex(shard) and steps < 50 do -- the restore job runs first
+        env:update(1)
+        steps = steps + 1
+      end
+      assert.is_not_nil(AME:CachedIndex(shard))
+      assert.is_true(AME:IndexBusy()) -- the rebuild is under way
+      ns.UI:Toggle()
+      for _ = 1, 40 do
+        env:update(1)
+        if not AME:IndexBusy() then
+          break
+        end
+        env:advance(0.6) -- the footer checks twice a second
+      end
+      drainJobs()
+      assert.is_false(AME:IndexBusy())
+      assert.are_not.equal(restored, AME:CachedIndex(shard)) -- swapped for the fresh one
+    end)
+
     it("builds the market index after scans and feeds the screener", function()
       seeded()
       assert.is_not_nil(ns.AME.index)

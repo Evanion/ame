@@ -159,7 +159,8 @@ function AME:Store(shardKey)
 end
 
 -- run fn(store) as a background job with time slicing inside the store
-function AME:WithStore(name, shardKey, fn, onDone)
+-- budgetMs (optional): time per frame for low-priority jobs (see Jobs:Add)
+function AME:WithStore(name, shardKey, fn, onDone, budgetMs)
   local store = self:Store(shardKey)
   if not store then
     return
@@ -176,7 +177,7 @@ function AME:WithStore(name, shardKey, fn, onDone)
     if onDone then
       onDone(ok, result)
     end
-  end)
+  end, budgetMs)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -382,6 +383,13 @@ function handlers.ADDON_LOADED(name)
   ns.Posting:Init()
 end
 
+-- save the market indexes so the next login has data right away (AME:RestoreIndexes)
+function handlers.PLAYER_LOGOUT()
+  if AME:HistoryLoaded() then
+    AME:SaveIndexes()
+  end
+end
+
 function handlers.PLAYER_LOGIN()
   C_Timer.After(2, function()
     ns.Trading:ScanBags()
@@ -434,6 +442,7 @@ function handlers.PLAYER_LOGIN()
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "COMMODITY_SEARCH_RESULTS_UPDATED",
     "ITEM_SEARCH_RESULTS_UPDATED",
+    "PLAYER_LOGOUT",
   }) do
     pcall(events.RegisterEvent, events, e) -- tolerate events a client flavour doesn't have
   end
@@ -443,15 +452,8 @@ function handlers.PLAYER_LOGIN()
   -- load history shortly after login (not during it) so tooltips have market data
   C_Timer.After(3, function()
     if AME:LoadHistory() then
-      AME:RebuildIndex()
-      -- other auction houses of this market (e.g. the goblin AH), for tooltips and arbitrage
-      local realm, current = AME:MarketRealmName(), AME:CurrentHouse()
-      for _, house in ipairs(ns.HOUSE_ORDER) do
-        local shard = ns.ShardKey(realm, house)
-        if house ~= current and AME:HasData(shard) then
-          AME:IndexFor(shard, function() end)
-        end
-      end
+      -- last session's market indexes right away; rebuilt in the background where the history changed since
+      AME:RestoreIndexes()
     end
   end)
   -- build the AME window in idle moments, so opening it the first time doesn't stutter

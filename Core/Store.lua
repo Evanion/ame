@@ -304,6 +304,7 @@ function Store:AddScan(snap, t, src, kind, packed)
   end
   data.days[day] = data.days[day] or {}
   self:mergeInto(data.days[day], byBucket)
+  data.rev = (data.rev or 0) + 1 -- history changed: a saved market index of this shard is out of date
   data.seen[day] = seen or {}
   data.seen[day][key] = true
 
@@ -332,6 +333,7 @@ function Store:ImportDay(day, rows, key)
     end
   end
   self:mergeInto(tier, byBucket)
+  data.rev = (data.rev or 0) + 1
   data.seen[day][key] = true
   return true
 end

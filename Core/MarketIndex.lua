@@ -54,3 +54,106 @@ function MarketIndex.Rank(index, key, filter, ascending)
   end)
   return list
 end
+
+-- Saving an index between sessions, so the screener and tooltips have (possibly stale) data right after login while
+-- a fresh one is built at low priority. One columnar string: integers only, fractions scaled, nil as a sentinel.
+-- Fields: { name, scale } - a value is stored as round(value * scale).
+local NONE = -1099511627776 -- -(2^40): no value
+local PHASE_KEYS = {
+  "shortage",
+  "demand",
+  "piling",
+  "tightening",
+  "balanced",
+  "pressure",
+  "withdrawing",
+  "weak",
+  "dumping",
+}
+local PHASE_NUM = {}
+for i, key in ipairs(PHASE_KEYS) do
+  PHASE_NUM[key] = i
+end
+local SIGNALS = { "sell", "buy", "hold", "wait", "none" } -- by Analytics.SIGNAL_RANK
+
+MarketIndex.SAVED_FIELDS = {
+  { "market", 1 },
+  { "min", 1 },
+  { "qty", 1 },
+  { "day", 1 },
+  { "days", 1 },
+  { "avg3", 1 },
+  { "avg7", 1 },
+  { "avg14", 1 },
+  { "avg30", 1 },
+  { "change1", 1e4 },
+  { "change7", 1e4 },
+  { "change30", 1e4 },
+  { "scans7", 1 },
+  { "sellRate", 1e3 },
+  { "vol30", 1e4 },
+  { "z30", 1e3 },
+  { "trend30", 1e6 },
+  { "supplyTrend30", 1e6 },
+  { "score", 1 },
+  { "outliers", 1 },
+}
+
+local function columnNames()
+  local names = { "ids", "signal", "phase" }
+  for _, f in ipairs(MarketIndex.SAVED_FIELDS) do
+    names[#names + 1] = f[1]
+  end
+  return names
+end
+
+-- index -> string (checkpoint, optional, is called between items in a background job)
+function MarketIndex.Encode(index, checkpoint)
+  local ids = {}
+  for id in pairs(index.items) do
+    ids[#ids + 1] = id
+  end
+  table.sort(ids)
+  local cols = { ids = ids, signal = {}, phase = {} }
+  for _, f in ipairs(MarketIndex.SAVED_FIELDS) do
+    cols[f[1]] = {}
+  end
+  for i, id in ipairs(ids) do
+    local s = index.items[id]
+    cols.signal[i] = ns.Analytics.SIGNAL_RANK[s.signal or "none"] or 5
+    cols.phase[i] = PHASE_NUM[s.phase] or 0
+    for _, f in ipairs(MarketIndex.SAVED_FIELDS) do
+      local v = s[f[1]]
+      cols[f[1]][i] = v and math.floor(v * f[2] + 0.5) or NONE
+    end
+    if checkpoint and i % 500 == 0 then
+      checkpoint()
+    end
+  end
+  return ("%d|%d|%d|"):format(index.day, index.days, index.outliers or 0) .. ns.Codec.Encode(columnNames(), cols)
+end
+
+-- string -> index (as MarketIndex.Build makes it)
+function MarketIndex.Decode(text, checkpoint)
+  local day, days, outliers, body = text:match("^(%-?%d+)|(%d+)|(%d+)|(.*)$")
+  local cols = ns.Codec.Decode(columnNames(), body)
+  local index = { day = tonumber(day), days = tonumber(days), count = 0, items = {}, outliers = tonumber(outliers) }
+  for i, id in ipairs(cols.ids) do
+    local s = { itemID = id }
+    s.signal = SIGNALS[cols.signal[i]] or "none"
+    s.signalRank = ns.Analytics.SIGNAL_RANK[s.signal]
+    s.phase = PHASE_KEYS[cols.phase[i]]
+    for _, f in ipairs(MarketIndex.SAVED_FIELDS) do
+      local v = cols[f[1]][i]
+      if v ~= NONE then
+        s[f[1]] = f[2] == 1 and v or v / f[2]
+      end
+    end
+    index.items[id] = s
+    index.count = index.count + 1
+    if checkpoint and i % 500 == 0 then
+      checkpoint()
+    end
+  end
+  return index
+end

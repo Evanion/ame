@@ -64,6 +64,31 @@ describe("MarketIndex", function()
     assert.are.equal(2000, index.day)
   end)
 
+  it("saves and restores an index between sessions", function()
+    for d = 1971, 2000 do
+      scan(d, { [5] = 100 + (d % 2), [6] = (d == 2000) and 60 or 100 + (d % 2), [7] = (d == 2000) and 150 or 100 })
+    end
+    local index = ns.MarketIndex.Build(store, 2000, 30)
+    local back = ns.MarketIndex.Decode(ns.MarketIndex.Encode(index))
+    assert.are.equal(index.count, back.count)
+    assert.are.equal(index.day, back.day)
+    for id, s in pairs(index.items) do
+      local r = back.items[id]
+      assert.are.equal(id, r.itemID)
+      assert.are.equal(s.signal, r.signal)
+      assert.are.equal(s.signalRank, r.signalRank)
+      assert.are.equal(s.phase, r.phase)
+      for _, f in ipairs(ns.MarketIndex.SAVED_FIELDS) do
+        local a, b = s[f[1]], r[f[1]]
+        if a == nil then
+          assert.is_nil(b, f[1])
+        else
+          assert.near(a, b, 1 / f[2], f[1])
+        end
+      end
+    end
+  end)
+
   it("ranks items by opportunity score", function()
     for d = 1971, 2000 do
       scan(d, { [5] = 100 + (d % 2), [6] = (d == 2000) and 60 or 100 + (d % 2), [7] = (d == 2000) and 150 or 100 })
