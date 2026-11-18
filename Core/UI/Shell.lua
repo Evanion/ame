@@ -127,7 +127,7 @@ function UI.Slots(v, opts)
   local function bar(h)
     local f = CreateFrame("Frame", nil, v)
     f:SetHeight(h)
-    bars[#bars + 1] = { f, y }
+    bars[#bars + 1] = { frame = f, h = h }
     y = y - h - GAP
     return f
   end
@@ -165,11 +165,17 @@ function UI.Slots(v, opts)
     local compact = self.compact
     local l = (self.left and not compact) and (opts.left + GAP) or 0
     local r = (self.right and not compact) and (opts.right + GAP) or 0
+    local top = 0
     for _, b in ipairs(bars) do
-      b[1]:ClearAllPoints()
-      b[1]:SetPoint("TOPLEFT", opts.fullLeft and l or 0, b[2])
-      b[1]:SetPoint("TOPRIGHT", 0, b[2])
+      b.frame:ClearAllPoints()
+      b.frame:SetShown(not b.hidden)
+      if not b.hidden then
+        b.frame:SetPoint("TOPLEFT", opts.fullLeft and l or 0, top)
+        b.frame:SetPoint("TOPRIGHT", 0, top)
+        top = top - b.h - GAP
+      end
     end
+    self.top = top
     self.main:ClearAllPoints()
     self.main:SetPoint("TOPLEFT", l, self.top)
     self.main:SetPoint("BOTTOMRIGHT", -r, self.bottom)
@@ -187,6 +193,16 @@ function UI.Slots(v, opts)
       self.right:SetFrameLevel((self.main:GetFrameLevel() or 1) + (compact and 20 or 0))
       self.right:SetShown(not compact or self.details)
     end
+  end
+
+  -- hide or show a bar (header / toolbar / chips); main and the sidebars move up or down with it
+  function s:ShowBar(frame, on)
+    for _, b in ipairs(bars) do
+      if b.frame == frame then
+        b.hidden = not on
+      end
+    end
+    self:Layout()
   end
 
   function s:SetCompact(on)

@@ -803,9 +803,26 @@ describe("addon in a stubbed client", function()
       end
       v.category.menu.items[opt].scripts.OnClick(v.category.menu.items[opt])
       assert.are.equal(7, ns.UI.mq.classID)
+      -- one toolbar row like the design: no chips row, a short signal filter, the rest under More
+      assert.is_false(v.slots.chips:IsShown())
+      assert.is_true(v.signalsShort:IsShown())
+      assert.is_false(v.columns:IsShown())
+      assert.is_false(v.minBox:IsShown())
+      local mp = v.slots.main.points
+      assert.are.equal(-(22 + ns.UI.SLOT_GAP), mp[1][3]) -- the table moves up into the chips row's space
+      v.signalsShort.byKey.sell.scripts.OnClick(v.signalsShort.byKey.sell)
+      assert.are.equal("sell", ns.UI.mq.signal)
+      ns.UI:MarketMoreMenu(v.more)
+      local wait = ns.Widgets.menu.items[1]
+      wait.scripts.OnClick(wait)
+      assert.are.equal("wait", ns.UI.mq.signal)
+      ns.UI:RenderMarket()
+      assert.is_false(v.signalsShort:Selected()) -- Wait isn't on the short filter
       ns.UI:OnResize(1000)
       assert.is_true(v.side:IsShown())
       assert.is_false(v.category:IsShown())
+      assert.is_true(v.slots.chips:IsShown())
+      assert.is_true(v.columns:IsShown())
     end)
 
     it("settings: Basic / Advanced, the colour-blind palette; sync: freshness per auction house", function()

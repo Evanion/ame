@@ -683,15 +683,40 @@ function UI:CreateMarketView(parent)
     v.table:Scroll(delta)
   end)
 
+  -- narrow: a short signal filter on the toolbar, and More for the rest (Wait / Vendor, price range, views, columns)
+  local short = { { "all", L["All"] } }
+  for _, key in ipairs({ "buy", "hold", "sell" }) do
+    short[#short + 1] = { key, W.SignalGlyph(key) }
+  end
+  v.signalsShort = W.Segmented(bar, short, {
+    minWidth = 40,
+    onSelect = function(key)
+      UI.mq.signal = key ~= "all" and key or nil
+      UI.offset = 0
+      UI:RefreshMarket(true)
+    end,
+  })
+  v.signalsShort:SetPoint("LEFT", quality, "RIGHT", 8, 0)
+  v.more = W.Button(bar, L["More"], 64, 20, function(self)
+    UI:MarketMoreMenu(self)
+  end)
+  v.more:SetPoint("LEFT", v.signalsShort, "RIGHT", 8, 0)
+
   function v:SetCompact(on)
     slots:SetCompact(on)
+    slots:ShowBar(slots.chips, not on)
     self.category:SetShown(on)
     self.search:ClearAllPoints()
     if on then
-      self.search:SetPoint("LEFT", self.category, "RIGHT", 8, 0)
+      self.search:SetPoint("LEFT", self.category, "RIGHT", 6, 0)
     else
       self.search:SetPoint("LEFT", 0, 0)
     end
+    for _, w in ipairs({ self.minBox, self.maxBox, self.views, self.columns }) do
+      w:SetShown(not on)
+    end
+    self.signalsShort:SetShown(on)
+    self.more:SetShown(on)
   end
   v:SetCompact(slots.compact)
 
@@ -707,6 +732,65 @@ function UI:CreateMarketView(parent)
     end
   end)
   return v
+end
+
+-- narrow window: what doesn't fit on the toolbar
+function UI:MarketMoreMenu(anchor)
+  local q, v = self.mq, self.marketView
+  local function signal(key)
+    return {
+      text = W.SignalGlyph(key),
+      checked = q.signal == key,
+      func = function()
+        q.signal = q.signal ~= key and key or nil
+        UI.offset = 0
+        UI:RefreshMarket(true)
+      end,
+    }
+  end
+  local function price(field, prompt, box)
+    return {
+      text = (field == "minPrice" and L["Minimum price..."] or L["Maximum price..."])
+        .. (q[field] and "  " .. W.Money(q[field], true) or ""),
+      func = function()
+        W.Prompt("AME_PRICE_" .. field, prompt, function(text)
+          local g = tonumber(text)
+          box:SetText(g and tostring(g) or "")
+          q[field] = g and g * 10000 or nil
+          UI.offset = 0
+          UI:RefreshMarket(true)
+        end)
+      end,
+    }
+  end
+  W.Menu(anchor, {
+    signal("wait"),
+    signal("vendor"),
+    price("minPrice", L["Minimum price in gold (empty: none):"], v.minBox),
+    price("maxPrice", L["Maximum price in gold (empty: none):"], v.maxBox),
+    {
+      text = L["Views..."],
+      func = function()
+        C_Timer.After(0, function()
+          UI:ViewsMenu(anchor)
+        end)
+      end,
+    },
+    {
+      text = L["Columns..."],
+      func = function()
+        C_Timer.After(0, function()
+          UI:ColumnMenu(anchor)
+        end)
+      end,
+    },
+    {
+      text = L["Clear all filters"],
+      func = function()
+        UI:ResetMarketFilters()
+      end,
+    },
+  })
 end
 
 function UI:ResetMarketFilters()
@@ -781,6 +865,7 @@ function UI:RenderMarket()
   end
   local q = self.mq
   v.signals:Select(q.signal or "all", true)
+  v.signalsShort:Select((q.signal == nil and "all") or (v.signalsShort.byKey[q.signal] and q.signal) or false, true)
   v.quality:SetValue(q.minQuality)
   local total = #list
   local t = v.table
