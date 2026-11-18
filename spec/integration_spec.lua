@@ -881,6 +881,17 @@ describe("addon in a stubbed client", function()
       assert.truthy(horde.sub.text:find("Full scan by you"), horde.sub.text)
       assert.truthy(v.fresh[2].label.text:find("Goblin"))
       assert.truthy(v.fresh[3].value.text:find("No data"))
+      -- lists are only as tall as what they show (an empty list: its wrapped message)
+      local empty = v.trustedList
+      assert.is_true(empty:GetHeight() < 22 * 3)
+      assert.are.equal(empty:GetHeight(), empty.holder:GetHeight())
+      -- settings: the Data buttons wrap onto a second line when the card is narrow
+      ns.UI:ShowTab("settings")
+      s.scripts.OnShow(s)
+      s:FlowActions(150)
+      assert.is_true(s.actionsRow:GetHeight() > 22) -- wrapped
+      s:FlowActions(2000)
+      assert.are.equal(22, s.actionsRow:GetHeight()) -- one line
     end)
 
     it("guides: scan progress, empty states, one-time hints, glossary links from explanations", function()

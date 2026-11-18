@@ -53,9 +53,9 @@ function UI:CreateSyncView(parent, contentArea)
   for i, house in ipairs(self:SyncHouses()) do
     defs[i] = { ns.HOUSE_LABEL[house] or house }
   end
-  local cards = W.CardRow(slots.header, defs, { width = UI.WIDTH - 20, height = 56 })
+  local cards = W.CardRow(slots.header, defs, { width = UI.WIDTH - 28, height = 56, gap = UI.SETTINGS_GAP or 10 })
   cards:SetPoint("TOPLEFT", 0, 0)
-  cards:SetPoint("RIGHT", 0, 0)
+  cards:SetPoint("RIGHT", -8, 0)
   for _, c in ipairs(cards.cards) do
     c.value:SetFontObject("GameFontHighlightLarge")
     c.value:ClearAllPoints()
@@ -82,6 +82,12 @@ function UI:CreateSyncView(parent, contentArea)
     stacks[i] = UI.Stack(cols[i], 0)
   end
   function v:LayoutColumns()
+    UI.Relayout(self, function()
+      self:PlaceColumns()
+      self.pane:Measure()
+    end)
+  end
+  function v:PlaceColumns()
     local gap = UI.SETTINGS_GAP or 10
     local n = UI.compact and 2 or 3
     local w = math.max(120, ((self:GetWidth() or 600) - gap * (n - 1)) / n)
@@ -107,12 +113,22 @@ function UI:CreateSyncView(parent, contentArea)
       UI:RefreshSync()
     end
   end
+  local lists = {}
   local function list(st, rows, rowHeight, opts)
-    local holder = st:Row(rows * rowHeight, 4)
-    opts.rows, opts.rowHeight, opts.width = rows, rowHeight, LIST_W
+    local holder = st:Row(rowHeight, 4)
+    opts.rows, opts.rowHeight, opts.width, opts.fill = rows, rowHeight, LIST_W, true
     local l = W.RowList(holder, opts)
     l:SetPoint("TOPLEFT")
+    l:SetPoint("RIGHT", holder, "RIGHT", 0, 0)
+    l.holder = holder
+    lists[#lists + 1] = l
     return l
+  end
+  -- the cards follow their lists' heights (call after SetItems)
+  function v:FitLists()
+    for _, l in ipairs(lists) do
+      l.holder:SetHeight(math.max(1, l:GetHeight() or 1))
+    end
   end
   local function sublabel(st, text)
     local t = st:Text("GameFontDisableSmall", 10)
@@ -319,6 +335,6 @@ function UI:RefreshSync()
   v.pendingList:SetItems(pending, function(row, p)
     row.text:SetText(p.name .. "  " .. W.Dim(L["wants to share, %s"]:format(ago(p.at))))
   end)
+  v:FitLists()
   v:LayoutColumns()
-  v.pane:Measure()
 end

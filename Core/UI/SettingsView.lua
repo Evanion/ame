@@ -52,10 +52,19 @@ function UI:CreateSettingsView(parent, contentArea)
   end
   v.columns, v.stacks = cols, stacks
   function v:LayoutColumns()
+    UI.Relayout(self, function()
+      self:PlaceColumns()
+      self.pane:Measure()
+    end)
+  end
+  function v:PlaceColumns()
     local gap = UI.SETTINGS_GAP
     local narrow = UI.compact
     local n = narrow and 2 or 3
     local w = math.max(120, ((self:GetWidth() or 600) - gap * (n - 1)) / n)
+    if self.FlowActions then
+      self:FlowActions(w - 16)
+    end
     for i = 1, 3 do
       cols[i]:SetWidth(w)
       cols[i]:SetHeight(math.max(1, stacks[i]:Height()))
@@ -226,7 +235,8 @@ function UI:CreateSettingsView(parent, contentArea)
   v.storage:SetSpacing(2)
   -- the data actions in one row, sized to their labels; what each does is on its tooltip
   local actions = st:Row(22, 8)
-  local prev
+  v.actionsRow = actions
+  local buttons = {}
   for _, a in ipairs({
     {
       L["Import from Auctionator"],
@@ -252,15 +262,24 @@ function UI:CreateSettingsView(parent, contentArea)
   }) do
     local b = W.Button(actions, a[1], 80, 22, a[3])
     b:SetWidth(math.ceil(b.label:GetStringWidth() or 60) + 16)
-    if prev then
-      b:SetPoint("LEFT", prev, "RIGHT", 6, 0)
-    else
-      b:SetPoint("LEFT", 0, 0)
-    end
+    buttons[#buttons + 1] = b
     W.Tooltip(b, function(tip)
       W.TipText(tip, a[1], a[2])
     end)
-    prev = b
+  end
+  -- left to right, onto a new line when the next button doesn't fit the card
+  function v:FlowActions(width)
+    local x, y = 0, 0
+    for _, b in ipairs(buttons) do
+      local bw = b:GetWidth() or 80
+      if x > 0 and x + bw > width then
+        x, y = 0, y - 28
+      end
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", actions, "TOPLEFT", x, y)
+      x = x + bw + 6
+    end
+    actions:SetHeight(22 - y)
   end
   local minimapRow = st:Row(18, 8)
   v.minimap = W.Check(minimapRow, L["Show minimap button"], function(on)

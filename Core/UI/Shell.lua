@@ -116,6 +116,20 @@ function UI.Stack(content, pad)
   return st
 end
 
+-- Re-measure after the game lays text out: fn() now, and once more on the next frame (wrapped text only gets its
+-- real height at its new width after a layout pass). Repeated calls in one frame share the second pass.
+function UI.Relayout(owner, fn)
+  fn()
+  if owner.relayoutPending then
+    return
+  end
+  owner.relayoutPending = true
+  C_Timer.After(0, function()
+    owner.relayoutPending = false
+    fn()
+  end)
+end
+
 -- v: the tab's content area. opts = { header = h, toolbar = h, chips = h, left = w, right = w, status = true,
 --   fullLeft = true: the left sidebar runs from the top, with header / toolbar / chips beside it }
 -- Returns slots: .header .toolbar .chips .main (frames), .left .right (sidebar frames; put things in .content),

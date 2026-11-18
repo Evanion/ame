@@ -1199,6 +1199,8 @@ end
 --   })
 --   list:SetItems(items, function(row, item) row.text:SetText(item.name) end)
 -- list.rows[i] has .text, .item, .name (item.name) and each button under its key.
+-- opts.fill: rows span the list's width (anchor the list's left and right); the list is only as tall as what it
+-- shows (list:GetHeight() after SetItems), and the empty message wraps.
 function W.RowList(parent, opts)
   local n, h, width = opts.rows or 5, opts.rowHeight or 20, opts.width or 460
   local list = CreateFrame("Frame", nil, parent)
@@ -1207,8 +1209,13 @@ function W.RowList(parent, opts)
   local defs = opts.buttons or {}
   for i = 1, n do
     local row = CreateFrame("Frame", nil, list)
-    row:SetSize(width, h)
+    row:SetHeight(h)
     row:SetPoint("TOPLEFT", 0, -(i - 1) * h)
+    if opts.fill then
+      row:SetPoint("RIGHT", list, "RIGHT", 0, 0)
+    else
+      row:SetWidth(width)
+    end
     row.item, row.name, row.state = false, false, false
     row.buttons = {}
     local right -- the leftmost button so far (buttons are placed right to left)
@@ -1239,24 +1246,37 @@ function W.RowList(parent, opts)
     row.text:SetWordWrap(false)
     if opts.state then
       row.state = W.Text(row, "GameFontDisableSmall", "RIGHT")
+      row.state:SetWordWrap(false)
       if right then
         row.state:SetPoint("RIGHT", right, "LEFT", -12, 0)
       else
         row.state:SetPoint("RIGHT", 0, 0)
       end
+      if opts.fill then
+        row.text:SetPoint("RIGHT", row.state, "LEFT", -8, 0) -- long names end in "..." before the state
+      end
     elseif right then
       row.text:SetPoint("RIGHT", right, "LEFT", -6, 0)
+    elseif opts.fill then
+      row.text:SetPoint("RIGHT", 0, 0)
     end
     list.rows[i] = row
   end
   list.more = W.Text(list, "GameFontDisableSmall")
   list.more:SetPoint("TOPLEFT", 0, -n * h)
+  if opts.fill then
+    list.emptyText = W.Text(list, "GameFontDisableSmall")
+    list.emptyText:SetPoint("TOPLEFT", 0, -3)
+    list.emptyText:SetPoint("RIGHT", list, "RIGHT", 0, 0)
+    list.emptyText:SetWordWrap(true)
+    list.emptyText:SetJustifyV("TOP")
+  end
 
   function list:SetItems(items, fill)
     for i, row in ipairs(self.rows) do
       local item = items[i]
       row.item, row.name = item or false, item and item.name or false
-      local empty = i == 1 and #items == 0 and opts.empty
+      local empty = i == 1 and #items == 0 and opts.empty and not self.emptyText
       row:SetShown(item ~= nil or empty and true or false)
       for k, d in ipairs(defs) do
         row.buttons[k]:SetShown(item ~= nil and (not d.shown or d.shown(item)))
@@ -1271,6 +1291,20 @@ function W.RowList(parent, opts)
       end
     end
     self.more:SetText(opts.more and #items > n and opts.more:format(#items - n) or "")
+    -- only as tall as what's shown
+    if self.emptyText then
+      local none = #items == 0 and opts.empty
+      self.emptyText:SetText(none and opts.empty or "")
+      self.emptyText:SetShown(none and true or false)
+      if none then
+        self:SetHeight(math.max(h, (self.emptyText:GetStringHeight() or 12) + 6))
+      else
+        local shown = math.min(#items, n)
+        self.more:ClearAllPoints()
+        self.more:SetPoint("TOPLEFT", 0, -shown * h)
+        self:SetHeight(shown * h + (#items > n and opts.more and 16 or 0))
+      end
+    end
   end
   return list
 end
