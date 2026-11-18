@@ -224,11 +224,7 @@ L["Customers"] = "구매자"
 L["Data"] = "데이터"
 L["Data age"] = "데이터 경과일"
 L["Data is %d days old"] = "데이터가 %d일 지났습니다"
-L["Data of any age"] = "모든 기간의 데이터"
 L["Data quality"] = "데이터 품질"
-L["Data up to 1 day old"] = "1일 이내 데이터"
-L["Data up to 3 days old"] = "3일 이내 데이터"
-L["Data up to 7 days old"] = "7일 이내 데이터"
 L["Days to sell"] = "판매 소요일"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "아이템 가격이 인접한 날보다 이만큼 배 높거나 낮은 날은 스크리너, 신호, 알림, 차트에서 제외됩니다 - 보통 거래가 적은 시장에서 1000% 비싸게 올린 매물 하나 때문입니다. 전체 스캔 안에서는 AME가 이미 비싼 매물을 무시합니다: 시장가는 공급 중 가장 싼 부분을 사용합니다."
@@ -599,6 +595,9 @@ L["Unusually cheap for this item, given how much its price usually moves"] =
 L["Unusually expensive for this item, given how much its price usually moves"] =
   "평소 가격 변동폭을 감안해도 이례적으로 비쌉니다"
 L["Up"] = "상승"
+L["Up to 1 day"] = "최대 1일"
+L["Up to 3 days"] = "최대 3일"
+L["Up to 7 days"] = "최대 7일"
 L["Updating market data…"] = "시장 데이터 업데이트 중…"
 L["VENDOR"] = "상인"
 L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."] =

@@ -175,13 +175,6 @@ function UI:CreateShell()
     UI:ViewChanged()
   end, { neutral = true })
   self.viewSelect:SetPoint("LEFT", title, "RIGHT", 10, 0)
-  -- a line under the title bar
-  local divider = f:CreateTexture(nil, "ARTWORK")
-  divider:SetHeight(1)
-  divider:SetPoint("TOPLEFT", 1, -34)
-  divider:SetPoint("TOPRIGHT", -1, -34)
-  W.Fill(divider, W.COLORS.border)
-  self.titleDivider = divider
 
   local close = W.CloseButton(f)
   close:SetPoint("TOPRIGHT", -6, -7)

@@ -14,10 +14,10 @@ local HOUSES = {
   { "Neutral", L["Goblin AH"] },
 }
 local AGES = {
-  { 1, L["Data up to 1 day old"] },
-  { 3, L["Data up to 3 days old"] },
-  { 7, L["Data up to 7 days old"] },
-  { false, L["Data of any age"] },
+  { 1, L["Up to 1 day"] },
+  { 3, L["Up to 3 days"] },
+  { 7, L["Up to 7 days"] },
+  { false, L["Any age"] },
 }
 UI.ARB_SIDEBAR = 260
 UI.ARB_POST_UNITS = 20 -- deposit basis when the route's depth isn't known: one post of up to this many
@@ -137,12 +137,14 @@ function UI:CreateArbitrageView(parent, contentArea)
     UI:RefreshArbitrage(true)
   end)
   v.minProfit:SetPoint("LEFT", v.sell, "RIGHT", 12, 0)
+  v.minProfit:SetWidth(84) -- room for the hint
   v.minMargin = W.GoldInput(bar, L["min margin %"], function(p) -- whole percent, same box as gold
     UI.arb.minMargin = (p or 10) / 100
     UI:RefreshArbitrage(true)
   end)
   v.minMargin:SetPoint("LEFT", v.minProfit, "RIGHT", 6, 0)
-  v.age = W.Dropdown(bar, 136, AGES, function(value)
+  v.minMargin:SetWidth(90)
+  v.age = W.Dropdown(bar, 104, AGES, function(value)
     UI.arb.maxAge = value
     UI:RefreshArbitrage(true)
   end, { neutral = true })

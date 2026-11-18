@@ -219,11 +219,7 @@ L["Customers"] = "买家"
 L["Data"] = "数据"
 L["Data age"] = "数据时效"
 L["Data is %d days old"] = "数据已有 %d 天"
-L["Data of any age"] = "任意时效的数据"
 L["Data quality"] = "数据质量"
-L["Data up to 1 day old"] = "1 天内的数据"
-L["Data up to 3 days old"] = "3 天内的数据"
-L["Data up to 7 days old"] = "7 天内的数据"
 L["Days to sell"] = "售完天数"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "如果某天的物品价格比相邻几天高（或低）这么多倍，该天将不计入筛选器、信号、提醒和图表——通常是冷门市场里一条加价 1000% 的挂单。在全面扫描中，AME 已经会忽略高价挂单：市场价只使用供应中最便宜的部分。"
@@ -584,6 +580,9 @@ L["Unusually cheap for this item, given how much its price usually moves"] =
 L["Unusually expensive for this item, given how much its price usually moves"] =
   "相对其通常的价格波动，此物品异常昂贵"
 L["Up"] = "涨"
+L["Up to 1 day"] = "1天内"
+L["Up to 3 days"] = "3天内"
+L["Up to 7 days"] = "7天内"
 L["Updating market data…"] = "正在更新市场数据…"
 L["VENDOR"] = "卖店"
 L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."] =

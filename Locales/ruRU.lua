@@ -235,11 +235,7 @@ L["Customers"] = "Покупатели"
 L["Data"] = "Данные"
 L["Data age"] = "Возраст данных"
 L["Data is %d days old"] = "Данным %d дн."
-L["Data of any age"] = "Данные любой давности"
 L["Data quality"] = "Качество данных"
-L["Data up to 1 day old"] = "Данные не старше 1 дня"
-L["Data up to 3 days old"] = "Данные не старше 3 дней"
-L["Data up to 7 days old"] = "Данные не старше 7 дней"
 L["Days to sell"] = "Дней на продажу"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "Дни, когда цена предмета во столько раз выше (или ниже) соседних дней, исключаются из скринера, сигналов, оповещений и графиков - обычно это один лот с наценкой 1000% на вялом рынке. В полном сканировании AME и так игнорирует дорогие лоты: рыночная цена берётся из самой дешёвой части предложения."
@@ -618,6 +614,9 @@ L["Unusually cheap for this item, given how much its price usually moves"] =
 L["Unusually expensive for this item, given how much its price usually moves"] =
   "Необычно дорого для этого предмета с учётом его обычных колебаний цены"
 L["Up"] = "Рост"
+L["Up to 1 day"] = "До 1 дня"
+L["Up to 3 days"] = "До 3 дней"
+L["Up to 7 days"] = "До 7 дней"
 L["Updating market data…"] = "Обновление рыночных данных…"
 L["VENDOR"] = "ТОРГОВЕЦ"
 L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."] =

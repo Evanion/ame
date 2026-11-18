@@ -221,11 +221,7 @@ L["Customers"] = "Clientes"
 L["Data"] = "Dados"
 L["Data age"] = "Idade dos dados"
 L["Data is %d days old"] = "Os dados têm %d dias"
-L["Data of any age"] = "Dados de qualquer idade"
 L["Data quality"] = "Qualidade dos dados"
-L["Data up to 1 day old"] = "Dados de até 1 dia"
-L["Data up to 3 days old"] = "Dados de até 3 dias"
-L["Data up to 7 days old"] = "Dados de até 7 dias"
 L["Days to sell"] = "Dias para vender"
 L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
   "Dias em que o preço de um item fica tantas vezes acima (ou abaixo) dos dias vizinhos são deixados de fora do filtro, sinais, alertas e gráficos - normalmente um único anúncio com 1000% de ágio num mercado pouco movimentado. Dentro de uma varredura completa, o AME já ignora anúncios caros: o preço de mercado usa a parte mais barata da oferta."
@@ -594,6 +590,9 @@ L["Unusually cheap for this item, given how much its price usually moves"] =
 L["Unusually expensive for this item, given how much its price usually moves"] =
   "Excepcionalmente caro para este item, dado o quanto seu preço costuma variar"
 L["Up"] = "Alta"
+L["Up to 1 day"] = "Até 1 dia"
+L["Up to 3 days"] = "Até 3 dias"
+L["Up to 7 days"] = "Até 7 dias"
 L["Updating market data…"] = "Atualizando dados de mercado…"
 L["VENDOR"] = "VENDEDOR"
 L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."] =
