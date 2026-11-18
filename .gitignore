@@ -14,3 +14,7 @@ Thumbs.db
 # release zips
 dist/
 .env
+# research (deep-research skill output)
+research_notes/
+reports/
+design-canvas/

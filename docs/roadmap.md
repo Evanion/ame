@@ -44,6 +44,11 @@ retention (60 days daily, 52 weeks weekly), O(n) ledger profits, Settings / Item
 Main split per concern, errors reported instead of swallowed. Next: shared UI components (button groups, inputs,
 cards, colours).
 
+## M15: holistic redesign (planned)
+
+Shared shell with resizable, dockable window and breakpoints; Item, sell bar, Market, Arbitrage, Portfolio, Settings,
+Sync and guidance redesigned in phases P1-P9. Spec and plan: [docs/plans/m15-redesign.md](plans/m15-redesign.md).
+
 ## Later
 
 - Crafting margins (reagent cost vs product price), disenchant values, deal finder / sniper. Others
