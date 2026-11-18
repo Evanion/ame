@@ -543,12 +543,22 @@ describe("addon in a stubbed client", function()
         ns.UI:Toggle()
         ns.UI:ShowTab("market")
         local t = ns.UI.marketView.table
-        t:Fit(20 + 30 * t.rowH)
+        -- the table grew while no size event reached it (hidden behind another tab, window closed): the next draw
+        -- notices and fits
+        t.frame:SetHeight(20 + 30 * t.rowH)
+        t:Render()
         assert.are.equal(30, t.visible)
         assert.is_true(#t.rows >= 30)
-        t:Fit(20 + 5 * t.rowH)
+        t.frame:SetHeight(20 + 5 * t.rowH)
+        t.frame.scripts.OnShow(t.frame)
         assert.are.equal(5, t.visible)
         assert.is_false(t.rows[6]:IsShown())
+        -- a portfolio table that was hidden while the window opened fills its space when its mode is picked
+        ns.UI:ShowTab("portfolio")
+        local pv = ns.UI.pfView
+        pv.ledger.frame:SetHeight(20 + 20 * pv.ledger.rowH)
+        pv.ledgerButton.scripts.OnClick(pv.ledgerButton)
+        assert.are.equal(20, pv.ledger.visible)
         t:SetUserHidden({}) -- every column on
         t:Layout(2000)
         assert.are.same({}, t.hiddenColumns)
@@ -723,6 +733,18 @@ describe("addon in a stubbed client", function()
       s.day = day
       t:Render()
       assert.are.equal(1, t.rows[1].alpha)
+      -- a menu goes away with what opened it: switching tabs, or its button hidden
+      ns.UI:ViewsMenu(v.views)
+      local menu = ns.Widgets.menu
+      assert.is_true(menu:IsShown())
+      ns.UI:ShowTab("item")
+      assert.is_false(menu:IsShown())
+      ns.UI:ShowTab("market")
+      ns.UI:ViewsMenu(v.views)
+      v.views:Hide()
+      menu.scripts.OnUpdate(menu, 0.016)
+      assert.is_false(menu:IsShown())
+      v.views:Show()
       -- narrow: the category sidebar becomes a dropdown on the toolbar
       ns.UI:OnResize(800)
       assert.is_false(v.side:IsShown())

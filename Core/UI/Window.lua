@@ -487,6 +487,7 @@ end
 
 function UI:ShowTab(name)
   self:Create()
+  W.HideMenu() -- a menu opened on the tab you leave goes with it
   for n, v in pairs(self.views) do
     v:SetShown(n == name)
   end

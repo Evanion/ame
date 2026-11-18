@@ -918,6 +918,13 @@ function W.Menu(anchor, entries, opts)
         self:Hide()
       end
     end)
+    -- the menu lives on the whole screen: close it when what opened it goes away (another tab, the window closed)
+    menu:SetScript("OnUpdate", function(self)
+      local a = self.anchor
+      if not (a and a.IsVisible and a:IsVisible()) then
+        self:Hide()
+      end
+    end)
     W.menu = menu
   end
   if menu:IsShown() and menu.anchor == anchor and not (opts and opts.refresh) then

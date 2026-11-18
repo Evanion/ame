@@ -243,6 +243,11 @@ function DataTable.New(parent, opts)
   frame:SetScript("OnMouseWheel", function(_, delta)
     t:Scroll(delta)
   end)
+  frame:SetScript("OnShow", function()
+    if t.data then
+      t:Render()
+    end
+  end)
   frame:SetScript("OnSizeChanged", function(_, width, height)
     if opts.fill then
       t:Fit(height)
@@ -261,6 +266,7 @@ function DataTable:Fit(height)
   if type(height) ~= "number" or height <= 0 then
     return
   end
+  self.fitHeight = height
   local n = math.max(1, math.floor((height - 20) / self.rowH))
   for r = #self.rows + 1, n do
     self:MakeRow(r)
@@ -505,6 +511,15 @@ local function itemCell(t, row, col, d, itemID)
 end
 
 function DataTable:Render()
+  -- the size can change while the table is hidden (another tab or mode, the window closed) without a size event
+  -- reaching it: check its height and width on every draw
+  if self.opts.fill then
+    local height = self.frame:GetHeight()
+    if type(height) == "number" and height > 0 and height ~= self.fitHeight then
+      self:Fit(height) -- draws again with the new row count
+      return
+    end
+  end
   local width = self.frame:GetWidth()
   if width ~= self.layoutWidth then -- laid out before the window had a size, or resized since
     self:Layout(width)
