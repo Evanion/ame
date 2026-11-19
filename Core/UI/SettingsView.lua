@@ -220,7 +220,10 @@ function UI:CreateSettingsView(parent, contentArea)
   v.click = dropdown(st, L["Open charts with"], 110, clicks, function(value)
     ns.Settings:Set("clickModifier", value)
   end)
-  paragraph(st, L["Off by default: loot addons use modified clicks. With AME open, Shift-click an item."])
+  paragraph(
+    st,
+    L["Off by default: loot addons use modified clicks. Without one, Shift-click an item while AME shows its Item tab."]
+  )
 
   -- Selling
   -- items hidden from the lists (right-click a row to hide one)

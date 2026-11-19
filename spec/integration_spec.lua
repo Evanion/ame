@@ -2217,6 +2217,9 @@ describe("addon in a stubbed client", function()
       assert.truthy(s.storage.text:find("Market:"))
       env:slash("AZEROTHMERCANTILEEXCHANGE", "config")
       assert.are.equal("settings", ns.UI.current)
+      env:slash("AZEROTHMERCANTILEEXCHANGE", "sync") -- Settings, Sharing
+      assert.are.equal("settings", ns.UI.current)
+      assert.are.equal("sharing", ns.UI.settingsView.current)
     end)
 
     it("ignores other realms, its own messages and garbage", function()

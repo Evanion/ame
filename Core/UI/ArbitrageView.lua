@@ -214,7 +214,7 @@ function UI:CreateArbitrageView(parent, contentArea)
       v.hint = W.Hint(
         slots.toolbar,
         "arbitrage",
-        L["Routes compare two auction houses' prices. Scan both (alts count), then search the buy house before buying: the Depth column shows how many units still pay."]
+        L["Routes compare two auction houses' prices. Scan both (alts count), then search the buy house before buying: the Units column shows how many units still pay."]
       ) or false
     end
   end)

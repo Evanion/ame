@@ -127,13 +127,19 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     AME:Backfill(true)
   elseif cmd == "config" or cmd == "settings" or cmd == "options" then
     ns.Settings:Open()
+  elseif cmd == "sync" or cmd == "sharing" then
+    ns.UI:Create()
+    ns.UI.frame:Show()
+    ns.UI:ShowTab("sync") -- Settings, Sharing
   elseif cmd == "" then
     ns.UI:Toggle()
   elseif cmd == "help" then
     say(
-      L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item with the window open - chart it"]
+      L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"]
     )
-    say(L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config"])
+    say(
+      L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync"]
+    )
   elseif itemIDFrom(msg) then
     ns.UI:ShowItem(itemIDFrom(msg))
   else

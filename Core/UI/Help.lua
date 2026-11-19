@@ -70,7 +70,6 @@ Help.TERMS = {
     L["Sells for"],
     L["The market price at the auction house you sell at: what the item typically sells for there."],
   },
-  arbProfit = { L["Profit"], L["Per item: what it sells for, minus the AH cut, minus what you paid."] },
   arbNet = {
     L["Net"],
     L["Per item: what it sells for, minus the AH cut, minus the listing deposit, minus what you paid. The deposit is counted for one post of the units the route pays for (or up to 20), at least 1 silver per post - you get it back when it sells."],
@@ -80,10 +79,6 @@ Help.TERMS = {
     L["How many units at the buy house still pay after the cut, of how many are listed there. The first number needs the item's listings: search it at the buy house (it then stays for 6 hours)."],
   },
   arbMargin = { L["Margin"], L["Profit as a share of what you paid. 50% means every 10g spent comes back as 15g."] },
-  arbSupply = {
-    L["Supply"],
-    L["Listed at the buy house / at the sell house. Plenty to buy and little to compete with where you sell is ideal; a big gap on one listing at the buy house may be gone fast."],
-  },
   arbDeposit = {
     L["Deposit"],
     L["What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and lose it if it doesn't - so a high deposit on a slow seller is real risk."],
@@ -102,7 +97,7 @@ Help.TERMS = {
   },
   pfValue = {
     L["Holdings value"],
-    L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
+    L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price, except soulbound items (they can't be sold) and items you hid. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
   },
   pfCost = {
     L["Average cost"],
@@ -118,7 +113,7 @@ Help.TERMS = {
   },
   pfFlow = {
     L["Sold / bought"],
-    L["Gold received from auction sales (after the cut) and gold spent on auction purchases in the last 30 days."],
+    L["Gold received from auction sales (after the cut) and gold spent on auction purchases in the chosen period."],
   },
   pfDays = {
     L["Days to sell"],
@@ -173,9 +168,8 @@ Help.GLOSSARY = {
   "arbBuy",
   "arbSell",
   "arbNet",
-  "arbProfit",
+  "arbUnits",
   "arbMargin",
-  "arbSupply",
   "arbDeposit",
   "arbDepth",
   "arbSellRate",
@@ -207,7 +201,7 @@ Help.GUIDE = {
   },
   {
     L["Item tab"],
-    L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. Shift-click any item (bags, chat, the AH) while this window is open to chart it, or set a modifier click in Settings."],
+    L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. To chart an item, type its name in the search box above the chart (Enter opens the best match), Shift-click it anywhere (bags, chat, the AH) while the Item tab is showing, or pick a modifier click under Settings, Tooltips & charts that charts it from anywhere."],
   },
   {
     L["Watchlists and alerts"],
@@ -219,7 +213,7 @@ Help.GUIDE = {
   },
   {
     L["Commands"],
-    L["/ame - open the window.   /ame <item link> - chart an item.   /ame status - data and sync status.   /ame config - settings.   /ame selftest - check everything is working."],
+    L["/ame - open the window.   /ame <item link> - chart an item.   /ame item <item link> - its history in chat.   /ame status - data, sharing and price check status.   /ame config - settings.   /ame sync - sharing settings.   /ame backfill - import Auctionator's history now.   /ame selftest - check everything is working.   /ame help - the commands in chat."],
   },
 }
 
@@ -254,9 +248,32 @@ function Help.Articles()
             L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."],
             H(L["Opening AME"]),
             L["Open the window with /ame, the minimap button, or set it to open with the auction house (Settings > Window)."],
+            L["Right-click the minimap button for Settings; hover it for the last full scan and the top buy signals."],
           },
         },
-        { key = "data", title = Help.GUIDE[1][1], body = { guideText(1) } },
+        {
+          key = "tooltips",
+          title = L["Item tooltips"],
+          body = {
+            L["Every item tooltip in the game gets AME's lines: the market price against its average, how many are listed and how many sell a day, and the signal with the market phase. Hold Shift for more - the average, the lowest listing, the 7-day change, the supply trend, volatility, the score and how much data it rests on - or show it all the time with Always show details."],
+            L["Tooltips show your own faction's auction house. Turn them off, or change the average they compare with, under Settings, Tooltips & charts."],
+          },
+        },
+        {
+          key = "data",
+          title = Help.GUIDE[1][1],
+          body = {
+            guideText(1),
+            H(L["Other auction houses"]),
+            L["The button next to AME's title picks which auction house you're looking at: yours, the other faction's or the goblin AH. Each keeps its own history; scan there (any character on this account counts) to fill it."],
+            H(L["Importing from Auctionator"]),
+            L["If Auctionator is installed, AME imports its recent daily prices for days it has no data for, once, when you open the auction house - your faction's only. The Import button under Settings, Data does it again."],
+            H(L["Random-suffix gear"]),
+            L['Gear with a random suffix ("of the Monkey", "of Magic") is tracked per suffix, since each sells at its own price. Charts, tooltips and your portfolio use the suffix of the item in hand.'],
+            H(L["How long history is kept"]),
+            L["Every scan is kept for 2 days (the 2D chart), a point per day for 60 days, then a point per week for a year. Your ledger keeps 90 days."],
+          },
+        },
         {
           key = "window",
           title = L["The window"],
@@ -283,6 +300,10 @@ function Help.Articles()
             H(L["Filtering by signal"]),
             EX("signalFilter"),
             L["Pick a signal to see only those items. Active filters show as chips under the toolbar: click one to remove it, or Clear all."],
+            H(L["Views and columns"]),
+            L["Views saves the filters you use often and brings them back in one click. Columns picks which columns show; the button says how many are hidden."],
+            H(L["Shift-clicks"]),
+            L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."],
             H(L["The item menu"]),
             L["Right-click any item in a list - Market, Arbitrage or Portfolio - for what you can do with it: open its chart, search the auction house for it (while the auction house is open), add it to a watchlist, set a price alert, or put its link in the chat box."],
             H(L["Hiding items"]),
@@ -302,6 +323,12 @@ function Help.Articles()
             EX("legend"),
             L["Market price, the lowest listing, the 7-day average, supply, and your own buys and sales as dots."],
             L["Hover the item's name or icon at the top for the game's own tooltip, with its stats."],
+            H(L["Ranges"]),
+            L["2D shows every scan from the last two days, with 2-hour candles. The longer ranges show a point per day, and per week beyond 60 days."],
+            H(L["Following the auction house"]),
+            L["While the Item tab is showing, it follows the item you search at the auction house. Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."],
+            H(L["Post at"]),
+            L["The sidebar's Post at card gives the same choices as the sell bar - Normal, Quick and Patient - with how long each takes to sell and what you net after the cut."],
           },
         },
         {
@@ -313,15 +340,33 @@ function Help.Articles()
             H(L["A route, broken down"]),
             EX("route"),
             L["Select a route to see what it pays after the cut and the deposit, and how fresh each side's price is. Routes paying over 2000% are gold transfers between factions, not trades: they're hidden and counted."],
+            H(L["Filters and actions"]),
+            L["Swap turns the route around. Minimum profit, margin and data age narrow the list. At the buy auction house, Search (or Shift-clicking a row) searches the item there, which also fills in how many units still pay; Chart opens it on the Item tab."],
           },
         },
-        { key = "tabPortfolio", title = Help.GUIDE[4][1], label = L["Portfolio"], body = { guideText(4) } },
+        {
+          key = "tabPortfolio",
+          title = Help.GUIDE[4][1],
+          label = L["Portfolio"],
+          body = {
+            guideText(4),
+            H(L["Five views"]),
+            L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."],
+            H(L["Whose, and since when"]),
+            L["Pick All characters or This character, and a period - Today, 7 days, 30 days or All time - for the ledger, the counterparties and the profit cards."],
+            H(L["How sales get recorded"]),
+            L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."],
+            H(L["Export"]),
+            L["Export copies the list you're looking at, as a spreadsheet (paste it into Excel or Google Sheets) or as CSV."],
+          },
+        },
         {
           key = "tabSettings",
           title = L["Settings tab"],
           label = L["Settings"],
           body = {
-            L["Pick a section on the left: General (the window and notifications), Tooltips & charts, Selling, Sharing and Data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored). Hover a setting for what it does."],
+            L["Pick a section on the left: General (the window and notifications), Tooltips & charts, Selling, Sharing and Data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored)."],
+            L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."],
           },
         },
         {
@@ -333,8 +378,10 @@ function Help.Articles()
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
             H(L["Price checks"]),
             L["Turn on Price checks and anyone who types !pc and an item in guild, party or raid chat gets its prices from you - market, lowest and 7-day average at your faction's auction house, and how old they are. When several players run AME, they agree among themselves and only one answers. Whispers can be answered too, for guild members, friends, your party or raid, and trusted players - never strangers. You answer at most once every 5 seconds - change it under Settings, Sharing - so nobody can make you flood the chat; while you wait, another AME player answers instead."],
+            L["Your own !pc is always answered, in the channel you asked in, even with Price checks off: ask in party and everyone sees the answer. A request takes an item link or the item's exact name. Inside dungeons, raids and boss encounters the game hides chat from addons, so price checks can't be answered there."],
             H(L["Keeping data honest"]),
             L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
+            L["The guild info line looks like this: AME block: Name, Name (any line, several allowed)."],
           },
         },
       },
@@ -368,7 +415,15 @@ function Help.Articles()
             L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It shows beside the signal."],
           },
         },
-        { key = "watch", title = Help.GUIDE[6][1], body = { guideText(6) } },
+        {
+          key = "watch",
+          title = Help.GUIDE[6][1],
+          body = {
+            guideText(6),
+            L["An alert fires once when its condition comes true, and again only after the price has moved back past its line. Alerts are checked after scans, after prices arrive from guild members and at login, and show on screen as well as in chat; the sound can be turned off under Settings, General. Signal alerts fire on Buy and Sell."],
+            L["Right-click a guild member's shared list to copy it into your own watchlists."],
+          },
+        },
         { key = "commands", title = Help.GUIDE[8][1], body = { guideText(8) } },
       },
     },
@@ -388,7 +443,8 @@ end
 -- (the player presses Enter; addons can't run slash commands for them). Commands aren't translated, so they're
 -- found in any language's text: "/ame", or "/ame" and one of its words.
 Help.CODE_COLOR = "8fd0ff"
-local SUBCOMMANDS = { status = true, config = true, selftest = true, backfill = true, help = true, item = true }
+local SUBCOMMANDS =
+  { status = true, config = true, selftest = true, backfill = true, help = true, item = true, sync = true }
 function Help.CommandLink(cmd)
   return ("|Hamecmd:%s|h|cff%s%s|r|h"):format(cmd, Help.CODE_COLOR, cmd)
 end
