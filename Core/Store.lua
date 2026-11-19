@@ -96,12 +96,22 @@ function Store:pause()
   end
 end
 
+-- self:pause as a plain function (for Codec's yield arguments)
+function Store:pauser()
+  if not self.pauseFn then
+    self.pauseFn = function()
+      self:pause()
+    end
+  end
+  return self.pauseFn
+end
+
 function Store:decode(packed, fields)
   local hit = self.cache[packed]
   if hit then
     return hit
   end
-  local cols = Codec.Decode(fields, self:unpack(packed), true)
+  local cols = Codec.Decode(fields, self:unpack(packed), true, self:pauser())
   -- simple FIFO-bounded cache; segments are immutable values keyed by their packed string
   local order = self.cacheOrder
   order[#order + 1] = packed
@@ -123,15 +133,15 @@ end
 function Store:unpack(packed)
   local texts = self.texts
   if not texts then
-    return Codec.Unpack(packed, self.compressor)
+    return Codec.Unpack(packed, self.compressor, self:pauser())
   end
-  local text = texts.new[packed] or texts.old[packed] or Codec.Unpack(packed, self.compressor)
+  local text = texts.new[packed] or texts.old[packed] or Codec.Unpack(packed, self.compressor, self:pauser())
   texts.new[packed] = text
   return text
 end
 
 function Store:encode(cols, fields)
-  return Codec.Pack(Codec.Encode(fields, cols), self.compressor)
+  return Codec.Pack(Codec.Encode(fields, cols), self.compressor, self:pauser())
 end
 
 -- binary search in a sorted id column
@@ -297,11 +307,11 @@ function Store:AddScan(snap, t, src, kind, packed)
 
   -- raw tier (sorted by t)
   local raw = data.raw
-  -- compressing a full scan takes ~100 ms in one go (inside LibDeflate); yield around it so nothing else piles on
+  -- a full scan is compressed in pieces, pausing between them (Compress.CHUNK)
   if not packed then
     local text = Codec.EncodeSnapshot(snap)
     self:pause()
-    packed = Codec.Pack(text, self.compressor)
+    packed = Codec.Pack(text, self.compressor, self:pauser())
     self:pause()
   end
   local entry = { t = t, src = src, k = kind, s = packed }
@@ -421,7 +431,12 @@ function Store:previousFull(pos)
         return self.lastFull.qty, floor((entry.t - e.t) / 60)
       end
       local ok, snap = pcall(function()
-        return Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor))
+        return Codec.Decode(
+          Codec.SNAPSHOT_FIELDS,
+          Codec.Unpack(e.s, self.compressor, self:pauser()),
+          nil,
+          self:pauser()
+        )
       end)
       if not ok then
         return nil, 0
@@ -656,7 +671,8 @@ function Store:Latest(itemID)
   local raw = self.data.raw
   for k = #raw, 1, -1 do
     local e = raw[k]
-    local snap = Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor))
+    local snap =
+      Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor, self:pauser()), nil, self:pauser())
     self:pause()
     local i = find(snap.ids, itemID)
     if i then
@@ -681,7 +697,8 @@ function Store:Intraday(itemID, fromT)
   for _, e in ipairs(self.data.raw) do
     if not fromT or e.t >= fromT then
       -- not through the segment cache: a full scan decodes to ~40k numbers, dozens of them would pin lots of memory
-      local snap = Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor))
+      local snap =
+        Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor, self:pauser()), nil, self:pauser())
       local i = find(snap.ids, itemID)
       if i then
         out[#out + 1] = {

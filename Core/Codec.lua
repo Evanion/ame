@@ -146,7 +146,8 @@ function Codec.Encode(fieldNames, cols)
 end
 
 -- allowMissing: text written before trailing fields were added decodes with those columns nil
-function Codec.Decode(fieldNames, text, allowMissing)
+-- yield (optional): called between columns (a full scan's columns take ~8 ms each)
+function Codec.Decode(fieldNames, text, allowMissing, yield)
   local fields, count = split(text, "|")
   if fields[1] ~= Codec.VERSION then
     error("Codec: unsupported version " .. tostring(fields[1]), 2)
@@ -159,6 +160,9 @@ function Codec.Decode(fieldNames, text, allowMissing)
   for f, name in ipairs(fieldNames) do
     if fields[f + 2] ~= nil then
       cols[name] = decodeColumn(fields[f + 2], n, f == 1)
+      if yield then
+        yield()
+      end
     end
   end
   return cols
@@ -168,16 +172,17 @@ function Codec.EncodeSnapshot(snap)
   return Codec.Encode(Codec.SNAPSHOT_FIELDS, snap)
 end
 
-function Codec.DecodeSnapshot(text)
-  return Codec.Decode(Codec.SNAPSHOT_FIELDS, text)
+function Codec.DecodeSnapshot(text, yield)
+  return Codec.Decode(Codec.SNAPSHOT_FIELDS, text, nil, yield)
 end
 
-function Codec.Pack(text, compressor)
-  return compressor:Compress(text)
+-- yield (optional): passed to the compressor, which pauses between the pieces of a big text
+function Codec.Pack(text, compressor, yield)
+  return compressor:Compress(text, yield)
 end
 
-function Codec.Unpack(packed, compressor)
-  local text = compressor:Decompress(packed)
+function Codec.Unpack(packed, compressor, yield)
+  local text = compressor:Decompress(packed, yield)
   if not text then
     error("Codec: decompression failed", 2)
   end

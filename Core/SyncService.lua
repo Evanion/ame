@@ -444,7 +444,9 @@ function Service:Merge(m, sender)
   local snap
   AME:WithStore("sync-merge", m.shard, function(store)
     local ok, decoded = pcall(function()
-      return ns.Codec.DecodeSnapshot(ns.Codec.Unpack(m.packed, AME.compressor))
+      -- in pieces, pausing between them: a full scan is ~450 KB of text
+      local pause = store:pauser()
+      return ns.Codec.DecodeSnapshot(ns.Codec.Unpack(m.packed, AME.compressor, pause), pause)
     end)
     if not ok or not decoded then
       return { rejected = "undecodable" }
