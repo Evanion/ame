@@ -356,3 +356,30 @@ describe("Analytics signal order", function()
     end
   end)
 end)
+
+describe("Analytics DE check", function()
+  local A
+  before_each(function()
+    A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+  end)
+
+  it("says DE when the materials are worth more than listing nets and a vendor pays", function()
+    -- a green at 10000c: 9500c after a 5% cut, minus a 200c deposit = 9300c < 12000c of materials
+    local s = { market = 10000, vendorPrice = 2500, signal = "hold", signalRank = A.SIGNAL_RANK.hold }
+    assert.is_true(A.DisenchantCheck(s, 12000, 0.05, 200))
+    assert.are.equal("disenchant", s.signal)
+    assert.are.equal(A.SIGNAL_RANK.disenchant, s.signalRank)
+    assert.are.equal(12000, s.deValue)
+    assert.near(9300, s.vendorNet, 1e-9)
+  end)
+
+  it("leaves the signal alone when listing or a vendor pays more, or there's no value", function()
+    local s = { market = 10000, signal = "buy" }
+    assert.is_false(A.DisenchantCheck(s, 9000, 0.05, 200))
+    assert.are.equal("buy", s.signal)
+    local v = { market = 100, vendorPrice = 5000, signal = "vendor" }
+    assert.is_false(A.DisenchantCheck(v, 4000, 0.05, 0)) -- the vendor still pays more
+    assert.are.equal("vendor", v.signal)
+    assert.is_false(A.DisenchantCheck({ market = 1, signal = "none" }, nil, 0.05, 0))
+  end)
+end)

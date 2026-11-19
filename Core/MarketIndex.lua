@@ -86,15 +86,16 @@ for i, key in ipairs(PHASE_KEYS) do
   PHASE_NUM[key] = i
 end
 -- stored codes (stable across versions: saves from before VENDOR existed used 1-5)
-local SIGNALS = { "sell", "buy", "hold", "wait", "none", "vendor" }
+local SIGNALS = { "sell", "buy", "hold", "wait", "none", "vendor", "disenchant" }
 local SIGNAL_CODE = {}
 for code, name in ipairs(SIGNALS) do
   SIGNAL_CODE[name] = code
 end
 
--- bumped when saved indexes gain information (2: vendor prices, 3: what a listing nets for VENDOR items); older
+-- bumped when saved indexes gain information (2: vendor prices, 3: what a listing nets for VENDOR items, 4: DE);
+-- older
 -- saves are shown, then rebuilt once
-MarketIndex.SAVE_VERSION = 3
+MarketIndex.SAVE_VERSION = 4
 
 MarketIndex.SAVED_FIELDS = {
   { "market", 1 },
@@ -119,6 +120,7 @@ MarketIndex.SAVED_FIELDS = {
   { "outliers", 1 },
   { "vendorPrice", 1 }, -- what a vendor pays (copper), when the client knew it at build time
   { "vendorNet", 1 }, -- VENDOR items: what a listing nets after the cut and deposit
+  { "deValue", 1 }, -- DE items: what disenchanting one is worth (its materials, at what selling them nets)
 }
 
 local function columnNames()

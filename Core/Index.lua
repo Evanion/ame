@@ -58,7 +58,7 @@ function AME:BuildIndex(store, shard, job)
       ns.Analytics.VendorCheck(s, vendor, cut, ns.Arbitrage.Deposit(vendor, house, hours))
     end
   end
-  return ns.MarketIndex.Build(
+  local index = ns.MarketIndex.Build(
     store,
     ns.Today(GetServerTime()),
     AME.INDEX_DAYS,
@@ -70,6 +70,43 @@ function AME:BuildIndex(store, shard, job)
     vendorCheck,
     ns.Settings:Get("marketOverview") and AME.ItemClass or nil
   )
+  AME.DisenchantSignals(index, house, cut, hours, function()
+    job:Checkpoint()
+  end)
+  return index
+end
+
+-- DE: gear worth more disenchanted than listed (Analytics.DisenchantCheck). After the build, so the materials are
+-- priced from the same fresh index. Gear the client hasn't cached yet is skipped (checked again next build).
+function AME.DisenchantSignals(index, house, cut, hours, checkpoint)
+  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+  if not (getInfo and ns.Disenchant) then
+    return
+  end
+  local function netSale(mat)
+    local m = index.items[mat]
+    if not (m and m.market) then
+      return nil
+    end
+    local vendor = ns.ItemCache.Get(mat).sellPrice
+    return m.market * (1 - cut) - (vendor and ns.Arbitrage.Deposit(vendor, house, hours) or 0)
+  end
+  local n = 0
+  for id, s in pairs(index.items) do
+    local info = ns.ItemCache.Get(id)
+    if (info.classID == 2 or info.classID == 4) and s.market then
+      local _, _, quality, level = getInfo(ns.BaseID(id))
+      if quality and quality >= 2 then
+        local value = ns.Disenchant.Value(level, quality, info.classID, netSale)
+        local vendor = info.sellPrice
+        ns.Analytics.DisenchantCheck(s, value, cut, vendor and ns.Arbitrage.Deposit(vendor, house, hours) or 0)
+      end
+    end
+    n = n + 1
+    if checkpoint and n % 500 == 0 then
+      checkpoint()
+    end
+  end
 end
 
 -- an item's class (category), for the market statistics (Market Overview, when switched on); nil when the client

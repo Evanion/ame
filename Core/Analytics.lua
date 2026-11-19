@@ -206,7 +206,7 @@ function Analytics.Summarize(series)
 end
 
 -- sort order for signals: sell first (act on it), then buy, hold, wait, and no signal last
-Analytics.SIGNAL_RANK = { sell = 1, buy = 2, hold = 3, wait = 4, vendor = 5, none = 6 }
+Analytics.SIGNAL_RANK = { sell = 1, buy = 2, hold = 3, wait = 4, vendor = 5, disenchant = 6, none = 7 }
 
 -- VENDOR: the auction house pays less than a vendor. What a listing nets - market price after the AH cut, minus the
 -- listing deposit (counted as the risk you take: lost if it doesn't sell) - is below the vendor's price. Overrides
@@ -221,6 +221,22 @@ function Analytics.VendorCheck(s, vendorPrice, cut, deposit)
   end
   s.signal, s.signalRank = "vendor", Analytics.SIGNAL_RANK.vendor
   s.vendorPrice, s.vendorNet = vendorPrice, net
+  return true
+end
+
+-- DE (disenchant): the item's expected enchanting materials (Disenchant.Value, at what selling them nets) are worth
+-- more than what listing the item nets and than what a vendor pays. Overrides the price signal (and VENDOR, when
+-- disenchanting beats the vendor too). s gets deValue (and vendorNet: what listing nets).
+function Analytics.DisenchantCheck(s, deValue, cut, deposit)
+  if not (s and s.market and deValue and deValue > 0) then
+    return false
+  end
+  local net = s.market * (1 - (cut or 0)) - (deposit or 0)
+  if deValue <= net or deValue <= (s.vendorPrice or 0) then
+    return false
+  end
+  s.signal, s.signalRank = "disenchant", Analytics.SIGNAL_RANK.disenchant
+  s.deValue, s.vendorNet = deValue, net
   return true
 end
 

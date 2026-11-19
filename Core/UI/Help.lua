@@ -40,7 +40,9 @@ Help.TERMS = {
     L["Signal"],
     L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."]
       .. " "
-      .. L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."],
+      .. L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."]
+      .. " "
+      .. L["DE: the enchanting materials it disenchants into are worth more than listing it nets (and than a vendor pays) - disenchant it, or sell it to an enchanter. Worked out from the classic disenchanting rules and today's material prices."],
   },
   confidence = {
     L["Confidence"],
@@ -716,13 +718,14 @@ Help.EXAMPLES = {
     return f
   end,
   signals = function(parent)
-    local f = panel(parent, 5 * 22 + 12)
+    local f = panel(parent, 6 * 22 + 12)
     local rows = {
       { "buy", L["Unusually cheap for this item, given how much its price usually moves"] },
       { "hold", L["Within its usual range"] },
       { "sell", L["Unusually expensive for this item, given how much its price usually moves"] },
       { "wait", L["Cheap, but sellers are dumping: wait for the bottom"] },
       { "vendor", L["A vendor pays more than the auction house nets after the cut and the deposit"] },
+      { "disenchant", L["Its enchanting materials are worth more than it sells for: disenchant it"] },
     }
     for k, r in ipairs(rows) do
       row(f, -8 - (k - 1) * 22, W.SignalGlyph(r[1]), W.Dim(r[2]), 90)
@@ -831,7 +834,7 @@ Help.EXAMPLES = {
     local f = CreateFrame("Frame", nil, parent)
     f:SetHeight(24)
     local items = { { "all", L["All"] } }
-    for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor" }) do
+    for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor", "disenchant" }) do
       items[#items + 1] = { key, W.SignalGlyph(key), W.SignalTone(key) }
     end
     local seg = W.Segmented(f, items, { minWidth = 40 })

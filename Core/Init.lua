@@ -24,6 +24,7 @@ ns.HEX = {
   hold = "ffcc33", -- HOLD, purchases
   wait = "8fa3b8", -- WAIT
   vendor = "c8a272", -- VENDOR
+  disenchant = "b49cff", -- DE (disenchant)
   brand = "33ccff", -- "AME" / "Azeroth" in chat and titles
   gold = "ffd100", -- the gold unit, "Post at"
   white = "ffffff",

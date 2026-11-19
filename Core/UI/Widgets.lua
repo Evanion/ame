@@ -606,6 +606,7 @@ local SIGNALS = {
   hold = { "hold", L["HOLD"] },
   wait = { "wait", L["WAIT"] },
   vendor = { "vendor", L["VENDOR"] },
+  disenchant = { "disenchant", L["DE"] },
 }
 function W.Signal(signal)
   local s = SIGNALS[signal]
@@ -613,9 +614,10 @@ function W.Signal(signal)
 end
 
 -- Signals are never colour alone: an icon in front of the word (media/Signals, drawn by
--- scripts/make-signal-icons.lua): up triangle BUY, down triangle SELL, dot HOLD, pause WAIT, coin VENDOR. The white
+-- scripts/make-signal-icons.lua): up triangle BUY, down triangle SELL, dot HOLD, pause WAIT, coin VENDOR, shard DE.
+-- The white
 -- icons take the signal's colour, so they follow the colour-blind palette too.
-W.SIGNAL_ICON = { buy = "Up", sell = "Down", hold = "Dot", wait = "Pause", vendor = "Coin" }
+W.SIGNAL_ICON = { buy = "Up", sell = "Down", hold = "Dot", wait = "Pause", vendor = "Coin", disenchant = "Shard" }
 W.SIGNAL_MEDIA = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Signals\\"
 
 -- an icon as inline text, tinted with a text role's colour ("good", "bad", ...), or with hex ("RRGGBB")

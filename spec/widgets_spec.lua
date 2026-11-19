@@ -17,7 +17,7 @@ describe("Widgets formatters", function()
       assert.are.equal(21, math.floor(W.Contrast("000000", "ffffff") + 0.5))
       for name, palette in pairs(W.PALETTES) do
         local roles = { good = palette.good, bad = palette.bad }
-        for _, role in ipairs({ "hold", "wait", "vendor" }) do
+        for _, role in ipairs({ "hold", "wait", "vendor", "disenchant" }) do
           roles[role] = W.HEX[role]
         end
         for role, hex in pairs(roles) do

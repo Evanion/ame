@@ -132,6 +132,11 @@ function UI.SignalReasons(s, today)
     lines[#lines + 1] = L["Within its usual range"]
   elseif sig == "wait" then
     lines[#lines + 1] = L["Cheap, but sellers are dumping: wait for the bottom"]
+  elseif sig == "disenchant" and s.deValue then
+    lines[#lines + 1] = L["Disenchanting is worth about %s; listing nets %s after the cut and deposit"]:format(
+      W.Money(s.deValue),
+      W.Money(s.vendorNet or 0)
+    )
   elseif sig == "vendor" and s.vendorPrice then
     lines[#lines + 1] = L["A vendor pays %s; listing nets %s after the cut and deposit"]:format(
       W.Money(s.vendorPrice),
@@ -701,7 +706,7 @@ function UI:CreateMarketView(parent)
 
   -- second row: signal filter (text + glyph + colour) and chips for the other active filters
   local signals = { { "all", L["All"] } }
-  for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor" }) do
+  for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor", "disenchant" }) do
     signals[#signals + 1] = { key, W.SignalGlyph(key), W.SignalTone(key) }
   end
   v.signals = W.Segmented(slots.chips, signals, {
@@ -928,6 +933,7 @@ function UI:MarketMoreMenu(anchor)
   W.Menu(anchor, {
     signal("wait"),
     signal("vendor"),
+    signal("disenchant"),
     price("minPrice", L["Minimum price in gold (empty: none):"], v.minBox),
     price("maxPrice", L["Maximum price in gold (empty: none):"], v.maxBox),
     {
