@@ -357,6 +357,7 @@ function UI:CreatePortfolioView(parent, contentArea)
     fill = true,
     top = 0,
     itemID = itemID,
+    itemMenu = {}, -- no Hide: these are your own goods
     sort = { key = "value", ascending = false },
     offset = offset,
     tooltip = function(tip, e)
@@ -374,6 +375,7 @@ function UI:CreatePortfolioView(parent, contentArea)
     fill = true,
     top = 0,
     itemID = itemID,
+    itemMenu = {},
     sort = { key = "total", ascending = false },
   })
   v.customers = ns.DataTable.New(main, {
@@ -396,6 +398,7 @@ function UI:CreatePortfolioView(parent, contentArea)
     fill = true,
     top = 0,
     itemID = itemID,
+    itemMenu = {},
     sort = { key = "t", ascending = false }, -- newest first
     offset = offset,
   })

@@ -83,7 +83,6 @@ L["; it usually moves ~%d%% a day"] = "; обычно меняется на ~%d%
 L["<1h"] = "<1 ч"
 L["A normal price"] = "Обычная цена"
 L["A route, broken down"] = "Маршрут в деталях"
-L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it."] = "Скринер всех предметов с историей. Выберите категорию или список наблюдения слева, ищите по названию, фильтруйте по качеству, диапазону цен или сигналу и щёлкните по столбцу для сортировки. Наведите курсор на заголовок столбца, чтобы узнать его смысл. Щёлкните по строке, чтобы открыть график; щёлкните по звезде, чтобы отслеживать предмет."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] = "Торговец платит %s; лот принесёт %s после комиссии и залога"
 L["A vendor pays more"] = "Торговец платит больше"
 L["A vendor pays more than the auction house nets after the cut and the deposit"] = "Торговец платит больше, чем даст аукцион после комиссии и залога"

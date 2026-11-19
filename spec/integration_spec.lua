@@ -752,6 +752,50 @@ describe("addon in a stubbed client", function()
       ns.MarketFilter.Apply = apply
     end)
 
+    it("right-click menu on a row: hide an item, find it under Hidden, unhide it", function()
+      seeded()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("market")
+      local v = ns.UI.marketView
+      local before = #ns.UI.list
+      local row = v.table.rows[1]
+      local key = row.itemID
+      row.scripts.OnClick(row, "RightButton")
+      local function pick(label)
+        for _, it in ipairs(ns.Widgets.menu.items) do
+          if it:IsShown() and (it.text.text or "") == label then
+            it.scripts.OnClick(it)
+            return true
+          end
+        end
+        error("no menu entry " .. label)
+      end
+      assert.are_not.equal("item", ns.UI.current) -- right-click opens the menu, not the chart
+      pick("Hide from lists")
+      assert.is_true(ns.AME.watch:IsHidden(key))
+      assert.are.equal(before - 1, #ns.UI.list)
+      for _, s in ipairs(ns.UI.list) do
+        assert.are_not.equal(key, s.itemID)
+      end
+      -- the sidebar's Hidden list shows it, with Unhide in its menu
+      local hiddenEntry
+      for _, e in ipairs(ns.UI:CategoryEntries()) do
+        if e.hidden then
+          hiddenEntry = e
+        end
+      end
+      assert.are.equal(1, hiddenEntry.count)
+      ns.UI:SelectCategory(hiddenEntry)
+      assert.are.equal(1, #ns.UI.list)
+      assert.are.equal(key, ns.UI.list[1].itemID)
+      row = v.table.rows[1]
+      row.scripts.OnClick(row, "RightButton")
+      pick("Unhide")
+      assert.is_false(ns.AME.watch:IsHidden(key))
+      assert.is_nil(ns.UI.mq.list) -- nothing hidden any more: back to all items
+      assert.are.equal(before, #ns.UI.list)
+    end)
+
     it("screener: chips for active filters, saved views, a column chooser, stale rows and signal reasons", function()
       seeded()
       ns.UI:Toggle()

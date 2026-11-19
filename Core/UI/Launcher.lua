@@ -92,8 +92,9 @@ function Launcher:CreateLauncher()
       local index = ns.AME.index
       if index then
         W.TipPair(tt, L["Items tracked"], tostring(index.count))
+        local hidden = ns.AME.watch and ns.AME.watch:Hidden() or {}
         local top = ns.MarketIndex.Rank(index, "score", function(s)
-          return s.signal == "buy"
+          return s.signal == "buy" and not hidden[s.itemID]
         end)
         if #top > 0 then
           tt:AddLine(" ")

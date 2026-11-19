@@ -45,6 +45,112 @@ function UI:StarClicked(anchor, itemID)
   end
 end
 
+---------------------------------------------------------------------------------------------------------------------
+-- the item menu: right-click an item row in any table. opts.hide: offer Hide / Unhide (Market and Arbitrage lists)
+
+function UI:ItemMenu(anchor, key, opts)
+  opts = opts or {}
+  local watch = ns.AME.watch
+  local name, _, quality = W.ItemInfo(key)
+  local entries = {
+    { text = W.QualityText(quality, name or ns.ItemString(key)), disabled = true },
+    {
+      text = L["Open chart"],
+      func = function()
+        UI:ShowItem(key)
+      end,
+    },
+  }
+  if ns.AME.ahOpen then
+    entries[#entries + 1] = {
+      text = L["Search the AH"],
+      func = function()
+        ns.AME:SearchAuctionHouse(key)
+      end,
+    }
+  end
+  if #watch:Lists() == 1 then
+    local on = watch:Has(1, key)
+    entries[#entries + 1] = {
+      text = on and L["Remove from watchlist"] or L["Add to watchlist"],
+      func = function()
+        watch:Toggle(1, key)
+        UI:WatchChanged()
+      end,
+    }
+  else
+    entries[#entries + 1] = {
+      text = L["Watchlists..."],
+      func = function()
+        UI:WatchMenu(anchor, key)
+      end,
+    }
+  end
+  entries[#entries + 1] = {
+    text = L["Set an alert..."],
+    func = function()
+      UI:ShowItem(key)
+      local v = UI.itemView
+      if v and v.alertBelow and v.alertBelow.SetFocus then
+        v.alertBelow:SetFocus()
+      end
+    end,
+  }
+  entries[#entries + 1] = {
+    text = L["Link in chat"],
+    func = function()
+      local link = ns.ItemCache.Link(key)
+      if not link then
+        return
+      end
+      if not (ChatEdit_InsertLink and ChatEdit_InsertLink(link)) and ChatFrame_OpenChat then
+        ChatFrame_OpenChat(link)
+      end
+    end,
+  }
+  if opts.hide then
+    local hidden = watch:IsHidden(key)
+    entries[#entries + 1] = {
+      text = hidden and L["Unhide"] or L["Hide from lists"],
+      func = function()
+        UI:SetHidden(key, not hidden)
+      end,
+    }
+  end
+  W.Menu(anchor, entries, { cursor = true })
+end
+
+-- hide or unhide an item: out of the Market and Arbitrage lists and their counts (it's still recorded)
+function UI:SetHidden(key, on)
+  local watch = ns.AME.watch
+  watch:SetHidden(key, on)
+  if self.index then
+    self.categories = ns.MarketFilter.Categories(self.index, function(id)
+      return ns.ItemCache.Get(id)
+    end, watch:Hidden())
+  end
+  self:WatchChanged()
+  if self.arbView and self.arbView:IsShown() and self.RefreshArbitrage then
+    self:RefreshArbitrage()
+  end
+  if self.UpdateHiddenControls then
+    self:UpdateHiddenControls()
+  end
+end
+
+-- the Market tab, on its Hidden list
+function UI:ShowHidden()
+  self:ShowTab("market")
+  if ns.AME.watch:HiddenCount() > 0 then
+    self:SelectCategory({ hidden = true })
+  end
+end
+
+function UI:UnhideAll()
+  ns.AME.watch:UnhideAll()
+  self:SetHidden(nil, false)
+end
+
 function UI:PromptNewList(itemID)
   W.Prompt("AME_NEW_LIST", L["Name for the new watchlist:"], function(name, data)
     local i = ns.AME.watch:AddList(name)
@@ -108,7 +214,9 @@ function UI:WatchChanged()
   local q = self.mq
   if q and q.list then
     local l
-    if type(q.list) == "string" then
+    if q.list == "hidden" then
+      l = ns.AME.watch:HiddenCount() > 0 and { items = ns.AME.watch:Hidden() } or nil
+    elseif type(q.list) == "string" then
       l = ns.AME.watch.db.guild[q.list:sub(3)]
     else
       l = ns.AME.watch:Lists()[q.list]
@@ -153,4 +261,15 @@ function UI:UpdateWatchControls(keepInputs)
     v.alertAbove:SetText(a.above and tostring(math.floor(a.above / 10000)) or "")
   end
   v.alertSignal:SetChecked(a.signal)
+  self:UpdateHiddenControls()
+end
+
+function UI:UpdateHiddenControls()
+  local v, id = self.itemView, self.itemID
+  if not (v and v.hide and id) then
+    return
+  end
+  local hidden = ns.AME.watch:IsHidden(id)
+  v.hide.label:SetText(hidden and (L["Hidden from lists"] .. "  ·  " .. L["Unhide"]) or L["Hide from lists"])
+  v.hide:SetSelected(hidden)
 end

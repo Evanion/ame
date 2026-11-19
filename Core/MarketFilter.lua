@@ -18,12 +18,12 @@ local function classRank(classID)
   return rank[classID] or (100 + classID)
 end
 
--- Category tree for the items in the index:
+-- Category tree for the items in the index (except those in the hide set, optional):
 --   { { classID, count, subs = { { subClassID, count }, ... } }, ... } in AH order (subclasses by id)
-function MarketFilter.Categories(index, info)
+function MarketFilter.Categories(index, info, hide)
   local byClass = {}
   for itemID in pairs(index.items) do
-    local i = info(itemID)
+    local i = not (hide and hide[itemID]) and info(itemID)
     if i and i.classID then
       local c = byClass[i.classID]
       if not c then
@@ -90,7 +90,8 @@ function MarketFilter.FindByName(index, text, info, limit)
   return hits
 end
 
--- query: { text, classID, subClassID, only (set of itemIDs, e.g. a watchlist), minQuality, signal ("buy"/"sell"),
+-- query: { text, classID, subClassID, only (set of itemIDs, e.g. a watchlist), hide (set of itemIDs left out),
+--          minQuality, signal ("buy"/"sell"),
 --          minPrice, maxPrice (copper, on market),
 --          sortKey, ascending }
 -- Name search only matches items whose name is known (info().name); returns list, unnamed (count of items that
@@ -105,6 +106,9 @@ function MarketFilter.Apply(index, query, info)
   for itemID, s in pairs(index.items) do
     local ok = s[key] ~= nil or key == "name"
     if ok and query.only and not query.only[itemID] then
+      ok = false
+    end
+    if ok and query.hide and query.hide[itemID] then
       ok = false
     end
     if ok and query.signal and s.signal ~= query.signal then

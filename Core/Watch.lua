@@ -3,6 +3,7 @@
 --   db = {
 --     lists  = { { name = "Watchlist", items = { [itemID] = true } }, ... },   -- account-wide, any shard
 --     alerts = { [itemID] = { below = copper?, above = copper?, signal = bool?, state = {} } },
+--     hidden = { [itemID] = true },   -- left out of the Market and Arbitrage lists (still recorded); never synced
 --   }
 --
 -- Alerts fire once when their condition becomes true and re-arm when it stops being true (with a little hysteresis
@@ -21,10 +22,42 @@ function Watch.New(db)
   db.lists = db.lists or {}
   db.alerts = db.alerts or {}
   db.guild = db.guild or {} -- shared by guild members: [owner/name] = { owner, name, items = set, t }
+  db.hidden = db.hidden or {}
   if #db.lists == 0 then
     db.lists[1] = { name = Watch.DEFAULT_NAME, items = {} }
   end
   return setmetatable({ db = db }, Watch)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- hidden items: items you don't want in the Market and Arbitrage lists (account-wide, every auction house)
+
+function Watch:Hidden()
+  return self.db.hidden
+end
+
+function Watch:IsHidden(itemID)
+  return itemID ~= nil and self.db.hidden[itemID] == true
+end
+
+function Watch:SetHidden(itemID, on)
+  if itemID then
+    self.db.hidden[itemID] = on and true or nil
+  end
+end
+
+function Watch:HiddenCount()
+  local n = 0
+  for _ in pairs(self.db.hidden) do
+    n = n + 1
+  end
+  return n
+end
+
+function Watch:UnhideAll()
+  for id in pairs(self.db.hidden) do
+    self.db.hidden[id] = nil
+  end
 end
 
 ---------------------------------------------------------------------------------------------------------------------

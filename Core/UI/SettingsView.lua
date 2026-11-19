@@ -223,6 +223,20 @@ function UI:CreateSettingsView(parent, contentArea)
   paragraph(st, L["Off by default: loot addons use modified clicks. With AME open, Shift-click an item."])
 
   -- Selling
+  -- items hidden from the lists (right-click a row to hide one)
+  _, st = card("display", L["Hidden items"])
+  v.hiddenText = paragraph(st, "")
+  local hiddenRow = st:Row(22, 8)
+  v.hiddenShow = W.Button(hiddenRow, L["Show them"], 100, 22, function()
+    UI:ShowHidden()
+  end)
+  v.hiddenShow:SetPoint("LEFT")
+  v.hiddenUnhide = W.Button(hiddenRow, L["Unhide all"], 100, 22, function()
+    UI:UnhideAll()
+    UI:RefreshSettings()
+  end)
+  v.hiddenUnhide:SetPoint("LEFT", v.hiddenShow, "RIGHT", 6, 0)
+
   _, st = card("selling", L["Selling"], 0)
   local function cutInput(key, label)
     local row = st:Row(22, 6)
@@ -413,6 +427,16 @@ function UI:RefreshSettings()
   v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
   v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))
   v.hours:SetValue(ns.Settings:Get("listingHours"))
+  local hidden = ns.AME.watch and ns.AME.watch:HiddenCount() or 0
+  v.hiddenText:SetText(
+    hidden > 0
+        and L["%d items are hidden from the Market and Arbitrage lists. AME still records their prices."]:format(hidden)
+      or L["Nothing hidden. Right-click an item in the Market or Arbitrage list to hide it from the lists."]
+  )
+  for _, b in ipairs({ v.hiddenShow, v.hiddenUnhide }) do
+    b:SetEnabled(hidden > 0)
+    b:SetAlpha(hidden > 0 and 1 or 0.4)
+  end
   local hasIcon = ns.Launcher:HasMinimapLibrary()
   v.minimap:SetChecked(hasIcon and not AME_DB.settings.minimap.hide)
   v.minimap.label:SetText(

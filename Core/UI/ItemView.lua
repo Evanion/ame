@@ -325,6 +325,21 @@ function UI:CreateItemView(parent)
     end
   end)
   v.alertSignal:SetPoint("LEFT")
+  -- hide from the Market and Arbitrage lists (or unhide)
+  local hideRow = st:Row(20, 8)
+  v.hide = W.Button(hideRow, L["Hide from lists"], 100, 20, function()
+    if UI.itemID then
+      UI:SetHidden(UI.itemID, not ns.AME.watch:IsHidden(UI.itemID))
+    end
+  end)
+  v.hide:SetPoint("LEFT")
+  v.hide:SetPoint("RIGHT")
+  W.Tooltip(v.hide, function(tip)
+    W.TipText(
+      tip,
+      L["Hidden items stay out of the Market and Arbitrage lists and their counts. AME keeps recording them; find them under Hidden on the Market tab."]
+    )
+  end)
   v.column = col
   -- cards size themselves to their text (which wraps with the sidebar's width)
   function v:FitCards()

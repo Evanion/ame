@@ -192,6 +192,11 @@ function DataTable.New(parent, opts)
       if not self.data then
         return
       end
+      -- right-click on an item row: what you can do with the item (opts.itemMenu = { hide = true } adds Hide)
+      if button == "RightButton" and self.itemID and opts.itemMenu and ns.UI.ItemMenu then
+        ns.UI:ItemMenu(self, self.itemID, opts.itemMenu)
+        return
+      end
       if opts.onClick then
         opts.onClick(self.data, button)
       elseif self.itemID then

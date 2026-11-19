@@ -43,6 +43,10 @@ describe("Arbitrage", function()
     assert.are.equal(4, r.sellQty)
   end)
 
+  it("leaves hidden items out", function()
+    assert.are.same({ 3 }, ids(A.Find(horde, goblin, { cut = 0.15, today = 10, hide = { [1] = true } })))
+  end)
+
   it("the fee can turn a price gap into a loss", function()
     local small = { items = { [9] = { min = 100, market = 100, day = 1 } } }
     local big = { items = { [9] = { min = 110, market = 110, day = 1 } } }

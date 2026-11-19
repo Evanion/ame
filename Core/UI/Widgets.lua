@@ -1065,6 +1065,7 @@ end
 -- One menu frame for the whole addon; closes on a pick or a click elsewhere.
 local menu
 -- opts.refresh: update a menu already open on this anchor instead of toggling it (live suggestions)
+-- opts.cursor: open at the mouse pointer (a right-click menu) instead of under the anchor
 function W.Menu(anchor, entries, opts)
   if not menu then
     menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
@@ -1132,7 +1133,16 @@ function W.Menu(anchor, entries, opts)
   menu.anchor = anchor
   menu:SetSize(width, #entries * ROW + 6)
   menu:ClearAllPoints()
-  menu:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
+  local x, y
+  if opts and opts.cursor and GetCursorPosition then
+    x, y = GetCursorPosition()
+  end
+  if x and y then
+    local scale = menu:GetEffectiveScale()
+    menu:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / scale + 2, y / scale - 2)
+  else
+    menu:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
+  end
   menu:Show()
   return menu
 end

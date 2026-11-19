@@ -158,8 +158,17 @@ end
 -- the sidebar entries for the current index and filters
 function UI:CategoryEntries()
   local q = self.mq
-  local entries = { { all = true, label = L["All items"], count = self.index and self.index.count or 0 } }
   local watch = ns.AME.watch
+  local shown, hiddenHere = self.index and self.index.count or 0, 0
+  if watch and self.index then
+    for id in pairs(watch:Hidden()) do
+      if self.index.items[id] then
+        hiddenHere = hiddenHere + 1
+      end
+    end
+    shown = shown - hiddenHere
+  end
+  local entries = { { all = true, label = L["All items"], count = shown } }
   if watch then
     entries[#entries + 1] = { header = true, label = W.Dim(L["Watchlists"]), count = "" }
     for i, l in ipairs(watch:Lists()) do
@@ -171,6 +180,9 @@ function UI:CategoryEntries()
       }
     end
     entries[#entries + 1] = { newList = true, label = W.Dim("+ " .. L["New list"]), count = "" }
+    if watch:HiddenCount() > 0 then -- items you hid (right-click a row): shown here so they can be unhidden
+      entries[#entries + 1] = { hidden = true, label = W.Dim(L["Hidden"]), name = L["Hidden"], count = hiddenHere }
+    end
     local guild = watch:GuildLists()
     if #guild > 0 then
       entries[#entries + 1] = { header = true, label = W.Dim(L["Guild watchlists"]), count = "" }
@@ -232,7 +244,10 @@ function UI:SelectCategory(e, button, anchor)
     return
   end
   q.list, q.only = nil, nil
-  if e.guild then
+  if e.hidden then
+    q.classID, q.subClassID = nil, nil
+    q.list, q.only = "hidden", ns.AME.watch:Hidden()
+  elseif e.guild then
     local g = ns.AME.watch.db.guild[e.guild]
     q.classID, q.subClassID = nil, nil
     q.list, q.only = "g:" .. e.guild, g and g.items
@@ -311,6 +326,8 @@ local function selected(q, e)
     return false
   elseif e.guild then
     return q.list == "g:" .. e.guild
+  elseif e.hidden then
+    return q.list == "hidden"
   elseif e.list then
     return q.list == e.list
   elseif q.list then
@@ -684,6 +701,7 @@ function UI:CreateMarketView(parent)
     itemID = function(s)
       return s.itemID
     end,
+    itemMenu = { hide = true },
     star = true,
     confidence = function(s)
       return ns.Analytics.Confidence(s, UI.index and UI.index.day)
@@ -893,7 +911,7 @@ function UI:RefreshMarket(force)
   end
   if index ~= self.index then
     self.index = index
-    self.categories = ns.MarketFilter.Categories(index, itemInfo)
+    self.categories = ns.MarketFilter.Categories(index, itemInfo, ns.AME.watch and ns.AME.watch:Hidden())
     local ids = {}
     for id in pairs(index.items) do
       ids[#ids + 1] = id
@@ -908,6 +926,8 @@ function UI:RefreshMarket(force)
       local avg = s[avgKey]
       s.vsAvg = s.market and avg and avg > 0 and s.market / avg - 1 or nil
     end
+    -- hidden items stay out of every list but their own
+    self.mq.hide = self.mq.list ~= "hidden" and ns.AME.watch and ns.AME.watch:Hidden() or nil
     self.list, self.unnamed = ns.MarketFilter.Apply(index, self.mq, itemInfo)
   end
   self:RenderMarket()
@@ -947,7 +967,7 @@ function UI:RenderMarket()
   elseif (self.unnamed or 0) > 0 then
     status = status .. W.SEP .. L["%d items not searchable yet (names loading)"]:format(self.unnamed)
   end
-  if q.list and q.only then
+  if q.list and q.only and q.list ~= "hidden" then
     local n = 0
     for _ in pairs(q.only) do
       n = n + 1

@@ -47,6 +47,19 @@ describe("MarketFilter", function()
     assert.are.equal(2, trade.subs[1].count)
   end)
 
+  it("leaves hidden items out of the list and the category counts", function()
+    local hide = { [2] = true }
+    assert.are.same({ 5, 1, 4, 3 }, ids(MF.Apply(index, { hide = hide }, info)))
+    assert.are.same({ 2 }, ids(MF.Apply(index, { only = hide }, info))) -- the Hidden list itself
+    local trade
+    for _, c in ipairs(MF.Categories(index, info, hide)) do
+      if c.classID == 7 then
+        trade = c
+      end
+    end
+    assert.are.equal(2, trade.count)
+  end)
+
   it("sorts by score by default and filters by category", function()
     assert.are.same({ 2, 5, 1, 4, 3 }, ids(MF.Apply(index, {}, info)))
     assert.are.same({ 2, 1, 3 }, ids(MF.Apply(index, { classID = 7 }, info)))

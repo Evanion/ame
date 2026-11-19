@@ -162,6 +162,7 @@ function UI:CreateArbitrageView(parent, contentArea)
     itemID = function(e)
       return e.itemID
     end,
+    itemMenu = { hide = true },
     sort = { key = self.arb.sortKey, ascending = self.arb.ascending },
     onSort = function(key, ascending)
       UI.arb.sortKey, UI.arb.ascending = key, ascending
@@ -411,6 +412,7 @@ function UI:RefreshArbitrage(keepOffset)
         today = ns.Today(GetServerTime()),
         sortKey = a.sortKey == "net" and "profit" or a.sortKey,
         ascending = a.ascending,
+        hide = ns.AME.watch and ns.AME.watch:Hidden(),
       })
       -- what's left after the deposit too
       for _, e in ipairs(rows) do

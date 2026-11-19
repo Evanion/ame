@@ -28,6 +28,9 @@ function Arbitrage.Find(buy, sell, opts)
   for id, b in pairs(buy and buy.items or {}) do
     local s = sell and sell.items[id]
     local cost = b.min or b.market
+    if opts.hide and opts.hide[id] then
+      s = nil -- hidden from lists
+    end
     if s and s.market and cost and cost > 0 then
       local fee = s.market * cut
       local profit = s.market - fee - cost
