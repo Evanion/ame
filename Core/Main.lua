@@ -491,6 +491,13 @@ function handlers.PLAYER_LOGIN()
   end)
   ns.Professions:Start()
   if ns.SyncService:Init(AME, AME.syncTransport) then
+    -- hide "No player named X is currently playing" when X logged off while AME was whispering them
+    local addFilter = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or _G.ChatFrame_AddMessageEventFilter
+    if addFilter then
+      addFilter("CHAT_MSG_SYSTEM", function(_, _, msg)
+        return ns.SyncService:ChatFilter(msg)
+      end)
+    end
     ns.SyncService:Start()
   end
 end
@@ -531,6 +538,9 @@ handlers.PLAYER_GUILD_UPDATE = handlers.GUILD_ROSTER_UPDATE
 -- portfolio: auction mail, bags, bank, own auctions
 function handlers.CHAT_MSG_SYSTEM(msg)
   ns.Trading:OnSystemMessage(msg)
+  if ns.SyncService.enabled then
+    ns.SyncService:OnSystemMessage(msg)
+  end
 end
 
 function handlers.MAIL_INBOX_UPDATE()

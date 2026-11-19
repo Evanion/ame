@@ -12,6 +12,8 @@ Service.PREFIX = "AME1"
 Service.ANNOUNCE_EVERY = 600 -- seconds
 Service.REQUEST_COOLDOWN = 600
 Service.MAX_REQUESTS_PER_ANNOUNCE = 4
+Service.GONE_QUIET = 600 -- a player who went offline mid-transfer gets nothing for this long (unless heard from)
+Service.SENT_RECENTLY = 600 -- "no player named X" counts as ours when we whispered X within this long
 
 local function aceTransport()
   local AceComm = LibStub and LibStub("AceComm-3.0", true)
@@ -32,9 +34,85 @@ local function aceTransport()
   }
 end
 
+-- Whispers to players who logged off: every queued chunk of a scan would bounce with "No player named X is currently
+-- playing" in our chat. The transport remembers whom we whisper; that message for one of them drops the rest of the
+-- queue to them (DropQueued), hides the message (ChatFilter), and pauses whispers to them until they're heard again.
+function Service:WrapTransport(raw)
+  self.sentTo, self.gone = {}, {}
+  return {
+    Register = function(_, ...)
+      return raw:Register(...)
+    end,
+    Send = function(_, prefix, msg, distribution, target)
+      if distribution == "WHISPER" then
+        local k = ns.Trust.Key(target)
+        local gone = self.gone[k]
+        if gone and GetTime() - gone < Service.GONE_QUIET then
+          return -- logged off a moment ago: don't bounce more whispers
+        end
+        self.sentTo[k] = GetTime()
+      end
+      return raw:Send(prefix, msg, distribution, target)
+    end,
+  }
+end
+
+-- the player a "No player named X is currently playing" system message names, when we whispered them lately
+function Service:NotFoundName(msg)
+  local secret = _G.issecretvalue
+  if type(msg) ~= "string" or (secret and secret(msg)) or not self.sentTo then
+    return nil
+  end
+  self.notFound = self.notFound
+    or ns.Trading.Pattern(_G.ERR_CHAT_PLAYER_NOT_FOUND_S, "No player named '%s' is currently playing.")
+  local name = msg:match(self.notFound)
+  local k = name and ns.Trust.Key(name)
+  local sent = k and self.sentTo[k]
+  if sent and GetTime() - sent < Service.SENT_RECENTLY then
+    return name, k
+  end
+end
+
+-- the system message, once (CHAT_MSG_SYSTEM): stop sending to that player
+function Service:OnSystemMessage(msg)
+  local name, k = self:NotFoundName(msg)
+  if not name then
+    return false
+  end
+  self.gone[k] = GetTime()
+  self.stats.syncGone = (self.stats.syncGone or 0) + 1
+  Service.DropQueued(_G.ChatThrottleLib, Service.PREFIX, k)
+  return true
+end
+
+-- chat filter (runs once per chat frame): hide the bounce when it's about a player we were whispering
+function Service:ChatFilter(msg)
+  return self:NotFoundName(msg) ~= nil
+end
+
+-- Neutralise the whispers still queued to a player in ChatThrottleLib: they drain at once without being sent (the
+-- queue is shared by all of AME's sync traffic, so removing them would be unsafe; a no-op send counts as sent).
+local function noop() end
+function Service.DropQueued(ctl, prefix, key)
+  local dropped = 0
+  for _, prio in pairs(ctl and ctl.Prio or {}) do
+    local pipe = prio.ByName and prio.ByName[prefix]
+    for _, m in ipairs(pipe or {}) do
+      if m[3] == "WHISPER" and ns.Trust.Key(m[4]) == key and m.f ~= noop then
+        m.f, m.nSize = noop, 1
+        dropped = dropped + 1
+      end
+    end
+  end
+  return dropped
+end
+
 function Service:Init(AME, transport)
   self.AME = AME
   self.transport = transport or aceTransport()
+  if self.transport then
+    self.transport = self:WrapTransport(self.transport)
+  end
   self.requested = {}
   self.requestedFrom = {}
   self.stats = AME_DB.stats
@@ -273,6 +351,9 @@ end
 function Service:OnMessage(msg, distribution, sender)
   if self:IsMine(sender) or not self:Active() then
     return
+  end
+  if self.gone then
+    self.gone[ns.Trust.Key(sender)] = nil -- heard from: back online
   end
   local m = Sync.Decode(msg)
   if not m or not sameRealm(m.shard) or not self:Allowed(m, distribution, sender) then

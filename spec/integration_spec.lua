@@ -2205,6 +2205,36 @@ describe("addon in a stubbed client", function()
       assert.are.equal(mine.s, reply.packed)
     end)
 
+    it("stops whispering a player who logged off mid-transfer, and hides the bounce", function()
+      bootSync()
+      fullScan({ { 2589, 1000, 10 } })
+      local mine = AME_HistoryDB.shards["TestRealm|Horde"].raw[1]
+      deliver(ns.Sync.EncodeRequest("TestRealm|Horde", mine.t, mine.src), "WHISPER", "Guild Mate")
+      assert.are.equal("Guild Mate", sent[#sent].target)
+      -- the rest of the scan still queued in ChatThrottleLib, to them and to the guild
+      local function send() end
+      local toThem = { "AME1", "chunk", "WHISPER", "Guild Mate", f = send, nSize = 255, n = 4 }
+      local toGuild = { "AME1", "announce", "GUILD", f = send, nSize = 100, n = 3 }
+      _G.ChatThrottleLib = { Prio = { BULK = { ByName = { AME1 = { toThem, toGuild } } } } }
+      -- they log off: the game says so for the next chunk
+      local bounce = "No player named 'Guild Mate' is currently playing."
+      assert.is_true(ns.SyncService:ChatFilter(bounce)) -- hidden from chat
+      assert.is_false(ns.SyncService:ChatFilter("No player named 'Someone Else' is currently playing."))
+      assert.is_true(ns.SyncService:OnSystemMessage(bounce))
+      assert.are_not.equal(send, toThem.f) -- their chunk drains without being sent
+      assert.are.equal(send, toGuild.f) -- the guild's traffic goes on
+      -- no more whispers to them for a while
+      local before = #sent
+      deliver(ns.Sync.EncodeRequest("TestRealm|Horde", mine.t, mine.src), "WHISPER", "Other Mate")
+      assert.are.equal(before + 1, #sent)
+      ns.SyncService.transport:Send("AME1", "x", "WHISPER", "Guild Mate")
+      assert.are.equal(before + 1, #sent)
+      -- heard from again: back online
+      deliver(ns.Sync.EncodeRequest("TestRealm|Horde", mine.t, mine.src), "WHISPER", "Guild Mate")
+      assert.are.equal("Guild Mate", sent[#sent].target)
+      _G.ChatThrottleLib = nil
+    end)
+
     it("rejects a poisoned scan that disagrees wildly with our prices", function()
       bootSync()
       local rows = {}
