@@ -142,3 +142,33 @@ describe("Crafting", function()
     assert.are.equal(0, #c:RecipesToBuy({ { item = 900, price = 120000 } }, teaches, recipe, chars))
   end)
 end)
+
+describe("Crafting sales and cooldowns", function()
+  local C
+  local market = {
+    [1] = { market = 100, avg30 = 100, sellRate = 50, qty = 50 },
+    [2] = { market = 1000, avg30 = 1000, sellRate = 40, qty = 3 }, -- gear: a high rate from expiring listings
+  }
+  before_each(function()
+    C = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Crafting.lua" }).Crafting
+  end)
+  local function new()
+    return C.New({
+      market = function(id)
+        return market[id]
+      end,
+      cut = 0,
+    })
+  end
+
+  it("never counts more sold a day than is listed", function()
+    assert.are.equal(3, new():SalesPerDay(2))
+    assert.are.equal(50, new():SalesPerDay(1))
+  end)
+
+  it("counts at most one craft per cooldown a day", function()
+    local transmute = { product = 2, made = 1, reagents = { { 1, 1 } }, cooldown = 2 * 86400 }
+    local e = new():Evaluate(transmute)
+    assert.are.equal(900 * 0.5, e.perDay) -- one craft every two days, not three a day
+  end)
+end)

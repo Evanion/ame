@@ -136,3 +136,50 @@ describe("Disenchant", function()
     end))
   end)
 end)
+
+describe("Leveling limits", function()
+  local ns
+  before_each(function()
+    ns = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Crafting.lua", "Core/Leveling.lua" })
+  end)
+  local function craft()
+    return ns.Crafting.New({
+      market = function(id)
+        return id == 1 and { market = 100, avg30 = 100 } or nil
+      end,
+      cut = 0,
+    })
+  end
+
+  it("never plans a path on a recipe with a cooldown", function()
+    local list = {
+      {
+        recipe = { id = 1, product = 5, reagents = { { 1, 1 } }, cooldown = 86400 },
+        yellow = 30,
+        grey = 60,
+        known = true,
+      },
+    }
+    local plan = ns.Leveling.Plan({ craft = craft(), recipes = list, from = 1, to = 10, cap = 75 })
+    assert.are.equal(1, plan.stuck)
+  end)
+
+  it("charges a recipe item once, however many steps use the recipe", function()
+    local list = {
+      {
+        recipe = { id = 1, product = 5, reagents = { { 1, 1 } } },
+        yellow = 30,
+        grey = 60,
+        learnAt = 1,
+        itemPrice = 500,
+      },
+      { recipe = { id = 2, product = 6, reagents = { { 1, 2 } } }, yellow = 20, grey = 25, known = true },
+    }
+    local plan = ns.Leveling.Plan({ craft = craft(), recipes = list, from = 1, to = 40, cap = 75, goal = "cheapest" })
+    local charged = 0
+    for _, st in ipairs(plan.steps) do
+      charged = charged + (st.learn or 0)
+    end
+    assert.are.equal(500, charged)
+  end)
+end)

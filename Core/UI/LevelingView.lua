@@ -24,8 +24,9 @@ local function charName(key)
 end
 
 local function itemName(id)
-  local name, _, quality = W.ItemInfo(id)
-  return W.QualityText(quality, name or ns.ItemCache.Name(id) or ("item:" .. tostring(id)))
+  return W.ItemNameOrLoad(id, function()
+    UI.RedrawCrafting()
+  end)
 end
 
 local function cost(v)
@@ -83,6 +84,7 @@ local function candidates(m, choice)
       product = rec and rec.out or d.product,
       made = rec and ((rec.min or 1) + (rec.max or rec.min or 1)) / 2 or d.made,
       reagents = rec and rec.r or d.reagents,
+      cooldown = ns.CraftingData:Cooldown(id),
     }
     local c = { recipe = recipe, yellow = d.yellow, grey = d.grey, known = learned[id] or false }
     if d.grey > choice.p.skill and #recipe.reagents > 0 then
@@ -196,28 +198,34 @@ function UI:LevelingRows(m)
   end
   local plan = L2.plans[self.levelGoal or "recovery"]
   local rows = {}
+  local noted = {} -- a recipe's learn / train note only before its first step
   for _, st in ipairs(plan.steps) do
     if st.train then
       rows[#rows + 1] = { note = true, skill = st.from, text = L["Train %s at your trainer"]:format(st.train) }
     else
       local c = st.entry
-      if st.learn then
-        rows[#rows + 1] = {
-          note = true,
-          skill = st.from,
-          itemID = c.recipeItem,
-          text = L["Learn %s: recipe on the AH, %s (needs %d)"]:format(
-            itemName(c.recipe.product or 0),
-            W.Plain(W.Money(st.learn, true)),
-            c.learnAt or 0
-          ),
-        }
-      elseif c.estimated and not c.known then
-        rows[#rows + 1] = {
-          note = true,
-          skill = st.from,
-          text = L["Train %s at a trainer (about %d, estimated)"]:format(itemName(c.recipe.product or 0), c.learnAt),
-        }
+      if not noted[c] and not c.known then
+        noted[c] = true
+        -- the text is made when drawn, so an item name that loads later shows up
+        if st.learn then
+          local price = W.Plain(W.Money(st.learn, true))
+          rows[#rows + 1] = {
+            note = true,
+            skill = st.from,
+            itemID = c.recipeItem,
+            text = function()
+              return L["Learn %s · AH %s · needs %d"]:format(itemName(c.recipe.product or 0), price, c.learnAt or 0)
+            end,
+          }
+        elseif c.estimated then
+          rows[#rows + 1] = {
+            note = true,
+            skill = st.from,
+            text = function()
+              return L["Train %s · trainer, about %d"]:format(itemName(c.recipe.product or 0), c.learnAt)
+            end,
+          }
+        end
       end
       st.itemID = c.recipe.product
       rows[#rows + 1] = st
@@ -270,12 +278,12 @@ UI.LEVELING_COLUMNS = {
   {
     key = "craft",
     label = L["Craft"],
-    width = 230,
+    width = 260,
     sortKey = false,
     align = "LEFT",
     text = function(st)
       if st.note then
-        return W.Color("brand", st.text)
+        return W.Color("brand", type(st.text) == "function" and st.text() or st.text)
       end
       return itemName(st.entry.recipe.product)
     end,
@@ -320,7 +328,7 @@ UI.LEVELING_COLUMNS = {
     key = "results",
     drop = 1,
     label = L["Results"],
-    width = 150,
+    width = 130,
     sortKey = false,
     align = "LEFT",
     text = resultsText,

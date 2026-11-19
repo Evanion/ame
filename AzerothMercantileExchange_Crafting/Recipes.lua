@@ -6,6 +6,7 @@
 --                      reagent, count, reagent, count, ... }
 -- items[recipeItemID] = { profession, skill to learn, taught spell, taught spell... }
 -- vendor[itemID] = what a vendor charges (copper), for reagents vendors sell
+-- cooldown[spellID] = seconds between crafts (transmutes, Mooncloth...)
 AME_CraftingData = {
   build = "1.60.1.70959",
   recipes = {
@@ -4548,5 +4549,22 @@ AME_CraftingData = {
     [14341] = 5000,
     [17194] = 10,
     [18256] = 30000,
+  },
+  cooldown = {
+    [11479] = 3600,
+    [11480] = 3600,
+    [17187] = 169200,
+    [17559] = 82800,
+    [17560] = 82800,
+    [17561] = 82800,
+    [17562] = 82800,
+    [17563] = 82800,
+    [17564] = 82800,
+    [17565] = 82800,
+    [17566] = 82800,
+    [18560] = 342000,
+    [22430] = 7200,
+    [25146] = 600,
+    [1317279] = 169200,
   },
 }

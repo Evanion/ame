@@ -30,6 +30,17 @@ function Crafting.New(env)
   return setmetatable({ env = env, memo = {} }, Crafting)
 end
 
+-- Units of an item that sell a day: its sell rate, but never more than is listed (the rate counts expired and
+-- cancelled listings too, and scales short observations up to a day). nil without a rate.
+function Crafting:SalesPerDay(itemID)
+  local s = self.env.market(itemID)
+  local rate = s and s.sellRate
+  if rate and s.qty and s.qty < rate then
+    rate = s.qty
+  end
+  return rate
+end
+
 -- the market price, capped at factor x the 30-day average (a fantasy listing isn't a price)
 function Crafting:Price(itemID)
   local s = self.env.market(itemID)
@@ -147,10 +158,13 @@ function Crafting:Evaluate(recipe, heldSet)
   end
   out.revenue = net * out.made
   out.profit = out.revenue - out.cost
-  local s = self.env.market(recipe.product)
-  out.sellRate = s and s.sellRate or nil
+  out.sellRate = self:SalesPerDay(recipe.product)
   if out.sellRate and where == "ah" then
-    out.perDay = out.profit * out.sellRate / out.made -- crafts a day the market absorbs x profit per craft
+    local crafts = out.sellRate / out.made -- crafts a day the market absorbs...
+    if recipe.cooldown and recipe.cooldown > 0 then
+      crafts = math.min(crafts, 86400 / recipe.cooldown) -- ...and the cooldown allows
+    end
+    out.perDay = out.profit * crafts
   elseif where == "vendor" then
     out.perDay = nil -- a vendor takes any amount: profit per craft is the measure
   end
@@ -215,8 +229,7 @@ function Crafting:SellOrRefine(itemID, qty, recipes)
       if ok and crafts > 0 then
         local made = recipe.made or 1
         local net = crafts * (productNet * made - others) + (qty - crafts * need) * each
-        local s = self.env.market(recipe.product)
-        local rate = s and s.sellRate
+        local rate = self:SalesPerDay(recipe.product)
         out.options[#out.options + 1] = {
           recipe = recipe,
           crafts = crafts,

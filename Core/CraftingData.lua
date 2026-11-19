@@ -45,6 +45,11 @@ function CraftingData:Load()
   return true
 end
 
+-- seconds between crafts of a recipe with a cooldown (transmutes, Mooncloth...), or nil
+function CraftingData:Cooldown(spellID)
+  return self.data and self.data.cooldown and self.data.cooldown[spellID]
+end
+
 -- what a vendor charges for a reagent vendors sell (vials, thread, flux...), or nil
 function CraftingData:VendorPrice(itemID)
   return self.data and self.data.vendor and self.data.vendor[itemID]

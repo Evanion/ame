@@ -725,6 +725,27 @@ function W.QualityText(quality, text)
   return (color and color.hex or "|cffffffff") .. text .. "|r"
 end
 
+-- An item's name in its quality colour; one the client hasn't loaded is asked for once a session, and redraw() runs
+-- (debounced) when names arrive. Until then "item:<id>".
+local namePending, redrawQueue = {}, {}
+function W.ItemNameOrLoad(key, redraw)
+  local name, _, quality = W.ItemInfo(key)
+  name = name or ns.ItemCache.Name(key)
+  if not name and key and not namePending[key] then
+    namePending[key] = true
+    W.OnItemLoaded(key, function()
+      if redraw and not redrawQueue[redraw] then
+        redrawQueue[redraw] = true
+        C_Timer.After(0.2, function()
+          redrawQueue[redraw] = nil
+          redraw()
+        end)
+      end
+    end)
+  end
+  return W.QualityText(quality, name or ("item:" .. tostring(key)))
+end
+
 -- run fn once item data is cached
 function W.OnItemLoaded(itemID, fn)
   if Item and Item.CreateFromItemID then

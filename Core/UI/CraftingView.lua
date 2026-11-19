@@ -24,9 +24,17 @@ local function charName(key)
   return (key or ""):gsub("^[^:]*:", "")
 end
 
+-- redraw the shown rows and breakdown (names that arrived)
+function UI.RedrawCrafting()
+  local v = UI.craftView
+  if v and v:IsShown() and v.tables[UI.craftMode] then
+    v.tables[UI.craftMode]:Render()
+    UI:RenderCraftingDetail()
+  end
+end
+
 local function itemName(id)
-  local name, _, quality = W.ItemInfo(id)
-  return W.QualityText(quality, name or ns.ItemCache.Name(id) or ("item:" .. tostring(id)))
+  return W.ItemNameOrLoad(id, UI.RedrawCrafting)
 end
 
 local function days(d)
@@ -52,11 +60,19 @@ local function recipeFor(profession, id)
       product = r.out,
       made = ((r.min or 1) + (r.max or r.min or 1)) / 2,
       reagents = r.r or {},
+      cooldown = ns.CraftingData:Cooldown(id),
     }
   end
   local d = ns.CraftingData:Recipe(id)
   if d then
-    return { id = id, profession = d.profession, product = d.product, made = d.made, reagents = d.reagents }
+    return {
+      id = id,
+      profession = d.profession,
+      product = d.product,
+      made = d.made,
+      reagents = d.reagents,
+      cooldown = ns.CraftingData:Cooldown(id),
+    }
   end
 end
 
@@ -418,6 +434,7 @@ function UI:CreateCraftingView(parent, contentArea)
 
   -- the breakdown: a title, a subtitle and reusable label / value rows
   local col = UI.Stack(slots.right.content, 0)
+  v.detailCol = col
   local st = col:Card(0).stack
   v.title = st:Text("GameFontNormalLarge")
   v.subtitle = st:Text("GameFontDisableSmall", 4)
@@ -534,7 +551,9 @@ function UI:RefreshCrafting()
       end
     end
     table.sort(names)
-    recorded[#recorded + 1] = ("%s (%s)"):format(charName(key), table.concat(names, ", "))
+    if #names > 0 then -- characters with only gathering, or only spellbook data, aren't listed
+      recorded[#recorded + 1] = ("%s (%s)"):format(charName(key), table.concat(names, ", "))
+    end
   end
   v.slots.status:SetText(
     #recorded > 0
@@ -559,7 +578,19 @@ local SOURCE = {
   craft = L["craft it"],
 }
 
+-- the breakdown, then the sidebar re-measured (its rows change height with their text)
 function UI:RenderCraftingDetail()
+  local v = self.craftView
+  if not v then
+    return
+  end
+  self:RenderCraftingDetailRows()
+  local width = v.slots.right.content:GetWidth()
+  v.detailCol:Height(width and width > 0 and width or UI.SIDE_PANEL_W)
+  v.slots.right.pane:Measure()
+end
+
+function UI:RenderCraftingDetailRows()
   local v = self.craftView
   local e = self.craftSelected
   local found = false

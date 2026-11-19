@@ -71,8 +71,7 @@ function Leveling.Plan(opts)
   refreshHeld()
   local sold, bought = {}, {} -- results allocated to the AH so far; recipe items paid for
   local function unitValue(product)
-    local s = craft.env.market(product)
-    local cap = s and s.sellRate and s.sellRate * Leveling.HORIZON or 0
+    local cap = (craft:SalesPerDay(product) or 0) * Leveling.HORIZON
     local net = craft:NetSale(product)
     local other =
       math.max(craft.env.vendorSell and craft.env.vendorSell(product) or 0, opts.deValue and opts.deValue(product) or 0)
@@ -98,7 +97,8 @@ function Leveling.Plan(opts)
     end
     local best, bestScore
     for _, c in ipairs(opts.recipes) do
-      local usable = c.known or (c.learnAt or 1) <= s
+      -- a recipe on a cooldown (transmutes) can't carry a path: one craft a day or two
+      local usable = not (c.recipe.cooldown and c.recipe.cooldown > 0) and (c.known or (c.learnAt or 1) <= s)
       local p = usable and Leveling.Chance(s, c.yellow, c.grey) or 0
       if p > 0 then
         local cost = craft:CraftCost(c.recipe, 0, nil, heldSet)
@@ -180,7 +180,7 @@ function Leveling.Plan(opts)
   for id, n in pairs(opts.held or {}) do
     held[id] = n
   end
-  local kept, soldAH = {}, {}
+  local kept, soldAH, charged = {}, {}, {}
   local out = { steps = steps, cost = 0, back = 0, crafts = 0, stuck = stuck }
   for _, st in ipairs(steps) do
     if st.entry then
@@ -204,7 +204,8 @@ function Leveling.Plan(opts)
           cost = cost + (total or (each or 0) * units)
         end
       end
-      if c.itemPrice and not c.known then
+      if c.itemPrice and not c.known and not charged[c] then
+        charged[c] = true
         st.learn = c.itemPrice
         cost = cost + c.itemPrice
       end
@@ -217,8 +218,7 @@ function Leveling.Plan(opts)
         results.keep = keep
         kept[product] = (kept[product] or 0) + keep
         units = units - keep
-        local s0 = craft.env.market(product)
-        local room = math.max(0, (s0 and s0.sellRate or 0) * Leveling.HORIZON - (soldAH[product] or 0))
+        local room = math.max(0, (craft:SalesPerDay(product) or 0) * Leveling.HORIZON - (soldAH[product] or 0))
         local net = craft:NetSale(product)
         local vendor = craft.env.vendorSell and craft.env.vendorSell(product) or 0
         local de = opts.deValue and opts.deValue(product) or 0
