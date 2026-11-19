@@ -457,7 +457,28 @@ function UI:CreateCraftingView(parent, contentArea)
   st = col:Card().stack
   v.lines = {}
   for i = 1, BREAKDOWN_ROWS do
-    v.lines[i] = st:Pair("", nil, i == 1 and 0 or 2)
+    local line = st:Pair("", nil, i == 1 and 0 or 2)
+    v.lines[i] = line
+    -- a line about an item (a reagent) acts like one: click searches the AH (or opens the chart), Shift-click
+    -- links it in chat, hover shows its tooltip
+    line:EnableMouse(true)
+    line:SetScript("OnMouseUp", function(self)
+      UI:CraftingLineClick(self.itemID)
+    end)
+    W.Tooltip(line, function(tip, self)
+      if not self.itemID then
+        return false
+      end
+      W.SetItemTip(tip, self.itemID)
+      tip:AddLine(" ")
+      tip:AddLine(
+        ns.AME.ahOpen and L["Click: search the auction house  ·  Shift-click: link in chat"]
+          or L["Click: price chart  ·  Shift-click: link in chat"],
+        0.6,
+        0.6,
+        0.6
+      )
+    end)
   end
   v.note = col:Text("GameFontDisableSmall", 6)
   local actions = col:Row(26, 10)
@@ -589,11 +610,31 @@ function UI:RefreshCrafting()
   self:RenderCraftingDetail()
 end
 
+-- the breakdown's lines: { label, value, itemID (optional: the line is about that item) }
 local function setLines(v, pairsList)
   for i, line in ipairs(v.lines) do
     local p = pairsList[i]
     line.label:SetText(p and p[1] or "")
     line.value:SetText(p and p[2] or "")
+    line.itemID = p and p[3] or nil
+  end
+end
+
+-- a click on an item line: Shift links it in chat; otherwise search the open auction house, or show its chart
+function UI:CraftingLineClick(itemID)
+  if not itemID then
+    return
+  end
+  if IsShiftKeyDown() then
+    local link = ns.ItemCache.Link(itemID)
+    local insert = (ChatFrameUtil and ChatFrameUtil.InsertLink) or _G.ChatEdit_InsertLink
+    if link and insert then
+      insert(link)
+    end
+  elseif ns.AME.ahOpen then
+    ns.AME:SearchAuctionHouse(itemID)
+  else
+    self:ShowItem(itemID)
   end
 end
 
@@ -674,6 +715,7 @@ function UI:RenderCraftingDetailRows()
       lines[#lines + 1] = {
         ("%d %s  %s"):format(r.n, itemName(r.item), W.Dim(SOURCE[r.source] or "")),
         W.Money(r.each * r.n, true),
+        r.item,
       }
     end
     lines[#lines + 1] = { L["Cost"], W.Money(ev.cost, true) }

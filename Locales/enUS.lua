@@ -208,6 +208,8 @@ L["Click a row to see what the route pays after the cut and the deposit, and how
 L["Click a step for its skill colors, the reagents to buy and where the results go. The button puts the whole path's reagents on a shopping list."] = true
 L["Click to open this category in the screener."] = true
 L["Click to put it in your chat box"] = true
+L["Click: price chart  ·  Shift-click: link in chat"] = true
+L["Click: search the auction house  ·  Shift-click: link in chat"] = true
 L["Climbing: green candles, each closing higher. Buyers take listings faster than sellers replace them."] = true
 L["Close"] = true
 L["Close: the market price at the end"] = true

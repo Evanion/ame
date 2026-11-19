@@ -497,7 +497,7 @@ function UI:LevelingDetail(v, st)
   }
   lines[#lines + 1] = { L["Crafts (expected)"], "~" .. st.crafts }
   for _, r in ipairs(c.recipe.reagents) do
-    lines[#lines + 1] = { ("%d %s"):format(r[2] * st.crafts, itemName(r[1])), "" }
+    lines[#lines + 1] = { ("%d %s"):format(r[2] * st.crafts, itemName(r[1])), "", r[1] }
   end
   lines[#lines + 1] = { L["Cost"], cost(st.cost) }
   local res = st.results

@@ -722,6 +722,12 @@ describe("addon in a stubbed client", function()
           texts[#texts + 1] = line.label.text or ""
         end
         assert.truthy(table.concat(texts, "|"):find("Skill%-up chance"))
+        -- the reagent line is the item: clicking it searches the AH (or opens its chart)
+        local linenLine
+        for _, line in ipairs(v.lines) do
+          linenLine = linenLine or (line.itemID == 2589 and line)
+        end
+        assert.is_not_nil(linenLine)
         -- the whole path's reagents on one shopping list
         ns.UI:CraftingAction()
         local list = ns.AME.shopping:Lists()[#ns.AME.shopping:Lists()]
