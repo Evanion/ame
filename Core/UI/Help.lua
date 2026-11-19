@@ -526,9 +526,10 @@ Help.EXAMPLES = {
     why:SetPoint("RIGHT", f, "RIGHT", -10, 0)
     why:SetWordWrap(true)
     why:SetText(
-      L["At %s it's %d%% above its %d-day average of %s."]:format(W.Money(95700), 56, 7, W.Money(61300))
-        .. " "
-        .. L["Its price usually moves only about %d%% a day, so that's unusual."]:format(8)
+      L["%d%% above its %d-day average (%s)"]:format(56, 7, W.Money(61300))
+        .. L["; it usually moves ~%d%% a day"]:format(8)
+        .. ". "
+        .. L["Good time to post."]
     )
     return f
   end,

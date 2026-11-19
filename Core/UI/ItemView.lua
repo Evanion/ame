@@ -846,15 +846,15 @@ end
 -- The verdict in plain words. Pure: s = the item's summary, ctx = { signal, market, avg, vendorPrice, vendorNet,
 -- today }. Returns signal, headline, { sentences }.
 local PHASE_WHY = {
-  shortage = L["Supply is shrinking while the price rises: there's a shortage."],
-  demand = L["The price rises on steady supply: demand is strong."],
-  piling = L["Sellers are piling in at these higher prices: that often comes before a drop."],
-  tightening = L["Supply is shrinking at a steady price: it may start to rise."],
-  balanced = L["Price and supply are both steady."],
-  pressure = L["Supply is building up at a steady price: pressure on the price."],
-  withdrawing = L["The price falls while sellers pull out: it may be near the bottom."],
-  weak = L["The price falls on steady supply: demand is weak."],
-  dumping = L["Sellers are dumping: the price falls while supply grows."],
+  shortage = L["Supply shrinking, price rising: a shortage."],
+  demand = L["Rising on steady supply: strong demand."],
+  piling = L["Sellers piling in at high prices: a drop often follows."],
+  tightening = L["Supply shrinking at a steady price: may start to rise."],
+  balanced = L["Price and supply steady."],
+  pressure = L["Supply building at a steady price: pressure on the price."],
+  withdrawing = L["Fewer sellers, yet the price falls: may be near the bottom."],
+  weak = L["Falling on steady supply: weak demand."],
+  dumping = L["Sellers dumping: price falling, supply growing."],
 }
 local HEADLINE = {
   buy = L["Cheaper than usual"],
@@ -864,24 +864,24 @@ local HEADLINE = {
   vendor = L["A vendor pays more"],
 }
 local ACTION = {
-  buy = L["A good time to buy, if you'll use it or can resell it."],
-  sell = L["If you hold some, a good time to post (see Post at below)."],
-  hold = L["No edge either way: keep what you have, and buy only what you need."],
-  wait = L["Wait for the price to settle before buying."],
-  vendor = L["Sell it to a vendor instead of posting it."],
+  buy = L["Good time to buy."],
+  sell = L["Good time to post."],
+  hold = L["No edge: buy only what you need."],
+  wait = L["Wait for it to settle."],
+  vendor = L["Vendor it instead."],
 }
 
 function UI.Verdict(s, ctx)
   ctx = ctx or {}
   if not s then
-    return "none", L["No call yet"], { L["There's no history for this item at this auction house yet."] }
+    return "none", L["No call yet"], { L["No history at this auction house yet."] }
   end
   local signal = ctx.signal or s.signal or "none"
   local why = {}
   local market, avg = ctx.market or s.market, ctx.avg or s.avg30
   local days = ctx.avgDays or 30
   if signal == "vendor" and ctx.vendorPrice then
-    why[#why + 1] = L["After the auction house cut and the deposit, a listing nets about %s; a vendor pays %s."]:format(
+    why[#why + 1] = L["Posting nets ~%s after cut and deposit; a vendor pays %s."]:format(
       W.Money(ctx.vendorNet),
       W.Money(ctx.vendorPrice)
     )
@@ -890,50 +890,40 @@ function UI.Verdict(s, ctx)
     local moves = s.vol30 and math.floor(s.vol30 * 100 + 0.5)
     local base
     if math.abs(d) < 0.03 then
-      base = L["At %s it's right at its %d-day average."]:format(W.Money(market), days)
-    elseif d > 0 then
-      base = L["At %s it's %d%% above its %d-day average of %s."]:format(
-        W.Money(market),
-        math.floor(d * 100 + 0.5),
-        days,
-        W.Money(avg)
-      )
+      base = L["Right at its %d-day average"]:format(days)
     else
-      base = L["At %s it's %d%% below its %d-day average of %s."]:format(
-        W.Money(market),
-        math.floor(-d * 100 + 0.5),
+      local pct = math.floor(math.abs(d) * 100 + 0.5)
+      base = (d > 0 and L["%d%% above its %d-day average (%s)"] or L["%d%% below its %d-day average (%s)"]):format(
+        pct,
         days,
         W.Money(avg)
       )
     end
-    why[#why + 1] = base
     if moves and moves > 0 and signal ~= "none" then
-      why[#why + 1] = (
-        (signal == "hold") and L["Its price usually moves about %d%% a day, so that's within its normal range."]
-        or L["Its price usually moves only about %d%% a day, so that's unusual."]
-      ):format(moves)
+      base = base .. L["; it usually moves ~%d%% a day"]:format(moves)
     end
+    why[#why + 1] = base .. "."
   end
   if s.phase and PHASE_WHY[s.phase] then
     why[#why + 1] = PHASE_WHY[s.phase]
   end
   if s.sellRate then
     if s.sellRate >= 20 then
-      why[#why + 1] = L["About %s sell a day, so it sells quickly."]:format(W.Count(s.sellRate))
+      why[#why + 1] = L["Sells fast: ~%s a day."]:format(W.Count(s.sellRate))
     elseif s.sellRate >= 1 then
-      why[#why + 1] = L["About %s sell a day."]:format(W.Count(s.sellRate))
+      why[#why + 1] = L["Sells ~%s a day."]:format(W.Count(s.sellRate))
     else
-      why[#why + 1] = L["It rarely sells (under one a day): selling takes time."]
+      why[#why + 1] = L["Rarely sells (under 1 a day)."]
     end
   end
   if signal == "none" then
-    why[#why + 1] = L["It needs %d days of history for a call; it has %d."]:format(ns.Analytics.MIN_DAYS, s.days or 0)
+    why[#why + 1] = L["Needs %d days of history (has %d)."]:format(ns.Analytics.MIN_DAYS, s.days or 0)
   end
   local level = ns.Analytics.Confidence(s, ctx.today)
   if level == "low" then
-    why[#why + 1] = L["Few recent scans: treat this with care, and scan again."]
+    why[#why + 1] = L["Few recent scans: scan again."]
   else
-    why[#why + 1] = L["Based on %d scans in the last 7 days."]:format(s.scans7 or 0)
+    why[#why + 1] = L["From %d scans this week."]:format(s.scans7 or 0)
   end
   if ACTION[signal] then
     why[#why + 1] = ACTION[signal]

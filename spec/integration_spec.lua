@@ -602,7 +602,7 @@ describe("addon in a stubbed client", function()
         end
         local _, head, why = ns.UI.Verdict({ days = 3, scans7 = 1, market = 100, avg30 = 100 }, { signal = "none" })
         assert.are.equal("No call yet", head)
-        assert.truthy(table.concat(why, " "):find("needs 7 days of history"))
+        assert.truthy(table.concat(why, " "):find("Needs 7 days of history (has 3)", 1, true))
         local sig, head2 = ns.UI.Verdict(
           { days = 20, scans7 = 10, day = 5, market = 300, avg30 = 400, phase = "dumping", sellRate = 50 },
           { signal = "wait", today = 5 }
