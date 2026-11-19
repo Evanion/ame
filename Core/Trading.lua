@@ -205,7 +205,9 @@ end
 -- System chat: your auction sold or expired. The game shows the message; AME records a pending sale in the ledger
 -- (quantity and price come with the auction mail, which settles it).
 function Trading:OnSystemMessage(msg)
-  if type(msg) ~= "string" then
+  -- in dungeons, raids and encounters (12.x) the game hands addons chat as secret values: unreadable, so skipped
+  local secret = _G.issecretvalue
+  if (secret and secret(msg)) or type(msg) ~= "string" then
     return
   end
   self.soldPattern = self.soldPattern or pattern(ERR_AUCTION_SOLD_S, "A buyer has been found for your auction of %s.")

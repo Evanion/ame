@@ -26,4 +26,19 @@ describe("Trading.Pattern", function()
     local zh = Trading.Pattern("你拍卖的%s已经找到买家。", "")
     assert.are.equal("亚麻布", ("你拍卖的亚麻布已经找到买家。"):match(zh))
   end)
+
+  it("skips system messages the game hands over as secret values (dungeons, raids)", function()
+    local secret = setmetatable({}, {
+      __index = function()
+        error("attempt to index a secret string value")
+      end,
+    })
+    _G.issecretvalue = function(v)
+      return v == secret
+    end
+    assert.has_no.errors(function()
+      Trading:OnSystemMessage(secret)
+    end)
+    _G.issecretvalue = nil
+  end)
 end)
