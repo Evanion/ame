@@ -193,11 +193,54 @@ function Service:Unblock(name)
   self.trust:Unblock(name)
 end
 
--- re-read the officers' blocklist from the guild information text
+-- The game blocks reading the guild information in combat and in instances (ADDON_ACTION_BLOCKED): wait for later.
+local function guildInfoBlocked()
+  if InCombatLockdown and InCombatLockdown() then
+    return true
+  end
+  local inInstance, kind = false, nil
+  if _G.IsInInstance then
+    inInstance, kind = _G.IsInInstance()
+  end
+  return inInstance and kind ~= "none" or false
+end
+
+Service.GUILD_INFO_EVERY = 60 -- seconds between re-reads on roster updates (they fire whenever anyone logs on or off)
+
+-- re-read the officers' blocklist from the guild information text; while the game won't allow it, once it does
+-- (RetryGuildBlocklist, on leaving combat or an instance)
 function Service:RefreshGuildBlocklist()
+  if guildInfoBlocked() then
+    self.guildInfoPending = true
+    return
+  end
+  self.guildInfoPending = nil
+  self.guildInfoAt = GetTime and GetTime() or 0
   local text = IsInGuild and IsInGuild() and GetGuildInfoText and GetGuildInfoText() or nil
   self.trust:SetGuildBlocklist(Sync.ParseBlocklist(text))
   self:Changed()
+end
+
+-- a guild roster update: re-read at most once a GUILD_INFO_EVERY; one inside it is done when it's up
+function Service:GuildRosterChanged()
+  local now = GetTime and GetTime() or 0
+  local wait = self.guildInfoAt and self.guildInfoAt + Service.GUILD_INFO_EVERY - now or 0
+  if wait <= 0 then
+    self:RefreshGuildBlocklist()
+  elseif not self.guildInfoTimer and C_Timer then
+    self.guildInfoTimer = true
+    C_Timer.After(wait, function()
+      self.guildInfoTimer = nil
+      self:RefreshGuildBlocklist()
+    end)
+  end
+end
+
+-- left combat or an instance: a re-read that had to wait
+function Service:RetryGuildBlocklist()
+  if self.guildInfoPending and self.trust then
+    self:RefreshGuildBlocklist()
+  end
 end
 
 function Service:Changed()

@@ -509,6 +509,8 @@ function handlers.PLAYER_LOGIN()
     "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
     "GUILD_ROSTER_UPDATE",
     "PLAYER_GUILD_UPDATE",
+    "PLAYER_REGEN_ENABLED",
+    "PLAYER_ENTERING_WORLD",
     "MAIL_INBOX_UPDATE",
     "CHAT_MSG_SYSTEM",
     "BAG_UPDATE_DELAYED",
@@ -579,10 +581,16 @@ end
 
 function handlers.GUILD_ROSTER_UPDATE()
   if ns.SyncService.trust then
-    ns.SyncService:RefreshGuildBlocklist()
+    ns.SyncService:GuildRosterChanged()
   end
 end
 handlers.PLAYER_GUILD_UPDATE = handlers.GUILD_ROSTER_UPDATE
+
+-- out of combat, or out of an instance: the guild information can be read again
+function handlers.PLAYER_REGEN_ENABLED()
+  ns.SyncService:RetryGuildBlocklist()
+end
+handlers.PLAYER_ENTERING_WORLD = handlers.PLAYER_REGEN_ENABLED
 
 -- portfolio: auction mail, bags, bank, own auctions
 function handlers.CHAT_MSG_SYSTEM(msg)

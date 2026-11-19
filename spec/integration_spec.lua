@@ -2384,9 +2384,27 @@ describe("addon in a stubbed client", function()
       _G.GetGuildInfoText = function()
         return "Be nice.\nAME block: Price Fixer"
       end
-      env:fire("GUILD_ROSTER_UPDATE")
       local svc = ns.SyncService
+      -- roster updates fire whenever anyone logs on or off: the guild info is re-read at most once a minute
+      env:fire("GUILD_ROSTER_UPDATE")
+      env:advance(svc.GUILD_INFO_EVERY)
       assert.are.equal("guild", svc.trust:IsBlocked("Price Fixer"))
+      -- in combat the game blocks reading it: it waits until combat ends
+      _G.GetGuildInfoText = function()
+        return "AME block: Price Fixer, Second Fixer"
+      end
+      _G.InCombatLockdown = function()
+        return true
+      end
+      env:advance(svc.GUILD_INFO_EVERY)
+      env:fire("GUILD_ROSTER_UPDATE")
+      assert.is_falsy(svc.trust:IsBlocked("Second Fixer"))
+      _G.InCombatLockdown = function()
+        return false
+      end
+      env:fire("PLAYER_REGEN_ENABLED")
+      assert.are.equal("guild", svc.trust:IsBlocked("Second Fixer"))
+      _G.InCombatLockdown = nil
       -- an announce from the blocked player is ignored: no request goes out
       local entry = peerScan({ [2589] = 1000 })
       local before = #sent
