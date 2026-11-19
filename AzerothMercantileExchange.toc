@@ -48,6 +48,7 @@ Core\SyncService.lua
 Core\Trading.lua
 Core\Professions.lua
 Core\CraftingData.lua
+Core\Crafting.lua
 Core\Posting.lua
 Core\Main.lua
 Core\Index.lua
