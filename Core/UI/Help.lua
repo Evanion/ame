@@ -356,6 +356,20 @@ function Help.Articles()
           },
         },
         {
+          key = "crafting",
+          title = L["Crafting"],
+          label = L["Crafting"],
+          body = {
+            L["The Crafting tab shows what your characters' professions earn at today's prices. It's off by default: switch it on under Settings, General. It needs the AME Crafting Data addon (recipe data, loaded only when you use the tab), and it learns your recipes from your profession windows: open each profession once on every character."],
+            H(L["Top earners"]),
+            L["Every recipe your characters know, ranked by gold a day: profit per craft times how many the market takes a day. Reagents count at the cheapest way to get them - bought at market price, from a vendor, crafted from cheaper materials, or, for what you already hold, at what selling it would net (listing costs the AH cut, buying doesn't). Click a row for the breakdown; the button puts one craft's reagents on a shopping list."],
+            H(L["Sell or refine"]),
+            L["For the materials your characters hold: sell them as they are, or craft them into something worth more and sell that. Takes says how long the market needs to absorb what you'd list."],
+            H(L["Recipes to buy"]),
+            L["Recipes on the auction house that one of your characters could learn and none knows yet, ranked by payback: the recipe's price divided by what it would earn a day. Recipes that need more skill are listed after the ones you can learn now."],
+          },
+        },
+        {
           key = "tabItem",
           title = Help.GUIDE[5][1],
           label = L["Item"],

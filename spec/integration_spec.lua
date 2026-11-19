@@ -640,6 +640,67 @@ describe("addon in a stubbed client", function()
         assert.is_false(v.summaryBar:IsShown())
       end)
 
+      it("the Crafting tab: hidden until switched on, earners and sell-or-refine from recorded professions", function()
+        seeded()
+        ns.UI:Toggle()
+        local tab = ns.UI.tabBar.byKey.crafting
+        assert.is_false(tab:IsShown()) -- off by default
+        ns.UI:ShowTab("crafting")
+        assert.are.equal("market", ns.UI.current) -- a hidden tab can't be opened
+        -- switched on, with one character's First Aid recorded: Linen Bandage (1 Linen Cloth -> 1 bandage)
+        _G.AME_CraftingData = nil
+        dofile("AzerothMercantileExchange_Crafting/Recipes.lua") -- the data addon, as LoadAddOn would run it
+        ns.CraftingData.data = nil
+        local key = ns.Trading.CharKey()
+        AME_DB.crafting = {
+          catalog = {
+            [129] = {
+              at = 0,
+              name = "First Aid",
+              recipes = { [3275] = { out = 1251, min = 1, max = 1, r = { { 2589, 1 } } } },
+            },
+          },
+          chars = {
+            [key] = {
+              professions = {
+                [129] = { name = "First Aid", skill = 40, max = 75, at = 0, learned = { [3275] = true } },
+              },
+            },
+          },
+        }
+        AME_DB.holdings[key] = { bags = { [2589] = 20 }, bank = {} }
+        ns.Settings:Set("crafting", true)
+        ns.UI:CraftingChanged(true)
+        assert.is_true(tab:IsShown())
+        ns.UI:ShowTab("crafting")
+        local v = ns.UI.craftView
+        v.scripts.OnShow(v)
+        local rows = ns.UI.craftRows
+        assert.are.equal(1, #rows)
+        assert.are.equal(1251, rows[1].itemID)
+        assert.are.equal("unpriced", rows[1].eval.why) -- the bandage has no price in this market
+        ns.UI.craftSelected = rows[1]
+        ns.UI:RenderCraftingDetail()
+        assert.truthy(v.note.text:find("Missing a price"), v.note.text)
+        -- sell or refine: the linen sells raw (the bandage has no price)
+        v.modes:Select("refine")
+        rows = ns.UI.craftRows
+        assert.are.equal(1, #rows)
+        assert.are.equal(2589, rows[1].itemID)
+        assert.are.equal(20, rows[1].qty)
+        assert.is_nil(rows[1].best)
+        assert.truthy(rows[1].raw > 0)
+        -- recipes to buy: none listed in this market
+        v.modes:Select("recipes")
+        assert.are.equal(0, #ns.UI.craftRows)
+        -- switched off again: back to the Market tab, the tab gone
+        ns.Settings:Set("crafting", false)
+        ns.UI:CraftingChanged(false)
+        assert.are.equal("market", ns.UI.current)
+        assert.is_false(tab:IsShown())
+        _G.AME_CraftingData = nil
+      end)
+
       it("the Market tab's Overview: market statistics, categories into the screener, remembered", function()
         seeded()
         ns.UI:Toggle()

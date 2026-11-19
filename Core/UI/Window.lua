@@ -43,6 +43,9 @@ UI.BUILD_STEPS = {
     ui.views.portfolio = ui:CreatePortfolioView(ui.building, contentArea)
   end,
   function(ui)
+    ui.views.crafting = ui:CreateCraftingView(ui.building, contentArea)
+  end,
+  function(ui)
     ui.views.settings = ui:CreateSettingsView(ui.building, contentArea)
   end,
   function(ui)
@@ -181,6 +184,7 @@ function UI:CreateShell()
     { "market", L["Market"] },
     { "arbitrage", L["Arbitrage"] },
     { "portfolio", L["Portfolio"] },
+    { "crafting", L["Crafting"] },
     { "item", L["Item"] },
     { "settings", L["Settings"] },
     { "guide", L["Guide"] },
@@ -191,6 +195,7 @@ function UI:CreateShell()
     end,
   })
   self.tabBar:SetPoint("TOPRIGHT", -34, -8) -- right-aligned: long labels push the row left
+  self:LayoutTabs()
 
   -- The footer, part of the window like the title bar: on the left, where the tab's numbers come from (each tab
   -- sets it through its slots.status); on the right, what AME is busy with and the version. Tabs end above it.
@@ -508,8 +513,30 @@ function UI:ShowGuide(key)
   end
 end
 
+-- Tabs that are switched off in Settings (Crafting) leave the tab row; the rest close up.
+function UI:LayoutTabs()
+  local bar = self.tabBar
+  if not bar then
+    return
+  end
+  local x, gap = 0, 4
+  for _, b in ipairs(bar.buttons) do
+    local shown = b.key ~= "crafting" or ns.Settings:Get("crafting") and true or false
+    b:SetShown(shown)
+    if shown then
+      b:ClearAllPoints()
+      b:SetPoint("LEFT", x, 0)
+      x = x + (b:GetWidth() or 60) + gap
+    end
+  end
+  bar:SetWidth(math.max(0, x - gap))
+end
+
 function UI:ShowTab(name)
   self:Create()
+  if name == "crafting" and not ns.Settings:Get("crafting") then
+    name = "market" -- switched off
+  end
   local section
   if name == "sync" then -- sharing is a section of Settings
     name, section = "settings", "sharing"
