@@ -451,7 +451,14 @@ function UI:CreateMarketOverview(area)
     end
   end
   v:SetCompact(slots.compact)
-  v:SetScript("OnShow", function()
+  v:SetScript("OnShow", function(self)
+    -- lay the toolbar out again: built while hidden (the window opened on the Screener), anchors chained to the mode
+    -- switch could stay unresolved in game
+    self.mode:ClearAllPoints()
+    self.mode:SetPoint("LEFT", bar, "LEFT", 0, 0)
+    self.modeDrop:ClearAllPoints()
+    self.modeDrop:SetPoint("LEFT", bar, "LEFT", 0, 0)
+    self:SetCompact(slots.compact)
     UI:RefreshOverview()
   end)
   ns.ItemCache.OnNamesChanged(function()

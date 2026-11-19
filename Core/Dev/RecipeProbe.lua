@@ -299,3 +299,98 @@ watcher:SetScript("OnEvent", function(_, event)
     pcall(Dev.ProbeRecipes, function() end, event)
   end)
 end)
+
+-- /amedev ui: where the Market screener's toolbar controls really are (position, size, shown / visible, layer), saved
+-- to AME_DB.dev.uiProbe - for layout bugs the stubbed client can't show.
+function Dev.ProbeUI(say)
+  local UI = ns.UI
+  local v = UI and UI.marketView
+  if not v then
+    return say("open the AME window on the Market tab first")
+  end
+  local out =
+    { at = GetServerTime(), compact = v.slots and v.slots.compact, overview = ns.Settings:Get("marketOverview") }
+  -- each anchor: point, what it's relative to (by name in the view), its point, offsets
+  local function nameOf(r)
+    if r == nil then
+      return "nil"
+    end
+    for k, w in pairs(v) do
+      if w == r then
+        return k
+      end
+    end
+    if v.slots and r == v.slots.toolbar then
+      return "toolbar"
+    end
+    return tostring(r.GetName and r:GetName() or r)
+  end
+  local function anchors(f)
+    local list = {}
+    for i = 1, (f.GetNumPoints and f:GetNumPoints() or 0) do
+      local point, rel, relPoint, x, y = f:GetPoint(i)
+      list[i] = ("%s -> %s.%s (%s,%s)"):format(
+        tostring(point),
+        nameOf(rel),
+        tostring(relPoint),
+        tostring(x),
+        tostring(y)
+      )
+    end
+    return table.concat(list, "; ")
+  end
+  local function rect(f)
+    if not f then
+      return "missing"
+    end
+    local ok, l, b, w, h = pcall(f.GetRect, f)
+    return {
+      shown = f:IsShown(),
+      visible = f:IsVisible(),
+      rect = ok and l and ("%.0f,%.0f %.0fx%.0f"):format(l, b, w or 0, h or 0) or "no rect",
+      alpha = f.GetEffectiveAlpha and f:GetEffectiveAlpha() or nil,
+      level = f.GetFrameLevel and f:GetFrameLevel() or nil,
+      strata = f.GetFrameStrata and f:GetFrameStrata() or nil,
+      parent = f.GetParent and f:GetParent() and tostring(f:GetParent():GetName() or f:GetParent()) or nil,
+      points = f.GetNumPoints and f:GetNumPoints() or nil,
+      anchors = anchors(f),
+      size = f.GetSize and ("%.0fx%.0f"):format(f:GetSize()) or nil,
+    }
+  end
+  for _, k in ipairs({
+    "mode",
+    "modeDrop",
+    "category",
+    "search",
+    "quality",
+    "minBox",
+    "maxBox",
+    "views",
+    "columns",
+    "signals",
+  }) do
+    out[k] = rect(v[k])
+  end
+  out.toolbar = rect(v.slots and v.slots.toolbar)
+  out.screener = rect(v)
+  local area = UI.views and UI.views.market
+  out.area = rect(area)
+  out.overviewFrame = rect(area and area.overview)
+  -- the mode switch's own buttons, and whether the client considers its rect valid
+  out.modeValid = v.mode and v.mode.IsRectValid and v.mode:IsRectValid() or "n/a"
+  out.modeButtons = {}
+  for i, b in ipairs(v.mode and v.mode.buttons or {}) do
+    out.modeButtons[i] = rect(b)
+  end
+  AME_DB.dev.uiProbe = out
+  -- experiment: anchor the switch to the toolbar explicitly, then measure again next frame
+  if v.mode then
+    v.mode:ClearAllPoints()
+    v.mode:SetPoint("LEFT", v.slots.toolbar, "LEFT", 0, 0)
+    C_Timer.After(0.2, function()
+      out.after = { mode = rect(v.mode), search = rect(v.search), valid = v.mode.IsRectValid and v.mode:IsRectValid() }
+      say("ui probe: measured again after re-anchoring - /reload to write it to disk")
+    end)
+  end
+  say("ui probe saved - wait a moment, then /reload")
+end

@@ -298,6 +298,11 @@ SlashCmdList.AMEDEV = function(msg)
     local before = collectgarbage("count")
     collectgarbage("collect")
     say("garbage collected: %s -> %s (all addons)", kb(before * 1024), kb(collectgarbage("count") * 1024))
+  elseif cmd == "ui" then
+    local ok, err = pcall(Dev.ProbeUI, say)
+    if not ok then
+      say("ui probe failed: %s", tostring(err))
+    end
   elseif cmd == "crafting" then
     -- switch Crafting's recording on / off before it has its Settings checkbox
     local on = not ns.Settings:Get("crafting")

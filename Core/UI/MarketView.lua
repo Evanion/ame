@@ -874,6 +874,16 @@ function UI:CreateMarketView(parent)
     self:PlaceSignals()
   end
   v:SetCompact(slots.compact)
+  -- Lay the toolbar out again each time the screener is shown: built while hidden (the window opened on the
+  -- Overview), the controls chained to the Screener | Overview switch could stay without a position in game -
+  -- invisible - after switching back.
+  v:HookScript("OnShow", function(self)
+    self.mode:ClearAllPoints()
+    self.mode:SetPoint("LEFT", bar, "LEFT", 0, 0)
+    self.modeDrop:ClearAllPoints()
+    self.modeDrop:SetPoint("LEFT", bar, "LEFT", 0, 0)
+    self:SetCompact(slots.compact)
+  end)
 
   ns.ItemCache.OnNamesChanged(function()
     local q = UI.mq
