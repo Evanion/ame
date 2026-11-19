@@ -1,3 +1,14 @@
+About the data
+--------------
+
+The recipe data in this addon is not ours. It is extracted from World of Warcraft's own game files (read through
+wago.tools) and only repackaged here, by ID, so Azeroth Mercantile Exchange can use it. World of Warcraft and its
+game data are the property of Blizzard Entertainment, Inc.; we claim no ownership of them.
+
+The MIT licence below covers only what we made: the way the data is selected, arranged and packaged (the file format
+and this addon). It grants no rights in Blizzard's game data.
+
+
 MIT License
 
 Copyright (c) 2026 Evanion
@@ -19,6 +30,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-The recipe data in Recipes.lua is generated from World of Warcraft's game files (via wago.tools) and refers to
-items and spells by ID; World of Warcraft and its content are the property of Blizzard Entertainment.

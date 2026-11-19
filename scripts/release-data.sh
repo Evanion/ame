@@ -41,6 +41,9 @@ trap 'rm -f "$CHANGELOG"' EXIT
 {
   echo "Recipe data for Azeroth Mercantile Exchange's Crafting tab, generated from WoW Forever build $BUILD."
   echo
+  echo "The data is Blizzard's, extracted from the game's own files and only repackaged here; we claim no ownership"
+  echo "of it. The MIT licence covers the packaging, not the game data."
+  echo
   [ -n "${SUMMARY:-}" ] && [ -f "$SUMMARY" ] && cat "$SUMMARY"
 } >"$CHANGELOG"
 
