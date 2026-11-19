@@ -48,6 +48,7 @@ describe("Widgets formatters", function()
       assert.are.equal("2.31M g", plain(W.BigMoney(2310000 * 10000)))
       assert.are.equal("1.20B g", plain(W.BigMoney(1.2e9 * 10000)))
       assert.are.equal("99,999g", plain(W.BigMoney(99999 * 10000)))
+      assert.are.equal("72.3K g", plain(W.BigMoney(72270 * 10000, 10000))) -- a table column shortens sooner
       assert.are.equal("-", plain(W.BigMoney(nil)))
     end)
   end)

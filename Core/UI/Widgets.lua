@@ -542,13 +542,14 @@ function W.Money(copper, short)
 end
 
 -- Whole-market amounts (listed value, turnover): 100,000 gold and up shortened to K / M / B ("486K g", "48.6M g",
--- "2.31M g"), so they fit a stat card; smaller amounts as W.Money(short).
-function W.BigMoney(copper)
+-- "2.31M g"), so they fit a stat card; smaller amounts as W.Money(short). from: shorten from this many gold instead
+-- (a table column shortens from 10,000 so its rows read alike).
+function W.BigMoney(copper, from)
   if not copper then
     return W.NONE
   end
   local g = copper / 10000
-  if g < 100000 then
+  if g < (from or 100000) then
     return W.Money(copper, true)
   end
   local n, unit = g / 1000, "K"

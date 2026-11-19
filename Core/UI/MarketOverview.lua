@@ -190,9 +190,25 @@ local function rowList(parent, count, cols, top, opts)
   return rows
 end
 
+-- an item's name; one the client hasn't loaded yet is asked for, and the overview redraws once it arrives
+local pendingNames = {}
+local redrawQueued = false
 local function itemName(key)
   local name, _, quality = W.ItemInfo(key)
-  return W.QualityText(quality, name or ns.ItemCache.Name(key) or ("item:" .. tostring(key)))
+  name = name or ns.ItemCache.Name(key)
+  if not name and not pendingNames[key] then
+    pendingNames[key] = true -- asked once a session (an item that never loads mustn't redraw forever)
+    W.OnItemLoaded(key, function()
+      if not redrawQueued then
+        redrawQueued = true
+        C_Timer.After(0.2, function()
+          redrawQueued = false
+          UI:RenderOverview()
+        end)
+      end
+    end)
+  end
+  return W.QualityText(quality, name or ("item:" .. tostring(key)))
 end
 
 local function changeText(x)
@@ -570,11 +586,11 @@ function UI:RenderOverview()
     if sct then
       sct.name = sct.classID == ns.MarketStats.OTHER and L["Other"] or ns.ItemCache.ClassName(sct.classID)
       r.cells[1]:SetText(W.Color("gold", sct.name))
-      r.cells[2]:SetText(W.BigMoney(sct.value))
+      r.cells[2]:SetText(W.BigMoney(sct.value, 10000))
       r.cells[3]:SetText(("%d%%"):format(math.floor(sct.share * 100 + 0.5)))
       r.bar:SetWidth(math.max(1, 40 * sct.share / math.max(top, 0.01)))
       r.cells[4]:SetText(changeText(sct.change))
-      r.cells[5]:SetText(sct.turnover and ("~" .. W.BigMoney(sct.turnover)) or W.Dim("-"))
+      r.cells[5]:SetText(sct.turnover and ("~" .. W.BigMoney(sct.turnover, 10000)) or W.Dim("-"))
     end
   end
 
@@ -586,7 +602,7 @@ function UI:RenderOverview()
     if t then
       r.cells[1]:SetText(itemName(t.id))
       r.cells[2]:SetText(W.Count(t.qty) .. " x " .. W.Money(t.price, true))
-      r.cells[3]:SetText(W.BigMoney(t.value) .. (t.raw and W.Dim(" " .. L["capped"]) or ""))
+      r.cells[3]:SetText(W.BigMoney(t.value, 10000) .. (t.raw and W.Dim(" " .. L["capped"]) or ""))
     end
   end
 

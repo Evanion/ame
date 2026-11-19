@@ -155,3 +155,12 @@ describe("MarketStats", function()
     assert.is_nil(ns.MarketStats.Summary({ items = {} }, 7))
   end)
 end)
+
+describe("MarketStats.SoldPerDay", function()
+  it("never counts more sold a day than is listed (expiring gear inflates the sell rate)", function()
+    local MS = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/MarketStats.lua" }).MarketStats
+    assert.are.equal(3, MS.SoldPerDay({ sellRate = 40, qty = 3 }))
+    assert.are.equal(12, MS.SoldPerDay({ sellRate = 12, qty = 500 }))
+    assert.are.equal(0, MS.SoldPerDay({ qty = 10 }))
+  end)
+end)

@@ -102,6 +102,17 @@ local function slot(t, a, b)
   return tb
 end
 
+-- Units a day an item really sells, for turnover and CPI weights: its sell rate, but never more than is listed. The
+-- sell rate counts every listing that leaves between full scans - expired and cancelled ones too - and a short
+-- observation scales up to a day, so for gear (single listings that mostly expire) it can be far above what sells.
+function MarketStats.SoldPerDay(s)
+  local rate = s.sellRate or 0
+  if s.qty and s.qty < rate then
+    rate = s.qty
+  end
+  return rate
+end
+
 -- One item: raw = its points in the window (oldest first, as Store:BucketSeries gives them), clean = the same with
 -- outlier days dropped (Analytics.Clean), s = its summary (Analytics.Summarize; avg30 sets the cap).
 function MarketStats:Add(id, raw, clean, s)
@@ -150,8 +161,9 @@ function MarketStats:Add(id, raw, clean, s)
   if MarketStats.CPI_CLASSES[cls] and s and s.market then
     local price = cap and min(s.market, cap) or s.market
     weights = { v = price * (s.qty or 0) }
-    if s.sellRate and s.sellRate > 0 then
-      weights.t = price * s.sellRate
+    local rate = MarketStats.SoldPerDay(s)
+    if rate > 0 then
+      weights.t = price * rate
     end
     for w, weight in pairs(weights) do
       if weight > 0 then
@@ -355,7 +367,7 @@ function MarketStats.Summary(index, period, classOf, hide, factor, moverClass)
         if factor and s.avg30 and s.avg30 > 0 then
           price = min(price, factor * s.avg30)
         end
-        local t = s.sellRate * price
+        local t = MarketStats.SoldPerDay(s) * price
         out.turnover = out.turnover + t
         bump(turnoverBy, (classOf and classOf(id)) or MarketStats.OTHER, t)
       end
