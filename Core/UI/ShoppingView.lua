@@ -217,7 +217,7 @@ function UI:SearchShoppingList()
   end
   local keys = {}
   for _, r in ipairs(self.shopRows or {}) do
-    if r.missing > 0 and ns.ItemCache.Name(ns.BaseID(r.itemID)) then
+    if r.missing > 0 and ns.ItemCache.Name(ns.BaseID(r.itemID)) then -- loaded: something to search for
       keys[#keys + 1] = r.itemID
     end
   end

@@ -1526,23 +1526,29 @@ describe("addon in a stubbed client", function()
       assert.is_true(row.action:IsShown())
       row.action.scripts.OnClick(row.action)
       assert.are.same({ caller = "AzerothMercantileExchange", term = "Item 2589" }, searched[1])
-      -- a random-suffix item: Auctionator's results carry the suffix, so its base name is searched loosely (an exact
-      -- "Archer's Gloves" would find no "Archer's Gloves of Defense")
+      -- a random-suffix item: its full name, suffix included, searched exactly
       local variant = 2589 + 5 * ns.SUFFIX_STEP
+      ns.ItemCache.setName(variant, "Item 2589 of Defense") -- learned from a link it saw
+      assert.are.equal("Item 2589 of Defense", ns.ItemCache.Name(variant))
+      assert.is_true(ns.AME:SearchAuctionHouse(variant))
+      assert.are.same({ caller = "AzerothMercantileExchange", term = "Item 2589 of Defense" }, searched[2])
+      -- a suffix whose full name AME hasn't seen yet: its base name, loosely (every suffix of it)
       _G.Auctionator.API.v1.MultiSearch = function(caller, terms)
         searched[#searched + 1] = { caller = caller, term = terms[1], loose = true }
       end
-      assert.is_true(ns.AME:SearchAuctionHouse(variant))
-      assert.are.same({ caller = "AzerothMercantileExchange", term = "Item 2589", loose = true }, searched[2])
+      local unseen = 2589 + 7 * ns.SUFFIX_STEP
+      assert.is_true(ns.AME:SearchAuctionHouse(unseen))
+      assert.are.same({ caller = "AzerothMercantileExchange", term = "Item 2589", loose = true }, searched[3])
       -- with the advanced API: one search, each term exact or not
       _G.Auctionator.API.v1.MultiSearchAdvanced = function(caller, terms)
         searched[#searched + 1] = { caller = caller, terms = terms }
       end
-      assert.is_true(ns.AME:AuctionatorSearch({ 2589, variant }))
+      assert.is_true(ns.AME:AuctionatorSearch({ 2589, variant, unseen }))
       assert.are.same({
         { searchString = "Item 2589", isExact = true },
+        { searchString = "Item 2589 of Defense", isExact = true },
         { searchString = "Item 2589", isExact = false },
-      }, searched[3].terms)
+      }, searched[4].terms)
       -- without Auctionator: the default auction house window's search box
       _G.Auctionator = nil
       local text, started

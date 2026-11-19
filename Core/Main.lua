@@ -294,9 +294,21 @@ AME.ingest = ns.Ingest.New({
 })
 
 ---------------------------------------------------------------------------------------------------------------------
--- Auctionator's shopping search for items (keys), by base name - the auction house searches base names. Exact for
--- plain items; a random-suffix item is searched loosely, since Auctionator's results carry the suffix ("Archer's
--- Gloves of Defense") and an exact "Archer's Gloves" matches none of them. Returns true when a search started.
+-- What to search the auction house for: the item's full name - a random-suffix item's includes its suffix
+-- ("Archer's Gloves of Defense"), which the server matches - searched exactly. A suffix item whose full name AME
+-- hasn't seen yet falls back to its base name, searched loosely (every suffix of it).
+local function searchTerm(key)
+  if not ns.IsVariant(key) then
+    return ns.ItemCache.Name(key), true
+  end
+  local full = ns.ItemCache.variants[key] -- learned from a link (Name() falls back to the base name until then)
+  if full then
+    return full, true
+  end
+  return ns.ItemCache.Name(ns.BaseID(key)), false
+end
+
+-- Auctionator's shopping search for items (keys). Returns true when a search started.
 function AME:AuctionatorSearch(keys)
   local api = Auctionator and Auctionator.API and Auctionator.API.v1
   if not api then
@@ -304,10 +316,10 @@ function AME:AuctionatorSearch(keys)
   end
   local terms, loose = {}, false
   for _, key in ipairs(keys) do
-    local name = ns.ItemCache.Name(ns.BaseID(key))
+    local name, exact = searchTerm(key)
     if name then
-      terms[#terms + 1] = { name = name, exact = not ns.IsVariant(key) }
-      loose = loose or ns.IsVariant(key)
+      terms[#terms + 1] = { name = name, exact = exact }
+      loose = loose or not exact
     end
   end
   if #terms == 0 then
@@ -337,8 +349,7 @@ function AME:SearchAuctionHouse(itemID)
     say(L["open the auction house first"])
     return false
   end
-  -- the auction house searches base names: a variant's search lists every suffix of the item
-  local name = ns.ItemCache.Name(itemID and ns.BaseID(itemID))
+  local name = itemID and searchTerm(itemID)
   if not name then
     say(L["item not loaded yet - try again in a moment"])
     return false
