@@ -28,7 +28,7 @@ echo "crafting data $VERSION (WoW Forever build $BUILD)"
 STAGE=.release-data
 rm -rf "$STAGE"
 mkdir -p "$STAGE/$DIR" dist
-cp "$TOC" "$DIR/Recipes.lua" COPYING COPYING.LESSER "$STAGE/$DIR/"
+cp "$TOC" "$DIR/Recipes.lua" "$DIR/LICENSE" "$STAGE/$DIR/" # MIT, unlike AME (LGPL)
 sed -i "s/@project-version@/$VERSION/" "$STAGE/$TOC"
 luac5.1 -p "$STAGE/$DIR/Recipes.lua"
 ZIP="dist/$DIR-$VERSION.zip"

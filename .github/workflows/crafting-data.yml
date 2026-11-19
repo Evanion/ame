@@ -13,6 +13,11 @@ on:
   schedule:
     - cron: "23 5 * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Release even if the data didn't change (packaging fixes)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -42,10 +47,13 @@ jobs:
 
       - name: Generate
         id: gen
-        if: steps.seen.outputs.cache-hit != 'true'
+        if: steps.seen.outputs.cache-hit != 'true' || inputs.force
         run: |
           python3 scripts/gen-recipes.py --build "${{ steps.build.outputs.build }}" --summary "$RUNNER_TEMP/summary.md"
-          if [ -z "$(git tag --list 'data-v*')" ]; then
+          if [ "${{ inputs.force }}" = "true" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Build ${{ steps.build.outputs.build }}: release forced by hand." >> "$GITHUB_STEP_SUMMARY"
+          elif [ -z "$(git tag --list 'data-v*')" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT" # nothing released yet: the first release
             echo "Build ${{ steps.build.outputs.build }}: first crafting data release." >> "$GITHUB_STEP_SUMMARY"
           elif git diff --quiet -- AzerothMercantileExchange_Crafting; then
