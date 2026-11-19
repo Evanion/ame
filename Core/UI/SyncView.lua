@@ -194,7 +194,7 @@ function UI:CreateSyncSection(v, host)
   st:Heading(L["Price checks"], 0)
   local pcIntro = st:Text("GameFontDisableSmall", 4)
   pcIntro:SetText(
-    L["When someone types !pc and an item (link or name), AME answers with its prices at your faction's auction house. If several players run AME, only one of you answers. Your own !pc is always answered in the channel you asked in, even with this off."]
+    L["When someone types !pc and an item (link or name), AME gets the answer ready - its prices at your faction's auction house - and shows it with a Send button: the game only lets addons send chat when you click. If several players run AME, only one of you is asked. Your own !pc is always answered in the channel you asked in, even with this off."]
   )
   row = st:Row(18, 4)
   v.priceCheck = W.SettingCheck(row, L["Answer in guild, party and raid chat"], "priceCheck", 0, -1)

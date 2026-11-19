@@ -2286,6 +2286,33 @@ describe("addon in a stubbed client", function()
     end)
   end)
 
+  it(
+    "price check: the answer waits in a prompt until you click Send (the game only sends chat from a click)",
+    function()
+      boot()
+      local sent = {}
+      _G.SendChatMessage = function(text, channel, _, target)
+        sent[#sent + 1] = { text = text, channel = channel, target = target }
+      end
+      local PC = ns.PriceCheck
+      PC:Offer({ text = "[AME] Linen Cloth: market 1s", channel = "GUILD", asker = "Gruk Suffix" })
+      local p = PC.prompt
+      assert.is_true(p:IsShown())
+      assert.are.equal("Gruk asked in guild chat:", p.who.text)
+      assert.are.equal(0, #sent)
+      p.send.scripts.OnClick(p.send)
+      assert.are.same({ { text = "[AME] Linen Cloth: market 1s", channel = "GUILD" } }, sent)
+      assert.is_false(p:IsShown())
+      -- unanswered offers lapse
+      PC.lastSent = nil
+      PC:Offer({ text = "[AME] x", channel = "WHISPER", target = "Pal", asker = "Pal" })
+      assert.is_true(p:IsShown())
+      env:advance(PC.ANSWER_TIMEOUT + 1)
+      assert.is_false(p:IsShown())
+      _G.SendChatMessage = nil
+    end
+  )
+
   it("/ame status works before any scan", function()
     boot()
     env:slash("AZEROTHMERCANTILEEXCHANGE", "status")

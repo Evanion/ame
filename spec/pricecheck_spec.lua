@@ -182,7 +182,22 @@ describe("PriceCheck", function()
           )
         end
       end
-      local c = { name = name, PC = ns.PriceCheck }
+      local c = { name = name, PC = ns.PriceCheck, offers = 0 }
+      -- the game only sends chat from a click: the player clicks Send a moment after the offer shows (unless away)
+      c.PC.onOffer = function(offer)
+        if offer then
+          c.offers = c.offers + 1
+          if not opts.afk then
+            timers[#timers + 1] = {
+              at = clock + 0.05,
+              who = c,
+              fn = function()
+                c.PC:SendOffer()
+              end,
+            }
+          end
+        end
+      end
       network[#network + 1] = c
       return c
     end
@@ -327,6 +342,35 @@ describe("PriceCheck", function()
       assert.are.equal("Abe", said[1].who)
     end)
 
+    it("nothing is sent without a click; nobody clicks in time: the next player in line is offered it", function()
+      local zed = client("Zed", 0, { afk = true })
+      local abe = client("Abe", 2)
+      chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
+      run(clock + 10)
+      assert.are.equal(0, #said) -- Zed won, but hasn't clicked
+      assert.are.equal(1, zed.offers)
+      assert.are.equal(0, abe.offers)
+      assert.truthy(zed.PC.offer.text:find("market 1s 20c", 1, true))
+      run(clock + 30)
+      assert.are.equal(1, #said)
+      assert.are.equal("Abe", said[1].who)
+      assert.is_nil(zed.PC.offer) -- Abe's answer took Zed's prompt away
+      assert.is_false(zed.PC:SendOffer()) -- a late click sends nothing
+      assert.are.equal(1, #said)
+    end)
+
+    it("an offer lapses: a click after the timeout sends nothing", function()
+      local abe = client("Abe", 0, { afk = true })
+      chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
+      run(clock + 5)
+      assert.is_true(abe.PC:OfferLive())
+      run(clock + 30)
+      me = abe
+      assert.is_false(abe.PC:SendOffer())
+      me = nil
+      assert.are.equal(0, #said)
+    end)
+
     it("stays quiet when off, and for repeats", function()
       client("Abe", 0, { off = true })
       chat("CHAT_MSG_GUILD", "!pc Linen Cloth", "Gruk")
@@ -380,7 +424,7 @@ describe("PriceCheck", function()
       run(clock + 5)
       assert.are.equal(0, #said) -- not a guild member, friend or trusted player
       chat("CHAT_MSG_WHISPER", "!pc Linen Cloth", "Pal")
-      run(clock + 5)
+      run(clock + 6)
       assert.are.equal(1, #said)
       assert.are.equal("WHISPER", said[1].channel)
       assert.are.equal("Pal", said[1].target)

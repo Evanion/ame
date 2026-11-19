@@ -7,6 +7,10 @@
 -- claims it saw - the freshest data, then the alphabetically first name - and only the winner answers. A client that
 -- sees someone else's claim before its own wait ends stays quiet. If no answer shows up within ANSWER_TIMEOUT, the
 -- others try once more without that player.
+--
+-- The game (12.x) only lets addons send chat from a click or key press, so the winner doesn't send the answer: AME
+-- offers it (PC.onOffer: a prompt with a Send button) and sends it when you click. Nobody clicks within
+-- ANSWER_TIMEOUT: the next player in line gets the offer.
 local _, ns = ...
 local L = ns.L
 
@@ -16,7 +20,7 @@ ns.PriceCheck = PC
 PC.PREFIX = "AMEPC1"
 PC.MARK = "[AME]" -- every answer starts with this: the others spot it in chat
 PC.CLAIM_WINDOW = 0.5
-PC.ANSWER_TIMEOUT = 3
+PC.ANSWER_TIMEOUT = 20 -- time to click Send before the next player in line is offered the answer
 PC.NO_DATA = 1000000 -- the "age" (minutes) of a client without a price: it answers only when nobody with data does
 PC.UNKNOWN = PC.NO_DATA + 1 -- a client that doesn't recognise the item name: last resort
 PC.REPEAT = 60 -- the same request (asker and item) is answered once within this many seconds
@@ -325,8 +329,53 @@ function PC:Say(text, channel, target)
   if self.stats then
     self.stats.priceChecks = (self.stats.priceChecks or 0) + 1
   end
-  local ok, err = pcall(SendChatMessage, text, channel, nil, target)
+  local send = (C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
+  local ok, err = pcall(send, text, channel, nil, target)
   trace(ok and "  answered in %s" or "  couldn't send in %s: %s", channel, tostring(err))
+end
+
+-- An answer ready to send: shown with a Send button (PC.onOffer(offer), or onOffer(nil) when it goes away). Only the
+-- latest offer is kept; it lapses after ANSWER_TIMEOUT.
+--   offer = { text, channel, target (whispers), asker, query, req (the request, not for whispers), at }
+function PC:Offer(offer)
+  if not self:CanSend() then
+    return trace("  not answering: cooling down")
+  end
+  offer.at = now()
+  self.offer = offer
+  trace("  offered: waiting for your click")
+  if self.onOffer then
+    self.onOffer(offer)
+  end
+end
+
+function PC:OfferLive(offer)
+  offer = offer or self.offer
+  return offer ~= nil and offer == self.offer and now() - offer.at < PC.ANSWER_TIMEOUT
+end
+
+function PC:DropOffer()
+  if self.offer then
+    self.offer = nil
+    if self.onOffer then
+      self.onOffer(nil)
+    end
+  end
+end
+
+-- the Send button (a click, so the game lets the chat line through)
+function PC:SendOffer()
+  local offer = self.offer
+  if not self:OfferLive(offer) then
+    self:DropOffer()
+    return false
+  end
+  self:DropOffer()
+  if offer.req then
+    offer.req.done = true
+  end
+  self:Say(offer.text, offer.channel, offer.target)
+  return true
 end
 
 function PC:SendClaim(req)
@@ -372,14 +421,11 @@ function PC:OnChat(event, msg, sender)
   self:Answer(query, function(text, age)
     trace("  answer ready (data %s min old)", age >= PC.NO_DATA and "-" or tostring(age))
     if channel == "WHISPER" then
-      if self:CanSend() then
-        self:Say(text, "WHISPER", sender)
-      else
-        trace("  not answering: cooling down")
-      end
+      self:Offer({ text = text, channel = "WHISPER", target = sender, asker = sender, query = query })
       return
     end
-    local req = { key = key, channel = channel, text = text, age = age, failed = {}, round = 0 }
+    local req = { key = key, channel = channel, text = text, age = age, failed = {}, round = 0, asker = sender }
+    req.query = query
     self.requests[key] = req
     if self.claims[key] then
       self:Watch(req) -- someone claimed it before the chat line reached us
@@ -412,12 +458,8 @@ function PC:Race(req)
       if best and PC.Wins(best, { age = req.age, name = UnitName("player") or "" }) then
         return trace("  %s won the claim", best.name) -- theirs; the timeout covers them going quiet
       end
-      req.done = true
-      if self:CanSend() then
-        self:Say(req.text, req.channel)
-      else
-        trace("  not answering: cooling down")
-      end
+      req.offered = true
+      self:Offer({ text = req.text, channel = req.channel, asker = req.asker, query = req.query, req = req })
     end)
   end)
 end
@@ -456,7 +498,7 @@ end
 -- someone claimed a request: if no answer shows up, try once more without the winner (the other claims are dropped:
 -- their senders stayed quiet and race again too)
 function PC:Watch(req)
-  if req.done or req.watching or req.retried then
+  if req.done or req.offered or req.watching or req.retried then
     return
   end
   req.watching = true
@@ -483,6 +525,9 @@ function PC:Answered(channel, sender)
   for key, req in pairs(self.requests) do
     if req.channel == channel and name and self.claims[key] and self.claims[key][name] then
       req.done = true
+      if self.offer and self.offer.req == req then
+        self:DropOffer() -- someone else answered it
+      end
     end
   end
 end

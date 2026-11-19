@@ -65,6 +65,7 @@ Core\UI\SettingsView.lua
 Core\UI\ArbitrageView.lua
 Core\UI\PortfolioView.lua
 Core\UI\Tooltip.lua
+Core\UI\PriceCheckPrompt.lua
 Core\UI\SellAssist.lua
 Core\UI\Launcher.lua
 Core\Dev\Profiler.lua
