@@ -5,6 +5,7 @@
 -- recipes[spellID] = { profession, product item (0 = enchant), made per craft, yellow, grey,
 --                      reagent, count, reagent, count, ... }
 -- items[recipeItemID] = { profession, skill to learn, taught spell, taught spell... }
+-- vendor[itemID] = what a vendor charges (copper), for reagents vendors sell
 AME_CraftingData = {
   build = "1.60.1.70959",
   recipes = {
@@ -4515,5 +4516,37 @@ AME_CraftingData = {
     [286153] = { 185, 225, 1319313 },
     [288206] = { 171, 180, 11447 },
     [289560] = { 333, 280, 1328948 },
+  },
+  vendor = {
+    [159] = 25,
+    [1179] = 125,
+    [2320] = 10,
+    [2321] = 100,
+    [2324] = 25,
+    [2325] = 1000,
+    [2604] = 50,
+    [2605] = 100,
+    [2678] = 10,
+    [2692] = 40,
+    [2880] = 100,
+    [3371] = 20,
+    [3372] = 200,
+    [3466] = 2000,
+    [3713] = 160,
+    [4289] = 50,
+    [4291] = 500,
+    [4340] = 350,
+    [4341] = 500,
+    [4342] = 2500,
+    [4470] = 38,
+    [6217] = 124,
+    [6260] = 50,
+    [6261] = 1000,
+    [8343] = 2000,
+    [8925] = 2500,
+    [10290] = 2500,
+    [14341] = 5000,
+    [17194] = 10,
+    [18256] = 30000,
   },
 }
