@@ -283,6 +283,10 @@ function Help.Articles()
             H(L["Filtering by signal"]),
             EX("signalFilter"),
             L["Pick a signal to see only those items. Active filters show as chips under the toolbar: click one to remove it, or Clear all."],
+            H(L["The item menu"]),
+            L["Right-click any item in a list - Market, Arbitrage or Portfolio - for what you can do with it: open its chart, search the auction house for it (while the auction house is open), add it to a watchlist, set a price alert, or put its link in the chat box."],
+            H(L["Hiding items"]),
+            L["Items you never trade can be hidden: right-click one in the Market or Arbitrage list and pick Hide from lists, or use the button on its item page. Hidden items leave both lists and their counts, on every auction house and character, but AME keeps recording their prices, and their tooltips still work. They're listed under Hidden in the Market sidebar: right-click one there to unhide it, or unhide them all under Settings, Tooltips & charts."],
           },
         },
         {
@@ -297,6 +301,7 @@ function Help.Articles()
             H(L["The chart"]),
             EX("legend"),
             L["Market price, the lowest listing, the 7-day average, supply, and your own buys and sales as dots."],
+            L["Hover the item's name or icon at the top for the game's own tooltip, with its stats."],
           },
         },
         {
