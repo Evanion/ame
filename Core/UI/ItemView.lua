@@ -325,7 +325,7 @@ function UI:CreateItemView(parent)
     end
   end)
   v.alertSignal:SetPoint("LEFT")
-  -- hide from the Market and Arbitrage lists (or unhide)
+  -- hide from the Market, Arbitrage and Portfolio lists (or unhide)
   local hideRow = st:Row(20, 8)
   v.hide = W.Button(hideRow, L["Hide from lists"], 100, 20, function()
     if UI.itemID then
@@ -337,7 +337,7 @@ function UI:CreateItemView(parent)
   W.Tooltip(v.hide, function(tip)
     W.TipText(
       tip,
-      L["Hidden items stay out of the Market and Arbitrage lists and their counts. AME keeps recording them; find them under Hidden on the Market tab."]
+      L["Hidden items stay out of the Market, Arbitrage and Portfolio lists and their totals. AME keeps recording them; find them under Hidden on the Market tab."]
     )
   end)
   v.column = col

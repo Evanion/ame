@@ -286,7 +286,7 @@ function Help.Articles()
             H(L["The item menu"]),
             L["Right-click any item in a list - Market, Arbitrage or Portfolio - for what you can do with it: open its chart, search the auction house for it (while the auction house is open), add it to a watchlist, set a price alert, or put its link in the chat box."],
             H(L["Hiding items"]),
-            L["Items you never trade can be hidden: right-click one in the Market or Arbitrage list and pick Hide from lists, or use the button on its item page. Hidden items leave both lists and their counts, on every auction house and character, but AME keeps recording their prices, and their tooltips still work. They're listed under Hidden in the Market sidebar: right-click one there to unhide it, or unhide them all under Settings, Tooltips & charts."],
+            L["Items you never trade can be hidden - drinks you buy from a vendor, for example: right-click one in the Market, Arbitrage or Portfolio list and pick Hide from lists, or use the button on its item page. Hidden items leave those lists and their totals, on every auction house and character (Portfolio says how many it left out and what they're worth), but AME keeps recording their prices, your ledger keeps every sale and purchase, and their tooltips still work. They're listed under Hidden in the Market sidebar: right-click one there to unhide it, or unhide them all under Settings, Tooltips & charts."],
           },
         },
         {

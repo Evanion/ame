@@ -357,7 +357,7 @@ function UI:CreatePortfolioView(parent, contentArea)
     fill = true,
     top = 0,
     itemID = itemID,
-    itemMenu = {}, -- no Hide: these are your own goods
+    itemMenu = { hide = true }, -- hidden positions leave the list and its totals (counted in the status line)
     sort = { key = "value", ascending = false },
     offset = offset,
     tooltip = function(tip, e)
@@ -436,7 +436,8 @@ function UI:RefreshPortfolio()
     holdings = { [key] = holdings[key] }
     char = UnitName("player")
   end
-  self.pfRows, self.pfTotals = ns.Portfolio.Build(holdings, basis, index and index.items or {})
+  self.pfRows, self.pfTotals =
+    ns.Portfolio.Build(holdings, basis, index and index.items or {}, AME.watch and AME.watch:Hidden())
   self.pfListed = ns.Portfolio.Listed(holdings, function(house)
     return ns.Settings:AuctionCut(house)
   end, index and index.items or {})
@@ -545,6 +546,14 @@ function UI:RenderPortfolio()
         L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."]:format(
           #list,
           chars
+        )
+    end
+    if t and (t.hidden or 0) > 0 then
+      status = status
+        .. W.SEP
+        .. L["%d hidden (%s), not counted: unhide them under Hidden on the Market tab"]:format(
+          t.hidden,
+          W.Money(t.hiddenValue)
         )
     end
     if self.pfIndexMissing then

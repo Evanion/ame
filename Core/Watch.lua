@@ -3,7 +3,8 @@
 --   db = {
 --     lists  = { { name = "Watchlist", items = { [itemID] = true } }, ... },   -- account-wide, any shard
 --     alerts = { [itemID] = { below = copper?, above = copper?, signal = bool?, state = {} } },
---     hidden = { [itemID] = true },   -- left out of the Market and Arbitrage lists (still recorded); never synced
+--     hidden = { [itemID] = true },   -- left out of the Market, Arbitrage and Portfolio lists (still recorded);
+--                                         -- never synced
 --   }
 --
 -- Alerts fire once when their condition becomes true and re-arm when it stops being true (with a little hysteresis
@@ -30,7 +31,7 @@ function Watch.New(db)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
--- hidden items: items you don't want in the Market and Arbitrage lists (account-wide, every auction house)
+-- hidden items: items you don't want in the Market, Arbitrage and Portfolio lists (account-wide, every auction house)
 
 function Watch:Hidden()
   return self.db.hidden

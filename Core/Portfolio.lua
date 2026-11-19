@@ -50,13 +50,16 @@ function Portfolio.Listed(holdings, cut, items)
   return out
 end
 
--- positions sorted by value, plus totals { value, cost (of the part with a known cost), unrealized }
-function Portfolio.Build(holdings, basis, items)
+-- positions sorted by value, plus totals { value, cost (of the part with a known cost), unrealized, positions,
+-- hidden, hiddenValue }. hide (optional): items left out (hidden from lists), counted in hidden / hiddenValue.
+function Portfolio.Build(holdings, basis, items, hide)
   local rows = {}
-  local totals = { value = 0, cost = 0, unrealized = 0, positions = 0 }
+  local totals = { value = 0, cost = 0, unrealized = 0, positions = 0, hidden = 0, hiddenValue = 0 }
   for itemID, h in pairs(Portfolio.Merge(holdings)) do
     local s = items and items[itemID]
-    if s and s.market and h.qty > 0 then
+    if s and s.market and h.qty > 0 and hide and hide[itemID] then
+      totals.hidden, totals.hiddenValue = totals.hidden + 1, totals.hiddenValue + s.market * h.qty
+    elseif s and s.market and h.qty > 0 then
       local b = basis and basis[itemID]
       local value = s.market * h.qty
       local row = {

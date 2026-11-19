@@ -46,7 +46,8 @@ function UI:StarClicked(anchor, itemID)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
--- the item menu: right-click an item row in any table. opts.hide: offer Hide / Unhide (Market and Arbitrage lists)
+-- the item menu: right-click an item row in any table. opts.hide: offer Hide / Unhide (Market, Arbitrage and
+-- Portfolio positions)
 
 function UI:ItemMenu(anchor, key, opts)
   opts = opts or {}
@@ -120,7 +121,7 @@ function UI:ItemMenu(anchor, key, opts)
   W.Menu(anchor, entries, { cursor = true })
 end
 
--- hide or unhide an item: out of the Market and Arbitrage lists and their counts (it's still recorded)
+-- hide or unhide an item: out of the Market, Arbitrage and Portfolio lists and their counts (it's still recorded)
 function UI:SetHidden(key, on)
   local watch = ns.AME.watch
   watch:SetHidden(key, on)
@@ -132,6 +133,9 @@ function UI:SetHidden(key, on)
   self:WatchChanged()
   if self.arbView and self.arbView:IsShown() and self.RefreshArbitrage then
     self:RefreshArbitrage()
+  end
+  if self.RefreshPortfolio then
+    self:RefreshPortfolio()
   end
   if self.UpdateHiddenControls then
     self:UpdateHiddenControls()

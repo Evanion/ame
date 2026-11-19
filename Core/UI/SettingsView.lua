@@ -430,8 +430,10 @@ function UI:RefreshSettings()
   local hidden = ns.AME.watch and ns.AME.watch:HiddenCount() or 0
   v.hiddenText:SetText(
     hidden > 0
-        and L["%d items are hidden from the Market and Arbitrage lists. AME still records their prices."]:format(hidden)
-      or L["Nothing hidden. Right-click an item in the Market or Arbitrage list to hide it from the lists."]
+        and L["%d items are hidden from the Market, Arbitrage and Portfolio lists. AME still records their prices."]:format(
+          hidden
+        )
+      or L["Nothing hidden. Right-click an item in the Market, Arbitrage or Portfolio list to hide it."]
   )
   for _, b in ipairs({ v.hiddenShow, v.hiddenUnhide }) do
     b:SetEnabled(hidden > 0)
