@@ -1526,6 +1526,23 @@ describe("addon in a stubbed client", function()
       assert.is_true(row.action:IsShown())
       row.action.scripts.OnClick(row.action)
       assert.are.same({ caller = "AzerothMercantileExchange", term = "Item 2589" }, searched[1])
+      -- a random-suffix item: Auctionator's results carry the suffix, so its base name is searched loosely (an exact
+      -- "Archer's Gloves" would find no "Archer's Gloves of Defense")
+      local variant = 2589 + 5 * ns.SUFFIX_STEP
+      _G.Auctionator.API.v1.MultiSearch = function(caller, terms)
+        searched[#searched + 1] = { caller = caller, term = terms[1], loose = true }
+      end
+      assert.is_true(ns.AME:SearchAuctionHouse(variant))
+      assert.are.same({ caller = "AzerothMercantileExchange", term = "Item 2589", loose = true }, searched[2])
+      -- with the advanced API: one search, each term exact or not
+      _G.Auctionator.API.v1.MultiSearchAdvanced = function(caller, terms)
+        searched[#searched + 1] = { caller = caller, terms = terms }
+      end
+      assert.is_true(ns.AME:AuctionatorSearch({ 2589, variant }))
+      assert.are.same({
+        { searchString = "Item 2589", isExact = true },
+        { searchString = "Item 2589", isExact = false },
+      }, searched[3].terms)
       -- without Auctionator: the default auction house window's search box
       _G.Auctionator = nil
       local text, started

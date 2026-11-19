@@ -294,6 +294,42 @@ AME.ingest = ns.Ingest.New({
 })
 
 ---------------------------------------------------------------------------------------------------------------------
+-- Auctionator's shopping search for items (keys), by base name - the auction house searches base names. Exact for
+-- plain items; a random-suffix item is searched loosely, since Auctionator's results carry the suffix ("Archer's
+-- Gloves of Defense") and an exact "Archer's Gloves" matches none of them. Returns true when a search started.
+function AME:AuctionatorSearch(keys)
+  local api = Auctionator and Auctionator.API and Auctionator.API.v1
+  if not api then
+    return false
+  end
+  local terms, loose = {}, false
+  for _, key in ipairs(keys) do
+    local name = ns.ItemCache.Name(ns.BaseID(key))
+    if name then
+      terms[#terms + 1] = { name = name, exact = not ns.IsVariant(key) }
+      loose = loose or ns.IsVariant(key)
+    end
+  end
+  if #terms == 0 then
+    return false
+  end
+  if api.MultiSearchAdvanced then -- each term exact or not
+    local adv = {}
+    for i, t in ipairs(terms) do
+      adv[i] = { searchString = t.name, isExact = t.exact }
+    end
+    if pcall(api.MultiSearchAdvanced, ADDON, adv) then
+      return true
+    end
+  end
+  local names = {}
+  for i, t in ipairs(terms) do
+    names[i] = t.name
+  end
+  local search = loose and api.MultiSearch or api.MultiSearchExact
+  return search ~= nil and pcall(search, ADDON, names) or false
+end
+
 -- Search the open auction house for an item, to buy it: Auctionator's shopping search when Auctionator is
 -- installed (its public API), otherwise the default auction house window. Returns true when a search started.
 function AME:SearchAuctionHouse(itemID)
@@ -307,8 +343,7 @@ function AME:SearchAuctionHouse(itemID)
     say(L["item not loaded yet - try again in a moment"])
     return false
   end
-  local api = Auctionator and Auctionator.API and Auctionator.API.v1
-  if api and api.MultiSearchExact and pcall(api.MultiSearchExact, ADDON, { name }) then
+  if self:AuctionatorSearch({ itemID }) then
     return true
   end
   local frame = AuctionHouseFrame

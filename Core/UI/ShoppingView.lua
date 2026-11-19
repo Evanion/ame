@@ -215,24 +215,17 @@ function UI:SearchShoppingList()
     print("|cff33ccffAME|r " .. L["open the auction house first"])
     return
   end
-  local names = {}
+  local keys = {}
   for _, r in ipairs(self.shopRows or {}) do
-    if r.missing > 0 then
-      local name = ns.ItemCache.Name(ns.BaseID(r.itemID))
-      if name then
-        names[#names + 1] = name
-      end
+    if r.missing > 0 and ns.ItemCache.Name(ns.BaseID(r.itemID)) then
+      keys[#keys + 1] = r.itemID
     end
   end
-  if #names == 0 then
-    return
-  end
-  local api = Auctionator and Auctionator.API and Auctionator.API.v1
-  if api and api.MultiSearchExact and pcall(api.MultiSearchExact, "AzerothMercantileExchange", names) then
+  if #keys == 0 or ns.AME:AuctionatorSearch(keys) then
     return
   end
   -- without Auctionator: the first one in the default window (it searches one name at a time)
-  ns.AME:SearchAuctionHouse(ns.ItemCache.KeyByName(names[1]) or names[1])
+  ns.AME:SearchAuctionHouse(keys[1])
 end
 
 -- The profession window's selected recipe, through the classic trade skill / craft API (whichever window is open).
