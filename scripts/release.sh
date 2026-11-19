@@ -102,6 +102,7 @@ meta = {
     "gameVersions": [int(i) for i in ids.split(",") if i],
     "releaseType": rtype,
 }
+data_slug = data_slug or "ame-crafting-data"
 if data_slug:  # the crafting data library: its own project, installed with AME by the CurseForge app
     meta["relations"] = {"projects": [{"slug": data_slug, "type": "requiredDependency"}]}
 print(json.dumps(meta))

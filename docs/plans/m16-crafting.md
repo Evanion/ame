@@ -69,14 +69,14 @@ Retail later: the same generator with retail's tables (CraftSim's mapping); not 
 
 - `AzerothMercantileExchange_Crafting` is its own load-on-demand addon and its own CurseForge project ("AME Crafting
   Data"), loaded by Core/CraftingData.lua only when Crafting needs it. AME's releases declare it a required
-  dependency (CURSEFORGE_DATA_SLUG in .env), so the CurseForge app installs it with AME; AME's own zip doesn't carry
+  dependency (slug ame-crafting-data, project 1816764), so the CurseForge app installs it with AME; AME's own zip doesn't carry
   it. It holds every profession's recipes (product, yield, yellow / grey, reagents) and every recipe item (profession,
   skill to learn, taught recipes): 2,492 recipes and 2,013 recipe items for build 1.60.1.70959, 263 KB.
 - scripts/gen-recipes.py builds it from the client tables on wago.tools (an honest User-Agent; cached under .cache/).
 - .github/workflows/crafting-data.yml, daily and hands-off: latest wowf build -> already handled (Actions cache, keyed
   by build and generator)? stop -> regenerate -> unchanged? stop -> shrink guard + crafting data specs -> the next patch
   version (data-v1.0.N) committed, tagged and uploaded by scripts/release-data.sh; any failure opens an issue.
-  One-time setup: the CurseForge project, and the secrets CURSEFORGE_CI_API_TOKEN and CURSEFORGE_DATA_PROJECT_ID.
+  One-time setup: the repository secret CURSEFORGE_CI_API_TOKEN (the token AME's releases already use).
 - Hand fixes: CraftingData.OVERRIDES in Core/CraftingData.lua (shipped with AME, applied over the generated rows).
 
 ## The numbers (Core/Crafting.lua, pure)

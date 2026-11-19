@@ -7,7 +7,7 @@ name: Crafting data
 #   4. changed data is checked (the shrink guard in the generator, the crafting data specs), then released as the
 #      next patch version on its own CurseForge project (scripts/release-data.sh) - never AME itself
 #   5. any failure opens an issue instead of releasing
-# Secrets: CURSEFORGE_CI_API_TOKEN, CURSEFORGE_DATA_PROJECT_ID.
+# Secret: CURSEFORGE_CI_API_TOKEN (the same CurseForge token AME's releases use). The data project's ID is public.
 
 on:
   schedule:
@@ -68,7 +68,7 @@ jobs:
         if: steps.gen.outputs.changed == 'true'
         env:
           CURSEFORGE_CI_API_TOKEN: ${{ secrets.CURSEFORGE_CI_API_TOKEN }}
-          CURSEFORGE_DATA_PROJECT_ID: ${{ secrets.CURSEFORGE_DATA_PROJECT_ID }}
+          CURSEFORGE_DATA_PROJECT_ID: "1816764" # curseforge.com/wow/addons/ame-crafting-data
           SUMMARY: ${{ runner.temp }}/summary.md
         run: bash scripts/release-data.sh
 
