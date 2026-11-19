@@ -59,6 +59,12 @@ globals = {
   "SLASH_AZEROTHMERCANTILEEXCHANGE2",
 }
 
+-- dev-only tools (never shipped)
+files["Core/Dev/**"] = {
+  globals = { "SLASH_AMEDEV1" },
+  read_globals = { "UpdateAddOnMemoryUsage", "GetAddOnMemoryUsage", "InCombatLockdown" },
+}
+
 files["spikes/AME_Spike/**"] = {
   globals = { "AME_SpikeDB", "SLASH_AMESPIKE1" },
 }

@@ -14,6 +14,7 @@ move-folders:
   AzerothMercantileExchange/AzerothMercantileExchange_History: AzerothMercantileExchange_History
 
 ignore:
+  - Core/Dev
   - docs
   - spec
   - spikes

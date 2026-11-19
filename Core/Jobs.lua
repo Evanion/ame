@@ -68,6 +68,7 @@ function Jobs:Tick()
     return
   end
   self.tickStart = self.clock()
+  self.lastName = job.name -- what this tick ran (the dev profiler's CPU table)
   self.current = job -- the job running now (yield hooks shared between jobs use it)
   local ok, result = coroutine.resume(job.co)
   self.current = nil

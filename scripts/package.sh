@@ -38,6 +38,10 @@ done
 find "$STAGE" \( -name .git -o -name .github -o -name tests -o -name '*.md' -o -name '*.textile' \) -prune \
   -exec rm -rf {} +
 
+# dev-only tools (Core/Dev: the profiler) never ship
+rm -rf "$CORE/Core/Dev"
+sed -i '/^Core\\Dev\\/d' "$CORE/AzerothMercantileExchange.toc"
+
 # version stamps
 sed -i "s/@project-version@/$VERSION/" "$CORE/AzerothMercantileExchange.toc" "$HIST/AzerothMercantileExchange_History.toc"
 sed -i "s/^ns.VERSION = .*/ns.VERSION = \"$VERSION\"/" "$CORE/Core/Init.lua"

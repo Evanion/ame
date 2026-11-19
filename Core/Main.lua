@@ -385,6 +385,7 @@ end
 
 local events = CreateFrame("Frame")
 local handlers = {}
+AME.handlers = handlers -- event name -> handler (the dev profiler times them)
 
 function handlers.ADDON_LOADED(name)
   if name ~= ADDON then

@@ -65,3 +65,4 @@ Core\UI\PortfolioView.lua
 Core\UI\Tooltip.lua
 Core\UI\SellAssist.lua
 Core\UI\Launcher.lua
+Core\Dev\Profiler.lua
