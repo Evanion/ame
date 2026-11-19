@@ -449,16 +449,25 @@ function UI:CreateMarketOverview(area)
       self.chartPanel:SetPoint("BOTTOM", self.movers, "TOP", 0, UI.SLOT_GAP)
       self.sectors:SetPoint("BOTTOM", self.largest, "TOP", 0, UI.SLOT_GAP)
     end
-  end
-  v:SetCompact(slots.compact)
-  v:SetScript("OnShow", function(self)
-    -- lay the toolbar out again: built while hidden (the window opened on the Screener), anchors chained to the mode
-    -- switch could stay unresolved in game
+    -- last: anchor the mode switch again (laying out the rows re-anchors the toolbar; see MarketView)
     self.mode:ClearAllPoints()
     self.mode:SetPoint("LEFT", bar, "LEFT", 0, 0)
     self.modeDrop:ClearAllPoints()
     self.modeDrop:SetPoint("LEFT", bar, "LEFT", 0, 0)
-    self:SetCompact(slots.compact)
+  end
+  v:SetCompact(slots.compact)
+  -- lay the toolbar out again when shown, and once more on the next frame (anchors set before the toolbar was first
+  -- drawn could stay unresolved in game)
+  local function relayout()
+    v:SetCompact(slots.compact) -- re-anchors the switch last
+  end
+  v:SetScript("OnShow", function()
+    relayout()
+    C_Timer.After(0, function()
+      if v:IsVisible() then
+        relayout()
+      end
+    end)
     UI:RefreshOverview()
   end)
   ns.ItemCache.OnNamesChanged(function()

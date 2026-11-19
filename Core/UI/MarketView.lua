@@ -872,17 +872,27 @@ function UI:CreateMarketView(parent)
     self.signalsShort:SetShown(on)
     self.more:SetShown(on)
     self:PlaceSignals()
-  end
-  v:SetCompact(slots.compact)
-  -- Lay the toolbar out again each time the screener is shown: built while hidden (the window opened on the
-  -- Overview), the controls chained to the Screener | Overview switch could stay without a position in game -
-  -- invisible - after switching back.
-  v:HookScript("OnShow", function(self)
+    -- last: anchor the mode switch again. Laying out the rows above re-anchors the toolbar, and in game the switch
+    -- anchored before that lost its position - and with it the search box, quality and price range chained to it.
     self.mode:ClearAllPoints()
     self.mode:SetPoint("LEFT", bar, "LEFT", 0, 0)
     self.modeDrop:ClearAllPoints()
     self.modeDrop:SetPoint("LEFT", bar, "LEFT", 0, 0)
-    self:SetCompact(slots.compact)
+  end
+  v:SetCompact(slots.compact)
+  -- Lay the toolbar out again when the screener is shown, and once more on the next frame: anchors set before the
+  -- toolbar was first drawn could stay unresolved in game, leaving the search box, quality and price range (chained
+  -- to the Screener | Overview switch) invisible until something re-anchored them.
+  local function relayout()
+    v:SetCompact(slots.compact) -- re-anchors the switch last
+  end
+  v:HookScript("OnShow", function()
+    relayout()
+    C_Timer.After(0, function()
+      if v:IsVisible() then
+        relayout()
+      end
+    end)
   end)
 
   ns.ItemCache.OnNamesChanged(function()
