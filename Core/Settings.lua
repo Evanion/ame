@@ -28,14 +28,19 @@ Settings.DEFAULTS = {
   outlierFactor = 4, -- ignore days priced more than this many times off their neighbours (false = off)
   syncGuild = true,
   syncTrusted = true,
-  priceCheck = false, -- answer "!pc <item>" in guild, party and raid chat (sends chat in your name)
-  priceCheckWhisper = false, -- and in whispers from guild members, friends, your party or raid and trusted players
-  priceCheckCooldown = 5, -- seconds between your price check answers (5 / 10 / 30 / 60)
   minimap = { hide = false },
 }
 
 function Settings:Init()
   AME_DB.settings = AME_DB.settings or {}
+  -- price checks (!pc) were removed: the game no longer lets addons answer in chat
+  for _, k in ipairs({ "priceCheck", "priceCheckWhisper", "priceCheckCooldown" }) do
+    AME_DB.settings[k] = nil
+  end
+  if AME_DB.stats then
+    AME_DB.stats.priceCheckLog, AME_DB.stats.priceChecks = nil, nil
+  end
+  AME_DB.priceCheckPrompt = nil -- the popup's position (an unreleased build)
   for k, v in pairs(Settings.DEFAULTS) do
     if AME_DB.settings[k] == nil and type(v) == "table" then
       AME_DB.settings[k] = { hide = v.hide }

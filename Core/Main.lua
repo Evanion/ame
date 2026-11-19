@@ -492,9 +492,6 @@ function handlers.PLAYER_LOGIN()
   if ns.SyncService:Init(AME, AME.syncTransport) then
     ns.SyncService:Start()
   end
-  if ns.PriceCheck then
-    ns.PriceCheck:Start()
-  end
 end
 
 function handlers.AUCTION_HOUSE_SHOW()

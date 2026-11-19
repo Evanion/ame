@@ -213,7 +213,7 @@ Help.GUIDE = {
   },
   {
     L["Commands"],
-    L["/ame - open the window.   /ame <item link> - chart an item.   /ame item <item link> - its history in chat.   /ame status - data, sharing and price check status.   /ame config - settings.   /ame sync - sharing settings.   /ame backfill - import Auctionator's history now.   /ame selftest - check everything is working.   /ame help - the commands in chat."],
+    L["/ame - open the window.   /ame <item link> - chart an item.   /ame item <item link> - its history in chat.   /ame status - data and sharing status.   /ame config - settings.   /ame sync - sharing settings.   /ame backfill - import Auctionator's history now.   /ame selftest - check everything is working.   /ame help - the commands in chat."],
   },
 }
 
@@ -383,9 +383,6 @@ function Help.Articles()
           body = {
             L["Sharing is a section of the Settings tab."],
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
-            H(L["Price checks"]),
-            L["Price checks are for players without AME. Turn them on and when someone types !pc and an item in guild, party or raid chat, AME gets their answer ready - market, lowest and 7-day average at your faction's auction house, and how old they are - and pops it up with a Send answer button. The game only lets addons send chat when you click, so nothing goes out until you do. When several players run AME, they agree among themselves and only one is asked; if they don't click within 20 seconds, the next one is. Drag the popup where you like it: it stays there. Whispers can be answered too, for guild members, friends, your party or raid, and trusted players - never strangers. You answer at most once every 5 seconds - change it under Settings, Sharing - so nobody can make you flood the chat; while you wait, another AME player is asked instead."],
-            L["Your own !pc is always answered, in the channel you asked in, even with Price checks off: ask in party and everyone sees the answer. A request takes an item link or the item's exact name. Inside dungeons, raids and boss encounters the game hides chat from addons, so price checks can't be answered there."],
             H(L["Keeping data honest"]),
             L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
             L["The guild info line looks like this: AME block: Name, Name (any line, several allowed)."],

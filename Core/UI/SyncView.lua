@@ -189,39 +189,6 @@ function UI:CreateSyncSection(v, host)
   })
   v.pending = v.pendingList.rows
 
-  -- Price checks: answer "!pc <item>" in chat
-  st = stack:Card().stack
-  st:Heading(L["Price checks"], 0)
-  local pcIntro = st:Text("GameFontDisableSmall", 4)
-  pcIntro:SetText(
-    L["When someone types !pc and an item (link or name), AME gets the answer ready - its prices at your faction's auction house - and shows it with a Send button: the game only lets addons send chat when you click. If several players run AME, only one of you is asked. Your own !pc is always answered in the channel you asked in, even with this off."]
-  )
-  row = st:Row(18, 4)
-  v.priceCheck = W.SettingCheck(row, L["Answer in guild, party and raid chat"], "priceCheck", 0, -1)
-  row = st:Row(18, 4)
-  v.priceCheckWhisper = W.SettingCheck(
-    row,
-    L["Answer whispers from guild members, friends, your party or raid, and trusted players"],
-    "priceCheckWhisper",
-    0,
-    -1
-  )
-  -- one answer every N seconds, however many ask
-  row = st:Row(22, 4)
-  local cooldowns = {}
-  for i, s in ipairs(ns.PriceCheck.COOLDOWNS) do
-    cooldowns[i] = { s, L["%d s"]:format(s) }
-  end
-  v.priceCheckCooldown = W.Dropdown(row, 70, cooldowns, function(value)
-    ns.Settings:Set("priceCheckCooldown", value)
-  end, { neutral = true })
-  v.priceCheckCooldown:SetPoint("RIGHT", 0, 0)
-  local cdLabel = W.Text(row, "GameFontHighlightSmall")
-  cdLabel:SetPoint("LEFT", 0, 0)
-  cdLabel:SetPoint("RIGHT", v.priceCheckCooldown, "LEFT", -6, 0)
-  cdLabel:SetText(L["Answer at most once every"])
-  cdLabel:SetWordWrap(false)
-
   -- Blocked: what it does, the list, the last rejected scan
   st = stack:Card().stack
   st:Heading(L["Blocked"], 0)
@@ -276,9 +243,6 @@ function UI:RefreshSync()
   )
   v.guild:SetChecked(ns.Settings:Get("syncGuild"))
   v.trusted:SetChecked(ns.Settings:Get("syncTrusted"))
-  v.priceCheck:SetChecked(ns.Settings:Get("priceCheck"))
-  v.priceCheckWhisper:SetChecked(ns.Settings:Get("priceCheckWhisper"))
-  v.priceCheckCooldown:SetValue(ns.Settings:Get("priceCheckCooldown"))
 
   local s = AME_DB.stats
   if not svc.enabled then

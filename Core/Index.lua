@@ -159,7 +159,7 @@ end
 
 -- Your faction's auction house index (the market you trade in): tooltips and the portfolio value things here, never
 -- at the goblin or other faction's house. Built in the background when missing (nil until then).
--- your faction's auction house (the market tooltips and price checks quote)
+-- your faction's auction house (the market tooltips quote)
 function AME:FactionShard()
   local house = UnitFactionGroup("player")
   if house ~= "Horde" and house ~= "Alliance" then

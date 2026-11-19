@@ -46,7 +46,6 @@ Core\Trust.lua
 Core\SyncService.lua
 Core\Trading.lua
 Core\Posting.lua
-Core\PriceCheck.lua
 Core\Main.lua
 Core\Index.lua
 Core\Commands.lua
@@ -65,7 +64,6 @@ Core\UI\SettingsView.lua
 Core\UI\ArbitrageView.lua
 Core\UI\PortfolioView.lua
 Core\UI\Tooltip.lua
-Core\UI\PriceCheckPrompt.lua
 Core\UI\SellAssist.lua
 Core\UI\Launcher.lua
 Core\Dev\Profiler.lua

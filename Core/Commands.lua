@@ -73,13 +73,6 @@ local function cmdStatus()
       say(L["history: %d raw scans, %d days, %.0f KB"], #(data.raw or {}), days, bytes / 1024)
     end
   end
-  local log = s.priceCheckLog
-  if log and #log > 0 then
-    say(L["recent price checks:"])
-    for i = math.max(1, #log - 9), #log do
-      say("  %s", log[i])
-    end
-  end
   local d = AME:ScanDiag()
   say(
     L["scan pipeline: %d requests, %d events (%d since last request), read %s, aborted %d; ingest requested=%s reading=%s"],
