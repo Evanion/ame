@@ -11,6 +11,7 @@ describe("real market data", function()
       "Core/Analytics.lua",
       "Core/Arbitrage.lua",
       "Core/Pricing.lua",
+      "Core/MarketStats.lua",
     })
     fixture = dofile("spec/fixtures/market.lua")
   end)
@@ -134,6 +135,35 @@ describe("real market data", function()
           assert.is_true(c.hours == nil or (finite(c.hours) and c.hours >= 0), id)
           assert.truthy(not item.vendor or c.price > item.vendor, id)
         end
+      end
+    end
+  end)
+
+  it("gives a sane market index and CPI over real history (only full-scan days, steady items)", function()
+    local first, last = math.huge, -math.huge
+    for _, item in pairs(fixture.items) do
+      for _, p in ipairs(item.points) do
+        first, last = math.min(first, p[1]), math.max(last, p[1])
+      end
+    end
+    local st = ns.MarketStats.New(math.max(first, last - 29), last, 4, function()
+      return 7 -- all trade goods: the whole fixture is in the CPI basket
+    end)
+    for id, item in pairs(fixture.items) do
+      local pts = series(item)
+      local clean = ns.Analytics.Clean(pts, 4)
+      local s = ns.Analytics.Summarize(clean)
+      st:Add(id, pts, clean, s)
+    end
+    local out = st:Finish()
+    assert.truthy(#out.days >= 5)
+    assert.truthy(out.basket >= 50, out.basket)
+    assert.are.equal("turnover", out.cpiWeights) -- the fixture has sell rates
+    assert.are.equal(out.days[1].day, out.index[1].day) -- the index starts on the first full-scan day
+    for _, list in ipairs({ out.index, out.cpi }) do
+      assert.truthy(#list >= 4)
+      for _, p in ipairs(list) do
+        assert.truthy(finite(p.level) and p.level > 50 and p.level < 200, p.level)
       end
     end
   end)

@@ -26,6 +26,9 @@ Settings.DEFAULTS = {
   cutNeutral = 15, -- and at goblin (neutral) auction houses
   listingHours = 24, -- listing length used for deposits and posting prices (2 / 8 / 24)
   outlierFactor = 4, -- ignore days priced more than this many times off their neighbours (false = off)
+  -- the Market tab's Overview (indexes and totals for the whole AH): off by default, since it adds work to every
+  -- market index build
+  marketOverview = false,
   syncGuild = true,
   syncTrusted = true,
   minimap = { hide = false },

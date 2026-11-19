@@ -178,6 +178,14 @@ function UI:CreateSettingsView(parent, contentArea)
     ns.Launcher:SetMinimap(on)
   end)
   v.minimap:SetPoint("TOPLEFT", 0, -1)
+  _, st = card("general", L["Market overview"])
+  v.overviewCheck = check(st, L["Show the Market overview"], "marketOverview", function(on)
+    UI:MarketOverviewChanged(on)
+  end)
+  paragraph(
+    st,
+    L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."]
+  )
   _, st = card("general", L["Notifications"])
   check(st, L["Announce recorded full scans"], "announceScans")
   check(st, L["Sound when an alert fires"], "alertSound")

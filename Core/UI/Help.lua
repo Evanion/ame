@@ -95,6 +95,30 @@ Help.TERMS = {
     L["Data"],
     L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."],
   },
+  mxIndex = {
+    L["Market index"],
+    L["How prices across the whole auction house moved, as one number: 100 thirty days ago. Each day it moves by the average price change of steadily listed items - listed on most days, at least 3 at a time - so one-off and fantasy listings can't move it. Above 100: things got more expensive."],
+  },
+  mxCpi = {
+    L["CPI"],
+    L["Consumer price index: what playing costs. Only what players use up - consumables, trade goods, reagents, gems, ammo - weighted by how much gold is spent on each (sell rate x price), like a real CPI weighs what households buy. Sell rates need full scans a few hours apart; until there are enough, it weighs by listed value (the status line says which)."],
+  },
+  mxValue = {
+    L["Listed value"],
+    L["Everything listed at the last full scan at market price. Each item's price is capped at the outlier limit (Settings, Data) times its 30-day average, so a fantasy listing can't inflate the total. Items too new to have an average can't be capped: Largest by value shows what the total leans on."],
+  },
+  mxTurnover = {
+    L["Turnover (estimate)"],
+    L["Gold changing hands per day: each item's sell rate times its price, summed. Sell rates count supply leaving the auction house between full scans, so expired and cancelled auctions count too: read it as an upper bound."],
+  },
+  mxAuctions = {
+    L["Auctions"],
+    L["Auctions listed at the last full scan, and the change over the chosen period. Only days with a full scan count: a day of searches sees too few items."],
+  },
+  mxBreadth = {
+    L["Breadth"],
+    L["How many steadily listed items rose against how many fell over the chosen period. A rising index with weak breadth means a few items are carrying it."],
+  },
   pfValue = {
     L["Holdings value"],
     L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price, except soulbound items (they can't be sold) and items you hid. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
@@ -149,6 +173,12 @@ end
 
 -- the glossary at the end of the Guide: every explained term, in this order
 Help.GLOSSARY = {
+  "mxIndex",
+  "mxCpi",
+  "mxValue",
+  "mxTurnover",
+  "mxAuctions",
+  "mxBreadth",
   "market",
   "min",
   "avg",
@@ -297,6 +327,7 @@ function Help.Articles()
           label = L["Market"],
           body = {
             guideText(2),
+            L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."],
             H(L["Filtering by signal"]),
             EX("signalFilter"),
             L["Pick a signal to see only those items. Active filters show as chips under the toolbar: click one to remove it, or Clear all."],
@@ -308,6 +339,20 @@ function Help.Articles()
             L["Right-click any item in a list - Market, Arbitrage or Portfolio - for what you can do with it: open its chart, search the auction house for it (while the auction house is open), add it to a watchlist, set a price alert, or put its link in the chat box."],
             H(L["Hiding items"]),
             L["Items you never trade can be hidden - drinks you buy from a vendor, for example: right-click one in the Market, Arbitrage or Portfolio list and pick Hide from lists, or use the button on its item page. Hidden items leave those lists and their totals, on every auction house and character (Portfolio says how many it left out and what they're worth), but AME keeps recording their prices, your ledger keeps every sale and purchase, and their tooltips still work. They're listed under Hidden in the Market sidebar: right-click one there to unhide it, or unhide them all under Settings, Tooltips & charts."],
+          },
+        },
+        {
+          key = "marketOverview",
+          title = L["Market overview"],
+          label = L["Overview"],
+          body = {
+            L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Screener on the Market tab's toolbar. Market data takes a little longer to update while it's on."],
+            H(L["The cards"]),
+            L["Market index and CPI start at 100 thirty days ago. The market index follows every steadily listed item; the CPI only what players use up, weighted by what's spent on it. Listed value, Turnover and Auctions are the totals at the last full scan; Breadth is the share of items that rose. Each card's change is over the period picked on the right of the toolbar. Hover a card for how it's worked out."],
+            H(L["Fair numbers"]),
+            L["Only items listed at least 3 at a time on most days count for the indexes, risers and fallers, so one item reposted every day can't move them. Listed value caps each price at the outlier limit (Settings, Data) times its 30-day average. Totals come only from days with a full scan."],
+            H(L["Categories and movers"]),
+            L["Categories shows each item class's share of the listed value: click one to open it in the screener. Biggest risers and fallers are steadily listed items; click one for its chart. Largest by value lists the items the total leans on most - a capped one is marked."],
           },
         },
         {

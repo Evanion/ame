@@ -640,6 +640,58 @@ describe("addon in a stubbed client", function()
         assert.is_false(v.summaryBar:IsShown())
       end)
 
+      it("the Market tab's Overview: market statistics, categories into the screener, remembered", function()
+        seeded()
+        ns.UI:Toggle()
+        ns.UI:ShowTab("market")
+        -- off by default: no Screener | Overview switch, no statistics in the index
+        local mv = ns.UI.marketView
+        assert.is_false(mv.mode:IsShown())
+        assert.is_nil(ns.AME.index.stats)
+        ns.Settings:Set("marketMode", "overview") -- a mode remembered from before doesn't bring it back
+        assert.are.equal("screener", ns.UI:MarketMode())
+        -- switched on in Settings: the switch appears and the index is rebuilt with statistics
+        ns.Settings:Set("marketOverview", true)
+        ns.UI:MarketOverviewChanged(true)
+        drainJobs()
+        assert.is_true(mv.mode:IsShown())
+        assert.is_table(ns.AME.index.stats)
+        ns.UI:SetMarketMode("overview")
+        drainJobs()
+        local ov = ns.UI.overviewView
+        assert.is_true(ov:IsShown())
+        assert.is_false(ns.UI.marketView:IsShown())
+        assert.are.equal("overview", ns.Settings:Get("marketMode"))
+        assert.truthy(ns.UI.footerLeft.text:find("totals from the full scan of"), ns.UI.footerLeft.text)
+        assert.are.equal("100.0", ov.cards[1].value.text) -- too few steady items to move it yet
+        assert.truthy(ov.cards[3].value.text:find("%d"), ov.cards[3].value.text) -- listed value
+        assert.truthy(ov.cards[5].value.text:find("^2"), ov.cards[5].value.text) -- 2 auctions at the last scan
+        -- the period changes the cards' comparison
+        ov.period:Select(1)
+        assert.are.equal(1, ns.UI.ovPeriod)
+        -- a category opens the screener filtered to it
+        local row = ov.sectorRows[1]
+        assert.is_true(row:IsShown())
+        local classID = row.data.classID
+        row.scripts.OnClick(row)
+        assert.are.equal("screener", ns.Settings:Get("marketMode"))
+        assert.is_true(ns.UI.marketView:IsShown())
+        assert.is_false(ov:IsShown())
+        assert.are.equal(classID, ns.UI.mq.classID)
+        -- the statistics are saved with the index at logout
+        ns.AME:SaveIndexes()
+        local _, saved = next(AME_DB.indexCache)
+        assert.is_table(saved.st)
+        assert.is_table(saved.st.days)
+        -- switched off again: back to the screener, statistics dropped
+        ns.UI:SetMarketMode("overview")
+        ns.Settings:Set("marketOverview", false)
+        ns.UI:MarketOverviewChanged(false)
+        assert.is_true(ns.UI.marketView:IsShown())
+        assert.is_false(mv.mode:IsShown())
+        assert.is_nil(ns.AME.index.stats)
+      end)
+
       it("the footer is the window's: each tab's status text on the left, version on the right", function()
         seeded()
         ns.UI:Toggle()
@@ -1049,7 +1101,7 @@ describe("addon in a stubbed client", function()
       assert.are.equal("Market", guide.byKey.tabMarket.link.text.text) -- the sidebar label, not "Market tab"
       guide.byKey.tabMarket.link.scripts.OnClick(guide.byKey.tabMarket.link)
       assert.are.equal("Market tab", guide.title.text) -- the article keeps its full title
-      assert.is_true(guide.examples["tabMarket:3"]:IsShown()) -- a live example in the article (the signal filter)
+      assert.is_true(guide.examples["tabMarket:4"]:IsShown()) -- a live example in the article (the signal filter)
       -- every article opens, its drawn examples included (the Item article's candles)
       for key in pairs(guide.byKey) do
         guide:ShowArticle(key)

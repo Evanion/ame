@@ -626,8 +626,11 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- the view
 
+-- The Market tab's area holds two modes (UI:SetMarketMode): this screener and the overview (MarketOverview.lua).
 function UI:CreateMarketView(parent)
-  local v = contentArea(parent)
+  local area = contentArea(parent)
+  local v = CreateFrame("Frame", nil, area)
+  v:SetAllPoints(area)
   self.marketView = v
   self.mq = { sortKey = "score", ascending = false, minQuality = 1 } -- Common+: hide grey junk by default
   local slots = UI.Slots(v, { toolbar = 22, chips = 20, left = SIDEBAR_W, status = true })
@@ -636,7 +639,10 @@ function UI:CreateMarketView(parent)
   local bar, main = slots.toolbar, slots.main
   v.main = main
 
-  -- toolbar: (compact: category), search, quality, price range ... views, columns
+  -- toolbar: Screener | Overview, (compact: category), search, quality, price range ... views, columns
+  v.mode, v.modeDrop = self:MarketModeSwitch(bar)
+  v.mode:SetPoint("LEFT", 0, 0)
+  v.modeDrop:SetPoint("LEFT", 0, 0)
   v.category = W.Dropdown(bar, 130, { { 1, L["All items"] } }, function(value)
     local o = v.category.entries and v.category.entries[value]
     if o then
@@ -644,7 +650,7 @@ function UI:CreateMarketView(parent)
       UI:SelectCategory(e, "LeftButton", v.category)
     end
   end, { neutral = true })
-  v.category:SetPoint("LEFT", 0, 0)
+  v.category:SetPoint("LEFT", v.modeDrop, "RIGHT", 6, 0)
   local search = W.Input(bar, {
     width = 160,
     hint = L["Search items..."],
@@ -722,7 +728,8 @@ function UI:CreateMarketView(parent)
       return
     end
     self.signals:Show()
-    local need = 160 + 104 + 64 + 64 + 8 * 4 + 10 + (self.signals:GetWidth() or 0) + 10 + 72 + 116 + 6
+    local modes = ns.Settings:Get("marketOverview") and ((self.mode:GetWidth() or 0) + 8) or 0
+    local need = modes + 160 + 104 + 64 + 64 + 8 * 4 + 10 + (self.signals:GetWidth() or 0) + 10 + 72 + 116 + 6
     local onToolbar = (bar:GetWidth() or 0) >= need
     self.signals:SetParent(onToolbar and bar or slots.chips)
     self.signals:ClearAllPoints()
@@ -832,10 +839,23 @@ function UI:CreateMarketView(parent)
     slots:SetCompact(on)
     UI.marketCompact = on
     UI:ApplyMarketColumns()
+    -- Screener | Overview only when the Overview is switched on (Settings)
+    local modes = ns.Settings:Get("marketOverview") and true or false
     self.category:SetShown(on)
+    self.mode:SetShown(modes and not on)
+    self.modeDrop:SetShown(modes and on)
+    self.category:ClearAllPoints()
+    if modes then
+      self.category:SetPoint("LEFT", self.modeDrop, "RIGHT", 6, 0)
+    else
+      self.category:SetPoint("LEFT", 0, 0)
+    end
     self.search:ClearAllPoints()
     if on then
       self.search:SetPoint("LEFT", self.category, "RIGHT", 6, 0)
+      self.search:SetWidth(modes and 140 or 160)
+    elseif modes then
+      self.search:SetPoint("LEFT", self.mode, "RIGHT", 8, 0)
       self.search:SetWidth(160)
     else
       self.search:SetPoint("LEFT", 0, 0)
@@ -861,7 +881,19 @@ function UI:CreateMarketView(parent)
       UI:RenderMarket()
     end
   end)
-  return v
+
+  area.screener = v
+  area.overview = self:CreateMarketOverview(area)
+  function area:SetCompact(on)
+    v:SetCompact(on)
+    self.overview:SetCompact(on)
+  end
+  local overview = self:MarketMode() == "overview"
+  v:SetShown(not overview)
+  area.overview:SetShown(overview)
+  area.slots = overview and area.overview.slots or slots
+  self:SyncModes()
+  return area
 end
 
 -- narrow window: what doesn't fit on the toolbar
@@ -939,6 +971,9 @@ end
 
 -- Rebuild the filtered, sorted list (only when the index, filters or sort change), then render.
 function UI:RefreshMarket(force)
+  if self:MarketMode() == "overview" then
+    self:RefreshOverview() -- the same triggers (new index, other auction house) refresh the overview
+  end
   local v = self.marketView
   if not (v and v:IsShown()) then
     return

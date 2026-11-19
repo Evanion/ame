@@ -541,6 +541,26 @@ function W.Money(copper, short)
   return coin(c, "c")
 end
 
+-- Whole-market amounts (listed value, turnover): 100,000 gold and up shortened to K / M / B ("486K g", "48.6M g",
+-- "2.31M g"), so they fit a stat card; smaller amounts as W.Money(short).
+function W.BigMoney(copper)
+  if not copper then
+    return W.NONE
+  end
+  local g = copper / 10000
+  if g < 100000 then
+    return W.Money(copper, true)
+  end
+  local n, unit = g / 1000, "K"
+  if g >= 1e9 then
+    n, unit = g / 1e9, "B"
+  elseif g >= 1e6 then
+    n, unit = g / 1e6, "M"
+  end
+  local text = n < 10 and ("%.2f"):format(n) or n < 100 and ("%.1f"):format(n) or ("%d"):format(math.floor(n + 0.5))
+  return "|cff" .. W.COIN_HEX.g .. text .. unit .. " g|r"
+end
+
 -- Quantities, abbreviated when large: 950, 1k, 4.5k, 12k, 1.2M (exact numbers stay in exports and tooltips' detail)
 function W.Count(n)
   if not n then

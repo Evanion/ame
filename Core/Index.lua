@@ -58,9 +58,24 @@ function AME:BuildIndex(store, shard, job)
       ns.Analytics.VendorCheck(s, vendor, cut, ns.Arbitrage.Deposit(vendor, house, hours))
     end
   end
-  return ns.MarketIndex.Build(store, ns.Today(GetServerTime()), AME.INDEX_DAYS, function()
-    job:Checkpoint()
-  end, ns.Settings:Get("outlierFactor"), current, vendorCheck)
+  return ns.MarketIndex.Build(
+    store,
+    ns.Today(GetServerTime()),
+    AME.INDEX_DAYS,
+    function()
+      job:Checkpoint()
+    end,
+    ns.Settings:Get("outlierFactor"),
+    current,
+    vendorCheck,
+    ns.Settings:Get("marketOverview") and AME.ItemClass or nil
+  )
+end
+
+-- an item's class (category), for the market statistics (Market Overview, when switched on); nil when the client
+-- doesn't know the item
+function AME.ItemClass(itemID)
+  return ns.ItemCache.Get(itemID).classID
 end
 
 -- Market indexes, one per auction house, built in the background. An index is never dropped while a new one is built:
@@ -226,7 +241,8 @@ function AME:SaveIndexes()
   for shard, index in pairs(self.indexes) do
     local ok, text = pcall(ns.MarketIndex.Encode, index)
     if ok then
-      saved[shard] = { rev = index.rev or 0, v = ns.MarketIndex.SAVE_VERSION, s = text }
+      -- the market statistics are small plain tables (30 days of totals): saved as they are
+      saved[shard] = { rev = index.rev or 0, v = ns.MarketIndex.SAVE_VERSION, s = text, st = index.stats }
     end
   end
   AME_DB.indexCache = saved
@@ -245,6 +261,7 @@ function AME:RestoreIndexes()
         local ok, index = pcall(ns.MarketIndex.Decode, entry.s)
         if ok and index then
           index.rev, index.saveVersion = entry.rev, entry.v or 1 -- saves before versioning: 1
+          index.stats = type(entry.st) == "table" and entry.st or nil
           restored[shard] = index
         end
         job:Checkpoint()

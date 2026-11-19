@@ -34,6 +34,7 @@ Core\Ingest.lua
 Core\Backfill.lua
 Core\Analytics.lua
 Core\MarketIndex.lua
+Core\MarketStats.lua
 Core\MarketFilter.lua
 Core\Watch.lua
 Core\Shopping.lua
@@ -59,6 +60,7 @@ Core\UI\ItemView.lua
 Core\UI\Watchlists.lua
 Core\UI\ShoppingView.lua
 Core\UI\MarketView.lua
+Core\UI\MarketOverview.lua
 Core\UI\SyncView.lua
 Core\UI\SettingsView.lua
 Core\UI\ArbitrageView.lua

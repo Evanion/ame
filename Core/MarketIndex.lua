@@ -10,8 +10,11 @@ ns.MarketIndex = MarketIndex
 -- cached: keep decompressed segments for the next build (Store:KeepTexts) - for the auction house you're at, where
 -- the index is rebuilt after every scan
 -- adjust (optional): fn(summary) applied to every item's summary (e.g. the VENDOR check, which needs vendor prices)
-function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached, adjust)
+-- classOf (optional): fn(itemID) -> item class. Given, the build also makes the market statistics (index.stats,
+-- MarketStats) for the Market Overview; without it (the Overview switched off) it skips them
+function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached, adjust, classOf)
   local index = { day = today, days = days, count = 0, items = {}, outliers = 0 }
+  local stats = classOf and ns.MarketStats and ns.MarketStats.New(today - days + 1, today, outlierFactor, classOf)
   if cached then
     store:KeepTexts(true)
   end
@@ -31,11 +34,15 @@ function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached
         index.items[id] = s
         index.count = index.count + 1
       end
+      if stats then
+        stats:Add(id, points, clean, s)
+      end
     end
     if checkpoint then
       checkpoint()
     end
   end
+  index.stats = stats and stats:Finish()
   return index
 end
 
