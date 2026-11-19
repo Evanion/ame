@@ -407,6 +407,7 @@ L["Low (cheapest)"] = true
 L["Low: the cheapest listing seen (the wick)"] = true
 L["Lowest"] = true
 L["Lowest listing"] = true
+L["Makes"] = true
 L["Margin"] = true
 L["Market"] = true
 L["Market %s"] = true

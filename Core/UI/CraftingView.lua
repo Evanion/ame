@@ -800,6 +800,7 @@ function UI:RenderCraftingDetailRows()
       lines[#lines + 1] = {
         L["Craft %s ×%d"]:format(itemName(o.recipe.product), o.crafts),
         W.Money(o.net, true) .. " " .. (o.gain > 0 and W.SignedMoney(o.gain) or W.Dim(L["less"])),
+        o.recipe.product,
       }
       if o.days then
         lines[#lines + 1] = { W.Dim(L["   the market takes it in"]), W.Dim(days(o.days)) }
@@ -816,6 +817,9 @@ function UI:RenderCraftingDetailRows()
         .. W.SEP
         .. L["needs %d"]:format(e.rank or 0)
     )
+    if e.recipe.product then -- what it makes, as an item (click: search / chart)
+      lines[#lines + 1] = { L["Makes"], itemName(e.recipe.product), e.recipe.product }
+    end
     lines[#lines + 1] = { L["On the AH now"], W.Money(e.price, true) }
     local s = self.craftModel and self.craftModel.index.items[e.item]
     if s and s.avg30 then
