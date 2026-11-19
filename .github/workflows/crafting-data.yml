@@ -45,7 +45,10 @@ jobs:
         if: steps.seen.outputs.cache-hit != 'true'
         run: |
           python3 scripts/gen-recipes.py --build "${{ steps.build.outputs.build }}" --summary "$RUNNER_TEMP/summary.md"
-          if git diff --quiet -- AzerothMercantileExchange_Crafting; then
+          if [ -z "$(git tag --list 'data-v*')" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT" # nothing released yet: the first release
+            echo "Build ${{ steps.build.outputs.build }}: first crafting data release." >> "$GITHUB_STEP_SUMMARY"
+          elif git diff --quiet -- AzerothMercantileExchange_Crafting; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Build ${{ steps.build.outputs.build }}: crafting data unchanged." >> "$GITHUB_STEP_SUMMARY"
           else
