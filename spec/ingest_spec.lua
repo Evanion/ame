@@ -144,6 +144,17 @@ describe("Ingest", function()
       assert.are.equal(3, row(snap, ns.ItemKey(15211, 1234)).qty)
     end)
 
+    it("splits a search whose itemKey has no suffix (as on Forever) by its rows' links", function()
+      api.items[15211] = { { 3500, 1, magic }, { 900, 1, monkey }, { 3600, 1, magic } }
+      ingest:OnItemResults({ itemID = 15211, itemLevel = 0, itemSuffix = 0 })
+      fireTimers()
+      drain()
+      local snap = got[1].snap
+      assert.is_nil(row(snap, 15211))
+      assert.are.equal(2, row(snap, ns.ItemKey(15211, 1234)).qty)
+      assert.are.equal(1, row(snap, ns.ItemKey(15211, 567)).qty)
+    end)
+
     it("hands the links to learn, which names the variants", function()
       local learned = {}
       ingest.learn = function(link)

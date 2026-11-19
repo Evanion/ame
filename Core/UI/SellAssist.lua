@@ -145,6 +145,15 @@ function Sell:Invalidate()
   self.key = nil
 end
 
+-- the item in a shown sell slot (an item key: Auctionator's slot and the item sell frame have its link), or nil
+function Sell:CurrentItem()
+  local src = self:Active()
+  if src then
+    return (src.read())
+  end
+  return nil
+end
+
 function Sell:Active()
   for _, src in ipairs(sources()) do
     if src.frame and src.frame.IsVisible and src.frame:IsVisible() then

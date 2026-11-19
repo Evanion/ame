@@ -654,6 +654,14 @@ function UI:Selling()
 end
 
 function UI:FollowAuctionItem(itemID)
+  -- search events name the plain item (Forever's item keys carry no suffix): when you're selling a variant of it, the
+  -- sell slot knows which one
+  if itemID and not ns.IsVariant(itemID) and ns.SellAssist then
+    local ok, selling = pcall(ns.SellAssist.CurrentItem, ns.SellAssist)
+    if ok and selling and ns.BaseID(selling) == itemID then
+      itemID = selling
+    end
+  end
   if not (self.frame and self.frame:IsShown()) or itemID == self.itemID then
     return
   end

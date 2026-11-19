@@ -299,6 +299,7 @@ function Ingest:flush()
   for pkey, p in pairs(pending) do
     local itemID = p.id
     local tiers = {}
+    local byKey = {} -- item search rows: one book per variant (a search can list several suffixes)
     if p.kind == "commodity" then
       if api.HasFullCommoditySearchResults(itemID) then
         for i = 1, api.GetNumCommoditySearchResults(itemID) do
@@ -317,8 +318,10 @@ function Ingest:flush()
           if info and info.buyoutAmount then
             -- a row groups identical auctions: quantity of them, buyoutAmount of one (Forever, per AHDB's probes)
             local count = info.quantity or 1
-            acc:Add(info.itemLink and self:keyOf(itemID, info.itemLink) or pkey, info.buyoutAmount * count, count)
-            tiers[#tiers + 1] = { info.buyoutAmount, count }
+            local key = info.itemLink and self:keyOf(itemID, info.itemLink) or pkey
+            acc:Add(key, info.buyoutAmount * count, count)
+            byKey[key] = byKey[key] or {}
+            table.insert(byKey[key], { info.buyoutAmount, count })
             any = true
           end
         end
@@ -326,6 +329,11 @@ function Ingest:flush()
     end
     if #tiers > 0 and ns.Depth then
       books[pkey] = ns.Depth.Book(tiers, t)
+    end
+    for key, list in pairs(byKey) do
+      if ns.Depth then
+        books[key] = ns.Depth.Book(list, t)
+      end
     end
   end
   if any then
