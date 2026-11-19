@@ -225,6 +225,9 @@ function AME:OnSnapshot(snap, t, kind, info)
     end
     if kind == "partial" and ns.UI and ns.UI.OnItemListings then
       ns.UI:OnItemListings(snap.ids) -- fresh listings: the posting price for those items can update
+      if ns.UI.current == "crafting" and ns.UI.frame and ns.UI.frame:IsShown() then
+        ns.UI:RefreshCrafting() -- searched items are priced at their listings right away
+      end
     end
     if kind == "full" then
       local ms = started and math.floor(debugprofilestop() - started) or nil

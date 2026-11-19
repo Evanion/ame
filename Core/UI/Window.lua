@@ -401,6 +401,8 @@ function UI:OnIndexReady(shard)
     self:RefreshArbitrage(true)
   elseif self.current == "portfolio" then
     self:RefreshPortfolio()
+  elseif self.current == "crafting" and shard == ns.AME:FactionShard() then
+    self:RefreshCrafting() -- new prices for the faction auction house the Crafting tab prices with
   end
 end
 

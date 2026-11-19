@@ -18,6 +18,7 @@ local MODES = {
   { "leveling", L["Leveling"] },
 }
 local BREAKDOWN_ROWS = 14
+UI.CRAFT_FRESH_BOOK = 3600 -- an item's listings searched this recently price it instead of the day's average
 UI.RECIPE_LISTING_DAYS = 2 -- recipe items seen on the AH within this many days count as for sale
 
 local function charName(key)
@@ -163,10 +164,36 @@ function UI:CraftingModel()
     heldSet[id] = n > 0 or nil
   end
 
+  -- Prices: the market index (a day's average), but an item searched in the last hour (you do when posting) is
+  -- priced at its cheapest listing then - what you'd pay, and what you'd have to undercut to sell. The index summary
+  -- itself is never changed: a copy carries the fresh price.
+  local shard = ns.AME:FactionShard()
+  local fresh = {}
+  local function market(id)
+    local s = index.items[id]
+    if fresh[id] == nil then
+      local book = shard and ns.AME:BookFor(shard, id, UI.CRAFT_FRESH_BOOK)
+      local p = book and book.prices and book.prices[1]
+      if p then
+        local copy = {}
+        for k, val in pairs(s or {}) do
+          copy[k] = val
+        end
+        local listed = 0
+        for _, q in ipairs(book.qtys or {}) do
+          listed = listed + q
+        end
+        copy.market, copy.fresh = p, book.t
+        copy.qty = copy.qty or listed
+        fresh[id] = copy
+      else
+        fresh[id] = false
+      end
+    end
+    return fresh[id] or s
+  end
   local craft = ns.Crafting.New({
-    market = function(id)
-      return index.items[id]
-    end,
+    market = market,
     vendorBuy = function(id)
       return ns.CraftingData:VendorPrice(id)
     end,
