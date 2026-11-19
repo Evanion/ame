@@ -1,6 +1,7 @@
 # M16: Crafting — top earners, sell-or-refine, recipes worth buying
 
-Status: phase 1 built (Core/Professions.lua, recording behind the `crafting` setting); plan otherwise (Nov 2026). Research: "Recipe database for WoW Forever" (reports/, kept out of the repo) and the
+Status: phases 1-2 built (Core/Professions.lua; the generated data library and its release pipeline); plan otherwise
+(Nov 2026). Research: "Recipe database for WoW Forever" (reports/, kept out of the repo) and the
 in-game probe (`/amedev recipes`, Core/Dev/RecipeProbe.lua) on Forever 1.60.1.
 
 ## What it does
@@ -64,6 +65,20 @@ only once enchanting output is handled (later).
 
 Retail later: the same generator with retail's tables (CraftSim's mapping); not part of the first version.
 
+## As built: the data library (phase 2)
+
+- `AzerothMercantileExchange_Crafting` is its own load-on-demand addon and its own CurseForge project ("AME Crafting
+  Data"), loaded by Core/CraftingData.lua only when Crafting needs it. AME's releases declare it a required
+  dependency (CURSEFORGE_DATA_SLUG in .env), so the CurseForge app installs it with AME; AME's own zip doesn't carry
+  it. It holds every profession's recipes (product, yield, yellow / grey, reagents) and every recipe item (profession,
+  skill to learn, taught recipes): 2,492 recipes and 2,013 recipe items for build 1.60.1.70959, 263 KB.
+- scripts/gen-recipes.py builds it from the client tables on wago.tools (an honest User-Agent; cached under .cache/).
+- .github/workflows/crafting-data.yml, daily and hands-off: latest wowf build -> already handled (Actions cache, keyed
+  by build and generator)? stop -> regenerate -> unchanged? stop -> shrink guard + crafting data specs -> the next patch
+  version (data-v1.0.N) committed, tagged and uploaded by scripts/release-data.sh; any failure opens an issue.
+  One-time setup: the CurseForge project, and the secrets CURSEFORGE_CI_API_TOKEN and CURSEFORGE_DATA_PROJECT_ID.
+- Hand fixes: CraftingData.OVERRIDES in Core/CraftingData.lua (shipped with AME, applied over the generated rows).
+
 ## The numbers (Core/Crafting.lua, pure)
 
 All prices from the faction market index; AH cut and deposit from Settings; sell rates from the index.
@@ -80,6 +95,32 @@ All prices from the faction market index; AH cut and deposit from Settings; sell
   stack vs net of crafting and selling the product, limited by what the market absorbs.
 - **Recipe payback** = recipe's buy price / gold per day of what it teaches, for characters with that profession,
   enough skill and the recipe unlearned. Recipes priced far below their usual price are flagged (the index knows).
+
+## Leveling guides (phase 6)
+
+Cheapest-to-best paths for leveling a profession, recalculated from live prices. For each skill level, every usable
+recipe has an expected cost per skill point: crafts per point (1 / skill-up chance) x net cost per craft (reagents
+minus what the result gets back: AH sale limited by sell rate, vendor, a later step's reagent, or disenchanting). A
+dynamic-programming pass over skill levels picks the path; large purchases are priced against recorded order books
+(Depth). Goals: cheapest, best recovery, fewest crafts, your materials first. One click puts the reagents on a
+shopping list; progress follows the recorded skill.
+
+Data (research: "Disenchant and skill color libraries", reports/; no reusable LGPL-compatible library exists, so AME
+generates its own):
+
+- Skill colors: Forever's SkillLineAbility (yellow = TrivialSkillLineRankLow, grey = TrivialSkillLineRankHigh,
+  green = floor of their midpoint); the learn level (orange) from the recipe item's ItemSparse.RequiredSkillRank
+  (SkillLineAbility's MinSkillLineRank is a placeholder). Forever moved 600+ thresholds versus Classic Era, so only
+  Forever's own data is right. In game, `GetRecipeInfo().relativeDifficulty` (the live color) overrides the table,
+  which also catches server hotfixes. Test / placeholder skill lines filtered out.
+- Skill-up chance: the community formula (grey - skill) / (grey - yellow) between yellow and grey; 100% orange.
+- Disenchanting: bands (item level x quality x weapon / armor) from Forever's ItemDisenchantLoot; the materials and
+  chances per band written by hand from the documented classic rules (not copied from GPL databases), cross-checked
+  against published measurements; items that can't be disenchanted from ItemSparse flags. AME also logs the player's
+  own disenchants to catch Forever differences. Optional at runtime: DisenchantBuddy's API and SkillUp Forever's API
+  when installed (pcall, version checks) - never their data copied in (both GPL-3.0).
+- So the phase 2 generator ships full recipe data (products, reagents, yields, thresholds, learn level, how it's
+  learned) for every profession, not only the recipe-item link: guides need professions nobody has opened yet.
 
 ## Where recipes come from (sources)
 
@@ -109,6 +150,7 @@ All prices from the faction market index; AH cut and deposit from Settings; sell
    real-data check against the market fixture.
 4. Crafting tab, settings flag, Guide article, translations.
 5. In-game check, mismatch log review, release.
+6. Leveling guides (see above): a fourth Crafting mode.
 
 ## Still to check in game
 

@@ -1,0 +1,10 @@
+## Interface: 16001
+## Title: Azeroth Mercantile Exchange - Crafting data
+## Notes: Recipe data for Azeroth Mercantile Exchange's Crafting tab. Loaded on demand, only when Crafting needs it.
+## Author: Evanion
+## Version: @project-version@
+## LoadOnDemand: 1
+## Dependencies: AzerothMercantileExchange
+## X-License: LGPL-3.0-or-later
+
+Recipes.lua

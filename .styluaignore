@@ -1,2 +1,4 @@
 Locales/enUS.lua
 spec/fixtures/market.lua
+AzerothMercantileExchange_Crafting/Recipes.lua
+.cache

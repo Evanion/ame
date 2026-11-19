@@ -26,4 +26,6 @@ ignore:
   - .luarc.json
   - .stylua.toml
   - .vscode
+  - .cache
+  - AzerothMercantileExchange_Crafting # its own CurseForge project (scripts/release-data.sh)
   - README.md

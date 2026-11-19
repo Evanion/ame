@@ -1,0 +1,92 @@
+name: Crafting data
+
+# Keeps the crafting data library (AzerothMercantileExchange_Crafting) in step with the game, hands-off:
+#   1. once a day, ask wago.tools for the latest WoW Forever build (one small request)
+#   2. a build already handled (remembered in the Actions cache, with the generator's version) ends the run
+#   3. otherwise regenerate the data; unchanged data (the same as what's released) ends the run
+#   4. changed data is checked (the shrink guard in the generator, the crafting data specs), then released as the
+#      next patch version on its own CurseForge project (scripts/release-data.sh) - never AME itself
+#   5. any failure opens an issue instead of releasing
+# Secrets: CURSEFORGE_CI_API_TOKEN, CURSEFORGE_DATA_PROJECT_ID.
+
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency: crafting-data
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the data tags, for the next version number
+
+      - name: Latest WoW Forever build
+        id: build
+        run: echo "build=$(python3 scripts/gen-recipes.py --latest)" >> "$GITHUB_OUTPUT"
+
+      - name: Handled this build already?
+        id: seen
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/handled
+          key: crafting-data-${{ steps.build.outputs.build }}-${{ hashFiles('scripts/gen-recipes.py') }}
+          lookup-only: true
+
+      - name: Generate
+        id: gen
+        if: steps.seen.outputs.cache-hit != 'true'
+        run: |
+          python3 scripts/gen-recipes.py --build "${{ steps.build.outputs.build }}" --summary "$RUNNER_TEMP/summary.md"
+          if git diff --quiet -- AzerothMercantileExchange_Crafting; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Build ${{ steps.build.outputs.build }}: crafting data unchanged." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            cat "$RUNNER_TEMP/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Install Lua 5.1, busted and zip
+        if: steps.gen.outputs.changed == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 liblua5.1-0-dev luarocks zip
+          sudo luarocks --lua-version=5.1 install busted
+
+      - name: Check the data
+        if: steps.gen.outputs.changed == 'true'
+        run: busted spec/crafting_data_spec.lua
+
+      - name: Release the next patch version
+        if: steps.gen.outputs.changed == 'true'
+        env:
+          CURSEFORGE_CI_API_TOKEN: ${{ secrets.CURSEFORGE_CI_API_TOKEN }}
+          CURSEFORGE_DATA_PROJECT_ID: ${{ secrets.CURSEFORGE_DATA_PROJECT_ID }}
+          SUMMARY: ${{ runner.temp }}/summary.md
+        run: bash scripts/release-data.sh
+
+      - name: Remember the build
+        if: steps.seen.outputs.cache-hit != 'true'
+        run: mkdir -p .cache/handled && echo "${{ steps.build.outputs.build }}" > .cache/handled/build
+
+      - uses: actions/cache/save@v4
+        if: steps.seen.outputs.cache-hit != 'true'
+        with:
+          path: .cache/handled
+          key: crafting-data-${{ steps.build.outputs.build }}-${{ hashFiles('scripts/gen-recipes.py') }}
+
+      - name: Report a failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Crafting data update failed (WoW Forever build ${{ steps.build.outputs.build }})" \
+            --body "The scheduled crafting data update failed and released nothing. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

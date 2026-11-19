@@ -21,7 +21,10 @@ while IFS= read -r line || [ -n "$line" ]; do
   key="${line%%=*}"
   value="${line#*=}"
   value="${value%\"}"; value="${value#\"}"; value="${value%\'}"; value="${value#\'}"
-  case "$key" in CURSEFORGE_CI_API_TOKEN | CURSEFORGE_PROJECT_ID | CURSEFORGE_GAME_VERSIONS) export "$key=$value" ;; esac
+  case "$key" in CURSEFORGE_CI_API_TOKEN | CURSEFORGE_PROJECT_ID | CURSEFORGE_GAME_VERSIONS | CURSEFORGE_DATA_SLUG)
+    export "$key=$value"
+    ;;
+  esac
 done < .env
 : "${CURSEFORGE_CI_API_TOKEN:?missing in .env}"
 : "${CURSEFORGE_PROJECT_ID:?missing in .env}"
@@ -89,16 +92,19 @@ else
 fi
 [ -n "$IDS" ] || { echo "no CurseForge game version matches interface $IFACE; set CURSEFORGE_GAME_VERSIONS" >&2; exit 1; }
 
-python3 - "$VERSION" "$TYPE" "$CHANGELOG" "$IDS" > "$TMP/metadata.json" <<'PY'
+python3 - "$VERSION" "$TYPE" "$CHANGELOG" "$IDS" "${CURSEFORGE_DATA_SLUG:-}" > "$TMP/metadata.json" <<'PY'
 import json, sys
-version, rtype, changelog, ids = sys.argv[1:5]
-print(json.dumps({
+version, rtype, changelog, ids, data_slug = sys.argv[1:6]
+meta = {
     "changelog": open(changelog, encoding="utf-8").read(),
     "changelogType": "markdown",
     "displayName": f"Azeroth Mercantile Exchange {version}",
     "gameVersions": [int(i) for i in ids.split(",") if i],
     "releaseType": rtype,
-}))
+}
+if data_slug:  # the crafting data library: its own project, installed with AME by the CurseForge app
+    meta["relations"] = {"projects": [{"slug": data_slug, "type": "requiredDependency"}]}
+print(json.dumps(meta))
 PY
 
 code=$(curl -s -o "$TMP/upload.json" -w '%{http_code}' "${auth[@]}" \

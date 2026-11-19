@@ -298,6 +298,15 @@ SlashCmdList.AMEDEV = function(msg)
     local before = collectgarbage("count")
     collectgarbage("collect")
     say("garbage collected: %s -> %s (all addons)", kb(before * 1024), kb(collectgarbage("count") * 1024))
+  elseif cmd == "crafting" then
+    -- switch Crafting's recording on / off before it has its Settings checkbox
+    local on = not ns.Settings:Get("crafting")
+    ns.Settings:Set("crafting", on)
+    say("crafting %s", on and "on: open your professions, then /reload" or "off")
+    if on and ns.Professions then
+      ns.Professions:RecordSpellbook()
+      ns.Professions:Record() -- a profession window that's already open
+    end
   elseif cmd == "recipes" then
     local ok, err = pcall(Dev.ProbeRecipes, say)
     if not ok then
@@ -308,6 +317,7 @@ SlashCmdList.AMEDEV = function(msg)
   else
     say(
       "/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev recipes"
+        .. "  ·  /amedev crafting"
         .. "  ·  /amedev reset"
     )
   end
