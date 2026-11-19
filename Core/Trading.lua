@@ -76,8 +76,11 @@ local function countBags(first, last)
       else -- classic: texture, count, ..., link (7th), itemID (10th), isBound (11th)
         itemID, count = id, b
       end
-      if itemID and link then -- a random-suffix variant is its own item
-        local key = ns.ItemCache.Learn(link)
+      if itemID then -- a random-suffix variant is its own item: the auction house's item key for the slot names it
+        local location = ItemLocation
+          and ItemLocation.CreateFromBagAndSlot
+          and ItemLocation:CreateFromBagAndSlot(bag, slot)
+        local key = location and ns.ItemCache.KeyAt(location) or (link and ns.ItemCache.Learn(link))
         itemID = key and ns.BaseID(key) == itemID and key or itemID
       end
       if itemID and not isBound(bag, slot, bound) then
@@ -123,7 +126,7 @@ function Trading:ScanAuctions()
     local active = info and (info.status == nil or info.status == 0)
     local id = info and info.itemKey and ns.ItemKey(info.itemKey.itemID, info.itemKey.itemSuffix)
     if id and info.itemLink then
-      id = ns.ItemCache.Learn(info.itemLink) or id
+      id = ns.ItemCache.Pair(info.itemLink, info.itemKey.itemID, info.itemKey.itemSuffix)
     end
     if active and id then
       local qty = info.quantity or 1

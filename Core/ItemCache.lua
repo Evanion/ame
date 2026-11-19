@@ -2,40 +2,94 @@
 -- available); name, link and quality from GetItemInfo once the client has the item cached. Warm() asks the client to
 -- load names for many items in small batches so name search and quality filters cover the whole market.
 --
--- Random-suffix variants: class, quality, icon and vendor price are the base item's. The client's GetItemInfo gives
--- the base name, so a variant's full name ("Raider Shortsword of Magic") is learned from the links it arrives with
--- (scans, tooltips, bags, chat) and kept in AME_DB.variants, so it survives a reload.
+-- Random-suffix variants (keyed by the auction house's item key suffix, see ns.ItemKey): class, quality, icon and
+-- vendor price are the base item's. The client's GetItemInfo gives the base name, so a variant's full name ("Raider
+-- Shortsword of Magic") and link come from C_TooltipInfo.GetItemKey (the item key's tooltip carries its hyperlink) or
+-- from links that arrive together with an item key (bags, the sell slot, searches, your auctions). Each such pair also
+-- teaches ns.suffixMap how links name that suffix, so any link (tooltips, chat) finds its variant. Names and the map
+-- are saved (AME_DB.variants, AME_DB.suffixMap).
 local _, ns = ...
 local L = ns.L
 
-local C = { info = {}, listeners = {}, variants = {}, byName = {}, keysOf = {} }
+local C = { info = {}, listeners = {}, variants = {}, byName = {}, keysOf = {}, tried = {} }
 ns.ItemCache = C
 
 local function api(name)
   return (C_Item and C_Item[name]) or _G[name]
 end
 
--- saved variant names: { [key] = "name" } (call at ADDON_LOADED)
-function C.Init(saved)
+-- saved variant names { [key] = "name" }, suffix map (see ns.suffixMap) and variant item strings
+-- { [key] = "item:..." }; call at ADDON_LOADED
+function C.Init(saved, map, strings)
   C.variants = saved or {}
   C.byName = {}
   for key, name in pairs(C.variants) do
     C.byName[name] = key
   end
+  ns.suffixMap = map or ns.suffixMap or {}
+  ns.itemStrings = strings or ns.itemStrings or {}
+  C.tried = {}
+end
+
+-- a link that belongs to the auction item key (itemID, suffix): learn how links name that suffix, and the variant's
+-- name and item string. Returns the item key.
+function C.Pair(link, itemID, suffix)
+  suffix = tonumber(suffix) or 0
+  local key = ns.ItemKey(itemID, suffix)
+  local id, field, bonuses, itemString = ns.ParseItemString(link)
+  if not (id and id == itemID) then
+    return key
+  end
+  if field == 0 and bonuses then
+    ns.suffixMap[id .. ":" .. bonuses] = suffix
+    if ns.suffixMap[bonuses] == nil then
+      ns.suffixMap[bonuses] = suffix
+    end
+  end
+  if suffix ~= 0 then
+    ns.itemStrings = ns.itemStrings or {}
+    ns.itemStrings[key] = itemString
+    C.setName(key, link:match("|h%[(.-)%]|h"))
+  end
+  return key
+end
+
+function C.setName(key, name)
+  if name and name ~= "" and C.variants[key] ~= name then
+    C.variants[key], C.byName[name] = name, key
+    local e = C.info[key]
+    if e then
+      e.name = name
+    end
+    return true
+  end
+  return false
+end
+
+-- a variant's link from the game: the tooltip of its auction item key carries it (C_TooltipInfo.GetItemKey)
+function C.Resolve(key)
+  local tip = C_TooltipInfo and C_TooltipInfo.GetItemKey
+  if not (tip and ns.IsVariant(key)) or C.tried[key] then
+    return nil
+  end
+  C.tried[key] = true -- once per session (it can return nothing until the item's data is loaded: see OnItemData)
+  local itemID, suffix = ns.SplitKey(key)
+  local getInfo = api("GetItemInfo")
+  local level = getInfo and select(4, getInfo(itemID)) or 0
+  local ok, data = pcall(tip, itemID, level or 0, suffix)
+  local line = ok and type(data) == "table" and data.lines and data.lines[1]
+  local link = line and line.hyperlink
+  if link then
+    C.Pair(link, itemID, suffix)
+  end
+  return link
 end
 
 -- remember a variant's name from its link; returns the key. Plain items need nothing (the client knows their name).
 function C.Learn(link)
   local key = ns.ItemIDFrom(link)
   if key and ns.IsVariant(key) and not C.variants[key] then
-    local name = type(link) == "string" and link:match("|h%[(.-)%]|h")
-    if name and name ~= "" then
-      C.variants[key], C.byName[name] = name, key
-      local e = C.info[key]
-      if e then
-        e.name = name
-      end
-    end
+    C.setName(key, type(link) == "string" and link:match("|h%[(.-)%]|h"))
   end
   return key
 end
@@ -64,10 +118,19 @@ function C.KeyFor(itemID, name)
   return itemID
 end
 
--- item key of the item at an item location (bags, sell frames): from its link, so a variant keeps its suffix
+-- item key of the item at an item location (bags, sell frames): the auction house's item key for it (with the
+-- suffix), which also pairs its link with that suffix; else from its link
 function C.KeyAt(location)
   local ok, key = pcall(function()
     local link = C_Item.GetItemLink and C_Item.GetItemLink(location)
+    local ah = C_AuctionHouse and C_AuctionHouse.GetItemKeyFromItem
+    local itemKey = ah and ah(location)
+    if itemKey and itemKey.itemID then
+      if link then
+        return C.Pair(link, itemKey.itemID, itemKey.itemSuffix)
+      end
+      return ns.ItemKey(itemKey.itemID, itemKey.itemSuffix)
+    end
     return link and C.Learn(link) or C_Item.GetItemID(location)
   end)
   return ok and key or nil
@@ -99,7 +162,10 @@ function C.Get(key)
       e.sellPrice = sell
     end
     if name and ns.IsVariant(key) then
-      -- the base name until the variant's own is learned (C.Learn replaces it)
+      if not C.variants[key] then
+        C.Resolve(key) -- ask the game for the variant's link and name
+      end
+      -- the base name until the variant's own is known
       name = C.variants[key] or name
     end
     if name then
@@ -172,6 +238,10 @@ function C.OnItemData(itemID)
   local got = false
   local function fill(key)
     local e = C.info[key]
+    if e and ns.IsVariant(key) and not C.variants[key] then
+      C.tried[key] = nil -- the base item's data is here: its variants' tooltips can resolve now
+      e.name = nil
+    end
     if e and not e.name then
       C.Get(key)
       got = got or e.name ~= nil

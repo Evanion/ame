@@ -34,7 +34,8 @@ Ingest.POLL_LIMIT = 180 -- give up waiting for a getAll list after this many pol
 
 -- opts: api, jobs, now, after(seconds, fn), onSnapshot(snap, t, kind, info), onReadStart(rows) (optional),
 -- legacy (optional: the legacy AH functions { GetNumAuctionItems, GetAuctionItemInfo, GetAuctionItemLink }),
--- learn(link) -> item key (optional: remembers a variant's name; default ns.ItemIDFrom)
+-- learn(link) -> item key (optional: remembers a variant's name; default ns.ItemIDFrom),
+-- pair(link, itemID, suffix) -> item key (optional: a link that belongs to an auction item key; see ItemCache.Pair)
 function Ingest.New(opts)
   return setmetatable({
     api = assert(opts.api),
@@ -45,6 +46,7 @@ function Ingest.New(opts)
     onSnapshot = assert(opts.onSnapshot),
     onReadStart = opts.onReadStart,
     learn = opts.learn or ns.ItemIDFrom,
+    pair = opts.pair,
     requested = false,
     reading = false,
     aborted = false,
@@ -318,7 +320,17 @@ function Ingest:flush()
           if info and info.buyoutAmount then
             -- a row groups identical auctions: quantity of them, buyoutAmount of one (Forever, per AHDB's probes)
             local count = info.quantity or 1
-            local key = info.itemLink and self:keyOf(itemID, info.itemLink) or pkey
+            -- the row's own item key names its suffix; its link learns how links name it
+            local rowKey = info.itemKey
+            local key
+            if rowKey and (rowKey.itemSuffix or 0) ~= 0 then
+              key = ns.ItemKey(itemID, rowKey.itemSuffix)
+              if info.itemLink and self.pair then
+                self.pair(info.itemLink, itemID, rowKey.itemSuffix)
+              end
+            else
+              key = info.itemLink and self:keyOf(itemID, info.itemLink) or pkey
+            end
             acc:Add(key, info.buyoutAmount * count, count)
             byKey[key] = byKey[key] or {}
             table.insert(byKey[key], { info.buyoutAmount, count })

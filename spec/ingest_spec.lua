@@ -47,7 +47,8 @@ describe("Ingest", function()
     end
     function a.GetItemSearchResultInfo(key, i)
       local r = a.items[key.itemID][i]
-      return { itemKey = key, buyoutAmount = r[1], quantity = r[2], itemLink = r[3] }
+      local rowKey = r[4] and { itemID = key.itemID, itemLevel = 0, itemSuffix = r[4] } or key
+      return { itemKey = rowKey, buyoutAmount = r[1], quantity = r[2], itemLink = r[3] }
     end
     return a
   end
@@ -153,6 +154,20 @@ describe("Ingest", function()
       assert.is_nil(row(snap, 15211))
       assert.are.equal(2, row(snap, ns.ItemKey(15211, 1234)).qty)
       assert.are.equal(1, row(snap, ns.ItemKey(15211, 567)).qty)
+    end)
+
+    it("keys Forever search rows by their own item key's suffix, and pairs their links with it", function()
+      local forever = "|cff1eff00|Hitem:15211::::::::1:1488:::1:12917::::::|h[Raider Shortsword of Magic]|h|r"
+      local pairs_ = {}
+      ingest.pair = function(link, id, suffix)
+        pairs_[#pairs_ + 1] = { link, id, suffix }
+      end
+      api.items[15211] = { { 3500, 1, forever, 14324 }, { 3600, 2, forever, 14324 } }
+      ingest:OnItemResults({ itemID = 15211, itemLevel = 0, itemSuffix = 0 })
+      fireTimers()
+      drain()
+      assert.are.same({ ns.ItemKey(15211, 14324) }, got[1].snap.ids)
+      assert.are.same({ forever, 15211, 14324 }, pairs_[1])
     end)
 
     it("hands the links to learn, which names the variants", function()

@@ -61,6 +61,21 @@ describe("shared helpers", function()
     assert.are.equal(2589, ns.ItemKey(2589, nil))
   end)
 
+  it("reads WoW Forever links: the suffix is a bonus ID, mapped to the auction house's suffix once learned", function()
+    -- real links from the game (Syndicator's saved data)
+    local magic = "|cff1eff00|Hitem:15210::::::::1:1488:::1:12917::::::|h[Raider Shortsword of Magic]|h|r"
+    local eagle = "|cff1eff00|Hitem:15210::::::::1:1488:::1:12718:1:28:5254:::::|h[Raider Shortsword of the Eagle]|h|r"
+    local id, field, bonuses = ns.ParseItemString(magic)
+    assert.are.same({ 15210, 0, "12917" }, { id, field, bonuses })
+    assert.are.equal("12718", select(3, ns.ParseItemString(eagle)))
+    assert.are.equal(15210, ns.ItemIDFrom(magic)) -- not learned yet: the plain item
+    ns.suffixMap["15210:12917"] = 14324
+    assert.are.equal(ns.ItemKey(15210, 14324), ns.ItemIDFrom(magic))
+    ns.suffixMap["12718"] = 14301 -- learned on another item: any item's link with that bonus
+    assert.are.equal(ns.ItemKey(15210, 14301), ns.ItemIDFrom(eagle))
+    assert.are.equal(1478, ns.ItemIDFrom("|Hitem:1478::::::::39:1484:::::::::|h[Scroll of Protection II]|h"))
+  end)
+
   it("numbers days the way history is stored (UTC)", function()
     assert.are.equal(0, ns.Today(86399))
     assert.are.equal(1, ns.Today(86400))

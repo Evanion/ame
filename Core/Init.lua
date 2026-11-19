@@ -41,11 +41,16 @@ function ns.Today(t)
 end
 
 -- Item keys. Random-suffix gear ("Raider Shortsword of Magic" vs "... of the Monkey") sells at very different prices,
--- so each suffix is tracked as its own item: key = itemID + SUFFIX_STEP * suffixID (the suffix field of the item
--- link; negative on clients with scaled random suffixes). A plain item's key is its item ID. SUFFIX_STEP is a multiple
--- of the store's bucket count, so a variant shares its base item's bucket. Keys can exceed 2^31: format them with
--- tostring, never "%d".
+-- so each suffix is tracked as its own item: key = itemID + SUFFIX_STEP * suffix, where suffix is the auction house's
+-- item key suffix (ItemKey.itemSuffix; scans and searches report it). A plain item's key is its item ID. SUFFIX_STEP is
+-- a multiple of the store's bucket count, so a variant shares its base item's bucket. Keys can exceed 2^31: format
+-- them with tostring, never "%d".
+--
+-- Item links name the suffix differently: Classic links in their suffix field, WoW Forever's links as bonus IDs (the
+-- suffix field is empty). ns.suffixMap (learned by ItemCache from APIs that give both a link and an item key, saved)
+-- maps a link's bonus IDs to the auction house's suffix: ["itemID:bonus,bonus"] for that item, ["bonus,bonus"] for any.
 ns.SUFFIX_STEP = 1000000
+ns.suffixMap = ns.suffixMap or {}
 
 function ns.ItemKey(itemID, suffix)
   if not itemID then
@@ -55,7 +60,7 @@ function ns.ItemKey(itemID, suffix)
   return itemID + ns.SUFFIX_STEP * suffix
 end
 
--- key -> itemID, suffixID (0 for a plain item)
+-- key -> itemID, suffix (0 for a plain item)
 function ns.SplitKey(key)
   local id = key % ns.SUFFIX_STEP
   return id, (key - id) / ns.SUFFIX_STEP
@@ -69,8 +74,13 @@ function ns.IsVariant(key)
   return key ~= nil and key ~= key % ns.SUFFIX_STEP
 end
 
--- an item string the client's item APIs and tooltips accept: "item:2207" or "item:2207::::::1234"
+-- an item string the client's item APIs and tooltips accept: the variant's own (learned from a link) when known, else
+-- "item:2207" / the Classic form "item:2207::::::1234"
 function ns.ItemString(key)
+  local known = ns.itemStrings and ns.itemStrings[key]
+  if known then
+    return known
+  end
   local id, suffix = ns.SplitKey(key)
   if suffix == 0 then
     return "item:" .. id
@@ -78,24 +88,50 @@ function ns.ItemString(key)
   return "item:" .. id .. "::::::" .. tostring(suffix)
 end
 
--- item key from an item link or item string (with its suffix), or from text that is just a number; nil otherwise
+-- Fields of an item link or item string: itemID, the suffix field (0 if empty), the bonus IDs as "a,b" (nil if none),
+-- and the item string itself. item:itemID:enchant:gem1:gem2:gem3:gem4:suffix:unique:linkLevel:spec:modifiersMask:
+-- context:numBonusIDs:bonusID...
+function ns.ParseItemString(text)
+  if type(text) ~= "string" then
+    return nil
+  end
+  local fields = text:match("item:([%-:%d]+)")
+  if not fields then
+    return nil
+  end
+  local parts, n = {}, 0
+  for f in (fields .. ":"):gmatch("([^:]*):") do
+    n = n + 1
+    parts[n] = f
+  end
+  local id = tonumber(parts[1])
+  if not id then
+    return nil
+  end
+  local bonuses
+  local count = tonumber(parts[13]) or 0
+  if count > 0 then
+    local list = {}
+    for k = 1, count do
+      list[k] = parts[13 + k] or ""
+    end
+    bonuses = table.concat(list, ",")
+  end
+  return id, tonumber(parts[7]) or 0, bonuses, "item:" .. fields
+end
+
+-- item key from an item link or item string, or from text that is just a number; nil otherwise. A Forever link's
+-- variant resolves once its bonus IDs are in ns.suffixMap (until then: the plain item ID).
 function ns.ItemIDFrom(text)
   if type(text) ~= "string" or text == "" then
     return nil
   end
-  local fields = text:match("item:([%-:%d]+)")
-  if fields then
-    -- item:itemID:enchant:gem1:gem2:gem3:gem4:suffix:...  (empty fields allowed)
-    local parts, n = {}, 0
-    for f in (fields .. ":"):gmatch("([^:]*):") do
-      n = n + 1
-      parts[n] = f
-      if n == 7 then
-        break
-      end
+  local id, suffix, bonuses = ns.ParseItemString(text)
+  if id then
+    if suffix == 0 and bonuses then
+      suffix = ns.suffixMap[id .. ":" .. bonuses] or ns.suffixMap[bonuses] or 0
     end
-    local id = tonumber(parts[1])
-    return id and ns.ItemKey(id, parts[7])
+    return ns.ItemKey(id, suffix)
   end
   return tonumber(text:match("^%s*(%d+)%s*$"))
 end

@@ -670,7 +670,13 @@ end
 -- the game's item tooltip for an item key (a random-suffix variant shows its own stats)
 function W.SetItemTip(tip, key)
   if ns.IsVariant(key) then
-    tip:SetHyperlink(ns.ItemString(key))
+    local itemID, suffix = ns.SplitKey(key)
+    if tip.SetItemKey and not (ns.itemStrings and ns.itemStrings[key]) then
+      local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+      tip:SetItemKey(itemID, select(4, getInfo(itemID)) or 0, suffix) -- the auction house's own item key
+    else
+      tip:SetHyperlink(ns.ItemString(key))
+    end
   else
     tip:SetItemByID(key)
   end

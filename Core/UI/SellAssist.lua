@@ -47,7 +47,13 @@ local function auctionatorSource()
     auctionator = true,
     read = function()
       local info = rawget(sale, "itemInfo")
-      local id = info and info.itemLink and ns.ItemCache.Learn(info.itemLink)
+      -- the auction house's item key for it names a random suffix (see ns.ItemKey)
+      local id = info and info.location and ns.ItemCache.KeyAt(info.location)
+      if not id and info and info.itemKey and info.itemKey.itemID then
+        id = info.itemLink and ns.ItemCache.Pair(info.itemLink, info.itemKey.itemID, info.itemKey.itemSuffix)
+          or ns.ItemKey(info.itemKey.itemID, info.itemKey.itemSuffix)
+      end
+      id = id or (info and info.itemLink and ns.ItemCache.Learn(info.itemLink))
       if not id then
         return nil
       end
