@@ -375,6 +375,21 @@ function UI:CreateLevelingControls(v, slots)
   }, { width = UI.WIDTH - 20 })
   v.levelCards:SetPoint("TOPLEFT", 0, 0)
   v.levelCards:SetPoint("RIGHT", 0, 0)
+  -- the other goals card: one line, kept inside the card; every goal's net on hover
+  local others = v.levelCards.cards[5]
+  others.value:SetPoint("RIGHT", -8, 0)
+  others.value:SetWordWrap(false)
+  W.Tooltip(others, function(tip)
+    local lv = UI.leveling
+    if not lv then
+      return false
+    end
+    W.TipText(tip, L["Other goals, net"], L["What the path nets under each goal (the one in use is marked)."])
+    for _, g in ipairs(GOALS) do
+      local label = g[1] == (UI.levelGoal or "recovery") and (g[2] .. " " .. W.Dim(L["(in use)"])) or g[2]
+      W.TipPair(tip, label, signed(lv.plans[g[1]].net))
+    end
+  end, "ANCHOR_BOTTOM")
 
   -- skill colors of the selected step's recipe: orange / yellow / green / grey, with the step marked
   local holder = CreateFrame("Frame", nil, v.colorRow)
@@ -432,13 +447,15 @@ function UI:RenderLevelingHeader(v)
   cards[2].value:SetText(gain(plan.back))
   cards[3].value:SetText(signed(plan.net) .. (plan.complete and "" or W.Dim("  " .. L["(incomplete)"])))
   cards[4].value:SetText("~" .. plan.crafts)
-  local others = {}
+  -- the best of the other goals on the card; all of them on hover
+  local best
   for _, g in ipairs(GOALS) do
-    if g[1] ~= goal then
-      others[#others + 1] = g[2] .. " " .. signed(lv.plans[g[1]].net)
+    local p = lv.plans[g[1]]
+    if g[1] ~= goal and (not best or p.net > lv.plans[best[1]].net) then
+      best = g
     end
   end
-  cards[5].value:SetText(table.concat(others, "  "))
+  cards[5].value:SetText(best and (best[2] .. " " .. signed(lv.plans[best[1]].net)) or W.Dim("-"))
 end
 
 -- the selected step in the sidebar; returns the lines for the breakdown
