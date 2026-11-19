@@ -258,8 +258,34 @@ Analytics.PHASE_LABEL = {
   dumping = L["Dumping"],
 }
 
+local function bitsIn(mask)
+  local c = 0
+  while mask and mask > 0 do
+    c, mask = c + mask % 2, math.floor(mask / 2)
+  end
+  return c
+end
+
+-- The newest day just after midnight UTC holds only a few night-time scans: thinner supply and often lower prices
+-- than the full days before it, which reads as "sellers withdrawing". Leave that day out while it has sampled fewer
+-- than half the hours of the best earlier day in the window (a player who scans once a day keeps every day).
+local function partialLastDay(series, n, from)
+  local last = bitsIn(series[n].hours)
+  if last == 0 then
+    return false
+  end
+  local best = 0
+  for k = from, n - 1 do
+    best = math.max(best, bitsIn(series[k].hours))
+  end
+  return last * 2 < best
+end
+
 function Analytics.Phase(series)
   local n = #series
+  if n >= 2 and partialLastDay(series, n, math.max(1, n - 7)) then
+    n = n - 1
+  end
   if n < 4 then
     return nil
   end

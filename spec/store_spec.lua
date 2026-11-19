@@ -179,6 +179,8 @@ describe("Store", function()
       assert.are.equal(1, #s)
       local expected = { day = 1000, res = "day", min = 100, market = 110, high = 110, median = 120 }
       expected.qty, expected.auctions, expected.scans = 5, 2, 1
+      assert.is_true(s[1].hours > 0) -- the hour it was sampled in
+      expected.hours = s[1].hours
       assert.are.same(expected, s[1])
     end)
 
@@ -233,6 +235,7 @@ describe("Store", function()
       assert.is_true(store:AddScan(late, early + 2 * 3600, "guildmate"))
       assert.is_false(store:AddScan(late, early + 2 * 3600, "guildmate")) -- re-sent: ignored
       local p = store:Series(10, 997, 997)[1]
+      p.hours = nil
       assert.are.same(
         { day = 997, res = "day", min = 80, market = 150, high = 200, median = 150, qty = 3, auctions = 2, scans = 2 },
         p

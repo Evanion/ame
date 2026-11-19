@@ -507,6 +507,8 @@ local function point(seg, i, res, period)
     p.week, p.day = period, period * 7
   else
     p.day = period
+    local hours = seg.hours and seg.hours[i]
+    p.hours = hours and hours > 0 and hours or nil -- bitmask of UTC hours sampled that day
   end
   return p
 end

@@ -283,6 +283,24 @@ describe("Analytics market phase", function()
     assert.is_nil(A.Phase(week(0.2, 0.3)[1] and { { day = 1, market = 1 } }))
   end)
 
+  it("leaves out a newest day that has only a few night-time hours so far", function()
+    local s = week(0, 0)
+    for k = 1, 7 do
+      s[k].hours = 2 ^ 16 - 1 -- 16 hours sampled
+    end
+    -- just after midnight: one hour of thin, cheaper listings
+    s[8] = { day = 8, market = 900, qty = 600, hours = 1 }
+    assert.are.equal("balanced", A.Phase(s))
+    -- once the day fills up it counts
+    s[8].hours = 2 ^ 12 - 1
+    assert.are.equal("withdrawing", A.Phase(s))
+    -- a once-a-day scanner: every day has one hour, so the newest day is kept
+    for k = 1, 8 do
+      s[k].hours = 1
+    end
+    assert.are.equal("withdrawing", A.Phase(s))
+  end)
+
   it("turns a buy into wait while sellers are dumping", function()
     local series = {}
     for d = 1, 20 do
