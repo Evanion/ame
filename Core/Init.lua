@@ -75,10 +75,40 @@ function ns.IsVariant(key)
   return key ~= nil and key ~= key % ns.SUFFIX_STEP
 end
 
--- an item string the client's item APIs and tooltips accept: the variant's own (learned from a link) when known, else
+-- A variant's item string, with the bonus that gives it its suffix and stats: its own, learned from a link; else
+-- built from another item's with the same suffix (a suffix is the same bonus on every item: "of the Bear" is 12917
+-- wherever it rolls); else from the bonus ns.suffixMap learned for that suffix. nil when AME knows none.
+function ns.VariantString(key)
+  local known = ns.itemStrings and ns.itemStrings[key]
+  if known or not ns.IsVariant(key) then
+    return known
+  end
+  local id, suffix = ns.SplitKey(key)
+  for other, s in pairs(ns.itemStrings or {}) do
+    if
+      other ~= key
+      and other % ns.SUFFIX_STEP ~= other
+      and (other - other % ns.SUFFIX_STEP) / ns.SUFFIX_STEP == suffix
+    then
+      local built = s:gsub("^item:%d+", "item:" .. id, 1)
+      return built
+    end
+  end
+  for bonuses, s in pairs(ns.suffixMap or {}) do
+    if s == suffix and not tostring(bonuses):find(":", 1, true) then
+      local list = {}
+      for b in tostring(bonuses):gmatch("[^,]+") do
+        list[#list + 1] = b
+      end
+      return "item:" .. id .. "::::::::::::" .. #list .. ":" .. table.concat(list, ":")
+    end
+  end
+end
+
+-- an item string the client's item APIs and tooltips accept: a variant's own (see VariantString) when known, else
 -- "item:2207" / the Classic form "item:2207::::::1234"
 function ns.ItemString(key)
-  local known = ns.itemStrings and ns.itemStrings[key]
+  local known = ns.VariantString(key)
   if known then
     return known
   end

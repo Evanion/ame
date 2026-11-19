@@ -91,6 +91,32 @@ describe("ItemCache with random-suffix variants", function()
     _G.C_TooltipInfo = nil
   end)
 
+  it("names a scanned variant from its item key tooltip's first line when it carries no link (WoW Forever)", function()
+    _G.C_TooltipInfo = {
+      GetItemKey = function(itemID, _, suffix)
+        if itemID == 15211 and suffix == 14399 then
+          return { lines = { { leftText = "Raider Shortsword of Shadow Protection" } } }
+        end
+      end,
+    }
+    local key = ns.ItemKey(15211, 14399)
+    assert.are.equal("Raider Shortsword of Shadow Protection", C.Get(key).name)
+    _G.C_TooltipInfo = nil
+  end)
+
+  it("builds a variant's link from another item with the same suffix, or the suffix's learned bonus", function()
+    local forever = "|cff1eff00|Hitem:15211::::::::1:1488:::1:12917::::::|h[Raider Shortsword of Magic]|h|r"
+    C.Pair(forever, 15211, 14324)
+    -- another item, same suffix: the same bonus, so its tooltip shows the suffix's stats
+    assert.are.equal("item:2207::::::::1:1488:::1:12917::::::", ns.ItemString(ns.ItemKey(2207, 14324)))
+    -- only the bonus known (from a link without a stored item string)
+    ns.itemStrings = {}
+    assert.are.equal("item:2207::::::::::::1:12917", ns.VariantString(ns.ItemKey(2207, 14324)))
+    -- a suffix AME has never seen in a link: none, so tooltips use the auction house's item key
+    assert.is_nil(ns.VariantString(ns.ItemKey(2207, 15000)))
+    assert.is_nil(ns.VariantString(2207))
+  end)
+
   it("keys an item location by the auction house's item key for it", function()
     local link = "|cff1eff00|Hitem:15211::::::::1:1488:::1:12917::::::|h[Raider Shortsword of Magic]|h|r"
     _G.C_Item.GetItemLink = function()

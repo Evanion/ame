@@ -77,12 +77,27 @@ function C.Resolve(key)
   local getInfo = api("GetItemInfo")
   local level = getInfo and select(4, getInfo(itemID)) or 0
   local ok, data = pcall(tip, itemID, level or 0, suffix)
-  local line = ok and type(data) == "table" and data.lines and data.lines[1]
-  local link = line and line.hyperlink
-  if link then
+  data = ok and type(data) == "table" and data or nil
+  local line = data and data.lines and data.lines[1]
+  local link = line and line.hyperlink or data and data.hyperlink
+  if type(link) == "string" and not (_G.issecretvalue and _G.issecretvalue(link)) then
     C.Pair(link, itemID, suffix)
+    return link
   end
-  return link
+  -- no link (WoW Forever's item key tooltips carry none): the first line still names the variant
+  -- (only a real one: the base name plus a suffix, not "Retrieving item information" while it loads)
+  local name = line and line.leftText
+  local baseName = getInfo and getInfo(itemID)
+  if
+    type(name) == "string"
+    and not (_G.issecretvalue and _G.issecretvalue(name))
+    and baseName
+    and #name > #baseName
+    and name:sub(1, #baseName) == baseName
+  then
+    C.setName(key, name)
+  end
+  return nil
 end
 
 -- remember a variant's name from its link; returns the key. Plain items need nothing (the client knows their name).

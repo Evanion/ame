@@ -694,7 +694,9 @@ end
 function W.SetItemTip(tip, key)
   if ns.IsVariant(key) then
     local itemID, suffix = ns.SplitKey(key)
-    if tip.SetItemKey and not (ns.itemStrings and ns.itemStrings[key]) then
+    -- the auction house's item key tooltip is the group's ("may vary in stats"): only when no link with the
+    -- suffix's bonus is known
+    if tip.SetItemKey and not ns.VariantString(key) then
       local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
       tip:SetItemKey(itemID, select(4, getInfo(itemID)) or 0, suffix) -- the auction house's own item key
     else
