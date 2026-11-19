@@ -47,6 +47,10 @@ read_globals = {
   "StartPrice",
   "ItemLocation",
   "ATTACHMENTS_MAX_RECEIVE", "GetInboxHeaderInfo", "C_Container", "GetContainerNumSlots", "GetContainerItemInfo", "AuctionHouseFrame", "AuctionHouseFrameDisplayMode", "AuctionFrame", "BrowseName", "AuctionFrameBrowse_Search", "ChatFrameUtil", "ChatEdit_GetActiveWindow", "GetTime", "GetGuildInfoText", "SendChatMessage", "GetNumGroupMembers", "IsInRaid", "GetNumGuildMembers", "GetGuildRosterInfo", "RegionalUniqueNamesEnabled", "C_GameRules",
+  -- professions (shopping lists: a recipe's reagents)
+  "CraftFrame", "GetCraftSelectionIndex", "GetCraftNumReagents", "GetCraftReagentItemLink", "GetCraftReagentInfo",
+  "GetCraftInfo", "GetTradeSkillSelectionIndex", "GetTradeSkillNumReagents", "GetTradeSkillReagentItemLink",
+  "GetTradeSkillReagentInfo", "GetTradeSkillInfo", "StaticPopup_FindVisible",
   -- optional integrations
   "Auctionator", "LibStub",
 }

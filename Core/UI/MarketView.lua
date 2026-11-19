@@ -200,6 +200,30 @@ function UI:CategoryEntries()
       end
     end
   end
+  local shop = ns.AME.shopping
+  if shop then
+    entries[#entries + 1] = { header = true, label = W.Dim(L["Shopping lists"]), count = "" }
+    local index = ns.AME:FactionIndex()
+    local holdings = ns.Trading:Holdings()
+    for i, l in ipairs(shop:Lists()) do
+      local _, totals = ns.Shopping.Progress(l.items, holdings, index and index.items or {})
+      entries[#entries + 1] = {
+        shop = i,
+        label = l.name .. (l.shared and " " .. W.Color("brand", L["shared"]) or ""),
+        name = l.name,
+        count = totals.done and W.Color("good", L["done"]) or totals.missing,
+      }
+    end
+    entries[#entries + 1] = { newShop = true, label = W.Dim("+ " .. L["New shopping list"]), count = "" }
+    for _, g in ipairs(shop:GuildLists()) do
+      entries[#entries + 1] = {
+        shopGuild = g.key,
+        label = "   " .. g.name .. " " .. W.Dim("(" .. g.owner .. ")"),
+        name = g.name,
+        count = "",
+      }
+    end
+  end
   entries[#entries + 1] = { header = true, label = W.Dim(L["Categories"]), count = "" }
   for _, c in ipairs(self.categories or {}) do
     entries[#entries + 1] = { classID = c.classID, label = ns.ItemCache.ClassName(c.classID), count = c.count }
@@ -224,6 +248,25 @@ function UI:SelectCategory(e, button, anchor)
     UI:PromptNewList()
     return
   end
+  if e.newShop then
+    UI:PromptNewShoppingList()
+    return
+  end
+  if e.shop and button == "RightButton" then
+    UI:ShoppingListMenu(anchor, e.shop)
+    return
+  end
+  if e.shopGuild and button == "RightButton" then
+    W.Menu(anchor, {
+      {
+        text = L["Copy to my shopping lists"],
+        func = function()
+          UI:ShoppingChanged(ns.AME.shopping:CopyGuildList(e.shopGuild))
+        end,
+      },
+    })
+    return
+  end
   if e.header then
     return
   end
@@ -244,6 +287,13 @@ function UI:SelectCategory(e, button, anchor)
     return
   end
   q.list, q.only = nil, nil
+  if e.shop or e.shopGuild then
+    q.list = e.shop and ("s:" .. e.shop) or ("sg:" .. e.shopGuild)
+    self.offset = 0
+    self:RenderCategories()
+    self:RefreshMarket(true)
+    return
+  end
   if e.hidden then
     q.classID, q.subClassID = nil, nil
     q.list, q.only = "hidden", ns.AME.watch:Hidden()
@@ -328,6 +378,10 @@ local function selected(q, e)
     return q.list == "g:" .. e.guild
   elseif e.hidden then
     return q.list == "hidden"
+  elseif e.shop then
+    return q.list == "s:" .. e.shop
+  elseif e.shopGuild then
+    return q.list == "sg:" .. e.shopGuild
   elseif e.list then
     return q.list == e.list
   elseif q.list then
@@ -743,6 +797,7 @@ function UI:CreateMarketView(parent)
     status = true, -- counts under the table; where the data comes from goes in the window's footer
   })
   v.headers, v.rows, v.bar, v.status = v.table.headers, v.table.rows, v.table.bar, slots.status
+  self:CreateShoppingPanel(v) -- a shopping list, shown instead of the table
   v.counts = v.table.status
   v.table.frame:HookScript("OnSizeChanged", function()
     UI:UpdateColumnsButton()
@@ -936,6 +991,9 @@ end
 -- Draw the visible rows from the cached list: cheap, so scrolling stays smooth.
 function UI:RenderMarket()
   local v = self.marketView
+  if v and v.shop and v:IsShown() and self:RenderShopping() then
+    return -- a shopping list is shown instead of the screener
+  end
   local list = self.list
   if not (v and list and v:IsShown()) then
     return

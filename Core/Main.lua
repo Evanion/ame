@@ -404,6 +404,8 @@ function handlers.ADDON_LOADED(name)
   ns.Settings:Init()
   AME_DB.watch = AME_DB.watch or {}
   AME.watch = ns.Watch.New(AME_DB.watch)
+  AME_DB.shopping = AME_DB.shopping or {}
+  AME.shopping = ns.Shopping.New(AME_DB.shopping)
   ns.Trading:Init()
   ns.Posting:Init()
 end
@@ -539,6 +541,11 @@ end
 
 function handlers.BAG_UPDATE_DELAYED()
   ns.Trading:ScanBags()
+  -- a shopping list on screen counts what you hold
+  local ui = ns.UI
+  if ui and ui.marketView and ui.marketView:IsShown() and ui.ShoppingSelected and ui:ShoppingSelected() then
+    ui:RenderMarket()
+  end
 end
 
 function handlers.BANKFRAME_OPENED()

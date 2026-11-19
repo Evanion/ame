@@ -94,6 +94,16 @@ function Sync.EncodeWatchlist(shard, name, t, ids)
   return table.concat({ Sync.PROTO, "W", shard, cleanName(name), Codec.ToBase36(t), table.concat(parts, ";") }, "|")
 end
 
+-- a shopping list: entries { key, need, max? } as key:need:max (max empty when unset)
+function Sync.EncodeShoppingList(shard, name, t, entries)
+  local parts = {}
+  for i = 1, math.min(#entries, Sync.MAX_LIST_ITEMS) do
+    local e = entries[i]
+    parts[i] = Codec.ToBase36(e[1]) .. ":" .. Codec.ToBase36(e[2]) .. ":" .. (e[3] and Codec.ToBase36(e[3]) or "")
+  end
+  return table.concat({ Sync.PROTO, "B", shard, cleanName(name), Codec.ToBase36(t), table.concat(parts, ";") }, "|")
+end
+
 function Sync.EncodeAccept(shard)
   return table.concat({ Sync.PROTO, "K", shard }, "|")
 end
@@ -129,6 +139,21 @@ function Sync.Decode(msg)
         end
       end
       return { type = "watchlist", shard = shard, name = f[5], t = Codec.FromBase36(f[6]), ids = ids }
+    elseif kind == "B" and #f == 7 then
+      local entries = {}
+      if f[7] ~= "" then
+        for item in f[7]:gmatch("[^;]+") do
+          local key, need, max = item:match("^(%-?[%w]+):([%w]+):([%w]*)$")
+          if key then
+            entries[#entries + 1] =
+              { Codec.FromBase36(key), Codec.FromBase36(need), max ~= "" and Codec.FromBase36(max) or nil }
+          end
+          if #entries >= Sync.MAX_LIST_ITEMS then
+            break
+          end
+        end
+      end
+      return { type = "shopping", shard = shard, name = f[5], t = Codec.FromBase36(f[6]), entries = entries }
     elseif kind == "H" and #f == 4 then
       return { type = "hello", shard = shard }
     elseif kind == "K" and #f == 4 then

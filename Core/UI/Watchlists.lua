@@ -88,6 +88,12 @@ function UI:ItemMenu(anchor, key, opts)
     }
   end
   entries[#entries + 1] = {
+    text = L["Add to shopping list..."],
+    func = function()
+      UI:ShoppingAddMenu(anchor, key)
+    end,
+  }
+  entries[#entries + 1] = {
     text = L["Set an alert..."],
     func = function()
       UI:ShowItem(key)
@@ -109,6 +115,9 @@ function UI:ItemMenu(anchor, key, opts)
       end
     end,
   }
+  for _, e in ipairs(opts.extra and opts.extra(key) or {}) do
+    entries[#entries + 1] = e
+  end
   if opts.hide then
     local hidden = watch:IsHidden(key)
     entries[#entries + 1] = {

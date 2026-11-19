@@ -196,11 +196,16 @@ function Service:Announce()
   self:ShareWatchlists()
 end
 
--- a shared list changed: send soon (several quick changes go out once)
-function Service:QueueShare(removed)
+-- a shared list changed: send soon (several quick changes go out once). removed: watchlist names no longer
+-- shared; removedShopping: shopping list names no longer shared (they go out empty once)
+function Service:QueueShare(removed, removedShopping)
   for _, name in ipairs(removed or {}) do
     self.pendingRemoved = self.pendingRemoved or {}
     self.pendingRemoved[#self.pendingRemoved + 1] = name
+  end
+  for _, name in ipairs(removedShopping or {}) do
+    self.pendingRemovedShop = self.pendingRemovedShop or {}
+    self.pendingRemovedShop[#self.pendingRemovedShop + 1] = name
   end
   if self.sharePending then
     return
@@ -208,14 +213,15 @@ function Service:QueueShare(removed)
   self.sharePending = true
   C_Timer.After(3, function()
     self.sharePending = false
-    local gone = self.pendingRemoved
-    self.pendingRemoved = nil
-    self:ShareWatchlists(gone)
+    local gone, goneShop = self.pendingRemoved, self.pendingRemovedShop
+    self.pendingRemoved, self.pendingRemovedShop = nil, nil
+    self:ShareWatchlists(gone, goneShop)
   end)
 end
 
--- Send your shared watchlists to the guild; unshared/deleted names go out empty once so others drop them.
-function Service:ShareWatchlists(removed)
+-- Send your shared watchlists and shopping lists to the guild; unshared/deleted names go out empty once so others
+-- drop them.
+function Service:ShareWatchlists(removed, removedShopping)
   if not self:GuildActive() or not self.AME.watch then
     return
   end
@@ -225,6 +231,13 @@ function Service:ShareWatchlists(removed)
   end
   for _, name in ipairs(removed or {}) do
     self.transport:Send(Service.PREFIX, Sync.EncodeWatchlist(shard, name, t, {}), "GUILD")
+  end
+  local shopping = self.AME.shopping
+  for _, l in ipairs(shopping and shopping:SharedLists() or {}) do
+    self.transport:Send(Service.PREFIX, Sync.EncodeShoppingList(shard, l.name, t, l.entries), "GUILD")
+  end
+  for _, name in ipairs(removedShopping or {}) do
+    self.transport:Send(Service.PREFIX, Sync.EncodeShoppingList(shard, name, t, {}), "GUILD")
   end
 end
 
@@ -243,7 +256,7 @@ function Service:Allowed(m, distribution, sender)
   if m.type == "hello" or m.type == "accept" then
     return self.enabled
   end
-  if m.type == "watchlist" then
+  if m.type == "watchlist" or m.type == "shopping" then
     return false -- guild only (handled above)
   end
   local trusted = self:TrustActive() and self.trust:IsTrusted(sender)
@@ -273,6 +286,15 @@ function Service:OnMessage(msg, distribution, sender)
   self.trust:Heard(sender, GetServerTime(), distribution)
   if m.type == "watchlist" then
     if self.AME.watch and self.AME.watch:SetGuildList(sender, m.name, m.t, m.ids) then
+      self:Changed()
+      if ns.UI and ns.UI.WatchChanged then
+        ns.UI:WatchChanged()
+      end
+    end
+    return
+  end
+  if m.type == "shopping" then
+    if self.AME.shopping and self.AME.shopping:SetGuildList(sender, m.name, m.t, m.entries) then
       self:Changed()
       if ns.UI and ns.UI.WatchChanged then
         ns.UI:WatchChanged()

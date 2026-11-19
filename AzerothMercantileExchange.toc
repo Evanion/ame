@@ -36,6 +36,7 @@ Core\Analytics.lua
 Core\MarketIndex.lua
 Core\MarketFilter.lua
 Core\Watch.lua
+Core\Shopping.lua
 Core\Arbitrage.lua
 Core\Depth.lua
 Core\Ledger.lua
@@ -57,6 +58,7 @@ Core\UI\Window.lua
 Core\UI\Shell.lua
 Core\UI\ItemView.lua
 Core\UI\Watchlists.lua
+Core\UI\ShoppingView.lua
 Core\UI\MarketView.lua
 Core\UI\SyncView.lua
 Core\UI\SettingsView.lua

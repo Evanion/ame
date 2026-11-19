@@ -728,8 +728,14 @@ describe("addon in a stubbed client", function()
       assert.are.equal(2589, v.rows[1].itemID)
       v.search:SetText("")
       v.search.scripts.OnTextChanged(v.search)
-      -- category sidebar: All items, watchlists, "+ New list", then classes; clicking a class filters to it
-      local classLine = v.side.lines[6]
+      -- category sidebar: All items, watchlists, "+ New list", shopping lists, then classes; clicking a class
+      -- filters to it
+      local classLine
+      for _, line in ipairs(v.side.lines) do
+        if not classLine and line.entry and line.entry.classID then
+          classLine = line
+        end
+      end
       assert.are.equal(7, classLine.entry.classID)
       classLine.scripts.OnClick(classLine)
       assert.are.equal(2, #ns.UI.list)
@@ -750,6 +756,55 @@ describe("addon in a stubbed client", function()
       assert.are.equal(1, ns.UI.mq.minQuality) -- back to the default: Common+ (no grey junk)
       assert.are.equal(2, v.quality.index)
       ns.MarketFilter.Apply = apply
+    end)
+
+    it("shopping lists: a goal in the sidebar shows what's still to buy and what it costs", function()
+      seeded()
+      ns.UI:Toggle()
+      ns.UI:ShowTab("market")
+      local v = ns.UI.marketView
+      local shop = ns.AME.shopping
+      local i = shop:AddList("Linen Robe")
+      shop:SetItem(i, 2589, 12) -- Linen Cloth
+      shop:SetItem(i, 4306, 2) -- Silk Cloth
+      AME_DB.holdings["TestRealm:Altchar"] = { bags = { [2589] = 5, [4306] = 2 } }
+      local entry
+      for _, e in ipairs(ns.UI:CategoryEntries()) do
+        if e.shop == i then
+          entry = e
+        end
+      end
+      assert.are.equal(1, entry.count) -- one item still short
+      ns.UI:SelectCategory(entry)
+      assert.is_true(v.shop:IsShown())
+      assert.is_false(v.table.frame:IsShown())
+      assert.is_false(v.search:IsShown())
+      local rows = ns.UI.shopRows
+      assert.are.equal(2589, rows[1].itemID)
+      assert.are.equal(7, rows[1].missing)
+      assert.are.equal(0, rows[2].missing)
+      assert.truthy(v.status:GetText():find("1 of 2 items still to buy", 1, true), v.status:GetText())
+      -- the item menu adds to a list; a list row's menu edits it
+      local row = v.shop.table.rows[1]
+      row.scripts.OnClick(row, "RightButton")
+      local labels = {}
+      for _, it in ipairs(ns.Widgets.menu.items) do
+        if it:IsShown() then
+          labels[#labels + 1] = it.text.text
+        end
+      end
+      local all = table.concat(labels, "|")
+      assert.truthy(all:find("Add to shopping list...", 1, true), all)
+      assert.truthy(all:find("Set quantity...", 1, true), all)
+      -- covered: done
+      AME_DB.holdings["TestRealm:Altchar"].bags[2589] = 12
+      ns.UI:RenderMarket()
+      assert.truthy(v.status:GetText():find("covered", 1, true), v.status:GetText())
+      -- back to all items: the screener returns
+      ns.UI:SelectCategory({ all = true })
+      assert.is_false(v.shop:IsShown())
+      assert.is_true(v.table.frame:IsShown())
+      assert.is_true(v.search:IsShown())
     end)
 
     it("right-click menu on a row: hide an item, find it under Hidden, unhide it", function()
