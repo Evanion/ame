@@ -1687,6 +1687,77 @@ describe("addon in a stubbed client", function()
       assert.are.equal("~120/d", v.rows[1].cells[col].text)
     end)
 
+    it("counts real auction outcomes: an item that leaves the AH every day but never sells isn't selling", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      env.now = env.now - env.now % 86400 + 3600
+      fullScan({ { 2589, 1000, 100 } })
+      env.now = env.now + 6 * 3600
+      fullScan({ { 2589, 1000, 70 } }) -- 30 gone in 6 hours: 120 a day leave the AH (sold? expired? reposted?)
+      env:advance(4)
+      drainJobs()
+      assert.are.equal(120, ns.AME.index.items[2589].sellRate)
+      local shard = ns.AME:CurrentShard()
+      -- you list it four times, 10 each for 24 hours
+      for _ = 1, 4 do
+        C_AuctionHouse.PostCommodity({ itemID = 2589 }, 3, 10, 1000)
+      end
+      -- you cancel one
+      env.ah.owned = { { auctionID = 7, itemKey = { itemID = 2589 }, quantity = 10, buyoutAmount = 1000, status = 0 } }
+      C_AuctionHouse.CancelAuction(7)
+      -- a day later: one expires while you're online...
+      env.now = env.now + 24 * 3600
+      env:fire("CHAT_MSG_SYSTEM", "Your auction of Item 2589 has expired.")
+      -- ...two while you were away: their items come back by mail, read twice (each counts once)
+      local mails = { { days = 30 }, { days = 30 } }
+      _G.GetInboxNumItems = function()
+        return #mails
+      end
+      _G.GetInboxInvoiceInfo = function() end
+      _G.GetInboxHeaderInfo = function(i)
+        return nil, nil, "Auction House", "Auction expired: Item 2589", 0, 0, mails[i].days
+      end
+      _G.GetInboxItem = function(_, slot)
+        if slot == 1 then
+          return "Item 2589", 2589, 134400, 10
+        end
+      end
+      env:fire("MAIL_INBOX_UPDATE")
+      env.now = env.now + 600
+      for _, m in ipairs(mails) do
+        m.days = m.days - 600 / 86400
+      end
+      env:fire("MAIL_INBOX_UPDATE")
+      _G.GetInboxNumItems, _G.GetInboxInvoiceInfo, _G.GetInboxHeaderInfo, _G.GetInboxItem = nil, nil, nil, nil
+      assert.are.equal(0, #AME_DB.listings)
+      local r = ns.SellThrough.Decode(AME_DB.sellThrough[shard][2589])
+      assert.are.equal(0, r.s)
+      assert.are.equal(30, math.floor(r.e + 0.5))
+      assert.are.equal(10, math.floor(r.c + 0.5))
+      assert.are.equal(4, math.floor(r.n + 0.5))
+      -- the index takes it in: of what left the AH, about none sold
+      env:advance(6)
+      drainJobs()
+      local s = ns.AME.index.items[2589]
+      assert.are.equal(0, s.sellThrough)
+      assert.are.equal(120, s.churnRate)
+      assert.truthy(s.sellRate < 60, s.sellRate) -- four outcomes outweigh the scans' guess
+      assert.truthy(s.value < 1000 * 0.5) -- worth the vendor's price (none here) as often as it doesn't sell
+      local rows = ns.Tooltip.Lines(s)
+      local found
+      for _, row in ipairs(rows) do
+        if row[1]:find("sell%-through") then
+          found = row[2]
+        end
+      end
+      assert.truthy(found and found:find("0%%") and found:find("0 of 40 sold"), found)
+      -- saved with the index and read back
+      local back = ns.MarketIndex.Decode(ns.MarketIndex.Encode(ns.AME.index)).items[2589]
+      assert.are.equal(0, back.sellThrough)
+      assert.are.equal(40, math.floor(back.stEnded + 0.5)) -- the cancel a day earlier has faded a little
+    end)
+
     it("learns each item's market from scans, suggests posting prices, and learns from your posts", function()
       seeded()
       local shard = ns.AME:CurrentShard()
@@ -1707,15 +1778,21 @@ describe("addon in a stubbed client", function()
       -- it sold right away: the outcome calibrates the item, and the speed learns it sells faster than predicted
       env.now = env.now + 60
       env:fire("CHAT_MSG_SYSTEM", "A buyer has been found for your auction of Item 2589.")
-      assert.are.equal(0, #AME_DB.listings)
       local learned = ns.Posting:Profile(shard, 2589)
       assert.are.equal(1, learned.no)
       assert.are.equal(1, learned.sn)
       assert.truthy(learned.speed > 0)
+      -- how many sold comes with the invoice: the listing waits for it, then counts for the item's sell-through
+      assert.are.equal("sold", AME_DB.listings[1].heard)
+      assert.is_not_nil(ns.Posting:OnOutcome("Item 2589", true, env.now + 3600, 5))
+      assert.are.equal(0, #AME_DB.listings)
+      assert.are.equal(1, learned.no) -- learned from once
+      assert.are.equal(5, ns.SellThrough.Decode(AME_DB.sellThrough[shard][2589]).s)
       -- a sale found only in the auction mail (you were offline): it sold some time before the mail
       C_AuctionHouse.PostCommodity({ itemID = 2589 }, 3, 5, advice.normal.price)
       assert.is_not_nil(ns.Posting:OnOutcome("Item 2589", true, env.now + 3600))
       assert.are.equal(0, #AME_DB.listings)
+      assert.are.equal(2, learned.no)
 
       -- the item view shows it under the chart
       ns.UI:Toggle()
@@ -2199,6 +2276,57 @@ describe("addon in a stubbed client", function()
         s = ns.Codec.Pack(ns.Codec.EncodeSnapshot(acc:Finish()), ns.AME.compressor),
       }
     end
+
+    it("shares auction outcomes with the guild; guildmates' count in sell-through and posting advice", function()
+      bootSync()
+      env.now = env.now - env.now % 86400 + 3600
+      fullScan({ { 2589, 1000, 100 } })
+      env.now = env.now + 6 * 3600
+      fullScan({ { 2589, 1000, 70 } }) -- 120 a day leave the AH
+      env:advance(4)
+      drainJobs()
+      local shard = ns.AME:CurrentShard()
+      -- a guildmate listed it 10 times: all 100 units expired, and their posting model learned it sells slower
+      local items = ns.SellThrough.EncodeItems({ { 2589, { s = 0, e = 100, c = 0, n = 10 }, -0.5, 10, -1, 10 } })
+      deliver(ns.Sync.EncodeOutcomes(shard, env.now, items), "GUILD", "Guild Mate")
+      env:advance(61) -- guildmates' numbers are taken in once they have been quiet a minute
+      drainJobs()
+      local s = ns.AME.index.items[2589]
+      assert.are.equal(0, s.sellThrough)
+      assert.are.equal(1, s.stPeers)
+      assert.truthy(s.sellRate < 30, s.sellRate)
+      -- what their listings taught their posting model counts in yours
+      local merged =
+        ns.SellThrough.MergeProfile(ns.Posting:Profile(shard, 2589), ns.Posting:SharedOutcomes(shard, 2589))
+      assert.are.equal(-1, merged.speed)
+      assert.are.equal(-0.5, merged.calib)
+      -- you share yours: a listing of yours expired
+      C_AuctionHouse.PostCommodity({ itemID = 2589 }, 3, 10, 1000)
+      env.now = env.now + 24 * 3600
+      env:fire("CHAT_MSG_SYSTEM", "Your auction of Item 2589 has expired.")
+      local before = #sent
+      ns.SyncService:Announce()
+      local shared
+      for i = before + 1, #sent do
+        local m = ns.Sync.Decode(sent[i].msg)
+        if m and m.type == "outcomes" then
+          shared = m
+          assert.are.equal("GUILD", sent[i].distribution)
+        end
+      end
+      assert.is_not_nil(shared)
+      assert.are.equal(10, ns.SellThrough.DecodeItems(shared.items)[2589].r.e)
+      -- nothing new: not sent again until an hour has passed
+      before = #sent
+      ns.SyncService:Announce()
+      for i = before + 1, #sent do
+        assert.are_not.equal("outcomes", (ns.Sync.Decode(sent[i].msg) or {}).type)
+      end
+      -- a blocked player's numbers don't count
+      assert.are.equal(1, ns.Posting:SellThroughTotals(shard)[2589].peers)
+      ns.SyncService:Block("Guild Mate")
+      assert.are.equal(0, ns.Posting:SellThroughTotals(shard)[2589].peers)
+    end)
 
     it("relays other players' scans for every auction house, and backfills a day of scans quickly", function()
       bootSync()

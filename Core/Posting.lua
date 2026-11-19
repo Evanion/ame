@@ -5,7 +5,7 @@
 --   AME_DB.listings = { { itemID, name, unit, qty, hours, t, shard, chance }, ... }   your posts awaiting an outcome
 local _, ns = ...
 
-local Posting = { cache = {}, priors = {} }
+local Posting = { cache = {}, priors = {}, peerItems = {} }
 ns.Posting = Posting
 
 Posting.BOOK_AGE = 1800 -- a search's order book is used for this long (seconds)
@@ -24,6 +24,8 @@ end
 function Posting:Init()
   AME_DB.pricing = AME_DB.pricing or {}
   AME_DB.listings = AME_DB.listings or {}
+  AME_DB.sellThrough = AME_DB.sellThrough or {}
+  AME_DB.sellThroughPeers = AME_DB.sellThroughPeers or {}
   local cutoff = now() - Posting.KEEP
   for _, items in pairs(AME_DB.pricing) do
     for id, s in pairs(items) do
@@ -145,7 +147,8 @@ end
 function Posting:Suggest(shard, itemID, qty, hours)
   local _, house = ns.SplitShard(shard)
   house = house or ns.AME:CurrentHouse()
-  local p = self:Profile(shard, itemID)
+  -- what guildmates' listings of it taught their posting models counts too
+  local p = ns.SellThrough.MergeProfile(self:Profile(shard, itemID), self:SharedOutcomes(shard, itemID))
   local s = summaryFor(shard, itemID)
   local params = ns.Pricing.Params(p, self:Prior(shard, itemID), s)
   local book = ns.AME:BookFor(shard, itemID, Posting.BOOK_AGE)
@@ -194,6 +197,7 @@ end
 
 Posting.WEEK_HOURS = 168
 Posting.KEEP_LISTING = 31 * 86400 -- listings wait this long for word (auction mail is kept 30 days)
+Posting.MAIL_SLACK = 2 * 3600 -- expired items come back by mail when the listing ends (a mail's age is approximate)
 
 ---------------------------------------------------------------------------------------------------------------------
 -- your listings and how they went
@@ -221,40 +225,231 @@ function Posting:Record(itemID, unit, qty, hours)
   })
 end
 
--- An auction of `name` sold (or expired): learn from the oldest matching listing - whether it sold (calibration)
--- and how fast (speed).
---   mailTime: the sale came from the auction mail (sold some time before then: only a bound), not from the chat
---             message the game shows the moment it sells
-function Posting:OnOutcome(name, sold, mailTime)
+-- An auction of `name` sold or expired. The listing it was (the one that fits best) teaches the posting model
+-- whether it sold (calibration) and how fast (speed) - once - and its units count for the item's sell-through.
+--   mailTime: the news came with auction mail (a sale's invoice, or the expired items coming back), which arrives
+--             when the auction ends; nil: the chat message the game shows the moment it happens
+--   units:    how many (the invoice's count, the items returned). The chat message doesn't say, so a sale's units
+--             are counted when its mail comes; a listing of which nothing sold is counted expired right away.
+function Posting:OnOutcome(name, sold, mailTime, units)
   local list = AME_DB.listings
   local t = now()
-  for i = #list, 1, -1 do -- listings that never got word (cancelled, or the mail was never opened)
+  for i = #list, 1, -1 do -- listings that never got word (the mail was never opened)
     if t - list[i].t > Posting.KEEP_LISTING then
       table.remove(list, i)
     end
   end
+  local best, at, score
   for i, l in ipairs(list) do
     l.name = l.name or itemName(l.itemID)
-    local ends = l.t + (l.hours or 48) * 3600 + 3600
-    -- live news only matches a listing still running; mail matches one posted before the mail
-    local fits = mailTime and l.t <= mailTime or (not mailTime and t <= ends)
-    if l.name == name and fits then
-      table.remove(list, i)
-      local p = self:Profile(l.shard, l.itemID)
-      ns.Pricing.Learn(p, l.chance, sold)
-      if sold and mailTime then
-        ns.Pricing.LearnSpeed(p, l.expect, "within", (mailTime - l.t) / 3600)
+    if l.name == name then
+      local ends = l.t + (l.hours or 48) * 3600
+      local fits, rank
+      if not mailTime then
+        -- live news: a listing still running (for an expiry, the one ending now)
+        fits = t <= ends + 3600 and l.heard ~= "expired"
+        rank = sold and l.t or math.abs(ends - t)
       elseif sold then
-        ns.Pricing.LearnSpeed(p, l.expect, "exact", (t - l.t) / 3600)
+        -- a sale's invoice: a listing posted before it, one the chat already said sold first
+        fits = l.t <= mailTime
+        rank = (l.heard == "sold" and 0 or 1e10) + l.t
       else
-        ns.Pricing.LearnSpeed(p, l.expect, "expired", l.hours or 48)
+        -- expired items back in the mail: a listing that ended when the mail came (or the chat said expired)
+        fits = l.t <= mailTime and (l.heard ~= nil or math.abs(ends - mailTime) <= Posting.MAIL_SLACK)
+        rank = (l.heard == "expired" and 0 or 1e10) + math.abs(ends - mailTime)
       end
-      self:Save(l.shard, l.itemID, p)
-      self.priors[l.shard] = nil
+      if fits and (not score or rank < score) then
+        best, at, score = l, i, rank
+      end
+    end
+  end
+  local l = best
+  if not l then
+    return nil
+  end
+  if not l.heard then
+    local p = self:Profile(l.shard, l.itemID)
+    ns.Pricing.Learn(p, l.chance, sold)
+    if sold and mailTime then
+      ns.Pricing.LearnSpeed(p, l.expect, "within", (mailTime - l.t) / 3600)
+    elseif sold then
+      ns.Pricing.LearnSpeed(p, l.expect, "exact", (t - l.t) / 3600)
+    else
+      ns.Pricing.LearnSpeed(p, l.expect, "expired", l.hours or 48)
+    end
+    self:Save(l.shard, l.itemID, p)
+    self.priors[l.shard] = nil
+  end
+  if mailTime then
+    self:Settle(at, l, sold and "sold" or "expired", units)
+  elseif not sold and l.heard ~= "sold" then
+    self:Settle(at, l, "expired") -- nothing of it sold: all of it came back
+  else
+    l.heard = l.heard or (sold and "sold" or "expired")
+  end
+  return l
+end
+
+-- Units of a listing that ended one way ("sold" / "expired" / "cancelled") count for its item's sell-through; the
+-- listing is done once all its units are accounted for.
+function Posting:Settle(i, l, kind, units)
+  local left = l.left or l.qty or 1
+  units = math.min(units or left, left)
+  self:Tally(l.shard, l.itemID, kind, units)
+  l.left = left - units
+  l.heard = l.heard or (kind == "sold" and "sold" or "expired")
+  if l.left <= 0 and AME_DB.listings[i] == l then
+    table.remove(AME_DB.listings, i)
+  end
+end
+
+-- You cancelled an auction: its units count as not sold (as TradeSkillMaster counts them).
+function Posting:OnCancel(key, qty)
+  for i, l in ipairs(AME_DB.listings) do
+    if l.itemID == key then
+      self:Settle(i, l, "cancelled", qty)
       return l
     end
   end
+  self:Tally(ns.AME:CurrentShard(), key, "cancelled", qty or 1) -- posted before AME recorded listings
   return nil
+end
+
+-- the owned auction the game is cancelling (C_AuctionHouse.CancelAuction's ID)
+function Posting:Cancelled(auctionID)
+  local ah = C_AuctionHouse
+  for i = 1, ah.GetNumOwnedAuctions() or 0 do
+    local info = ah.GetOwnedAuctionInfo(i)
+    local k = info and info.itemKey
+    if k and info.auctionID == auctionID then
+      local key = ns.ItemKey(k.itemID, k.itemSuffix)
+      if info.itemLink then
+        key = ns.ItemCache.Pair(info.itemLink, k.itemID, k.itemSuffix)
+      end
+      self:OnCancel(key, info.quantity or 1)
+      return
+    end
+  end
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- sell-through (SellThrough.lua): yours, and your guildmates' over sync
+--
+--   AME_DB.sellThrough[shard][key] = SellThrough.Encode(record)              your listings' outcomes
+--   AME_DB.sellThroughPeers[shard][playerKey] = { name, t, items = text }    what each guildmate last shared
+
+function Posting:Tally(shard, key, kind, units)
+  if not (shard and key) then
+    return
+  end
+  local own = AME_DB.sellThrough
+  own[shard] = own[shard] or {}
+  local s = own[shard][key]
+  local r = s and ns.SellThrough.Decode(s) or ns.SellThrough.New()
+  if ns.SellThrough.Add(r, kind, units, now()) then
+    own[shard][key] = ns.SellThrough.Encode(r)
+    self.stChanged = true
+    self:SellThroughChanged(shard, 5)
+  end
+end
+
+-- sell-through changed for a house: its market index picks it up once things have been quiet for `delay` seconds
+-- (nil: a minute)
+function Posting:SellThroughChanged(shard, delay)
+  self.peerItems[shard] = nil
+  if ns.AME.InvalidateIndexLater then
+    ns.AME:InvalidateIndexLater(shard, delay)
+  end
+end
+
+local function blocked(name)
+  local trust = ns.SyncService and ns.SyncService.trust
+  return trust and trust:IsBlocked(name) and true or false
+end
+
+-- every guildmate's shared items for a house, decoded once: { { name, t, items = { [key] = shared } }, ... }
+function Posting:Peers(shard)
+  local cached = self.peerItems[shard]
+  if cached then
+    return cached
+  end
+  local out, cutoff = {}, now() - ns.SellThrough.PEER_AGE
+  local peers = AME_DB.sellThroughPeers[shard] or {}
+  for k, p in pairs(peers) do
+    if (p.t or 0) < cutoff then
+      peers[k] = nil
+    else
+      out[#out + 1] = { name = p.name, t = p.t, items = ns.SellThrough.DecodeItems(p.items, p.t) }
+    end
+  end
+  self.peerItems[shard] = out
+  return out
+end
+
+-- A guildmate's numbers arrived. They send all of theirs each time: the newest replace the last.
+function Posting:SetPeer(shard, sender, t, text)
+  if type(text) ~= "string" or #text > 20000 then
+    return false
+  end
+  AME_DB.sellThroughPeers[shard] = AME_DB.sellThroughPeers[shard] or {}
+  AME_DB.sellThroughPeers[shard][ns.Trust.Key(sender)] =
+    { name = sender, t = math.min(t or now(), now()), items = text }
+  self:SellThroughChanged(shard) -- once guildmates have been quiet a minute
+  return true
+end
+
+-- Sell-through totals for every item with data at an auction house: { [key] = SellThrough.Combine totals }.
+-- Blocked players' numbers are left out.
+function Posting:SellThroughTotals(shard)
+  local t = now()
+  local shared = {}
+  for _, p in ipairs(self:Peers(shard)) do
+    if not blocked(p.name) then
+      for key, o in pairs(p.items) do
+        shared[key] = shared[key] or {}
+        table.insert(shared[key], { t = p.t, r = o.r })
+      end
+    end
+  end
+  local own = AME_DB.sellThrough[shard] or {}
+  local out = {}
+  for key, s in pairs(own) do
+    out[key] = ns.SellThrough.Combine(ns.SellThrough.Decode(s), shared[key], t)
+  end
+  for key, list in pairs(shared) do
+    if not own[key] then
+      out[key] = ns.SellThrough.Combine(nil, list, t)
+    end
+  end
+  return out
+end
+
+-- guildmates' posting outcomes for one item (calibration and speed), for SellThrough.MergeProfile
+function Posting:SharedOutcomes(shard, key)
+  local out = {}
+  for _, p in ipairs(self:Peers(shard)) do
+    local o = p.items[key]
+    if o and not blocked(p.name) and (o.no > 0 or o.sn > 0) then
+      out[#out + 1] = o
+    end
+  end
+  return out
+end
+
+-- what you share for a house: your items, the ones with the most outcomes first (SellThrough.EncodeItems entries)
+function Posting:ShareEntries(shard)
+  local t, out = now(), {}
+  for key, s in pairs(AME_DB.sellThrough[shard] or {}) do
+    local r = ns.SellThrough.Decay(ns.SellThrough.Decode(s), t)
+    if r.n >= 0.05 then
+      local p = self:Peek(shard, key)
+      out[#out + 1] = { key, r, p.calib, p.no, p.speed, p.sn }
+    end
+  end
+  table.sort(out, function(a, b)
+    return a[2].n > b[2].n
+  end)
+  return out
 end
 
 function Posting:HookPosting()
@@ -265,6 +460,14 @@ function Posting:HookPosting()
   if ah and ah.PostCommodity then
     hooksecurefunc(ah, "PostCommodity", function(location, duration, quantity, unitPrice)
       self:Record(idOf(location), unitPrice, quantity, Posting.DurationHours(duration))
+    end)
+  end
+  if ah and ah.CancelAuction and ah.GetOwnedAuctionInfo then
+    hooksecurefunc(ah, "CancelAuction", function(auctionID)
+      local ok, err = pcall(self.Cancelled, self, auctionID)
+      if not ok then
+        ns.AME:ReportError("cancel", err)
+      end
     end)
   end
   if ah and ah.PostItem then

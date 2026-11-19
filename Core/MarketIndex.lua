@@ -95,7 +95,7 @@ end
 -- bumped when saved indexes gain information (2: vendor prices, 3: what a listing nets for VENDOR items, 4: DE);
 -- older
 -- saves are shown, then rebuilt once
-MarketIndex.SAVE_VERSION = 4
+MarketIndex.SAVE_VERSION = 5 -- 5: sell-through
 
 MarketIndex.SAVED_FIELDS = {
   { "market", 1 },
@@ -121,6 +121,14 @@ MarketIndex.SAVED_FIELDS = {
   { "vendorPrice", 1 }, -- what a vendor pays (copper), when the client knew it at build time
   { "vendorNet", 1 }, -- VENDOR items: what a listing nets after the cut and deposit
   { "deValue", 1 }, -- DE items: what disenchanting one is worth (its materials, at what selling them nets)
+  -- items with real auction outcomes (SellThrough.Apply)
+  { "sellThrough", 1e3 },
+  { "stWeight", 1e3 },
+  { "stSold", 10 },
+  { "stEnded", 10 },
+  { "stPeers", 1 },
+  { "churnRate", 1e3 },
+  { "value", 1 },
 }
 
 local function columnNames()

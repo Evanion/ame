@@ -94,6 +94,15 @@ describe("Pricing", function()
       assert.are.equal(10, p.no)
     end)
 
+    it("scales the scans' demand by the item's sell-through (what left the AH vs what sold)", function()
+      local p = P.NewProfile()
+      p.n, p.demand = 50, 10 -- scans: 10 an hour leave the AH
+      local churn = P.Params(p, nil, { sellRate = 240 })
+      -- real outcomes: a tenth of that sold (SellThrough.Apply kept the scans' rate as churnRate)
+      local real = P.Params(p, nil, { sellRate = 24, churnRate = 240 })
+      assert.near(churn.demand / 10, real.demand, 1e-9)
+    end)
+
     it("learns how fast your listings sell against the prediction, and speeds up its estimates", function()
       local p = P.NewProfile()
       local base = P.Params(p, nil, { sellRate = 24 })

@@ -208,14 +208,22 @@ end
 -- sort order for signals: sell first (act on it), then buy, hold, wait, and no signal last
 Analytics.SIGNAL_RANK = { sell = 1, buy = 2, hold = 3, wait = 4, vendor = 5, disenchant = 6, none = 7 }
 
--- VENDOR: the auction house pays less than a vendor. What a listing nets - market price after the AH cut, minus the
--- listing deposit (counted as the risk you take: lost if it doesn't sell) - is below the vendor's price. Overrides
--- the price signal: whatever the trend, the vendor is the better deal. s gets vendorPrice / vendorNet.
+-- What one listing nets: market price after the AH cut, minus the listing deposit - counted as lost (the risk you
+-- take) unless the item's sell-through says how often it sells (SellThrough.Net).
+local function listingNet(s, cut, deposit)
+  if ns.SellThrough then
+    return ns.SellThrough.Net(s, cut, deposit)
+  end
+  return s.market * (1 - (cut or 0)) - (deposit or 0)
+end
+
+-- VENDOR: the auction house pays less than a vendor: what a listing nets is below the vendor's price. Overrides the
+-- price signal: whatever the trend, the vendor is the better deal. s gets vendorPrice / vendorNet.
 function Analytics.VendorCheck(s, vendorPrice, cut, deposit)
   if not (s and s.market and vendorPrice and vendorPrice > 0) then
     return false
   end
-  local net = s.market * (1 - (cut or 0)) - (deposit or 0)
+  local net = listingNet(s, cut, deposit)
   if net >= vendorPrice then
     return false
   end
@@ -231,7 +239,7 @@ function Analytics.DisenchantCheck(s, deValue, cut, deposit)
   if not (s and s.market and deValue and deValue > 0) then
     return false
   end
-  local net = s.market * (1 - (cut or 0)) - (deposit or 0)
+  local net = listingNet(s, cut, deposit)
   if deValue <= net or deValue <= (s.vendorPrice or 0) then
     return false
   end

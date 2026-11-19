@@ -33,6 +33,14 @@ function Tooltip.Lines(s, opts)
     L["supply"],
     W.Count(s.qty or 0) .. Dim(" " .. L["listed"]) .. (s.sellRate and ("  ·  " .. W.Rate(s.sellRate)) or "")
   )
+  if s.sellThrough and s.stEnded then
+    -- real auction outcomes (yours and your guildmates'): how much of what was listed sold
+    row(
+      L["sell-through"],
+      ("%d%%"):format(math.floor(s.sellThrough * 100 + 0.5))
+        .. Dim("  " .. L["%s of %s sold"]:format(W.Count(s.stSold or 0), W.Count(s.stEnded)))
+    )
+  end
   local phase = s.phase and ns.Analytics and ns.Analytics.PHASE_LABEL[s.phase]
   local hint = not opts.detail and Dim("  " .. L["Shift: more"]) or ""
   if s.signal and s.signal ~= "none" then

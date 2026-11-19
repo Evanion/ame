@@ -300,11 +300,15 @@ function Pricing.Params(p, prior, summary)
   prior = prior or Pricing.DEFAULT_PRIOR
   local w = p.n / (p.n + Pricing.PRIOR_WEIGHT)
   local longRun = summary and summary.sellRate and summary.sellRate / 24
+  -- scans count expired and cancelled listings as sold: where real auction outcomes corrected the summary's rate
+  -- (SellThrough.Apply; churnRate is the scans' own), the scans' demand here is corrected the same way
+  local churn = summary and summary.churnRate
+  local real = churn and churn > 0 and summary.sellRate and summary.sellRate / churn or 1
   local demand
   if p.n > 0 and longRun then
-    demand = w * p.demand + (1 - w) * longRun
+    demand = w * p.demand * real + (1 - w) * longRun
   elseif p.n > 0 then
-    demand = p.demand
+    demand = p.demand * real
   else
     demand = longRun or 0
   end

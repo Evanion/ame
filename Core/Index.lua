@@ -51,8 +51,14 @@ function AME:BuildIndex(store, shard, job)
   -- VENDOR where selling on this house nets less than a vendor (one listing at your usual length)
   local _, house = ns.SplitShard(shard)
   local cut, hours = ns.Settings:AuctionCut(house), ns.Settings:Get("listingHours")
+  -- sell-through from real auction outcomes (yours and your guildmates'): corrects the scans' sales rate, the value
+  -- and what a listing nets
+  local through = ns.Posting and ns.Posting:SellThroughTotals(shard) or {}
   local function vendorCheck(s)
     local vendor = ns.ItemCache.Get(s.itemID).sellPrice
+    if through[s.itemID] then
+      ns.SellThrough.Apply(s, through[s.itemID], vendor)
+    end
     if vendor and vendor > 0 then
       s.vendorPrice = vendor -- kept with the index (saved at logout), so a restored index has it without the client
       ns.Analytics.VendorCheck(s, vendor, cut, ns.Arbitrage.Deposit(vendor, house, hours))

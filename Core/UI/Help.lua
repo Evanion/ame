@@ -34,7 +34,11 @@ Help.TERMS = {
   },
   sellRate = {
     L["Market sales per day (estimate)"],
-    L["How fast the item moves: units that disappeared between consecutive full scans of this auction house, per day, over the last week. It counts sold, cancelled and expired listings, and new listings hide some sales, so treat it as a rough guide. A cheap item that never sells is a trap; a high number means you can sell a stack quickly. Needs a few full scans on the same day to show."],
+    L["How fast the item moves: units that disappeared between consecutive full scans of this auction house, per day, over the last week. Scans can't tell a sale from a listing that expired or was cancelled, so where you or your guildmates have listed the item, only its sell-through's share counts as sold - an item reposted every day that never sells drops to about 0. Elsewhere treat it as a rough upper bound. A cheap item that never sells is a trap; a high number means you can sell a stack quickly. Needs a few full scans on the same day to show."],
+  },
+  sellThrough = {
+    L["Sell-through"],
+    L["How much of what was listed actually sold, in units: sold / (sold + expired + cancelled). It comes from real auction outcomes - your auction mail and cancels, and your guildmates' (shared automatically) - and recent ones count most. With a few outcomes it takes over from the scans: the sales rate, what a listing nets (VENDOR, DE) and the value of what you hold (worth the market price when it sells, the vendor's price when it doesn't)."],
   },
   signal = {
     L["Signal"],
@@ -123,7 +127,7 @@ Help.TERMS = {
   },
   pfValue = {
     L["Holdings value"],
-    L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price, except soulbound items (they can't be sold) and items you hid. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
+    L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price, except soulbound items (they can't be sold) and items you hid. Items with a sell-through count at what they're really worth: the market price as often as they sell, the vendor's price otherwise. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
   },
   pfCost = {
     L["Average cost"],
@@ -189,6 +193,7 @@ Help.GLOSSARY = {
   "vol30",
   "qty",
   "sellRate",
+  "sellThrough",
   "signal",
   "score",
   "phase",
@@ -302,6 +307,8 @@ function Help.Articles()
             L["If Auctionator is installed, AME imports its recent daily prices for days it has no data for, once, when you open the auction house - your faction's only. The Import button under Settings, Data does it again."],
             H(L["Random-suffix gear"]),
             L['Gear with a random suffix ("of the Monkey", "of Magic") is tracked per suffix, since each sells at its own price. Charts, tooltips and your portfolio use the suffix of the item in hand.'],
+            H(L["What really sells"]),
+            L["Scans see listings disappear, but not why: sold, expired or cancelled look the same. So AME also counts real outcomes - sales and expired items from your auction mail, and auctions you cancel - and shares them with your guild. That sell-through corrects the sales rate, the VENDOR and DE signals and your portfolio's value for every item someone has listed."],
             H(L["How long history is kept"]),
             L["Every scan is kept for 2 days (the 2D chart), a point per day for 60 days, then a point per week for a year. Your ledger keeps 90 days."],
           },
@@ -448,6 +455,8 @@ function Help.Articles()
           body = {
             L["Sharing is a section of the Settings tab."],
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
+            H(L["Sell-through"]),
+            L["AME also shares how your auctions went - per item, how many units sold, expired or were cancelled, and what that taught the posting prices - no prices, gold or buyers. Everyone's outcomes add up: an item that never sells is found out after a few guildmates tried it, and posting advice learns from everyone's listings."],
             H(L["Keeping data honest"]),
             L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."],
             L["The guild info line looks like this: AME block: Name, Name (any line, several allowed)."],

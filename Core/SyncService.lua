@@ -315,6 +315,39 @@ function Service:Announce()
     self.stats.syncAnnounced = (self.stats.syncAnnounced or 0) + 1
   end
   self:ShareWatchlists()
+  self:ShareOutcomes(targets)
+end
+
+Service.SHARE_OUTCOMES_EVERY = 3600 -- seconds: your auction outcomes go out at most this often unless they changed
+
+-- Your auction outcomes per item (sold / expired / cancelled, and what they taught your posting model), for every
+-- auction house of your market: guildmates' sell-through and posting advice learn from everyone's listings.
+-- targets: trusted players to whisper (guild members get the guild broadcast).
+function Service:ShareOutcomes(targets)
+  local posting = ns.Posting
+  if not (posting and AME_DB.sellThrough) then
+    return
+  end
+  local t = GetServerTime()
+  if not posting.stChanged and self.outcomesAt and t - self.outcomesAt < Service.SHARE_OUTCOMES_EVERY then
+    return
+  end
+  self.outcomesAt, posting.stChanged = t, false
+  local realm = self.AME:MarketRealmName()
+  for shard in pairs(AME_DB.sellThrough) do
+    if ns.SplitShard(shard) == realm then
+      local entries = posting:ShareEntries(shard)
+      if #entries > 0 then
+        local msg = Sync.EncodeOutcomes(shard, t, ns.SellThrough.EncodeItems(entries))
+        if self:GuildActive() then
+          self.transport:Send(Service.PREFIX, msg, "GUILD")
+        end
+        for _, name in ipairs(targets or {}) do
+          self.transport:Send(Service.PREFIX, msg, "WHISPER", name)
+        end
+      end
+    end
+  end
 end
 
 -- a shared list changed: send soon (several quick changes go out once). removed: watchlist names no longer
@@ -383,7 +416,7 @@ function Service:Allowed(m, distribution, sender)
   local trusted = self:TrustActive() and self.trust:IsTrusted(sender)
   if m.type == "request" then
     return trusted or self:GuildActive()
-  elseif m.type == "announce" then
+  elseif m.type == "announce" or m.type == "outcomes" then
     return trusted
   elseif m.type == "scan" then
     return trusted or self.requestedFrom[ns.Trust.Key(sender) .. ":" .. m.shard .. ":" .. m.t .. ":" .. m.src]
@@ -423,6 +456,12 @@ function Service:OnMessage(msg, distribution, sender)
       if ns.UI and ns.UI.WatchChanged then
         ns.UI:WatchChanged()
       end
+    end
+    return
+  end
+  if m.type == "outcomes" then
+    if ns.Posting and ns.Posting:SetPeer(m.shard, sender, m.t, m.items) then
+      self.stats.syncOutcomes = (self.stats.syncOutcomes or 0) + 1
     end
     return
   end

@@ -50,6 +50,12 @@ function Portfolio.Listed(holdings, cut, items)
   return out
 end
 
+-- what one unit is worth: its value when real auction outcomes say how often it sells (SellThrough.Apply), else the
+-- market price
+local function worth(s)
+  return s.value or s.market
+end
+
 -- positions sorted by value, plus totals { value, cost (of the part with a known cost), unrealized, positions,
 -- hidden, hiddenValue }. hide (optional): items left out (hidden from lists), counted in hidden / hiddenValue.
 function Portfolio.Build(holdings, basis, items, hide)
@@ -58,10 +64,10 @@ function Portfolio.Build(holdings, basis, items, hide)
   for itemID, h in pairs(Portfolio.Merge(holdings)) do
     local s = items and items[itemID]
     if s and s.market and h.qty > 0 and hide and hide[itemID] then
-      totals.hidden, totals.hiddenValue = totals.hidden + 1, totals.hiddenValue + s.market * h.qty
+      totals.hidden, totals.hiddenValue = totals.hidden + 1, totals.hiddenValue + worth(s) * h.qty
     elseif s and s.market and h.qty > 0 then
       local b = basis and basis[itemID]
-      local value = s.market * h.qty
+      local value = worth(s) * h.qty
       local row = {
         itemID = itemID,
         qty = h.qty,
@@ -78,7 +84,7 @@ function Portfolio.Build(holdings, basis, items, hide)
         local known = math.min(b.units, h.qty)
         row.unitCost = b.unit
         row.cost = known * b.unit
-        row.unrealized = known * (s.market - b.unit)
+        row.unrealized = known * (worth(s) - b.unit)
         totals.cost = totals.cost + row.cost
         totals.unrealized = totals.unrealized + row.unrealized
       end

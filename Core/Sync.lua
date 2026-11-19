@@ -6,6 +6,7 @@
 --   hello     "1|H|<shard>"                                   whisper: "I'd like to share prices with you" (trust)
 --   accept    "1|K|<shard>"                                   whisper: "I trust you too"
 --   watchlist "1|W|<shard>|<name>|<t36>|<id36;id36;...>"      guild: a shared watchlist (empty ids = unshared)
+--   outcomes  "1|T|<shard>|<t36>|<key36:s:e:c:n:...;...>"     guild (and trusted): your auctions' sell-through
 --
 -- Transport (chunking + pacing at BULK priority) is AceComm/ChatThrottleLib in the WoW glue. Received scans are
 -- merged with Store:AddScan, whose dedupe makes repeats harmless; announcements repeat, so dropped whispers retry
@@ -104,6 +105,12 @@ function Sync.EncodeShoppingList(shard, name, t, entries)
   return table.concat({ Sync.PROTO, "B", shard, cleanName(name), Codec.ToBase36(t), table.concat(parts, ";") }, "|")
 end
 
+-- your auction outcomes per item (SellThrough.EncodeItems): what sold, expired or was cancelled, and what it taught
+-- your posting model
+function Sync.EncodeOutcomes(shard, t, items)
+  return table.concat({ Sync.PROTO, "T", shard, Codec.ToBase36(t), items }, "|")
+end
+
 function Sync.EncodeAccept(shard)
   return table.concat({ Sync.PROTO, "K", shard }, "|")
 end
@@ -154,6 +161,8 @@ function Sync.Decode(msg)
         end
       end
       return { type = "shopping", shard = shard, name = f[5], t = Codec.FromBase36(f[6]), entries = entries }
+    elseif kind == "T" and #f == 6 then
+      return { type = "outcomes", shard = shard, t = Codec.FromBase36(f[5]), items = f[6] }
     elseif kind == "H" and #f == 4 then
       return { type = "hello", shard = shard }
     elseif kind == "K" and #f == 4 then

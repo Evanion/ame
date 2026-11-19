@@ -165,6 +165,15 @@ local function newAuctionHouse()
   function a.ReplicateItems() end
   function a.PostCommodity() end -- hooked by the addon: your posts feed the pricing model
   function a.PostItem() end
+  -- your auctions: a.owned = { { auctionID =, itemKey = { itemID = }, quantity =, buyoutAmount =, status = 0 }, ... }
+  a.owned = {}
+  function a.GetNumOwnedAuctions()
+    return #a.owned
+  end
+  function a.GetOwnedAuctionInfo(i)
+    return a.owned[i]
+  end
+  function a.CancelAuction() end -- hooked by the addon: a cancel counts for sell-through
   -- browse results: a.browse = { { itemID, minPrice, totalQuantity }, ... }; a.browseFull
   a.browse, a.browseFull = {}, true
   function a.SendBrowseQuery() end

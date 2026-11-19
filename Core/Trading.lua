@@ -330,6 +330,45 @@ function Trading:ResolveLedger()
   return n
 end
 
+Trading.SAME_MAIL = 1800 -- seconds: a mail's arrival time, worked out from its days left, wobbles this little
+
+-- An auction of yours that expired: its items come back in a mail titled "Auction expired: <item>" when the listing
+-- ends, and its units count as not sold. Each mail once, however often the mailbox is opened: AME_DB.expiredMail
+-- remembers the ones counted (item, arrival time, units) as long as the game keeps them.
+-- claimed: the records matched in this pass over the inbox
+function Trading:ExpiredMail(i, now, claimed)
+  local _, _, _, subject, _, _, daysLeft = GetInboxHeaderInfo(i)
+  local secret = _G.issecretvalue
+  if type(subject) ~= "string" or (secret and secret(subject)) then
+    return
+  end
+  self.expiredMailPattern = self.expiredMailPattern or pattern(_G.AUCTION_EXPIRED_MAIL_SUBJECT, "Auction expired: %s")
+  local name = subject:match(self.expiredMailPattern)
+  if not name then
+    return
+  end
+  local units = 0
+  for slot = 1, (ATTACHMENTS_MAX_RECEIVE or 16) do
+    local _, _, _, count = (_G.GetInboxItem or function() end)(i, slot)
+    units = units + (count or 0)
+  end
+  local t = now - math.floor((Trading.MAIL_DAYS - (daysLeft or Trading.MAIL_DAYS)) * 86400)
+  AME_DB.expiredMail = AME_DB.expiredMail or {}
+  local seen = AME_DB.expiredMail
+  for k = #seen, 1, -1 do
+    local m = seen[k]
+    if now - m.t > (Trading.MAIL_DAYS + 1) * 86400 then
+      table.remove(seen, k)
+    elseif not claimed[m] and m.name == name and m.units == units and math.abs(m.t - t) <= Trading.SAME_MAIL then
+      claimed[m] = true -- (two alike mails in one inbox are two listings: each claims one record)
+      return -- counted when the mailbox was opened before
+    end
+  end
+  seen[#seen + 1] = { name = name, t = t, units = units }
+  claimed[seen[#seen]] = true
+  ns.Posting:OnOutcome(name, false, t, units > 0 and units or nil)
+end
+
 -- Record AH invoices in the inbox (sold: "seller", bought: "buyer"); each mail once, however often the mailbox is
 -- opened (Ledger:AddInvoice matches invoices to what is already recorded).
 function Trading:ScanMail()
@@ -338,6 +377,7 @@ function Trading:ScanMail()
   end
   local now, added = GetServerTime(), 0
   local claimed = {} -- ledger entries matched to an invoice in this pass (see Ledger:AddInvoice)
+  local expiredClaimed = {} -- expired mails counted before, matched in this pass (see ExpiredMail)
   local resolve = Trading.NameResolver()
   for i = 1, GetInboxNumItems() or 0 do
     local invoiceType, itemName, playerName, bid, _, _, consignment, _, _, _, count = GetInboxInvoiceInfo(i)
@@ -360,9 +400,11 @@ function Trading:ScanMail()
       if self.ledger:AddInvoice(entry, claimed) then
         added = added + 1
         if entry.kind == "sale" and ns.Posting then
-          ns.Posting:OnOutcome(itemName, true, t) -- sold some time before this mail arrived
+          ns.Posting:OnOutcome(itemName, true, t, entry.qty) -- sold some time before this mail arrived
         end
       end
+    elseif not invoiceType and ns.Posting then
+      self:ExpiredMail(i, now, expiredClaimed)
     end
   end
   if (added > 0 or self:ResolveLedger() > 0) and ns.UI and ns.UI.RefreshPortfolio then
