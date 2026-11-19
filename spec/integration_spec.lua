@@ -712,6 +712,11 @@ describe("addon in a stubbed client", function()
         ns.UI.craftSelected = step
         ns.UI:RenderCraftingDetail()
         assert.is_true(v.colorBar:IsShown())
+        -- a craft re-records the profession and rebuilds the rows: the same step stays selected
+        ns.UI:RefreshCrafting()
+        assert.is_not_nil(ns.UI.craftSelected)
+        assert.are_not.equal(step, ns.UI.craftSelected) -- a new row...
+        assert.are.equal(ns.UI.CraftRowKey(step), ns.UI.CraftRowKey(ns.UI.craftSelected)) -- ...for the same step
         local texts = {}
         for _, line in ipairs(v.lines) do
           texts[#texts + 1] = line.label.text or ""

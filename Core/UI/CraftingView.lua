@@ -24,6 +24,21 @@ local function charName(key)
   return (key or ""):gsub("^[^:]*:", "")
 end
 
+-- what a row is, across rebuilds: a leveling step by its recipe, a top earner by recipe, a material by item, a
+-- recipe to buy by item and taught spell (nil: notes and nothing selected)
+function UI.CraftRowKey(r)
+  if not r or r.note then
+    return nil
+  elseif r.entry then
+    return "step:" .. tostring(r.entry.recipe.id)
+  elseif r.recipe and r.crafters then
+    return "recipe:" .. tostring(r.recipe.id)
+  elseif r.spell then
+    return "buy:" .. tostring(r.item) .. ":" .. tostring(r.spell)
+  end
+  return "item:" .. tostring(r.itemID)
+end
+
 -- redraw the shown rows and breakdown (names that arrived)
 function UI.RedrawCrafting()
   local v = UI.craftView
@@ -528,8 +543,19 @@ function UI:RefreshCrafting()
     )
   end
   self.craftModel = m
+  -- the selection survives a rebuild (each craft re-records the profession): the new row for the same thing
+  local selected = UI.CraftRowKey(self.craftSelected)
   local rows = leveling and self:LevelingRows(m) or self:CraftingRows(m)
   self.craftRows = rows
+  self.craftSelected = nil
+  if selected then
+    for _, r in ipairs(rows) do
+      if UI.CraftRowKey(r) == selected then
+        self.craftSelected = r
+        break
+      end
+    end
+  end
   if leveling then
     self:RenderLevelingHeader(v)
   end
