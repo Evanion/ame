@@ -24,7 +24,7 @@ The cheapest path from your current skill to the one you want, recalculated from
 
 ## What's inside
 
-All of it comes from WoW Forever's game data as published by [wago.tools](https://wago.tools), for the current WoW Forever build - so it matches the game, including the recipes Forever added or changed, which Classic-era data gets wrong:
+All of it is Blizzard's own data for the current WoW Forever version (via [wago.tools](https://wago.tools)), so it matches the game - including the recipes Forever added or changed, which Classic-era data gets wrong:
 
 - **Every crafting recipe** of every profession: what it makes, how many per craft, and its reagents (about 2,500 recipes)
 - **Every recipe item**: the recipe it teaches, its profession and the skill needed to learn it (about 2,000)
@@ -49,4 +49,4 @@ The data sets one global table, `AME_CraftingData` (recipes, recipe items, skill
 
 ## About the data
 
-The recipe data comes from [wago.tools](https://wago.tools) - thank you - and is World of Warcraft game data, Blizzard Entertainment's; it's only repackaged here. We claim no ownership of it; the MIT licence covers the packaging, not the game data.
+The recipe data comes from Blizzard, via [wago.tools](https://wago.tools) - thank you - and is only repackaged here. We claim no ownership of it; the MIT licence covers the packaging, not the data.

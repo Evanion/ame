@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Azeroth Mercantile Exchange - Crafting data
-## Notes: Recipe data for Azeroth Mercantile Exchange's Crafting tab, from wago.tools (Blizzard's game data, repackaged). Loaded on demand.
+## Notes: Recipe data for Azeroth Mercantile Exchange's Crafting tab (Blizzard's data, via wago.tools). Loaded on demand.
 ## Author: Evanion
 ## Version: @project-version@
 ## LoadOnDemand: 1

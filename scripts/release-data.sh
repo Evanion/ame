@@ -41,8 +41,8 @@ trap 'rm -f "$CHANGELOG"' EXIT
 {
   echo "Recipe data for Azeroth Mercantile Exchange's Crafting tab, from WoW Forever build $BUILD via wago.tools."
   echo
-  echo "The data comes from wago.tools and is World of Warcraft game data (Blizzard's), only repackaged here; we"
-  echo "claim no ownership of it. The MIT licence covers the packaging, not the game data."
+  echo "The data comes from Blizzard, via wago.tools, and is only repackaged here; we claim no ownership of it."
+  echo "The MIT licence covers the packaging, not the data."
   echo
   [ -n "${SUMMARY:-}" ] && [ -f "$SUMMARY" ] && cat "$SUMMARY"
 } >"$CHANGELOG"
