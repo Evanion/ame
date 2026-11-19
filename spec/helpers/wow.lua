@@ -366,6 +366,12 @@ function M.install(opts)
       end
       return false, "MISSING"
     end,
+    GetAddOnInfo = function(name) -- name, title, notes, loadable, reason: only AME's history addon is installed
+      if name == "AzerothMercantileExchange_History" then
+        return name, name, "", true, "DEMAND_LOADED"
+      end
+      return nil, nil, nil, false, "MISSING"
+    end,
   })
   set("Enum", { SendAddonMessageResult = { Success = 0 } })
   set("AME_DB", nil)

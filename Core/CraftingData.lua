@@ -2,6 +2,7 @@
 -- client tables), loaded on demand: only when Crafting asks for it, never at login. Read through this module, which
 -- applies hand fixes (OVERRIDES) on top of the generated rows and decodes their compact form.
 --
+--   CraftingData:Installed()       -> true when the data addon is there and can load (checked without loading it)
 --   CraftingData:Load()            -> true when the data is there (loads the addon the first time)
 --   CraftingData:Recipe(spellID)   -> { profession, product, made, yellow, green, grey, reagents = {{id, n}...} }
 --   CraftingData:Teaches(itemID)   -> { profession, rank, spells = {...} } for a recipe item (nil otherwise)
@@ -24,6 +25,25 @@ CraftingData.OVERRIDES = {
 function CraftingData:Use(data)
   self.data = data
   self.cache = {}
+end
+
+-- Without the data addon, Crafting doesn't exist as far as the player can tell: no tab, no setting, no guide page,
+-- no recipe recording. Installing it needs a client restart, so this holds for the whole session.
+function CraftingData:Installed()
+  if self.data or type(_G.AME_CraftingData) == "table" then
+    return true
+  end
+  local info = C_AddOns and C_AddOns.GetAddOnInfo or _G.GetAddOnInfo
+  if not info then
+    return false
+  end
+  local ok, name, _, _, loadable = pcall(info, CraftingData.ADDON)
+  return ok and name ~= nil and loadable and true or false
+end
+
+-- Crafting is on: switched on in Settings, with its data installed
+function CraftingData:Enabled()
+  return ns.Settings:Get("crafting") and self:Installed() or false
 end
 
 function CraftingData:Load()

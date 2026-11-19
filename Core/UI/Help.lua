@@ -510,6 +510,15 @@ function Help.Articles()
       },
     },
   }
+  if not ns.CraftingData:Installed() then -- no data addon: the Crafting page goes too
+    for _, g in ipairs(groups) do
+      for i = #g[2], 1, -1 do
+        if g[2][i].key == "crafting" then
+          table.remove(g[2], i)
+        end
+      end
+    end
+  end
   local glossary = {}
   for _, key in ipairs(Help.GLOSSARY) do
     local term = Help.TERMS[key]

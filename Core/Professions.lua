@@ -171,7 +171,7 @@ function Professions:Catalog(skillLine)
 end
 
 local function enabled()
-  return ns.Settings and ns.Settings:Get("crafting")
+  return ns.Settings and ns.CraftingData and ns.CraftingData:Enabled()
 end
 
 function Professions:Record()

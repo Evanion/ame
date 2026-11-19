@@ -752,6 +752,33 @@ describe("addon in a stubbed client", function()
         _G.AME_CraftingData = nil
       end)
 
+      it("Crafting without its data addon: no tab, no setting, no guide page - even switched on", function()
+        seeded()
+        _G.AME_CraftingData = nil
+        ns.CraftingData.data = nil
+        ns.Settings:Set("crafting", true)
+        ns.UI:Toggle()
+        ns.UI:LayoutTabs()
+        local tab
+        for _, b in ipairs(ns.UI.tabBar.buttons) do
+          if b.key == "crafting" then
+            tab = b
+          end
+        end
+        assert.is_false(ns.CraftingData:Installed())
+        assert.is_false(tab:IsShown())
+        ns.UI:ShowTab("crafting")
+        assert.are.equal("market", ns.UI.current)
+        ns.UI:ShowTab("settings")
+        assert.is_nil(rawget(ns.UI.settingsView, "craftingCheck"))
+        for _, g in ipairs(ns.Help.Articles()) do
+          for _, article in ipairs(g[2]) do
+            assert.are_not.equal("crafting", article.key)
+          end
+        end
+        ns.Settings:Set("crafting", false)
+      end)
+
       it("the Market tab's Overview: market statistics, categories into the screener, remembered", function()
         seeded()
         ns.UI:Toggle()
