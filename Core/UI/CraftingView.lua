@@ -497,7 +497,7 @@ function UI:RefreshCrafting()
   if not m then
     v.message:SetText(
       why == "nodata"
-          and L["Crafting needs the AME Crafting Data addon (recipe data, loaded only when you use this tab). Install it from CurseForge: AME Crafting Data."]
+          and (ns.CraftingData.failed == "DISABLED" and L["Crafting needs the AME Crafting Data addon, which is installed but switched off: enable it in the AddOns list at character select."] or ns.CraftingData.failed == "INTERFACE_VERSION" and L["Your AME Crafting Data addon is out of date for this game version: update it from CurseForge."] or L["Crafting needs the AME Crafting Data addon (recipe data, loaded only when you use this tab). Install it from CurseForge: AME Crafting Data. A newly installed addon shows up after you log out to character select."])
         or L["Building market index..."]
     )
     v.slots.status:SetText("")
