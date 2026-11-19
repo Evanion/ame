@@ -85,8 +85,9 @@ for code, name in ipairs(SIGNALS) do
   SIGNAL_CODE[name] = code
 end
 
--- bumped when saved indexes gain information (2: vendor prices): older saves are shown, then rebuilt once
-MarketIndex.SAVE_VERSION = 2
+-- bumped when saved indexes gain information (2: vendor prices, 3: what a listing nets for VENDOR items); older
+-- saves are shown, then rebuilt once
+MarketIndex.SAVE_VERSION = 3
 
 MarketIndex.SAVED_FIELDS = {
   { "market", 1 },
@@ -110,6 +111,7 @@ MarketIndex.SAVED_FIELDS = {
   { "score", 1 },
   { "outliers", 1 },
   { "vendorPrice", 1 }, -- what a vendor pays (copper), when the client knew it at build time
+  { "vendorNet", 1 }, -- VENDOR items: what a listing nets after the cut and deposit
 }
 
 local function columnNames()

@@ -102,6 +102,8 @@ describe("MarketIndex", function()
     local text = ns.MarketIndex.Encode(index)
     local back = ns.MarketIndex.Decode(text)
     assert.are.equal("vendor", back.items[6].signal)
+    assert.are.equal(500, back.items[6].vendorPrice)
+    assert.are.equal(math.floor(index.items[6].vendorNet + 0.5), back.items[6].vendorNet) -- the verdict's "nets about"
     assert.are.equal(index.items[5].signal, back.items[5].signal)
     -- an older save: signal code 5 meant "none"
     index.items[6].signal = "none"
