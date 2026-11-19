@@ -40,6 +40,27 @@ describe("shared helpers", function()
     assert.is_nil(ns.ItemIDFrom(nil))
   end)
 
+  it("keys random-suffix variants apart from the plain item", function()
+    local link = "|cff1eff00|Hitem:15211::::::1234:9876:60:::::|h[Raider Shortsword of Magic]|h|r"
+    local key = ns.ItemIDFrom(link)
+    assert.are.equal(15211 + 1234 * ns.SUFFIX_STEP, key)
+    assert.are.same({ 15211, 1234 }, { ns.SplitKey(key) })
+    assert.are.equal(15211, ns.BaseID(key))
+    assert.is_true(ns.IsVariant(key))
+    assert.is_false(ns.IsVariant(15211))
+    assert.are.equal("item:15211::::::1234", ns.ItemString(key))
+    assert.are.equal("item:15211", ns.ItemString(15211))
+    assert.are.equal(key, ns.ItemIDFrom(ns.ItemString(key)))
+    -- negative (scaled) suffixes, and the same bucket as the base item
+    local neg = ns.ItemIDFrom("item:15211:0:0:0:0:0:-37:12345")
+    assert.are.same({ 15211, -37 }, { ns.SplitKey(neg) })
+    assert.are.equal(15211 % 32, neg % 32)
+    assert.are.equal(15211 % 32, key % 32)
+    -- a zero suffix is the plain item
+    assert.are.equal(2589, ns.ItemIDFrom("item:2589:0:0:0:0:0:0:0"))
+    assert.are.equal(2589, ns.ItemKey(2589, nil))
+  end)
+
   it("numbers days the way history is stored (UTC)", function()
     assert.are.equal(0, ns.Today(86399))
     assert.are.equal(1, ns.Today(86400))

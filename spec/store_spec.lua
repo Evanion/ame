@@ -184,6 +184,23 @@ describe("Store", function()
       assert.are.same(expected, s[1])
     end)
 
+    it("drops an item's mixed history once its suffixes show up, and stores no plain-ID data for it after", function()
+      local store = newStore()
+      local magic = ns.ItemKey(15211, 1234)
+      store:AddScan(snap({ [15211] = { 900, 2000, 2000, 5, 5 }, [10] = { 5, 5, 5, 1, 1 } }), clock - DAY, "a")
+      assert.are.equal(1, #store:Series(15211))
+      store:AddScan(snap({ [magic] = { 3500, 3500, 3500, 1, 1 } }), clock, "a")
+      assert.are.equal(0, #store:Series(15211)) -- the blend of every suffix is gone
+      assert.are.equal(1, #store:Series(magic))
+      assert.are.equal(1, #store:Series(10)) -- other items untouched
+      assert.is_true(store:Mixed(15211))
+      -- plain-ID data for it later (an older version over sync, a backfill) isn't stored
+      store:AddScan(snap({ [15211] = { 900, 2000, 2000, 5, 5 } }), clock + 60, "old")
+      assert.are.equal(0, #store:Series(15211))
+      store:ImportDay(990, { { 15211, 1, 1, 1, 1, 1, 1 } }, "backfill")
+      assert.are.equal(0, #store:Series(15211))
+    end)
+
     it("aggregates several scans of the same day", function()
       local store = newStore()
       store:AddScan(snap({ [10] = { 100, 100, 100, 4, 2 } }), clock, "a")

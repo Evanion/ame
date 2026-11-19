@@ -15,10 +15,7 @@ Sell.REFRESH = 0.5 -- seconds between checks of the sell slot
 Sell.RECOMPUTE = 3 -- recompute at least this often (a new search of the item updates its order book)
 
 local function itemIDAt(location)
-  local ok, id = pcall(function()
-    return C_Item.GetItemID(location)
-  end)
-  return ok and id or nil
+  return ns.ItemCache.KeyAt(location)
 end
 
 local function call(obj, method, ...)
@@ -50,7 +47,7 @@ local function auctionatorSource()
     auctionator = true,
     read = function()
       local info = rawget(sale, "itemInfo")
-      local id = info and info.itemLink and ns.ItemIDFrom(info.itemLink)
+      local id = info and info.itemLink and ns.ItemCache.Learn(info.itemLink)
       if not id then
         return nil
       end
@@ -115,6 +112,7 @@ local function sources()
           return nil
         end
         local d = f.duration or 3
+        id = ns.ItemCache.KeyFor(id, name) -- the slot gives the variant's full name, not its link
         return id, count or 1, d > 3 and math.floor(d / 60) or ns.Posting.DurationHours(d)
       end,
       set = function(price, qty)
@@ -447,7 +445,7 @@ function Sell:Refresh()
       self.key = nil
     end
   end
-  local key = ("%d:%d:%d"):format(id, qty, hours)
+  local key = tostring(id) .. ":" .. qty .. ":" .. hours -- item keys can exceed %d's range
   local t = GetTime()
   if key == self.key and t - (self.at or 0) < Sell.RECOMPUTE then
     return

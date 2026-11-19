@@ -260,10 +260,7 @@ end
 function Posting:HookPosting()
   local ah = C_AuctionHouse
   local function idOf(location)
-    local ok, id = pcall(function()
-      return C_Item.GetItemID(location)
-    end)
-    return ok and id or nil
+    return ns.ItemCache.KeyAt(location)
   end
   if ah and ah.PostCommodity then
     hooksecurefunc(ah, "PostCommodity", function(location, duration, quantity, unitPrice)
@@ -277,7 +274,8 @@ function Posting:HookPosting()
   end
   if PostAuction and GetAuctionSellItemInfo then -- the old auction house
     hooksecurefunc("PostAuction", function(_, buyout, runTime, stackSize, numStacks)
-      local id = select(10, GetAuctionSellItemInfo())
+      local name, _, _, _, _, _, _, _, _, id = GetAuctionSellItemInfo()
+      id = id and ns.ItemCache.KeyFor(id, name)
       local size = stackSize or 1
       if buyout and buyout > 0 then
         self:Record(id, buyout / size, size * (numStacks or 1), Posting.DurationHours(runTime))

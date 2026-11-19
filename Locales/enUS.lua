@@ -205,6 +205,7 @@ L["Down"] = true
 L["Drag the title bar to move the window and the bottom-right corner to resize it. AME remembers the size, and where you put it with and without the auction house open. When the auction house opens and there's room beside it, AME docks next to it (Settings > Window)."] = true
 L["Dumping"] = true
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] = true
+L["Each suffix of this item (\"of the Monkey\", \"of Magic\"...) has its own prices. Shift-click one, or search its full name."] = true
 L["Epic+"] = true
 L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."] = true
 L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price. Bank items and auctions are counted as of the last time you opened the bank / auction house."] = true

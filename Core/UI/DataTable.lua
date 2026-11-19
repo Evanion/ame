@@ -203,7 +203,7 @@ function DataTable.New(parent, opts)
         return false
       end
       if self.itemID then
-        tip:SetItemByID(self.itemID)
+        W.SetItemTip(tip, self.itemID)
       end
       if opts.tooltip then
         opts.tooltip(tip, self.data)

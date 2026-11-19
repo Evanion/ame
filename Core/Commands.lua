@@ -8,7 +8,9 @@ local say, money = AME.Say, AME.Money
 ---------------------------------------------------------------------------------------------------------------------
 -- slash commands
 
-local itemIDFrom = ns.ItemIDFrom
+local function itemIDFrom(text) -- an item key, learning a variant's name from its link
+  return ns.ItemCache.Learn(text)
+end
 
 local function cmdItem(arg)
   local id = itemIDFrom(arg)

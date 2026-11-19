@@ -14,6 +14,10 @@
 -- event we poll GetNumAuctionItems("list") until the list is complete and stable, then read it the same way.
 -- Legacy rows have count, buyout and itemID at the same positions as replicate rows.
 --
+-- Random-suffix gear: every listing is recorded under its item key (ns.ItemKey: item ID plus suffix), read from the
+-- row's link (full scans, searches) or its itemKey (browse rows), so "of Magic" and "of the Monkey" get separate
+-- prices. Links also teach the item cache the variants' names (opts.learn).
+--
 -- Searches / sell-tab rechecks: commodity and item search results are collected per item and flushed as one
 -- "partial" snapshot after SETTLE seconds without new results. Incomplete result sets (only the cheapest page) are
 -- skipped, because they would bias the market price low.
@@ -29,7 +33,8 @@ Ingest.POLL = 1.0 -- seconds between legacy list checks
 Ingest.POLL_LIMIT = 180 -- give up waiting for a getAll list after this many polls
 
 -- opts: api, jobs, now, after(seconds, fn), onSnapshot(snap, t, kind, info), onReadStart(rows) (optional),
--- legacy (optional: the legacy AH functions { GetNumAuctionItems, GetAuctionItemInfo })
+-- legacy (optional: the legacy AH functions { GetNumAuctionItems, GetAuctionItemInfo, GetAuctionItemLink }),
+-- learn(link) -> item key (optional: remembers a variant's name; default ns.ItemIDFrom)
 function Ingest.New(opts)
   return setmetatable({
     api = assert(opts.api),
@@ -39,10 +44,11 @@ function Ingest.New(opts)
     after = assert(opts.after),
     onSnapshot = assert(opts.onSnapshot),
     onReadStart = opts.onReadStart,
+    learn = opts.learn or ns.ItemIDFrom,
     requested = false,
     reading = false,
     aborted = false,
-    pending = {}, -- itemID -> { kind = "commodity"|"item", key = itemID|itemKey }
+    pending = {}, -- item key -> { kind = "commodity"|"item", id = itemID, key = itemID|itemKey }
     generation = 0,
   }, Ingest)
 end
@@ -61,7 +67,7 @@ function Ingest:OnReplicateUpdate()
   self.requested = false
   local api = self.api
   local total = api.GetNumReplicateItems() or 0
-  self:read(0, total - 1, total, api.GetReplicateItemInfo)
+  self:read(0, total - 1, total, api.GetReplicateItemInfo, api.GetReplicateItemLink)
 end
 
 -- Browse queries. An unfiltered one paged to the end is a full (summary) scan. Everything else - category browsing,
@@ -126,7 +132,7 @@ function Ingest:readBrowse(results, first, kind)
         return nil
       end
       local r = results[i]
-      local id = r.itemKey and r.itemKey.itemID
+      local id = r.itemKey and ns.ItemKey(r.itemKey.itemID, r.itemKey.itemSuffix)
       if id and id > 0 and r.minPrice and r.minPrice > 0 and (r.totalQuantity or 0) > 0 then
         local e = byID[id]
         if not e then
@@ -185,6 +191,8 @@ function Ingest:OnGetAllRequested()
       self.pollGen = gen + 1
       self:read(0, batch, batch, function(i)
         return legacy.GetAuctionItemInfo("list", i)
+      end, legacy.GetAuctionItemLink and function(i)
+        return legacy.GetAuctionItemLink("list", i)
       end)
       return
     end
@@ -196,8 +204,19 @@ function Ingest:OnGetAllRequested()
   self.after(Ingest.POLL, poll)
 end
 
--- read rows first..last (missing rows are skipped) into one full snapshot, time-sliced
-function Ingest:read(first, last, total, getInfo)
+-- a row's item key: from its link when there is one (the suffix), else the plain item ID
+function Ingest:keyOf(itemID, link)
+  if link then
+    local key = self.learn(link)
+    if key and ns.BaseID(key) == itemID then
+      return key
+    end
+  end
+  return itemID
+end
+
+-- read rows first..last (missing rows are skipped) into one full snapshot, time-sliced. getLink(i) is optional.
+function Ingest:read(first, last, total, getInfo, getLink)
   self.reading, self.aborted = true, false
   self.progress = { done = 0, total = total } -- read so far (the window's status row shows it)
   local t = self.now()
@@ -212,7 +231,7 @@ function Ingest:read(first, last, total, getInfo)
       end
       local _, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = getInfo(i)
       if itemID and itemID > 0 then
-        acc:Add(itemID, buyout, count)
+        acc:Add(getLink and self:keyOf(itemID, getLink(i)) or itemID, buyout, count)
       end
       if i % 64 == 0 then
         self.progress.done = i - first + 1
@@ -247,8 +266,8 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- searches
 
-function Ingest:queue(itemID, kind, key)
-  self.pending[itemID] = { kind = kind, key = key }
+function Ingest:queue(itemID, kind, key, suffix)
+  self.pending[ns.ItemKey(itemID, suffix)] = { kind = kind, id = itemID, key = key }
   self.generation = self.generation + 1
   local gen = self.generation
   self.after(Ingest.SETTLE, function()
@@ -266,7 +285,7 @@ end
 
 function Ingest:OnItemResults(itemKey)
   if itemKey and itemKey.itemID then
-    self:queue(itemKey.itemID, "item", itemKey)
+    self:queue(itemKey.itemID, "item", itemKey, itemKey.itemSuffix)
   end
 end
 
@@ -276,8 +295,9 @@ function Ingest:flush()
   local api, t = self.api, self.now()
   local acc = ns.Stats.NewAccumulator()
   local any = false
-  local books = {} -- itemID -> order book (price tiers) from this search
-  for itemID, p in pairs(pending) do
+  local books = {} -- item key -> order book (price tiers) from this search
+  for pkey, p in pairs(pending) do
+    local itemID = p.id
     local tiers = {}
     if p.kind == "commodity" then
       if api.HasFullCommoditySearchResults(itemID) then
@@ -297,7 +317,7 @@ function Ingest:flush()
           if info and info.buyoutAmount then
             -- a row groups identical auctions: quantity of them, buyoutAmount of one (Forever, per AHDB's probes)
             local count = info.quantity or 1
-            acc:Add(itemID, info.buyoutAmount * count, count)
+            acc:Add(info.itemLink and self:keyOf(itemID, info.itemLink) or pkey, info.buyoutAmount * count, count)
             tiers[#tiers + 1] = { info.buyoutAmount, count }
             any = true
           end
@@ -305,7 +325,7 @@ function Ingest:flush()
       end
     end
     if #tiers > 0 and ns.Depth then
-      books[itemID] = ns.Depth.Book(tiers, t)
+      books[pkey] = ns.Depth.Book(tiers, t)
     end
   end
   if any then

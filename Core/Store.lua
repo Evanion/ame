@@ -12,6 +12,9 @@
 --                                                              kept WEEKS_KEEP weeks
 --   data.seen  = { [day] = { ["t:src"] = true } }               scans already merged into that day (dedupe)
 --   data.books = { [itemID] = { t =, s = Depth-encoded book } }  latest order book per item, kept RAW_KEEP
+--   data.suffixed = { [itemID] = true }  items seen with random suffixes: their history is per variant (item key, see
+--                                        ns.ItemKey), and data under the plain item ID (a mix of every suffix, from
+--                                        before variants were tracked, or from older versions over sync) is dropped
 --
 -- Segments hold running SUMS (market, median, qty, auctions), the min, and the scan count per item, so merging a
 -- scan is an incremental add: closed days never need their raw scans again, and late arrivals (sync) merge exactly.
@@ -54,6 +57,7 @@ function Store.New(data, opts)
   data.weeks = data.weeks or {}
   data.seen = data.seen or {}
   data.books = data.books or {}
+  data.suffixed = data.suffixed or {}
   return setmetatable({
     data = data,
     compressor = opts.compressor,
@@ -221,6 +225,62 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- writes
 
+-- Items whose variants show up for the first time: mark them suffixed and delete the history kept under their plain
+-- item ID (a blend of every suffix's prices). Returns true when there were any.
+function Store:markSuffixed(ids)
+  local suffixed, fresh, any = self.data.suffixed, {}, false
+  for _, id in ipairs(ids) do
+    if ns.IsVariant(id) then
+      local base = ns.BaseID(id)
+      if not suffixed[base] then
+        suffixed[base], fresh[base], any = true, true, true
+      end
+    end
+  end
+  if any then
+    self:forget(fresh)
+  end
+  return any
+end
+
+-- remove items (set of ids) from every daily and weekly segment, and their order books
+function Store:forget(set)
+  local buckets = {}
+  for id in pairs(set) do
+    buckets[id % Store.BUCKETS] = true
+    self.data.books[id] = nil
+  end
+  for _, tier in ipairs({ self.data.days, self.data.weeks }) do
+    for _, segs in pairs(tier) do
+      for b in pairs(buckets) do
+        if segs[b] then
+          local seg = self:decode(segs[b], Store.SEGMENT_FIELDS)
+          local out, n = emptySegment(), 0
+          for i, id in ipairs(seg.ids) do
+            if not set[id] then
+              n = n + 1
+              for _, field in ipairs(Store.SEGMENT_FIELDS) do
+                local col = seg[field]
+                out[field][n] = col and col[i] or 0
+              end
+            end
+          end
+          if n < #seg.ids then
+            segs[b] = n > 0 and self:encode(out, Store.SEGMENT_FIELDS) or nil
+          end
+          self:pause()
+        end
+      end
+    end
+  end
+  self.data.rev = (self.data.rev or 0) + 1
+end
+
+-- data under a plain item ID that has variants: a mix of every suffix, not stored
+function Store:Mixed(id)
+  return self.data.suffixed[id] == true
+end
+
 -- kind: "full" (replicate scan, default) or "partial" (search / sell-tab results for a few items)
 -- packed (optional): the snapshot already compressed (a scan received over sync), stored as is.
 function Store:AddScan(snap, t, src, kind, packed)
@@ -250,6 +310,8 @@ function Store:AddScan(snap, t, src, kind, packed)
     pos = pos - 1
   end
   table.insert(raw, pos, entry)
+  self:markSuffixed(ids)
+  local suffixed = self.data.suffixed
   local prevQty, obs = nil, 0
   if kind == "full" then
     prevQty, obs = self:previousFull(pos)
@@ -275,7 +337,7 @@ function Store:AddScan(snap, t, src, kind, packed)
     return rows
   end
   for i, id in ipairs(ids) do
-    local rows = bucketRows(id)
+    local rows = suffixed[id] and {} or bucketRows(id) -- a mixed plain-ID row: not stored
     local before = prevQty and prevQty[id]
     local drain = before and max(0, before - snap.qty[i]) or 0
     rows[#rows + 1] = {
@@ -297,7 +359,7 @@ function Store:AddScan(snap, t, src, kind, packed)
   end
   -- items that were listed in the previous scan and are gone now: all of it drained
   for id, before in pairs(prevQty or {}) do
-    if before > 0 then
+    if before > 0 and not suffixed[id] then
       local rows = bucketRows(id)
       rows[#rows + 1] = { id, drainOnly = true, [10] = before, [11] = obs }
     end
@@ -326,7 +388,7 @@ function Store:ImportDay(day, rows, key)
   for _, r in ipairs(rows) do
     local b = r[1] % Store.BUCKETS
     local seg = tier[b] and self:decode(tier[b], Store.SEGMENT_FIELDS)
-    if not (seg and find(seg.ids, r[1])) then
+    if not (seg and find(seg.ids, r[1])) and not data.suffixed[r[1]] then
       byBucket[b] = byBucket[b] or {}
       local list = byBucket[b]
       list[#list + 1] = { r[1], r[2], r[3], r[4], r[5], r[6], r[7], 0, r[8] or 0 }

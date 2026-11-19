@@ -40,12 +40,64 @@ function ns.Today(t)
   return math.floor(t / ns.DAY)
 end
 
--- item ID from an item link, or from text that is just a number; nil otherwise
+-- Item keys. Random-suffix gear ("Raider Shortsword of Magic" vs "... of the Monkey") sells at very different prices,
+-- so each suffix is tracked as its own item: key = itemID + SUFFIX_STEP * suffixID (the suffix field of the item
+-- link; negative on clients with scaled random suffixes). A plain item's key is its item ID. SUFFIX_STEP is a multiple
+-- of the store's bucket count, so a variant shares its base item's bucket. Keys can exceed 2^31: format them with
+-- tostring, never "%d".
+ns.SUFFIX_STEP = 1000000
+
+function ns.ItemKey(itemID, suffix)
+  if not itemID then
+    return nil
+  end
+  suffix = tonumber(suffix) or 0
+  return itemID + ns.SUFFIX_STEP * suffix
+end
+
+-- key -> itemID, suffixID (0 for a plain item)
+function ns.SplitKey(key)
+  local id = key % ns.SUFFIX_STEP
+  return id, (key - id) / ns.SUFFIX_STEP
+end
+
+function ns.BaseID(key)
+  return key and key % ns.SUFFIX_STEP
+end
+
+function ns.IsVariant(key)
+  return key ~= nil and key ~= key % ns.SUFFIX_STEP
+end
+
+-- an item string the client's item APIs and tooltips accept: "item:2207" or "item:2207::::::1234"
+function ns.ItemString(key)
+  local id, suffix = ns.SplitKey(key)
+  if suffix == 0 then
+    return "item:" .. id
+  end
+  return "item:" .. id .. "::::::" .. tostring(suffix)
+end
+
+-- item key from an item link or item string (with its suffix), or from text that is just a number; nil otherwise
 function ns.ItemIDFrom(text)
   if type(text) ~= "string" or text == "" then
     return nil
   end
-  return tonumber(text:match("item:(%d+)") or text:match("^%s*(%d+)%s*$"))
+  local fields = text:match("item:([%-:%d]+)")
+  if fields then
+    -- item:itemID:enchant:gem1:gem2:gem3:gem4:suffix:...  (empty fields allowed)
+    local parts, n = {}, 0
+    for f in (fields .. ":"):gmatch("([^:]*):") do
+      n = n + 1
+      parts[n] = f
+      if n == 7 then
+        break
+      end
+    end
+    local id = tonumber(parts[1])
+    return id and ns.ItemKey(id, parts[7])
+  end
+  return tonumber(text:match("^%s*(%d+)%s*$"))
 end
 
 -- the addon's icon (also used for the minimap / broker launcher and the window title)

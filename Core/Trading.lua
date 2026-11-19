@@ -69,12 +69,16 @@ local function countBags(first, last)
   local out = {}
   for bag = first, last do
     for slot = 1, numSlots(bag) or 0 do
-      local a, b, _, _, _, _, _, _, _, id, bound = itemInfo(bag, slot)
+      local a, b, _, _, _, _, link, _, _, id, bound = itemInfo(bag, slot)
       local itemID, count
       if type(a) == "table" then -- C_Container: an info table
-        itemID, count, bound = a.itemID, a.stackCount, a.isBound
-      else -- classic: texture, count, ..., itemID (10th), isBound (11th)
+        itemID, count, bound, link = a.itemID, a.stackCount, a.isBound, a.hyperlink
+      else -- classic: texture, count, ..., link (7th), itemID (10th), isBound (11th)
         itemID, count = id, b
+      end
+      if itemID and link then -- a random-suffix variant is its own item
+        local key = ns.ItemCache.Learn(link)
+        itemID = key and ns.BaseID(key) == itemID and key or itemID
       end
       if itemID and not isBound(bag, slot, bound) then
         out[itemID] = (out[itemID] or 0) + (count or 1)
@@ -117,7 +121,10 @@ function Trading:ScanAuctions()
   for i = 1, ah.GetNumOwnedAuctions() or 0 do
     local info = ah.GetOwnedAuctionInfo(i)
     local active = info and (info.status == nil or info.status == 0)
-    local id = info and info.itemKey and info.itemKey.itemID
+    local id = info and info.itemKey and ns.ItemKey(info.itemKey.itemID, info.itemKey.itemSuffix)
+    if id and info.itemLink then
+      id = ns.ItemCache.Learn(info.itemLink) or id
+    end
     if active and id then
       local qty = info.quantity or 1
       out[id] = (out[id] or 0) + qty
@@ -238,6 +245,11 @@ local function idFromName(name, byName)
   if not name then
     return nil
   end
+  -- a random-suffix variant's full name ("... of Magic"), learned from its links
+  local variant = ns.ItemCache.byName and ns.ItemCache.byName[name]
+  if variant then
+    return variant
+  end
   local instant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
   if instant then
     local ok, id = pcall(instant, name)
@@ -290,7 +302,7 @@ local function mailItemID(i)
   end
   for slot = 1, (ATTACHMENTS_MAX_RECEIVE or 16) do
     local link = GetInboxItemLink(i, slot)
-    local id = ns.ItemIDFrom(link)
+    local id = ns.ItemCache.Learn(link)
     if id then
       return id
     end

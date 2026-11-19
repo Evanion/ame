@@ -12,7 +12,8 @@ describe("Ingest", function()
     function a.GetBrowseResults()
       local out = {}
       for i, r in ipairs(a.browse) do
-        out[i] = { itemKey = { itemID = r[1], itemLevel = r[4] or 0 }, minPrice = r[2], totalQuantity = r[3] }
+        local key = { itemID = r[1], itemLevel = r[4] or 0, itemSuffix = r[5] or 0 }
+        out[i] = { itemKey = key, minPrice = r[2], totalQuantity = r[3] }
       end
       return out
     end
@@ -24,6 +25,9 @@ describe("Ingest", function()
       -- name, texture, count, quality, usable, level, levelType, minBid, minIncrement, buyout, bid, highBidder,
       -- bidderFullName, owner, ownerFullName, saleStatus, itemID, hasAllInfo
       return nil, nil, r[3], 1, true, 1, "", 0, 0, r[2], 0, false, nil, nil, nil, 0, r[1], false
+    end
+    function a.GetReplicateItemLink(i) -- rows can carry a link as r[4]
+      return a.rows[i + 1][4]
     end
     function a.HasFullCommoditySearchResults(itemID)
       return a.full[itemID] ~= false
@@ -43,7 +47,7 @@ describe("Ingest", function()
     end
     function a.GetItemSearchResultInfo(key, i)
       local r = a.items[key.itemID][i]
-      return { itemKey = key, buyoutAmount = r[1], quantity = r[2] }
+      return { itemKey = key, buyoutAmount = r[1], quantity = r[2], itemLink = r[3] }
     end
     return a
   end
@@ -100,6 +104,58 @@ describe("Ingest", function()
         got[#got + 1] = { snap = snap, t = t, kind = kind, info = info }
       end,
     })
+  end)
+
+  describe("random-suffix variants", function()
+    local magic = "|cff1eff00|Hitem:15211::::::1234::60:::::|h[Raider Shortsword of Magic]|h|r"
+    local monkey = "|cff1eff00|Hitem:15211::::::567::60:::::|h[Raider Shortsword of the Monkey]|h|r"
+
+    it("records each suffix of a full scan under its own key, from the row's link", function()
+      api.rows = { { 15211, 3500, 1, magic }, { 15211, 900, 1, monkey }, { 15211, 3700, 1, magic }, { 10, 50, 1 } }
+      ingest:OnReplicateRequested()
+      ingest:OnReplicateUpdate()
+      drain()
+      local snap = got[1].snap
+      assert.are.equal(3, #snap.ids)
+      assert.is_nil(row(snap, 15211))
+      assert.are.equal(2, row(snap, ns.ItemKey(15211, 1234)).qty)
+      assert.are.equal(900, row(snap, ns.ItemKey(15211, 567)).min)
+      assert.are.equal(1, row(snap, 10).qty)
+    end)
+
+    it("keys browse rows by their itemKey's suffix", function()
+      api.browse = { { 15211, 3500, 2, 0, 1234 }, { 15211, 900, 1, 0, 567 } }
+      api.browseFull = true
+      ingest:OnBrowseQuery({ searchString = "" })
+      ingest:OnBrowseResults()
+      drain()
+      local snap = got[1].snap
+      assert.are.equal(3500, row(snap, ns.ItemKey(15211, 1234)).min)
+      assert.are.equal(900, row(snap, ns.ItemKey(15211, 567)).min)
+    end)
+
+    it("keys item search rows by their links, and the search by its itemKey", function()
+      api.items[15211] = { { 3500, 1, magic }, { 3600, 2 } }
+      ingest:OnItemResults({ itemID = 15211, itemLevel = 0, itemSuffix = 1234 })
+      fireTimers()
+      drain()
+      local snap = got[1].snap
+      assert.are.same({ ns.ItemKey(15211, 1234) }, snap.ids)
+      assert.are.equal(3, row(snap, ns.ItemKey(15211, 1234)).qty)
+    end)
+
+    it("hands the links to learn, which names the variants", function()
+      local learned = {}
+      ingest.learn = function(link)
+        learned[#learned + 1] = link
+        return ns.ItemIDFrom(link)
+      end
+      api.rows = { { 15211, 3500, 1, magic } }
+      ingest:OnReplicateRequested()
+      ingest:OnReplicateUpdate()
+      drain()
+      assert.are.same({ magic }, learned)
+    end)
   end)
 
   describe("full scans", function()

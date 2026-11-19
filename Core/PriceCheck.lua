@@ -206,9 +206,17 @@ end
 
 -- the item a query names, from a link or number, else the client's cache by name
 local function resolve(query)
+  local cache = ns.ItemCache
   local id = PC.QueryID(query)
   if id then
+    if cache.Learn then
+      cache.Learn(query) -- a variant's link names it
+    end
     return id
+  end
+  local variant = cache.byName and cache.byName[query] -- "Raider Shortsword of Magic"
+  if variant then
+    return variant
   end
   local instant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
   if instant then

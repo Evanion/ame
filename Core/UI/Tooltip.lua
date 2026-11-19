@@ -105,13 +105,18 @@ function Tooltip:Install()
   if TooltipDataProcessor and Enum and Enum.TooltipDataType then
     TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip, data)
       if tooltip == GameTooltip or tooltip == ItemRefTooltip then
-        addLines(tooltip, data and data.id)
+        -- the link carries a random suffix (data.id is only the base item)
+        local link = data and data.hyperlink
+        if not link and tooltip.GetItem then
+          link = select(2, tooltip:GetItem())
+        end
+        addLines(tooltip, link and ns.ItemCache.Learn(link) or (data and data.id))
       end
     end)
   elseif GameTooltip and GameTooltip.HookScript then
     GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
       local _, link = tooltip:GetItem()
-      addLines(tooltip, link and ns.ItemIDFrom(link))
+      addLines(tooltip, link and ns.ItemCache.Learn(link))
     end)
   end
 
@@ -119,7 +124,7 @@ function Tooltip:Install()
   if HandleModifiedItemClick then
     hooksecurefunc("HandleModifiedItemClick", function(link)
       if link and ns.Settings:ClickModifierDown() then
-        local id = ns.ItemIDFrom(link)
+        local id = ns.ItemCache.Learn(link)
         if id then
           ns.UI:ShowItem(id)
         end

@@ -70,7 +70,7 @@ function UI:CreateItemView(parent)
       end
     end,
     onEnter = function(self)
-      local id = ns.ItemIDFrom(self:GetText())
+      local id = ns.ItemCache.Learn(self:GetText())
       if not id then
         local best = UI:ItemSuggestions(self:GetText(), 1)[1]
         id = best and best.itemID
@@ -693,7 +693,7 @@ function UI:ShowItem(itemID)
   self.chart:SetMessage(L["Loading history..."])
 
   ns.AME:WithStore("chart-" .. itemID, self:ViewShard(), function(store)
-    return { series = store:Series(itemID), latest = store:Latest(itemID) }
+    return { series = store:Series(itemID), latest = store:Latest(itemID), mixed = store:Mixed(itemID) }
   end, function(ok, res)
     if self.itemID ~= itemID then
       return
@@ -702,7 +702,7 @@ function UI:ShowItem(itemID)
       self.chart:SetMessage(L["Could not load history: %s"]:format(tostring(res)))
       return
     end
-    self:FillItem(itemID, res.series, res.latest)
+    self:FillItem(itemID, res.series, res.latest, res.mixed)
   end)
 end
 
@@ -714,19 +714,24 @@ function UI:ReloadItem()
   end
   self.intraday, self.intradayItem = nil, nil
   ns.AME:WithStore("chart-" .. itemID, self:ViewShard(), function(store)
-    return { series = store:Series(itemID), latest = store:Latest(itemID) }
+    return { series = store:Series(itemID), latest = store:Latest(itemID), mixed = store:Mixed(itemID) }
   end, function(ok, res)
     if ok and self.itemID == itemID then
-      self:FillItem(itemID, res.series, res.latest)
+      self:FillItem(itemID, res.series, res.latest, res.mixed)
     end
   end)
 end
 
-function UI:FillItem(_, series, latest)
+-- mixed: the item has random suffixes, and each has its own history (see Store:Mixed)
+function UI:FillItem(_, series, latest, mixed)
   local v = self.itemView
   if #series == 0 then
     self.series = nil
-    self.chart:SetMessage(L["No history for this item yet. Search for it at the auction house, or run a full scan."])
+    self.chart:SetMessage(
+      mixed
+          and L['Each suffix of this item ("of the Monkey", "of Magic"...) has its own prices. Shift-click one, or search its full name.']
+        or L["No history for this item yet. Search for it at the auction house, or run a full scan."]
+    )
     v.sub:SetText(ns.ShardLabel(self:ViewShard()))
     for _, c in ipairs(v.cards) do
       c.value:SetText("-")
@@ -1076,7 +1081,7 @@ function UI:OnItemLinkClicked(link, fromInsert)
   if not (link and self.frame and self.frame:IsShown()) then
     return
   end
-  local id = ns.ItemIDFrom(link)
+  local id = ns.ItemCache.Learn(link)
   if not id then
     return
   end

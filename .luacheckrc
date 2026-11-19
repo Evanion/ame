@@ -28,7 +28,7 @@ read_globals = {
   "GetItemInfo", "C_Item", "GetItemInfoInstant", "GetItemClassInfo", "GetItemSubClassInfo", "CreateFramePool", "CreateTexturePool", "Mixin", "CreateFromMixins", "ColorMixin",
   "CreateColor", "ITEM_QUALITY_COLORS", "ItemRefTooltip", "ChatEdit_InsertLink", "HandleModifiedItemClick",
   -- namespaces
-  "C_AuctionHouse", "C_ChatInfo", "QueryAuctionItems", "GetNumAuctionItems", "GetAuctionItemInfo", "C_AddOns", "LoadAddOn",
+  "C_AuctionHouse", "C_ChatInfo", "QueryAuctionItems", "GetNumAuctionItems", "GetAuctionItemInfo", "GetAuctionItemLink", "C_AddOns", "LoadAddOn",
   -- unit / realm
   "GetServerTime", "GetNormalizedRealmName", "GetRealmName", "GetAutoCompleteRealms", "UnitName",
   "UnitFactionGroup", "IsInGuild", "C_FriendList", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "GetInboxNumItems", "GetInboxInvoiceInfo",

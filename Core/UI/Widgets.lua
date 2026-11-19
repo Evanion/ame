@@ -662,16 +662,30 @@ function W.ItemHover(parent, first, text)
     if not self.itemID then
       return false
     end
-    tip:SetItemByID(self.itemID)
+    W.SetItemTip(tip, self.itemID)
   end)
   return f
 end
 
-function W.ItemInfo(itemID)
+-- the game's item tooltip for an item key (a random-suffix variant shows its own stats)
+function W.SetItemTip(tip, key)
+  if ns.IsVariant(key) then
+    tip:SetHyperlink(ns.ItemString(key))
+  else
+    tip:SetItemByID(key)
+  end
+end
+
+-- name, link, quality, icon of an item key; a variant has its own name and link, the rest is its base item's
+function W.ItemInfo(key)
+  local itemID = ns.BaseID(key)
   local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
   local name, link, quality, _, _, _, _, _, _, icon = getInfo(itemID)
   if not icon and C_Item and C_Item.GetItemIconByID then
     icon = C_Item.GetItemIconByID(itemID)
+  end
+  if name and ns.IsVariant(key) then
+    name, link = ns.ItemCache.Name(key) or name, ns.ItemCache.Link(key) or link
   end
   return name, link, quality, icon
 end
@@ -685,7 +699,7 @@ end
 -- run fn once item data is cached
 function W.OnItemLoaded(itemID, fn)
   if Item and Item.CreateFromItemID then
-    local item = Item:CreateFromItemID(itemID)
+    local item = Item:CreateFromItemID(ns.BaseID(itemID))
     if item and not item:IsItemEmpty() then
       item:ContinueOnItemLoad(fn)
       return

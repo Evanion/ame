@@ -278,7 +278,13 @@ AME.ingest = ns.Ingest.New({
     GetAuctionItemInfo = function(...)
       return GetAuctionItemInfo(...)
     end,
+    GetAuctionItemLink = function(...)
+      return GetAuctionItemLink and GetAuctionItemLink(...)
+    end,
   },
+  learn = function(link)
+    return ns.ItemCache.Learn(link)
+  end,
 })
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -289,7 +295,8 @@ function AME:SearchAuctionHouse(itemID)
     say(L["open the auction house first"])
     return false
   end
-  local name = ns.ItemCache.Name(itemID)
+  -- the auction house searches base names: a variant's search lists every suffix of the item
+  local name = ns.ItemCache.Name(itemID and ns.BaseID(itemID))
   if not name then
     say(L["item not loaded yet - try again in a moment"])
     return false
@@ -384,6 +391,8 @@ function handlers.ADDON_LOADED(name)
   AME_DB.v = AME_DB.v or 1
   AME_DB.stats = AME_DB.stats or {}
   AME_DB.backfilled = AME_DB.backfilled or {}
+  AME_DB.variants = AME_DB.variants or {} -- random-suffix item names, learned from links
+  ns.ItemCache.Init(AME_DB.variants)
   AME.compressor = ns.Compress.New(LibStub("LibDeflate"))
   ns.Settings:Init()
   AME_DB.watch = AME_DB.watch or {}
@@ -599,7 +608,7 @@ end
 
 function handlers.ITEM_SEARCH_RESULTS_UPDATED(itemKey)
   AME.ingest:OnItemResults(itemKey)
-  followSearch(type(itemKey) == "table" and itemKey.itemID or nil)
+  followSearch(type(itemKey) == "table" and ns.ItemKey(itemKey.itemID, itemKey.itemSuffix) or nil)
 end
 
 events:SetScript("OnEvent", function(_, event, ...)

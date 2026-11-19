@@ -139,7 +139,7 @@ function SelfTest.Run(AME)
     local ms = debugprofilestop() - t0
     AME_DB.stats.lookupBench = { itemID = id, points = #series, ms = ms }
     assert(#series > 0, L["item from latest scan has no daily points"])
-    return "PASS", L["item %d: %d points in %.1f ms"]:format(id, #series, ms)
+    return "PASS", L["item %d: %d points in %.1f ms"]:format(ns.BaseID(id), #series, ms)
   end)
 
   check(L["market index"], function()
