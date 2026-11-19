@@ -1050,6 +1050,18 @@ describe("addon in a stubbed client", function()
       guide.byKey.tabMarket.link.scripts.OnClick(guide.byKey.tabMarket.link)
       assert.are.equal("Market tab", guide.title.text) -- the article keeps its full title
       assert.is_true(guide.examples["tabMarket:3"]:IsShown()) -- a live example in the article (the signal filter)
+      -- every article opens, its drawn examples included (the Item article's candles)
+      for key in pairs(guide.byKey) do
+        guide:ShowArticle(key)
+      end
+      guide:ShowArticle("tabItem")
+      local candles = 0
+      for id, e in pairs(guide.examples) do
+        if id:match("^tabItem:") and e:IsShown() then
+          candles = candles + 1
+        end
+      end
+      assert.is_true(candles >= 4) -- verdict, legend, candle anatomy, candle patterns
       assert.is_true(guide.heads[1]:IsShown()) -- and a section heading
       -- slash commands are links: a click puts the command in the chat box
       guide.byKey.commands.link.scripts.OnClick(guide.byKey.commands.link)

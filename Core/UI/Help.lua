@@ -323,6 +323,13 @@ function Help.Articles()
             EX("legend"),
             L["Market price, the lowest listing, the 7-day average, supply, and your own buys and sales as dots."],
             L["Hover the item's name or icon at the top for the game's own tooltip, with its stats."],
+            H(L["Reading candles"]),
+            L["Switch the chart from Line to Candles for a trading view. Each candle sums up a stretch of time - 2 hours on the 2D range, a day or more on longer ranges (so a range shows at most about 60 candles) - in four prices:"],
+            EX("candleAnatomy"),
+            L["Green: the price closed higher than it opened. Red: lower. The body is the move; the wicks are how far the price strayed. AME's candles open where the previous one closed, so they join up without gaps, and the lower wick is the cheapest listing anyone posted - which is why it's often long: a cheap copy or two shows up long before the market price follows. Hover a candle for its exact open, high, low and close."],
+            L["A few shapes worth knowing:"],
+            EX("candlePatterns"),
+            L["Read candles together with the supply bars underneath: a price move on rising supply means sellers are piling in; on falling supply, it's buyers clearing the shelf. The verdict in the sidebar does that reading for you."],
             H(L["Ranges"]),
             L["2D shows every scan from the last two days, with 2-hour candles. The longer ranges show a point per day, and per week beyond 60 days."],
             H(L["Following the auction house"]),
@@ -524,7 +531,130 @@ local function pair(parent, y, label, value)
   b:SetText(value)
 end
 
+-- Candles drawn the way the Item chart draws them (a 1 px wick from low to high, a body from open to close; green
+-- closed higher, red lower), from made-up prices, into box (x, y from the top-left of f, w by h).
+--   data: { { open, high, low, close }, ... }; lo, hi: the price range the box spans (default: the data's).
+-- Returns yOf(price) and xOf(i) for annotations.
+local function drawCandles(f, x, y, w, h, data, lo, hi, maxBody)
+  if not lo then
+    lo, hi = math.huge, -math.huge
+    for _, c in ipairs(data) do
+      lo, hi = math.min(lo, c[3]), math.max(hi, c[2])
+    end
+    local pad = (hi - lo) * 0.08
+    lo, hi = lo - pad, hi + pad
+  end
+  local function yOf(p)
+    return y + (hi - p) / (hi - lo) * h
+  end
+  local slot = w / #data
+  local bw = math.max(3, math.min(maxBody or 12, math.floor(slot * 0.6)))
+  local function xOf(i)
+    return math.floor(x + (i - 0.5) * slot)
+  end
+  for i, c in ipairs(data) do
+    local col = c[4] >= c[1] and W.COLORS.up or W.COLORS.down
+    local wick = f:CreateTexture(nil, "ARTWORK")
+    wick:SetColorTexture(col[1], col[2], col[3], 0.8)
+    wick:SetSize(1, math.max(1, yOf(c[3]) - yOf(c[2])))
+    wick:SetPoint("TOP", f, "TOPLEFT", xOf(i) + 0.5, -yOf(c[2]))
+    local body = f:CreateTexture(nil, "OVERLAY")
+    body:SetColorTexture(col[1], col[2], col[3], 1)
+    body:SetSize(bw, math.max(1, yOf(math.min(c[1], c[4])) - yOf(math.max(c[1], c[4]))))
+    body:SetPoint("TOP", f, "TOPLEFT", xOf(i) + 0.5, -yOf(math.max(c[1], c[4])))
+  end
+  return yOf, xOf, bw
+end
+
+-- candles from closing prices, the way AME builds them: each opens where the last one closed. Optional per-candle
+-- extras: lows[i] / highs[i] (how far the wick reaches beyond the body).
+local function chain(closes, lows, highs)
+  local out, prev = {}, closes[1]
+  for i, c in ipairs(closes) do
+    local o = i == 1 and c - 2 or prev
+    out[i] = {
+      o,
+      math.max(o, c) + ((highs and highs[i]) or 2),
+      math.min(o, c) - ((lows and lows[i]) or 3),
+      c,
+    }
+    prev = c
+  end
+  return out
+end
+
 Help.EXAMPLES = {
+  -- one green and one red candle, the green one's four prices labelled
+  candleAnatomy = function(parent)
+    local f = panel(parent, 176)
+    local data = { { 100, 141, 70, 128 }, { 128, 133, 98, 112 } }
+    local yOf, xOf, bw = drawCandles(f, 16, 14, 110, 140, data, 62, 146, 18)
+    local labels = {
+      { 141, L["High: the highest price seen"] },
+      { 128, L["Close: the market price at the end"] },
+      { 100, L["Open: where the previous candle closed"] },
+      { 70, L["Low: the cheapest listing seen (the wick)"] },
+    }
+    for _, l in ipairs(labels) do
+      local y = math.floor(yOf(l[1]))
+      local line = f:CreateTexture(nil, "ARTWORK")
+      line:SetColorTexture(1, 1, 1, 0.22)
+      line:SetHeight(1)
+      line:SetPoint("TOPLEFT", f, "TOPLEFT", xOf(1) + bw / 2 + 3, -y)
+      line:SetPoint("RIGHT", f, "TOPLEFT", 150, 0)
+      local t = W.Text(f, "GameFontHighlightSmall")
+      t:SetPoint("LEFT", f, "TOPLEFT", 156, -y)
+      t:SetPoint("RIGHT", f, "RIGHT", -10, 0)
+      t:SetText(l[2])
+    end
+    for i, word in ipairs({ W.Color("good", L["Up"]), W.Color("bad", L["Down"]) }) do
+      local t = W.Text(f, "GameFontDisableSmall", "CENTER")
+      t:SetPoint("TOP", f, "TOPLEFT", xOf(i), -158)
+      t:SetText(word)
+    end
+    return f
+  end,
+  -- five shapes worth knowing, each a small chart beside what it means
+  candlePatterns = function(parent)
+    local patterns = {
+      {
+        chain({ 100, 104, 103, 109, 114, 120, 126, 131 }),
+        L["Climbing: green candles, each closing higher. Buyers take listings faster than sellers replace them."],
+      },
+      {
+        chain({ 100, 101, 99, 100, 102, 101, 100, 101 }, { 3, 24, 4, 28, 3, 22, 4, 26 }),
+        L["Long lower wicks, steady bodies: someone keeps listing far below the market, and those sell before the price moves. Cheap copies are worth watching for."],
+      },
+      {
+        chain({ 100, 102, 101, 103, 102, 104, 103, 104 }, nil, { 2, 2, 2, 34, 2, 2, 2, 2 }),
+        L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."],
+      },
+      {
+        chain({ 100, 103, 106, 108, 110, 93, 86, 84 }),
+        L["A big red candle after a climb: sellers piled in and undercut each other. Check the supply bars below the candles before buying into it."],
+      },
+      {
+        chain({ 100, 101, 100, 101, 100, 100, 101, 100 }, { 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1 }),
+        L["Small bodies, short wicks: a quiet, steady market. Its market price is a safe guide."],
+      },
+    }
+    local ROW = 62
+    local f = panel(parent, #patterns * ROW + 8)
+    for k, p in ipairs(patterns) do
+      local top = 8 + (k - 1) * ROW
+      local box = f:CreateTexture(nil, "BACKGROUND", nil, 1)
+      box:SetColorTexture(0.07, 0.08, 0.1, 1)
+      box:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -top)
+      box:SetSize(140, ROW - 8)
+      drawCandles(f, 14, top + 4, 132, ROW - 16, p[1])
+      local t = W.Text(f, "GameFontHighlightSmall")
+      t:SetPoint("TOPLEFT", f, "TOPLEFT", 162, -top - 4)
+      t:SetPoint("RIGHT", f, "RIGHT", -10, 0)
+      t:SetWordWrap(true)
+      t:SetText(p[2])
+    end
+    return f
+  end,
   signals = function(parent)
     local f = panel(parent, 5 * 22 + 12)
     local rows = {
