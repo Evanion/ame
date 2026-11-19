@@ -728,6 +728,7 @@ describe("addon in a stubbed client", function()
           linenLine = linenLine or (line.itemID == 2589 and line)
         end
         assert.is_not_nil(linenLine)
+        assert.are.equal(step.entry.recipe.product, v.titleHit.itemID) -- the title is the product
         -- the whole path's reagents on one shopping list
         ns.UI:CraftingAction()
         local list = ns.AME.shopping:Lists()[#ns.AME.shopping:Lists()]

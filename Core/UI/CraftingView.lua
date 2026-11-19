@@ -452,6 +452,11 @@ function UI:CreateCraftingView(parent, contentArea)
   v.detailCol = col
   local st = col:Card(0).stack
   v.title = st:Text("GameFontNormalLarge")
+  -- the title is the row's item (product, material or recipe): it acts like one too (UI.ItemLine)
+  v.titleHit = CreateFrame("Frame", nil, slots.right.content)
+  v.titleHit:SetPoint("TOPLEFT", v.title, "TOPLEFT")
+  v.titleHit:SetPoint("BOTTOMRIGHT", v.title, "BOTTOMRIGHT")
+  UI.ItemLine(v.titleHit)
   v.subtitle = st:Text("GameFontDisableSmall", 4)
   v.colorRow = st:Row(14, 6) -- Leveling: the step's skill colors
   st = col:Card().stack
@@ -461,24 +466,7 @@ function UI:CreateCraftingView(parent, contentArea)
     v.lines[i] = line
     -- a line about an item (a reagent) acts like one: click searches the AH (or opens the chart), Shift-click
     -- links it in chat, hover shows its tooltip
-    line:EnableMouse(true)
-    line:SetScript("OnMouseUp", function(self)
-      UI:CraftingLineClick(self.itemID)
-    end)
-    W.Tooltip(line, function(tip, self)
-      if not self.itemID then
-        return false
-      end
-      W.SetItemTip(tip, self.itemID)
-      tip:AddLine(" ")
-      tip:AddLine(
-        ns.AME.ahOpen and L["Click: search the auction house  ·  Shift-click: link in chat"]
-          or L["Click: price chart  ·  Shift-click: link in chat"],
-        0.6,
-        0.6,
-        0.6
-      )
-    end)
+    UI.ItemLine(line)
   end
   v.note = col:Text("GameFontDisableSmall", 6)
   local actions = col:Row(26, 10)
@@ -610,6 +598,43 @@ function UI:RefreshCrafting()
   self:RenderCraftingDetail()
 end
 
+-- A frame about an item (frame.itemID, nil: none) acts like one: click searches the AH (or opens the chart), Shift-click
+-- links it in chat, hover shows its tooltip.
+function UI.ItemLine(frame)
+  frame:EnableMouse(true)
+  frame:SetScript("OnMouseUp", function(self)
+    UI:CraftingLineClick(self.itemID)
+  end)
+  W.Tooltip(frame, function(tip, self)
+    if not self.itemID then
+      return false
+    end
+    W.SetItemTip(tip, self.itemID)
+    tip:AddLine(" ")
+    tip:AddLine(
+      ns.AME.ahOpen and L["Click: search the auction house  ·  Shift-click: link in chat"]
+        or L["Click: price chart  ·  Shift-click: link in chat"],
+      0.6,
+      0.6,
+      0.6
+    )
+  end)
+end
+
+-- the item a row is about, for the breakdown's title
+function UI.CraftRowItem(mode, e)
+  if not e or e.note then
+    return nil
+  elseif mode == "leveling" then
+    return e.entry and e.entry.recipe.product
+  elseif mode == "earners" then
+    return e.recipe and e.recipe.product
+  elseif mode == "recipes" then
+    return e.item
+  end
+  return e.itemID
+end
+
 -- the breakdown's lines: { label, value, itemID (optional: the line is about that item) }
 local function setLines(v, pairsList)
   for i, line in ipairs(v.lines) do
@@ -652,6 +677,7 @@ function UI:RenderCraftingDetail()
     return
   end
   self:RenderCraftingDetailRows()
+  v.titleHit.itemID = UI.CraftRowItem(self.craftMode, self.craftSelected)
   local width = v.slots.right.content:GetWidth()
   v.detailCol:Height(width and width > 0 and width or UI.SIDE_PANEL_W)
   v.slots.right.pane:Measure()
