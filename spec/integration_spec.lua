@@ -729,6 +729,16 @@ describe("addon in a stubbed client", function()
         end
         assert.is_not_nil(linenLine)
         assert.are.equal(step.entry.recipe.product, v.titleHit.itemID) -- the title is the product
+        -- a learn / train note selected: its text in the sidebar (built when shown)
+        local noteRow
+        for _, r in ipairs(ns.UI.craftRows) do
+          noteRow = noteRow or (r.note and type(r.text) == "function" and r)
+        end
+        assert.is_not_nil(noteRow)
+        ns.UI.craftSelected = noteRow
+        ns.UI:RenderCraftingDetail()
+        assert.are.equal(noteRow.text(), v.subtitle.text)
+        assert.is_nil(rawget(v.titleHit, "itemID")) -- a note is about no item
         -- the whole path's reagents on one shopping list
         ns.UI:CraftingAction()
         local list = ns.AME.shopping:Lists()[#ns.AME.shopping:Lists()]

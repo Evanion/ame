@@ -598,8 +598,8 @@ function UI:RefreshCrafting()
   self:RenderCraftingDetail()
 end
 
--- A frame about an item (frame.itemID, nil: none) acts like one: click searches the AH (or opens the chart), Shift-click
--- links it in chat, hover shows its tooltip.
+-- A frame about an item (frame.itemID, nil: none) acts like one: click searches the AH (or opens the chart),
+-- Shift-click links it in chat, hover shows its tooltip.
 function UI.ItemLine(frame)
   frame:EnableMouse(true)
   frame:SetScript("OnMouseUp", function(self)
@@ -699,8 +699,12 @@ function UI:RenderCraftingDetailRows()
   v.colorBar:SetShown(false)
   if self.craftMode == "leveling" and (not e or e.note) then
     v.title:SetText(W.Dim(L["Select a step"]))
+    local noteText = e and e.text
+    if type(noteText) == "function" then -- learn / train notes build their text when shown
+      noteText = noteText()
+    end
     v.subtitle:SetText(
-      e and e.text
+      noteText
         or L["Click a step for its skill colors, the reagents to buy and where the results go. The button puts the whole path's reagents on a shopping list."]
     )
     setLines(v, {})
