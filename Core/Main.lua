@@ -489,6 +489,7 @@ function handlers.PLAYER_LOGIN()
       ns.UI:Prebuild()
     end
   end)
+  ns.Professions:Start()
   if ns.SyncService:Init(AME, AME.syncTransport) then
     ns.SyncService:Start()
   end

@@ -29,6 +29,8 @@ Settings.DEFAULTS = {
   -- the Market tab's Overview (indexes and totals for the whole AH): off by default, since it adds work to every
   -- market index build
   marketOverview = false,
+  -- Crafting (top earners, sell or refine, recipes to buy): off by default; while off, profession windows aren't read
+  crafting = false,
   syncGuild = true,
   syncTrusted = true,
   minimap = { hide = false },

@@ -1,6 +1,6 @@
 # M16: Crafting — top earners, sell-or-refine, recipes worth buying
 
-Status: plan (Nov 2026). Research: "Recipe database for WoW Forever" (reports/, kept out of the repo) and the
+Status: phase 1 built (Core/Professions.lua, recording behind the `crafting` setting); plan otherwise (Nov 2026). Research: "Recipe database for WoW Forever" (reports/, kept out of the repo) and the
 in-game probe (`/amedev recipes`, Core/Dev/RecipeProbe.lua) on Forever 1.60.1.
 
 ## What it does
@@ -80,6 +80,14 @@ All prices from the faction market index; AH cut and deposit from Settings; sell
   stack vs net of crafting and selling the product, limited by what the market absorbs.
 - **Recipe payback** = recipe's buy price / gold per day of what it teaches, for characters with that profession,
   enough skill and the recipe unlearned. Recipes priced far below their usual price are flagged (the index knows).
+
+## Where recipes come from (sources)
+
+- Version 1: recipe items on the auction house (from scans) and trainer recipes. The generated table also records
+  SkillLineAbility's AcquireMethod, so a recipe can say "train it at 250" or "needs the recipe item".
+- Later: vendor sources (who sells which recipe, for how much, reputation / Merchant's Favor), learned from merchant
+  windows (MERCHANT_SHOW) and seeded from AllTheThings' Forever data (MIT) if it checks out. Drop and quest sources
+  are left out unless asked for.
 
 ## UI
 
