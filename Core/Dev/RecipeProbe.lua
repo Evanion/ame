@@ -72,6 +72,19 @@ local function recipe(id)
     out.name, out.learned, out.category = safe(info.name), safe(info.learned), safe(info.categoryID)
     out.difficulty, out.skillUps = safe(info.relativeDifficulty), safe(info.numSkillUps)
     out.sla = safe(info.skillLineAbilityID)
+    if not info.learned then
+      -- unlearned: every plain field the client returns (looking for a required skill), and its source text
+      out.info = {}
+      for k, val in pairs(info) do
+        if type(val) ~= "table" and type(val) ~= "function" then
+          out.info[k] = safe(val)
+        end
+      end
+      if T.GetRecipeSourceText then
+        local okSource, text = pcall(T.GetRecipeSourceText, id)
+        out.source = okSource and safe(text) or nil
+      end
+    end
   else
     out.infoError = tostring(info)
   end

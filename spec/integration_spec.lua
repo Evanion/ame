@@ -693,6 +693,35 @@ describe("addon in a stubbed client", function()
         -- recipes to buy: none listed in this market
         v.modes:Select("recipes")
         assert.are.equal(0, #ns.UI.craftRows)
+        -- leveling: First Aid from 40 to 75 on linen (the only reagent with a price here)
+        ns.UI.levelTarget = 75
+        v.modes:Select("leveling")
+        assert.is_true(v.levelProf:IsShown())
+        assert.is_false(v.char:IsShown())
+        local lv = ns.UI.leveling
+        assert.are.equal(129, lv.choice.profession)
+        local plan = lv.plans.recovery
+        assert.is_true(plan.complete, tostring(plan.stuck))
+        assert.are.equal(40, plan.steps[1].from)
+        assert.truthy(plan.cost > 0)
+        local step
+        for _, r in ipairs(ns.UI.craftRows) do
+          step = step or (not r.note and r)
+        end
+        assert.truthy(v.levelCards.cards[1].value.text:find("-"), v.levelCards.cards[1].value.text) -- a cost, in red
+        ns.UI.craftSelected = step
+        ns.UI:RenderCraftingDetail()
+        assert.is_true(v.colorBar:IsShown())
+        local texts = {}
+        for _, line in ipairs(v.lines) do
+          texts[#texts + 1] = line.label.text or ""
+        end
+        assert.truthy(table.concat(texts, "|"):find("Skill%-up chance"))
+        -- the whole path's reagents on one shopping list
+        ns.UI:CraftingAction()
+        local list = ns.AME.shopping:Lists()[#ns.AME.shopping:Lists()]
+        assert.are.equal("First Aid to 75", list.name)
+        assert.truthy(list.items[2589].need > 0)
         -- switched off again: back to the Market tab, the tab gone
         ns.Settings:Set("crafting", false)
         ns.UI:CraftingChanged(false)

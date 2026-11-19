@@ -15,6 +15,7 @@ local MODES = {
   { "earners", L["Top earners"] },
   { "refine", L["Sell or refine"] },
   { "recipes", L["Recipes to buy"] },
+  { "leveling", L["Leveling"] },
 }
 local BREAKDOWN_ROWS = 14
 UI.RECIPE_LISTING_DAYS = 2 -- recipe items seen on the AH within this many days count as for sale
@@ -251,7 +252,15 @@ local COLUMNS = {
         return table.concat(names, ", ")
       end,
     },
-    { key = "cost", label = L["Cost"], width = 72, format = "money" },
+    {
+      key = "cost",
+      money = true,
+      label = L["Cost"],
+      width = 72,
+      text = function(e)
+        return UI.CostText(e.cost)
+      end,
+    },
     { key = "revenue", label = L["Sells for"], width = 72, format = "money" },
     {
       key = "profit",
@@ -324,7 +333,15 @@ local COLUMNS = {
         return L["%s needs %d (has %d)"]:format(charName(l.char), r.rank or 0, l.skill)
       end,
     },
-    { key = "price", label = L["Price"], width = 72, format = "money" },
+    {
+      key = "price",
+      money = true,
+      label = L["Price"],
+      width = 72,
+      text = function(r)
+        return UI.CostText(r.price)
+      end,
+    },
     {
       key = "perDay",
       money = true,
@@ -343,13 +360,17 @@ local COLUMNS = {
       end,
     },
   },
+  leveling = UI.LEVELING_COLUMNS, -- Core/UI/LevelingView.lua
 }
 
 function UI:CreateCraftingView(parent, contentArea)
   local v = contentArea(parent)
   self.craftView = v
   self.craftMode = "earners"
-  local slots = UI.Slots(v, { toolbar = 22, right = UI.SIDE_PANEL_W, rightCards = true, status = true })
+  local slots = UI.Slots(
+    v,
+    { toolbar = 22, header = 42, headerBelow = true, right = UI.SIDE_PANEL_W, rightCards = true, status = true }
+  )
   v.slots = slots
   local bar = slots.toolbar
   v.modes = W.Segmented(bar, MODES, {
@@ -400,6 +421,7 @@ function UI:CreateCraftingView(parent, contentArea)
   local st = col:Card(0).stack
   v.title = st:Text("GameFontNormalLarge")
   v.subtitle = st:Text("GameFontDisableSmall", 4)
+  v.colorRow = st:Row(14, 6) -- Leveling: the step's skill colors
   st = col:Card().stack
   v.lines = {}
   for i = 1, BREAKDOWN_ROWS do
@@ -420,6 +442,9 @@ function UI:CreateCraftingView(parent, contentArea)
     end
   end)
   v.chart:SetPoint("RIGHT")
+
+  self:CreateLevelingControls(v, slots)
+  self:ShowLevelingControls(v, false)
 
   v.message = W.Text(slots.main, "GameFontDisable")
   v.message:SetPoint("TOPLEFT", 20, -40)
@@ -449,6 +474,8 @@ function UI:RefreshCrafting()
     return
   end
   v.modes:Select(self.craftMode, true)
+  local leveling = self.craftMode == "leveling"
+  self:ShowLevelingControls(v, leveling)
   -- the character filter: characters with recorded professions
   local options = { { false, L["All characters"] } }
   local keys = {}
@@ -484,8 +511,11 @@ function UI:RefreshCrafting()
     )
   end
   self.craftModel = m
-  local rows = self:CraftingRows(m)
+  local rows = leveling and self:LevelingRows(m) or self:CraftingRows(m)
   self.craftRows = rows
+  if leveling then
+    self:RenderLevelingHeader(v)
+  end
   local t = v.tables[self.craftMode]
   t:SetData(rows)
   t:Render()
@@ -540,8 +570,21 @@ function UI:RenderCraftingDetail()
     e = nil
     self.craftSelected = nil
   end
-  v.action:SetShown(e ~= nil)
-  v.chart:SetShown(e ~= nil)
+  v.action:SetShown(e ~= nil and not e.note)
+  v.chart:SetShown(e ~= nil and not e.note)
+  v.colorBar:SetShown(false)
+  if self.craftMode == "leveling" and (not e or e.note) then
+    v.title:SetText(W.Dim(L["Select a step"]))
+    v.subtitle:SetText(
+      e and e.text
+        or L["Click a step for its skill colors, the reagents to buy and where the results go. The button puts the whole path's reagents on a shopping list."]
+    )
+    setLines(v, {})
+    v.note:SetText("")
+    v.action:SetText(L["Add all reagents to a shopping list"])
+    v.action:SetShown(self.leveling ~= nil)
+    return
+  end
   if not e then
     v.title:SetText(W.Dim(L["Select a row"]))
     v.subtitle:SetText(
@@ -553,7 +596,16 @@ function UI:RenderCraftingDetail()
   end
   local mode = self.craftMode
   local lines = {}
-  if mode == "earners" then
+  if mode == "leveling" then
+    lines = self:LevelingDetail(v, e)
+    v.note:SetText(
+      e.entry.estimated
+          and not e.entry.known
+          and L["Trained at a trainer; the game data has no training level for it, so the level here is estimated."]
+        or ""
+    )
+    v.action:SetText(L["Add all reagents to a shopping list"])
+  elseif mode == "earners" then
     local ev = e.eval
     v.title:SetText(e.recipe.product and itemName(e.recipe.product) or W.Dim(L["Enchant"]))
     local names = {}
@@ -634,7 +686,11 @@ end
 -- the sidebar's main button: a shopping list of one craft's reagents (top earners), or search the auction house
 function UI:CraftingAction()
   local e = self.craftSelected
-  if not e then
+  if not e and self.craftMode ~= "leveling" then
+    return
+  end
+  if self.craftMode == "leveling" then
+    self:LevelingShoppingList()
     return
   end
   if self.craftMode == "earners" then

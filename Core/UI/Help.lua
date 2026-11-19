@@ -367,6 +367,10 @@ function Help.Articles()
             L["For the materials your characters hold: sell them as they are, or craft them into something worth more and sell that. Takes says how long the market needs to absorb what you'd list."],
             H(L["Recipes to buy"]),
             L["Recipes on the auction house that one of your characters could learn and none knows yet, ranked by payback: the recipe's price divided by what it would earn a day. Recipes that need more skill are listed after the ones you can learn now."],
+            H(L["Leveling"]),
+            L["The cheapest way to raise a profession from where a character is to the skill you pick, recalculated from today's prices. For every skill point AME picks the recipe with the lowest expected cost per point: how many crafts a point takes (always one while a recipe is orange, more as it turns yellow and green) times what a craft costs, minus what its result gets back."],
+            L["Pick a goal: Cheapest counts only what you spend; Best recovery subtracts what the results sell for (only as many as the market takes in about three days; the rest go to a vendor, or are disenchanted if one of your characters has Enchanting); Fewest crafts saves time; My materials uses what the character holds first. Results a later step needs are kept for it, and big reagent buys are priced along the listings when AME has recorded them."],
+            L["Steps can need a recipe: one on the auction house (its price is added) or one taught by a trainer. The game data has no training level for most trainer recipes, so those steps say the level is estimated. Click a step for its skill colors and reagents; the button puts the whole path's reagents on a shopping list."],
           },
         },
         {

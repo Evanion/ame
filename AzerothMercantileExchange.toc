@@ -70,6 +70,7 @@ Core\UI\SyncView.lua
 Core\UI\SettingsView.lua
 Core\UI\ArbitrageView.lua
 Core\UI\PortfolioView.lua
+Core\UI\LevelingView.lua
 Core\UI\CraftingView.lua
 Core\UI\Tooltip.lua
 Core\UI\SellAssist.lua
