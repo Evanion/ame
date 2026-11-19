@@ -66,7 +66,16 @@ globals = {
 -- dev-only tools (never shipped)
 files["Core/Dev/**"] = {
   globals = { "SLASH_AMEDEV1" },
-  read_globals = { "UpdateAddOnMemoryUsage", "GetAddOnMemoryUsage", "InCombatLockdown" },
+  read_globals = {
+    "UpdateAddOnMemoryUsage",
+    "GetAddOnMemoryUsage",
+    "InCombatLockdown",
+    "C_TradeSkillUI",
+    "GetBuildInfo",
+    "ProfessionsFrame",
+    "GetProfessions",
+    "GetProfessionInfo",
+  },
 }
 
 files["spikes/AME_Spike/**"] = {

@@ -67,3 +67,4 @@ Core\UI\Tooltip.lua
 Core\UI\SellAssist.lua
 Core\UI\Launcher.lua
 Core\Dev\Profiler.lua
+Core\Dev\RecipeProbe.lua

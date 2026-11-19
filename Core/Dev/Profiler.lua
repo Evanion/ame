@@ -298,10 +298,18 @@ SlashCmdList.AMEDEV = function(msg)
     local before = collectgarbage("count")
     collectgarbage("collect")
     say("garbage collected: %s -> %s (all addons)", kb(before * 1024), kb(collectgarbage("count") * 1024))
+  elseif cmd == "recipes" then
+    local ok, err = pcall(Dev.ProbeRecipes, say)
+    if not ok then
+      say("recipe probe failed: %s", tostring(err))
+    end
   elseif cmd == "" or cmd == "stats" then
     summary()
   else
-    say("/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev reset")
+    say(
+      "/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev recipes"
+        .. "  ·  /amedev reset"
+    )
   end
 end
 
