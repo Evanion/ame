@@ -103,8 +103,11 @@ meta = {
     "releaseType": rtype,
 }
 data_slug = data_slug or "ame-crafting-data"
-if data_slug:  # the crafting data library: its own project, installed with AME by the CurseForge app
-    meta["relations"] = {"projects": [{"slug": data_slug, "type": "requiredDependency"}]}
+# the crafting data library: its own project. Optional until CurseForge has approved it; then "requiredDependency",
+# so the CurseForge app installs it with AME
+DATA_RELATION = "optionalDependency"
+if data_slug:
+    meta["relations"] = {"projects": [{"slug": data_slug, "type": DATA_RELATION}]}
 print(json.dumps(meta))
 PY
 
