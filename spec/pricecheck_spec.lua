@@ -11,6 +11,18 @@ describe("PriceCheck", function()
       PC = load().PriceCheck
     end)
 
+    it("knows when chat arrives as secret values (dungeons, raids), which it can't read", function()
+      assert.is_false(PC.Secret("!pc Linen Cloth", "Someone")) -- no secret values in this client
+      local secret = {}
+      _G.issecretvalue = function(v)
+        return v == secret
+      end
+      assert.is_true(PC.Secret(secret, "Someone"))
+      assert.is_true(PC.Secret("!pc x", secret))
+      assert.is_false(PC.Secret("!pc x", "Someone", nil))
+      _G.issecretvalue = nil
+    end)
+
     it("parses !pc requests and nothing else", function()
       assert.are.equal("Linen Cloth", PC.Parse("!pc Linen Cloth"))
       assert.are.equal("Linen Cloth", PC.Parse("  !PC   Linen Cloth  "))

@@ -497,6 +497,20 @@ function PC:Prune()
   end
 end
 
+-- any of the values secret (12.x: chat in restricted content)? Then they can't be read or compared.
+function PC.Secret(...)
+  local test = _G.issecretvalue
+  if not test then
+    return false
+  end
+  for i = 1, select("#", ...) do
+    if test((select(i, ...))) then
+      return true
+    end
+  end
+  return false
+end
+
 function PC:Start()
   if self.frame or not CreateFrame then
     return
@@ -510,6 +524,13 @@ function PC:Start()
   end
   f:RegisterEvent("CHAT_MSG_ADDON")
   f:SetScript("OnEvent", function(_, event, a, b, _, d)
+    -- in dungeons, raids and encounters the game hands addons chat as secret values: unreadable, so not answered
+    if PC.Secret(a, b, d) then
+      if event ~= "CHAT_MSG_ADDON" then
+        trace("a chat line in %s couldn't be read here (dungeon, raid or encounter)", PC.CHANNELS[event] or event)
+      end
+      return
+    end
     local ok, err = pcall(function()
       if event == "CHAT_MSG_ADDON" then
         if a == PC.PREFIX then
