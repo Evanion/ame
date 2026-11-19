@@ -2,7 +2,7 @@
 
 **Recipe data for Azeroth Mercantile Exchange's Crafting tab: what every profession can make in WoW Forever, what it costs, and how it levels.**
 
-AME Crafting Data is a companion to [Azeroth Mercantile Exchange](https://www.curseforge.com/wow/addons/azeroth-mercantile-exchange) (AME), the auction house addon that records prices from your own scans. With this data installed, AME's **Crafting** tab can tell you which of your recipes make money at today's auction house prices, whether to sell your materials or craft them into something first, which recipes for sale on the auction house are worth buying, and the cheapest way to level a profession.
+AME Crafting Data is a companion to [Azeroth Mercantile Exchange](https://www.curseforge.com/wow/addons/ame) (AME), the auction house addon that records prices from your own scans. With this data installed, AME's **Crafting** tab can tell you which of your recipes make money at today's auction house prices, whether to sell your materials or craft them into something first, which recipes for sale on the auction house are worth buying, and the cheapest way to level a profession.
 
 On its own it adds nothing to your screen: it's the reference data AME reads. It loads only when you open the Crafting tab, so it costs nothing at login or while you play.
 
@@ -40,7 +40,7 @@ The data is rebuilt automatically from each new WoW Forever build and released a
 
 ## Requirements
 
-- [Azeroth Mercantile Exchange](https://www.curseforge.com/wow/addons/azeroth-mercantile-exchange) (switch the Crafting tab on under Settings › General)
+- [Azeroth Mercantile Exchange](https://www.curseforge.com/wow/addons/ame) (switch the Crafting tab on under Settings › General)
 - WoW Forever
 
 ## For addon authors
