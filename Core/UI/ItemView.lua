@@ -199,7 +199,7 @@ function UI:CreateItemView(parent)
       lines[#lines + 1] = { W.Dim(L["Lowest"]), W.Money(rows.min.y) }
     end
     if rows.sma and rows.sma.x == x then
-      lines[#lines + 1] = { W.Dim(L["7-day average"]), W.Money(rows.sma.y) }
+      lines[#lines + 1] = { W.Dim(L["%d-day average"]:format(UI:AverageDays())), W.Money(rows.sma.y) }
     end
     if rows.qty and rows.qty.x == x then
       lines[#lines + 1] = { W.Dim(L["Supply"]), W.Count(rows.qty.y) }
@@ -527,12 +527,18 @@ local function candlePeriod(series, rangeDays)
   return math.max(1, math.ceil((span or 1) / 60))
 end
 
--- A rolling 7-day (168-hour) average at each of xs: every hour of the week before counts once - its scan or hourly
--- price (the last in that hour), carried on for up to UI.CARRY_HOURS when an hour has none, else that day's daily
+-- the chart's average line: over 2 days on 2D, 7 days on every longer range
+function UI:AverageDays()
+  return (self.intradayMode and (self.rangeDays or 7) < 7) and self.rangeDays or 7
+end
+
+-- A rolling average over `hours` (default 168, a week) at each of xs: every hour before counts once - its scan or
+-- hourly price (the last in that hour), carried on for up to UI.CARRY_HOURS when an hour has none, else that day's daily
 -- price (byDay[day]). So a scan moves it by about 1/168th, and a gap or a day boundary doesn't make it jump.
 -- Returns ys aligned with xs (nil where there's nothing to average).
 UI.ROLL_HOURS, UI.CARRY_HOURS = 168, 6
-function UI.RollingAverage(xs, values, byDay)
+function UI.RollingAverage(xs, values, byDay, hours)
+  hours = hours or UI.ROLL_HOURS
   local hourly = {}
   for i, x in ipairs(xs) do
     if values[i] then
@@ -543,7 +549,7 @@ function UI.RollingAverage(xs, values, byDay)
   if #xs == 0 then
     return out
   end
-  local first = math.floor(xs[1] / 3600) - UI.ROLL_HOURS + 1
+  local first = math.floor(xs[1] / 3600) - hours + 1
   local last = math.floor(xs[#xs] / 3600)
   -- each hour's value, then running sums over the window
   local sum, n, vals, seen, seenAt = {}, {}, {}, nil, nil
@@ -561,7 +567,7 @@ function UI.RollingAverage(xs, values, byDay)
     if v then
       s, c = s + v, c + 1
     end
-    local drop = vals[h - UI.ROLL_HOURS]
+    local drop = vals[h - hours]
     if drop then
       s, c = s - drop, c - 1
     end
@@ -687,7 +693,7 @@ function UI:DrawItemChart()
         byDay[p.day] = p.market
       end
     end
-    local rolled = UI.RollingAverage(xs, market, byDay)
+    local rolled = UI.RollingAverage(xs, market, byDay, self:AverageDays() * 24)
     for i, x in ipairs(xs) do
       if rolled[i] then
         smaXs[#smaXs + 1], smaYs[#smaYs + 1] = x, rolled[i]
@@ -705,7 +711,7 @@ function UI:DrawItemChart()
     end
   end
   if #smaXs > 1 then
-    legend[#legend + 1] = { { 1, 0.67, 0.2 }, L["7-day average"], kind = "line" }
+    legend[#legend + 1] = { { 1, 0.67, 0.2 }, L["%d-day average"]:format(self:AverageDays()), kind = "line" }
   end
   -- what a vendor pays: a dashed line when it's near the prices (where selling to a vendor can beat the auction
   -- house); far below them, a line would squash the chart, so the legend just says it

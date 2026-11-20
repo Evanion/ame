@@ -398,7 +398,7 @@ function Help.Articles()
             L["The sidebar opens with the call and why, in plain words: the price against its average, what supply is doing, how fast it sells and how much data it rests on."],
             H(L["The chart"]),
             EX("legend"),
-            L["Market price, the lowest listing, the 7-day average, supply, and your own buys and sales as dots. A dashed line marks what a vendor pays for one when that's near the prices - where selling to a vendor can beat the auction house; when it's far below, the legend just says it."],
+            L["Market price, the lowest listing, the 7-day average (a 2-day one on 2D), supply, and your own buys and sales as dots. A dashed line marks what a vendor pays for one when that's near the prices - where selling to a vendor can beat the auction house; when it's far below, the legend just says it."],
             L["Hover the item's name or icon at the top for the game's own tooltip, with its stats."],
             H(L["Reading candles"]),
             L["Switch the chart from Line to Candles for a trading view. Each candle sums up a stretch of time - 2 hours on the 2D range, 6 hours on 7D, a day or more on longer ranges (so a range shows at most about 60 candles) - in four prices:"],

@@ -1819,8 +1819,9 @@ describe("addon in a stubbed client", function()
       drainJobs()
       local market = ns.UI.chart.series.market
       assert.are.same(times, market.xs) -- one point per scan, at the scan's time
-      -- the 7-day average: at each scan, the 6 days before it and that scan's price
+      -- the average over the range: on 2D, a 2-day one
       assert.are.same(times, ns.UI.chart.series.sma.xs)
+      assert.truthy(ns.UI.itemView.legend.text:find("2-day average", 1, true), ns.UI.itemView.legend.text)
       -- intraday candles: 2-hour candles from the scans
       v.style.byKey.candles.scripts.OnClick(v.style.byKey.candles)
       assert.are.equal(5, #ns.UI.candles.xs)
