@@ -58,6 +58,7 @@ function Store.New(data, opts)
   data.seen = data.seen or {}
   data.books = data.books or {}
   data.suffixed = data.suffixed or {}
+  data.hours = data.hours or {}
   return setmetatable({
     data = data,
     compressor = opts.compressor,
@@ -298,8 +299,7 @@ function Store:AddScan(snap, t, src, kind, packed)
   local data = self.data
   local day = floor(t / Store.DAY)
   local ids = snap.ids
-  -- dedupe key includes the content's shape, so several partial searches in the same second don't collide
-  local key = ("%d:%s:%s:%d:%s:%s"):format(t, tostring(src), kind, #ids, tostring(ids[1]), tostring(ids[#ids]))
+  local key = Store.ScanKey(t, src, kind, ids)
   local seen = data.seen[day]
   if seen and seen[key] then
     return false
@@ -380,8 +380,56 @@ function Store:AddScan(snap, t, src, kind, packed)
   data.seen[day] = seen or {}
   data.seen[day][key] = true
 
+  if kind == "full" then
+    self:AddHourFrom(snap, t, src, key)
+  end
   self:Rollup()
   return true
+end
+
+-- A scan's dedupe key. It includes the content's shape, so several partial searches in the same second don't collide.
+function Store.ScanKey(t, src, kind, ids)
+  return ("%d:%s:%s:%d:%s:%s"):format(t, tostring(src), kind, #ids, tostring(ids[1]), tostring(ids[#ids]))
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Hourly points: data.hours = { [hour] = { t =, src =, key =, s = packed } }, hour = floor(t / 3600) (UTC). One per
+-- hour (the newest full scan in it), kept HOURS_KEEP. Plain items only, in Codec.HOUR_FIELDS with prices rounded
+-- (Codec.Round3): ~26 KB on a busy house, against ~240 KB for the full scan with its random-suffix variants. They
+-- keep an hourly price line for a week after the full scans are pruned (RAW_KEEP), and are what sync sends to fill
+-- the hours a player missed (docs/plans/sync-v2.md). key: the dedupe key of the scan it came from.
+
+Store.HOUR = 3600
+Store.HOURS_KEEP = 7 * Store.DAY
+
+-- the hourly point of a full scan (replaces an older one of the same hour)
+function Store:AddHourFrom(snap, t, src, key)
+  local hours = self.data.hours
+  local hour = floor(t / Store.HOUR)
+  local have = hours[hour]
+  if have and have.t >= t then
+    return false
+  end
+  local suffixed = self.data.suffixed
+  local cols = { ids = {}, min = {}, market = {}, qty = {}, auctions = {} }
+  local round3 = Codec.Round3
+  local n = 0
+  for i, id in ipairs(snap.ids) do
+    if not ns.IsVariant(id) and not suffixed[id] then
+      n = n + 1
+      cols.ids[n], cols.min[n], cols.market[n] = id, round3(snap.min[i]), round3(snap.market[i])
+      cols.qty[n], cols.auctions[n] = snap.qty[i], snap.auctions[i]
+    end
+  end
+  self:pause()
+  local packed = Codec.Pack(Codec.Encode(Codec.HOUR_FIELDS, cols), self.compressor, self:pauser())
+  hours[hour] = { t = t, src = src, key = key, s = packed }
+  return true
+end
+
+-- an hourly point decoded (Codec.HOUR_FIELDS columns)
+function Store:HourPoint(entry)
+  return Codec.Decode(Codec.HOUR_FIELDS, Codec.Unpack(entry.s, self.compressor, self:pauser()), nil, self:pauser())
 end
 
 -- Backfill: add day points for items that day doesn't have yet (own data always wins). rows: list of
@@ -486,7 +534,28 @@ function Store:Rollup()
   end
   if keep > 1 then
     for _ = 1, keep - 1 do
-      table.remove(raw, 1)
+      local e = table.remove(raw, 1)
+      -- a full scan from before hourly points existed: keep its hour before it goes
+      local hour = floor(e.t / Store.HOUR)
+      if (e.k or "full") == "full" and not data.hours[hour] and e.t >= now - Store.HOURS_KEEP then
+        local ok, snap = pcall(function()
+          return Codec.Decode(
+            Codec.SNAPSHOT_FIELDS,
+            Codec.Unpack(e.s, self.compressor, self:pauser()),
+            nil,
+            self:pauser()
+          )
+        end)
+        if ok then
+          self:AddHourFrom(snap, e.t, e.src, Store.ScanKey(e.t, e.src, "full", snap.ids))
+        end
+      end
+    end
+  end
+  local hourCutoff = floor((now - Store.HOURS_KEEP) / Store.HOUR)
+  for hour in pairs(data.hours) do
+    if hour < hourCutoff then
+      data.hours[hour] = nil
     end
   end
 
@@ -653,7 +722,7 @@ function Store:BucketSeries(b, fromDay, toDay)
   return out
 end
 
--- Size of a shard's stored history: days of daily points and the bytes of their packed segments.
+-- Size of a shard's stored history: days of daily points, and the bytes of their packed segments and hourly points.
 function Store.Footprint(data)
   local days, bytes = 0, 0
   for _, buckets in pairs(data and data.days or {}) do
@@ -661,6 +730,9 @@ function Store.Footprint(data)
     for _, packed in pairs(buckets) do
       bytes = bytes + #packed
     end
+  end
+  for _, e in pairs(data and data.hours or {}) do
+    bytes = bytes + #e.s
   end
   return days, bytes
 end
@@ -690,10 +762,41 @@ function Store:Latest(itemID)
 end
 
 -- Every recent scan (full and partial, kept in full for RAW_KEEP) that saw the item, oldest first:
--- { { t, min, market, median, qty, auctions, kind, src }, ... }. Decodes one snapshot per scan (uncached, yields
--- between scans), so it's meant for a background job.
+-- { { t, min, market, median, qty, auctions, kind, src }, ... }; before that, the hourly points (kind "hour", no
+-- median; plain items only). Decodes one snapshot per scan (uncached, yields between scans), so it's meant for a
+-- background job.
 function Store:Intraday(itemID, fromT)
   local out = {}
+  -- hourly points whose scan isn't among the raw ones any more (pruned, or a point that came by sync)
+  local inRaw = {}
+  for _, e in ipairs(self.data.raw) do
+    inRaw[e.t] = true
+  end
+  local hours = {}
+  for _, e in pairs(self.data.hours) do
+    if not inRaw[e.t] and (not fromT or e.t >= fromT) and not ns.IsVariant(itemID) then
+      hours[#hours + 1] = e
+    end
+  end
+  table.sort(hours, function(a, b)
+    return a.t < b.t
+  end)
+  for _, e in ipairs(hours) do
+    local ok, p = pcall(self.HourPoint, self, e)
+    local i = ok and find(p.ids, itemID)
+    if i then
+      out[#out + 1] = {
+        t = e.t,
+        min = p.min[i],
+        market = p.market[i],
+        qty = p.qty[i],
+        auctions = p.auctions[i],
+        kind = "hour",
+        src = e.src,
+      }
+    end
+    self:pause()
+  end
   for _, e in ipairs(self.data.raw) do
     if not fromT or e.t >= fromT then
       -- not through the segment cache: a full scan decodes to ~40k numbers, dozens of them would pin lots of memory
@@ -715,5 +818,8 @@ function Store:Intraday(itemID, fromT)
       self:pause()
     end
   end
+  table.sort(out, function(a, b)
+    return a.t < b.t
+  end)
   return out
 end

@@ -7,9 +7,11 @@ local UI = ns.UI
 local DAY = ns.DAY
 local avgDays, contentArea = UI.AvgDays, UI.ContentArea
 
--- 2D plots every recent scan (intraday); the others plot daily history
+-- 2D plots every recent scan, 7D the hourly points (Store:Intraday); the others plot daily history
 local RANGES = { { "2D", 2 }, { "7D", 7 }, { "30D", 30 }, { "90D", 90 }, { "1Y", 365 }, { "All", nil, L["All"] } }
-local INTRADAY = "2D"
+local INTRADAY = { ["2D"] = true, ["7D"] = true }
+-- hours per candle on the intraday ranges (about 24-28 candles)
+local INTRADAY_CANDLE_HOURS = { [2] = 2, [7] = 6 }
 
 ---------------------------------------------------------------------------------------------------------------------
 -- Item view
@@ -177,7 +179,7 @@ function UI:CreateItemView(parent)
     return W.Count(val)
   end)
   chart:SetHoverFormatter(function(_, x, rows)
-    local lines = { W.Color("white", date(UI.intradayMode and "%a %b %d, %H:%M" or "%a %b %d, %Y", x)) }
+    local lines = { W.Color("white", date(UI:ShowingIntraday() and "%a %b %d, %H:%M" or "%a %b %d, %Y", x)) }
     local c = rows.candles and UI.candles
     if c and rows.candles.x == x then
       local i = rows.candles.index
@@ -388,11 +390,12 @@ function UI:SetRange(days, key)
   self.rangeDays, self.rangeKey = days, key
   self.itemView.ranges:Select(key, true)
   local wasIntraday = self.intradayMode
-  self.intradayMode = key == INTRADAY
+  self.intradayMode = INTRADAY[key] or false
   if self.intradayMode then
     self:LoadIntraday()
     return
   end
+  self.chart:SetMessage(nil)
   if wasIntraday and self.series then
     self:DrawItemChart()
   end
@@ -407,36 +410,67 @@ function UI:SetRange(days, key)
   end
 end
 
--- the last 2 days scan by scan (full scans and searches), from the scans kept in full
+-- the scan-by-scan points for the item and range are loaded (and there are some): the chart plots them
+function UI:ShowingIntraday()
+  return self.intradayMode
+      and self.intraday
+      and self.intradayItem == self.itemID
+      and (self.intradayDays or 0) >= (self.rangeDays or 0)
+      and #self:IntradayPoints() > 0
+    or false
+end
+
+-- the loaded points within the current range
+function UI:IntradayPoints()
+  local from = GetServerTime() - (self.rangeDays or 2) * DAY
+  local out = {}
+  for _, p in ipairs(self.intraday or {}) do
+    if p.t >= from then
+      out[#out + 1] = p
+    end
+  end
+  return out
+end
+
+-- 2D: the last 2 days scan by scan (full scans and searches, from the scans kept in full). 7D: those plus the
+-- hourly points before them; until they're loaded (or when there are none), its daily points.
 function UI:LoadIntraday()
-  local itemID = self.itemID
+  local itemID, days = self.itemID, self.rangeDays or 2
   if not itemID then
     return
   end
   local function show()
     local now = GetServerTime()
     self:DrawItemChart()
-    if #(self.intraday or {}) == 0 then
-      self.chart:SetMessage(L["No scans of this item in the last 2 days. Daily history is on the other ranges."])
-    else
+    if self:ShowingIntraday() then
       self.chart:SetMessage(nil)
-      self.chart:SetXRange(now - 2 * DAY, now + 3600)
+      self.chart:SetXRange(now - days * DAY, now + 3600)
+    elseif days <= 2 then
+      self.chart:SetMessage(L["No scans of this item in the last 2 days. Daily history is on the other ranges."])
+    else -- the daily points
+      self.chart:SetMessage(nil)
+      self.chart:SetXRange(now - days * DAY, now + DAY)
     end
   end
-  if self.intradayItem == itemID and self.intraday then
+  if self.intradayItem == itemID and self.intraday and (self.intradayDays or 0) >= days and not self.intradayStale then
     return show()
   end
-  self.chart:SetMessage(L["Loading recent scans..."])
-  ns.AME:WithStore("intraday-" .. itemID, self:ViewShard(), function(store)
-    return store:Intraday(itemID, GetServerTime() - 2 * DAY)
+  if days <= 2 and not self:ShowingIntraday() then
+    self.chart:SetMessage(L["Loading recent scans..."])
+  else
+    show() -- what's there (the daily points, or the points being reloaded) while they load
+  end
+  ns.AME:WithStore("intraday-" .. itemID .. "-" .. days, self:ViewShard(), function(store)
+    return store:Intraday(itemID, GetServerTime() - days * DAY)
   end, function(ok, points)
     if not ok then
       ns.AME:ReportError("recent scans", points)
     end
-    if self.itemID ~= itemID or not self.intradayMode then
+    if self.itemID ~= itemID or not self.intradayMode or (self.rangeDays or 2) > days then
       return
     end
-    self.intraday, self.intradayItem = ok and points or {}, itemID
+    self.intraday, self.intradayItem, self.intradayDays = ok and points or {}, itemID, days
+    self.intradayStale = nil
     show()
   end)
 end
@@ -472,8 +506,8 @@ end
 
 -- (Re)draw the item chart in the current style from self.series.
 function UI:DrawItemChart()
-  local intraday = self.intradayMode
-  local series, v, chart = intraday and self.intraday or self.series, self.itemView, self.chart
+  local intraday = self:ShowingIntraday()
+  local series, v, chart = intraday and self:IntradayPoints() or self.series, self.itemView, self.chart
   if not series or #series == 0 then
     chart:ClearSeries()
     v.legend:SetText("")
@@ -498,12 +532,12 @@ function UI:DrawItemChart()
   if candles then
     local c
     if intraday then
-      -- hourly candles from the individual scans (2 hours each over 2 days)
+      -- candles from the individual scans and hourly points (2 hours each over 2 days, 6 over 7)
       local hourly = {}
       for i, p in ipairs(series) do
         hourly[i] = { day = math.floor(p.t / 3600), market = p.market, min = p.min }
       end
-      c = ns.Analytics.Candles(hourly, 2, 3600)
+      c = ns.Analytics.Candles(hourly, INTRADAY_CANDLE_HOURS[self.rangeDays] or 2, 3600)
     else
       c = ns.Analytics.Candles(series, candlePeriod(series, self.rangeDays))
     end
@@ -695,7 +729,7 @@ function UI:ShowItem(itemID)
   self.frame:Show()
   self:ShowTab("item")
   self.itemID = itemID
-  self.intraday, self.intradayItem = nil, nil
+  self.intraday, self.intradayItem, self.intradayStale = nil, nil, nil
   local v = self.itemView
 
   local function header()
@@ -735,7 +769,7 @@ function UI:ReloadItem()
   if not itemID then
     return
   end
-  self.intraday, self.intradayItem = nil, nil
+  self.intradayStale = true -- reloaded behind the current points (no flash back to daily)
   ns.AME:WithStore("chart-" .. itemID, self:ViewShard(), function(store)
     return { series = store:Series(itemID), latest = store:Latest(itemID), mixed = store:Mixed(itemID) }
   end, function(ok, res)

@@ -1,6 +1,20 @@
 # Sync v2: guild fan-out, resumable transfers, a 7-day window
 
-Status: proposal (Nov 2026), for review. Nothing built yet.
+Status: agreed (Nov 2026). Step 1 built; steps 2-7 to do.
+
+### As built
+
+- **Step 1.** `data.hours` in Core/Store.lua:
+  - `AddHourFrom`, `HourPoint`, `Store.ScanKey`; `Codec.HOUR_FIELDS` and `Codec.Round3`.
+  - The item chart's 7D range plots hourly points, with 6-hour candles. It shows the daily points while they load.
+  - Upgrading: a full scan from before hourly points existed leaves its hour when it's pruned at 48 h.
+  - The late-merge sell-rate pair fix moved to step 3: until sync delivers points, every point comes from a scan
+    that was already merged.
+- **Measured on the real history:**
+  - A stored point is ~40 KB, not 26 KB: the store compresses in 16 KB pieces (Compress.CHUNK) to avoid frame
+    hitches.
+  - Building one takes ~50 ms; reading one ~20 ms (in a background job, which pauses between steps).
+  - Sync (step 2) should send a one-piece compression of the point, built in the background.
 
 ## Why
 

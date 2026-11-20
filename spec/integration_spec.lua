@@ -2257,10 +2257,27 @@ describe("addon in a stubbed client", function()
       _G.C_Item.GetItemInfo, _G.C_Container = getInfo, nil
     end)
 
+    it("plots the 7-day range from hourly points, and the longer ones by day", function()
+      seeded()
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      assert.are.equal("7D", ns.UI.rangeKey)
+      assert.is_true(ns.UI:ShowingIntraday())
+      local kinds = {}
+      for _, p in ipairs(ns.UI:IntradayPoints()) do
+        kinds[p.kind] = true
+      end
+      assert.is_true(kinds.hour, "hourly points from before the scans kept in full")
+      ns.UI:SetRange(30, "30D")
+      assert.is_false(ns.UI:ShowingIntraday())
+      assert.is_false(ns.UI.chart.message:IsShown())
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)
       drainJobs()
+      ns.UI:SetRange(30, "30D") -- daily candles (7D plots the hourly points)
       local v = ns.UI.itemView
       v.style.byKey.candles.scripts.OnClick(v.style.byKey.candles)
       assert.are.equal("candles", AME_DB.settings.chartStyle)

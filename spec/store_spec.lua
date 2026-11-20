@@ -115,6 +115,91 @@ describe("Store", function()
     end)
   end)
 
+  describe("hourly points", function()
+    local variant = 12 + 1000000 * 7 -- item 12 with suffix 7
+
+    it("Round3 keeps 3 significant figures", function()
+      assert.are.equal(999, ns.Codec.Round3(999))
+      assert.are.equal(1230, ns.Codec.Round3(1234))
+      assert.are.equal(123000, ns.Codec.Round3(123456))
+      assert.are.equal(100000, ns.Codec.Round3(99960))
+    end)
+
+    it("a full scan leaves one per hour: plain items, rounded prices; partial scans don't", function()
+      local data = {}
+      local store = newStore(data)
+      store:AddScan(snap({ [10] = { 12345, 23456, 1, 5, 2 }, [variant] = { 1, 1, 1, 1, 1 } }), clock, "a")
+      store:AddScan(snap({ [11] = { 1, 1, 1, 1, 1 } }), clock + 60, "b", "partial")
+      local hour = math.floor(clock / 3600)
+      local e = data.hours[hour]
+      assert.are.equal(clock, e.t)
+      assert.are.equal("a", e.src)
+      local p = store:HourPoint(e)
+      assert.are.same({ 10 }, p.ids)
+      assert.are.same({ 12300 }, p.min)
+      assert.are.same({ 23500 }, p.market)
+      assert.are.same({ 5 }, p.qty)
+      assert.are.same({ 2 }, p.auctions)
+      assert.are.equal(
+        1,
+        (function()
+          local n = 0
+          for _ in pairs(data.hours) do
+            n = n + 1
+          end
+          return n
+        end)()
+      )
+    end)
+
+    it("the newest full scan of an hour wins", function()
+      local data = {}
+      local store = newStore(data)
+      local h0 = clock - clock % 3600
+      store:AddScan(snap({ [10] = { 1, 1, 1, 1, 1 } }), h0 + 1200, "later")
+      store:AddScan(snap({ [10] = { 2, 2, 2, 2, 2 } }), h0 + 600, "earlier")
+      assert.are.equal("later", data.hours[math.floor(h0 / 3600)].src)
+      store:AddScan(snap({ [10] = { 3, 3, 3, 3, 3 } }), h0 + 1800, "latest")
+      assert.are.equal("latest", data.hours[math.floor(h0 / 3600)].src)
+    end)
+
+    it("are kept 7 days; a pruned full scan from before them leaves its hour", function()
+      local data = {}
+      local store = newStore(data)
+      local old = clock - 47 * 3600
+      store:AddScan(snap({ [10] = { 100, 110, 120, 5, 2 } }), old, "a")
+      data.hours = {} -- as if stored by an older version
+      clock = clock + 2 * 3600
+      store:AddScan(snap({ [10] = { 90, 100, 100, 4, 2 } }), clock, "b") -- prunes the old raw scan
+      assert.are.equal(1, #data.raw)
+      local e = data.hours[math.floor(old / 3600)]
+      assert.are.equal(old, e.t)
+      assert.are.same({ 110 }, store:HourPoint(e).market)
+      clock = clock + 7 * 86400 - 3600 -- the scan at "old" is now more than 7 days back
+      store:Rollup()
+      assert.is_nil(data.hours[math.floor(old / 3600)])
+      assert.is_not_nil(data.hours[math.floor((clock - 7 * 86400 + 3600) / 3600)])
+    end)
+
+    it("Intraday plots them before the scans kept in full, without repeating a scan", function()
+      local store = newStore()
+      store:AddScan(snap({ [10] = { 100, 110, 120, 5, 2 } }), clock - 5 * 86400, "a")
+      store:AddScan(snap({ [10] = { 90, 105, 115, 7, 3 } }), clock - 7200, "b")
+      store:AddScan(snap({ [10] = { 80, 95, 100, 2, 1 } }), clock - 60, "me", "partial")
+      local pts = store:Intraday(10, clock - 7 * 86400)
+      assert.are.equal(3, #pts)
+      assert.are.equal("hour", pts[1].kind)
+      assert.are.equal(clock - 5 * 86400, pts[1].t)
+      assert.are.equal(110, pts[1].market)
+      assert.is_nil(pts[1].median)
+      assert.are.equal("full", pts[2].kind) -- its hourly point isn't repeated
+      assert.are.equal("partial", pts[3].kind)
+      -- a 2-day window leaves the old hour out; a variant has no hourly points
+      assert.are.equal(2, #store:Intraday(10, clock - 2 * 86400))
+      assert.are.same({}, store:Intraday(variant, clock - 7 * 86400))
+    end)
+  end)
+
   describe("daily rollup", function()
     it("keeps the day's highest market price (the upper candle wick) next to the average", function()
       local store = newStore()

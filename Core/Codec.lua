@@ -17,6 +17,21 @@ ns.Codec = Codec
 
 Codec.VERSION = "1"
 Codec.SNAPSHOT_FIELDS = { "ids", "min", "market", "median", "qty", "auctions" }
+-- an hourly point (Store's hours tier): plain items only, prices to 3 significant figures (see Codec.Round3)
+Codec.HOUR_FIELDS = { "ids", "min", "market", "qty", "auctions" }
+
+-- a price (copper) to 3 significant figures: 123456 -> 123000. Charts and trends don't need the last copper, and
+-- rounded points compress far better (hourly points go out over sync).
+function Codec.Round3(v)
+  if v < 1000 then
+    return v
+  end
+  local p = 1
+  while v >= 1000 * p do
+    p = p * 10
+  end
+  return math.floor(v / p + 0.5) * p
+end
 
 local MAX_SAFE = 2 ^ 53
 
