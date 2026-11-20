@@ -18,7 +18,7 @@ ns.Codec = Codec
 Codec.VERSION = "1"
 Codec.SNAPSHOT_FIELDS = { "ids", "min", "market", "median", "qty", "auctions" }
 -- an hourly point (Store's hours tier): plain items only, prices to 3 significant figures (see Codec.Round3)
-Codec.HOUR_FIELDS = { "ids", "min", "market", "qty", "auctions" }
+Codec.HOUR_FIELDS = { "ids", "min", "market", "qty", "auctions", "median" } -- median: added later (may be missing)
 
 -- a price (copper) to 3 significant figures: 123456 -> 123000. Charts and trends don't need the last copper, and
 -- rounded points compress far better (hourly points go out over sync).

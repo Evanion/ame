@@ -40,6 +40,10 @@ Help.TERMS = {
     L["Sell-through"],
     L["How much of what was listed actually sold, in units: sold / (sold + expired + cancelled). It comes from real auction outcomes - your auction mail and cancels, and your guildmates' (shared automatically) - and recent ones count most. With a few outcomes it takes over from the scans: the sales rate, what a listing nets (VENDOR, DE) and the value of what you hold (worth the market price when it sells, the vendor's price when it doesn't)."],
   },
+  syncProtocol = {
+    L["Sync protocol"],
+    L["How AME shares with your guild. v2 (the default) sends each scan once to the whole guild, in small numbered pieces: a lost piece is sent again on its own, a /reload doesn't start a transfer over, and hours you missed - up to a week back - are filled in from whoever has them, so the 7D chart has a point for every hour someone scanned. v1 is the original: each player asks for each scan separately, over the last 48 hours. Pick v1 if sync seems to slow your game; v2 players keep sharing with you. Trusted players outside the guild always use v1."],
+  },
   signal = {
     L["Signal"],
     L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."]
@@ -194,6 +198,7 @@ Help.GLOSSARY = {
   "qty",
   "sellRate",
   "sellThrough",
+  "syncProtocol",
   "signal",
   "score",
   "phase",
@@ -456,6 +461,8 @@ function Help.Articles()
             L["Sharing is a section of the Settings tab."],
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
             L["Sharing happens on its own every 10 minutes. Sync now (in the Guild sharing card) does it right away: it sends what you have and asks your guild and trusted players to send theirs, so scans you're missing arrive within a minute or two."],
+            H(L["Sync protocol"]),
+            L["With v2 (the default), every scan goes to the whole guild at once, and hours you missed in the last week are filled in from whoever has them - a point per hour for the 7D chart, and whole days for days you have nothing of. It's paced at about one message a second, so a full scan takes several minutes to arrive, in the background. If sync seems to slow your game, pick v1 (lighter) under Guild sharing: you still get scans, the original way. The status under Guild sharing shows how many of the week's hours you have and what's on its way."],
             H(L["Sell-through"]),
             L["AME also shares how your auctions went - per item, how many units sold, expired or were cancelled, and what that taught the posting prices - no prices, gold or buyers. Everyone's outcomes add up: an item that never sells is found out after a few guildmates tried it, and posting advice learns from everyone's listings."],
             H(L["Keeping data honest"]),

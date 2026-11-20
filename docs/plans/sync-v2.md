@@ -1,6 +1,6 @@
 # Sync v2: guild fan-out, resumable transfers, a 7-day window
 
-Status: agreed (Nov 2026). Step 1 built; steps 2-7 to do.
+Status: agreed (Nov 2026). Steps 1-6 built with specs; step 7 (in game) to do.
 
 ### As built
 
@@ -15,6 +15,38 @@ Status: agreed (Nov 2026). Step 1 built; steps 2-7 to do.
     hitches.
   - Building one takes ~50 ms; reading one ~20 ms (in a background job, which pauses between steps).
   - Sync (step 2) should send a one-piece compression of the point, built in the background.
+- **Steps 2-6.**
+  - Engine: Core/SyncV2.lua (pure; spec/syncv2_spec.lua simulates a guild over a lossy channel, 60 random
+    seeds at 30% loss).
+  - Glue: Core/SyncV2Service.lua.
+  - Wire format: `Compress:Wire` / `Unwire`. The stored print-safe string is deflated again and encoded for the
+    addon channel (any byte but NUL), in 16 KB pieces: ~24% smaller.
+  - Hourly points now carry median too (added last, so older points decode without it). Points received by sync
+    merge into their day as a price sample, without a sell-rate pair. Whole days bring their sell-rate data.
+- **Differences from the plan:**
+  - Offers go out at once, as a claim, ahead of other objects' blocks.
+  - "Still sending" and "stalled" go by the sender's last offer or block, so an object queued behind another
+    doesn't look stalled.
+  - Requests wait a random 0-2 s too (everyone hears a manifest at once).
+  - A receiver that sees blocks of an object whose offer it missed asks for the offer (an empty missing list),
+    then catches up the missed blocks. That covers logging in mid-transfer.
+  - A new offer of the same object from the same sender replaces a stalled one, keeping its blocks when the
+    content matches.
+  - Senders send fresh full scans first, then hours, then whole days, never cutting into an object under way.
+  - Incoming objects are saved at logout print-safe (EncodeForPrint) and resume after a `/reload`, within an hour.
+  - Trusted players outside the guild stay on v1 whispers; v2 is guild only.
+- **Not built (later, if transfers prove slow):**
+  - Splitting one object's blocks between several holders.
+  - The sell-rate pair fix for points that land between two already paired.
+- **Wire sizes on the real Horde history, at 1 message per 1.05 s:**
+
+  | Object | Wire size | Time to send |
+  |---|---|---|
+  | Hourly point | 41 KB | ~3 min |
+  | Full scan | 174 KB | ~13 min |
+  | Whole day (all ~25k variants) | 451 KB | ~34 min |
+
+  Whole days are for days a player has nothing of: new installs and players back from a break.
 
 ## Why
 

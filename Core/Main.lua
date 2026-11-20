@@ -249,6 +249,7 @@ function AME:OnSnapshot(snap, t, kind, info)
         )
       end
       self:RebuildIndex()
+      ns.SyncService:PushScan(shard, t)
       ns.SyncService:Announce()
     else
       AME_DB.stats.partials = (AME_DB.stats.partials or 0) + 1
@@ -461,6 +462,7 @@ end
 
 -- save the market indexes so the next login has data right away (AME:RestoreIndexes)
 function handlers.PLAYER_LOGOUT()
+  ns.SyncService:SaveV2()
   if AME:HistoryLoaded() then
     AME:SaveIndexes()
   end

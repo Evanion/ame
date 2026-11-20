@@ -130,6 +130,7 @@ function Service:Init(AME, transport)
     end
   end)
   self.enabled = true
+  self:InitV2()
   return true
 end
 
@@ -329,12 +330,14 @@ function Service:Announce()
   local realm = self.AME:MarketRealmName()
   local targets = self:TrustedTargets()
   local any = false
+  -- on v2 the guild hears the v2 manifest; v1 announcements only while a v1-only player is around
+  local v1Guild = self:GuildActive() and (not self.v2 or self:V1Around())
   for shard, data in pairs(self.AME.history.shards) do
     if ns.SplitShard(shard) == realm then
       local inventory = Sync.Inventory(data.raw or {}, Sync.MAX_ANNOUNCE)
       if #inventory > 0 then
         local msg = Sync.EncodeAnnounce(shard, inventory)
-        if self:GuildActive() then
+        if v1Guild then
           self.transport:Send(Service.PREFIX, msg, "GUILD")
         end
         for _, name in ipairs(targets) do
@@ -346,6 +349,9 @@ function Service:Announce()
   end
   if any then
     self.stats.syncAnnounced = (self.stats.syncAnnounced or 0) + 1
+  end
+  if self.v2 and self:GuildActive() then
+    self.v2:Announce()
   end
   self:ShareWatchlists()
   self:ShareOutcomes(targets)
@@ -532,6 +538,13 @@ function Service:OnMessage(msg, distribution, sender)
   local data = self.AME.history.shards[m.shard]
 
   if m.type == "announce" then
+    if distribution == "GUILD" then
+      self:HeardProtocol(sender, 1)
+      -- on v2, guild members' scans come over v2; a v1-only player's only this way
+      if self.v2 and not self:IsV1Only(sender) then
+        return
+      end
+    end
     local want = Sync.Wanted(m, m.shard, data and data.raw or {}, GetServerTime(), Sync.WINDOW)
     local sent = 0
     for _, s in ipairs(want) do
@@ -571,6 +584,9 @@ function Service:Merge(m, sender)
     local ok, decoded = pcall(function()
       -- in pieces, pausing between them: a full scan is ~450 KB of text
       local pause = store:pauser()
+      if m.wire then -- sync v2: as it travelled (Compress Wire) - stored as the packed string inside it
+        m.packed = assert(AME.compressor:Unwire(m.wire, pause))
+      end
       return ns.Codec.DecodeSnapshot(ns.Codec.Unpack(m.packed, AME.compressor, pause), pause)
     end)
     if not ok or not decoded then
@@ -586,30 +602,7 @@ function Service:Merge(m, sender)
     end
     return { added = store:AddScan(snap, m.t, m.src, m.kind == "partial" and "partial" or "full", m.packed) }
   end, function(done, result)
-    local why = done and result and result.rejected
-    if why then
-      self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
-      if why ~= "undecodable" then
-        self.stats.lastSyncRejection = ("%s: %s"):format(tostring(sender), tostring(why))
-      end
-      return
-    end
-    if done and result and result.added then
-      self.stats.syncReceived = (self.stats.syncReceived or 0) + 1
-      self.trust:Received(sender)
-      self.stats.lastSyncReceived = { from = sender, at = GetServerTime(), items = #snap.ids }
-      self:Changed()
-      if ns.Settings:Get("announceScans") then
-        AME.Say(L["received a full scan from %s via sync (%d items, %s)"], m.src, #snap.ids, ns.ShardLabel(m.shard))
-      end
-      AME:InvalidateIndex(m.shard)
-      if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
-        ns.UI:RefreshViewOptions()
-      end
-      if m.shard == AME:CurrentShard() then
-        AME:RebuildIndex()
-      end
-    end
+    self:Received(m.shard, sender, done, result, snap and { src = m.src, items = #snap.ids })
   end)
 end
 

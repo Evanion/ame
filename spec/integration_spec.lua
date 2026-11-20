@@ -2337,22 +2337,30 @@ describe("addon in a stubbed client", function()
   end)
 
   describe("guild sync", function()
-    local sent, deliver
+    local sent, deliver, handlers
 
-    local function bootSync()
-      sent = {}
+    -- protocol: 2 for sync v2 (the default); these tests are v1's unless they say so
+    local function bootSync(protocol)
+      sent, handlers = {}, {}
       boot({
         pre = function(n)
           n.AME.syncTransport = {
-            Register = function(_, _, handler)
-              deliver = handler
+            Register = function(_, prefix, handler)
+              handlers[prefix] = handler
+              if prefix == "AME1" then
+                deliver = handler
+              end
             end,
-            Send = function(_, _, msg, distribution, target)
-              sent[#sent + 1] = { msg = msg, distribution = distribution, target = target }
+            Send = function(_, prefix, msg, distribution, target)
+              sent[#sent + 1] = { prefix = prefix, msg = msg, distribution = distribution, target = target }
             end,
           }
         end,
       })
+      if protocol ~= 2 then
+        ns.Settings:Set("syncProtocol", 1)
+        ns.SyncService:InitV2()
+      end
       env.inGuild = true
       env.npcFaction = "Horde"
       env:fire("AUCTION_HOUSE_SHOW")
@@ -2527,6 +2535,322 @@ describe("addon in a stubbed client", function()
       local before = #sent
       deliver(ns.Sync.EncodeAnnounce("TestRealm|Horde", { { t = entry.t, src = entry.src } }), "GUILD", "Guild Mate")
       assert.are.equal(before, #sent)
+    end)
+
+    describe("v2", function()
+      local SHARD = "TestRealm|Horde"
+
+      -- A v2 guildmate: their own engine, on the guild channel with us. have: { [objKey] = { payload, t, src, key } }
+      local function v2Peer(name)
+        local V2 = ns.SyncV2
+        local peer = { name = name, have = {}, got = {}, read = #sent }
+        local function hours0()
+          return math.floor(env.now / 3600), math.floor(env.now / 86400) - 1
+        end
+        peer.host = {
+          Allowed = function()
+            return true
+          end,
+          Shards = function()
+            return { SHARD }
+          end,
+          Manifest = function()
+            local hour0, day0 = hours0()
+            local m = { scanT = 0, hour0 = hour0, hours = {}, day0 = day0, days = {} }
+            for k in pairs(peer.have) do
+              local kind, ref = k:match("#(%a)#(%d+)$")
+              ref = tonumber(ref)
+              if kind == "h" then
+                m.hours[ref] = true
+              elseif kind == "d" then
+                m.days[ref] = true
+              else
+                m.scanT = math.max(m.scanT, ref)
+              end
+            end
+            return m
+          end,
+          Has = function(_, shard, kind, ref)
+            return peer.have[V2.ObjKey(shard, kind, ref)] ~= nil
+          end,
+          Wanted = function(_, shard, kind, ref)
+            return peer.have[V2.ObjKey(shard, kind, ref)] == nil
+          end,
+          Wants = function(_, shard, m)
+            local out = {}
+            if m.scanT > 0 and not peer.have[V2.ObjKey(shard, "s", m.scanT)] then
+              out[#out + 1] = { kind = "s", ref = m.scanT }
+            end
+            for hour in pairs(m.hours) do
+              if not peer.have[V2.ObjKey(shard, "h", hour)] then
+                out[#out + 1] = { kind = "h", ref = hour }
+              end
+            end
+            return out
+          end,
+          Object = function(_, shard, kind, ref, done)
+            local o = peer.have[V2.ObjKey(shard, kind, ref)]
+            done(o and { kind = kind, ref = ref, payload = o[1], t = o[2], src = o[3], key = o[4] })
+          end,
+          Accept = function(_, shard, obj)
+            peer.got[V2.ObjKey(shard, obj.kind, obj.ref)] = obj
+          end,
+        }
+        peer.engine = V2.New({
+          name = name,
+          send = function(msg)
+            handlers.AME2(msg, "GUILD", name)
+          end,
+          now = GetTime,
+          after = function(seconds, fn)
+            C_Timer.After(seconds, fn)
+          end,
+          random = math.random,
+          host = peer.host,
+        })
+        -- what we sent on the v2 prefix reaches them
+        function peer:pump()
+          for i = self.read + 1, #sent do
+            if sent[i].prefix == "AME2" then
+              self.engine:OnMessage(sent[i].msg, "Tyken")
+            end
+          end
+          self.read = #sent
+        end
+        return peer
+      end
+
+      -- time passes for us and the guildmate
+      local function run(peer, seconds)
+        for _ = 1, seconds * 2 do
+          env:advance(0.5)
+          drainJobs()
+          peer:pump()
+        end
+      end
+
+      -- the guildmate's own history (a store of their own), with a full scan at t
+      local function peerHistory(t, prices)
+        local data = {}
+        local store = ns.Store.New(data, {
+          compressor = ns.AME.compressor,
+          now = function()
+            return env.now
+          end,
+        })
+        local acc = ns.Stats.NewAccumulator()
+        for id, p in pairs(prices) do
+          acc:Add(id, p, 5)
+        end
+        store:AddScan(acc:Finish(), t, "Guild Mate")
+        return data, store
+      end
+
+      local function v2Sent(from)
+        local out = {}
+        for i = from + 1, #sent do
+          if sent[i].prefix == "AME2" then
+            out[#out + 1] = sent[i]
+          end
+        end
+        return out
+      end
+
+      it("our full scan goes to the guild once, paced, and arrives whole", function()
+        bootSync(2)
+        local peer = v2Peer("Guild Mate")
+        local before = #sent
+        fullScan({ { 2589, 1000, 10 }, { 4306, 900, 4 } })
+        run(peer, 60)
+        local mine = AME_HistoryDB.shards[SHARD].raw[1]
+        local got = peer.got[ns.SyncV2.ObjKey(SHARD, "s", mine.t)]
+        assert.is_not_nil(got)
+        assert.are.equal(mine.s, ns.AME.compressor:Unwire(got.payload))
+        assert.are.equal("Tyken", got.src)
+        -- over v2 only: no v1 announcement to the guild (nobody's on v1)
+        local v1Guild = 0
+        for i = before + 1, #sent do
+          local s = sent[i]
+          if s.prefix == "AME1" and s.distribution == "GUILD" and ns.Sync.Decode(s.msg).type == "announce" then
+            v1Guild = v1Guild + 1
+          end
+        end
+        assert.are.equal(0, v1Guild)
+        for _, s in ipairs(v2Sent(before)) do
+          assert.are.equal("GUILD", s.distribution)
+          assert.truthy(#s.msg <= 255, #s.msg)
+        end
+      end)
+
+      it("asks for hours it lacks, merges them into the chart and the day, and serves them on", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        local peer = v2Peer("Guild Mate")
+        local t = env.now - 5 * 3600
+        local pdata = peerHistory(t, { [2589] = 1100, [4306] = 900 })
+        local hour = math.floor(t / 3600)
+        local e = pdata.hours[hour]
+        peer.have[ns.SyncV2.ObjKey(SHARD, "h", hour)] = { ns.AME.compressor:Wire(e.s), e.t, e.src, e.key }
+        peer.engine:Announce()
+        run(peer, 60)
+        local data = AME_HistoryDB.shards[SHARD]
+        assert.is_not_nil(data.hours[hour])
+        assert.are.equal(e.s, data.hours[hour].s)
+        assert.are.equal("Guild Mate", data.hours[hour].src)
+        assert.is_true(data.seen[math.floor(t / 86400)][e.key]) -- in the day's numbers, once
+        assert.is_true(AME_DB.stats.syncReceived >= 1)
+        -- the item chart's 7D range plots it
+        local pts
+        ns.AME:WithStore("t", SHARD, function(store)
+          return store:Intraday(4306, env.now - 7 * 86400)
+        end, function(_, p)
+          pts = p
+        end)
+        drainJobs()
+        assert.are.equal(1, #pts)
+        assert.are.equal("hour", pts[1].kind)
+        -- another guildmate without it gets it from us
+        local other = v2Peer("Other Mate")
+        ns.SyncService:Announce()
+        run(other, 120)
+        assert.is_not_nil(other.got[ns.SyncV2.ObjKey(SHARD, "h", hour)])
+      end)
+
+      it("takes a whole day it has nothing of", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        local peer = v2Peer("Guild Mate")
+        local day = math.floor(env.now / 86400) - 2
+        local _, pstore = peerHistory(day * 86400 + 3600, { [2589] = 1100 })
+        peer.have[ns.SyncV2.ObjKey(SHARD, "d", day)] = { ns.AME.compressor:Wire(pstore:ExportDay(day)), day * 86400 }
+        -- this guildmate's manifest lists the day; we ask for it (days aren't in the test peer's Wants: it's us asking)
+        peer.engine:Announce()
+        run(peer, 60)
+        local data = AME_HistoryDB.shards[SHARD]
+        assert.is_not_nil(data.days[day])
+        assert.are.same(pstore.data.days[day], data.days[day])
+        assert.are.same(pstore.data.seen[day], data.seen[day]) -- with the scans it holds, so none comes twice
+        assert.are.equal(
+          1,
+          #ns.Store.New(data, { compressor = ns.AME.compressor, now = GetServerTime }):Series(2589, day, day)
+        )
+      end)
+
+      it("a blocked guildmate's objects aren't taken", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        ns.SyncService:Block("Guild Mate")
+        local peer = v2Peer("Guild Mate")
+        local t = env.now - 5 * 3600
+        local pdata = peerHistory(t, { [2589] = 1100 })
+        local hour = math.floor(t / 3600)
+        local e = pdata.hours[hour]
+        peer.have[ns.SyncV2.ObjKey(SHARD, "h", hour)] = { ns.AME.compressor:Wire(e.s), e.t, e.src, e.key }
+        peer.engine:Push(SHARD, "h", hour)
+        run(peer, 60)
+        assert.is_nil(AME_HistoryDB.shards[SHARD].hours[hour])
+      end)
+
+      it("serves v1 players alongside: announces over v1 while one is around, and takes their scans", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        local function v1Announces(from)
+          local n = 0
+          for i = from + 1, #sent do
+            local s = sent[i]
+            if s.prefix == "AME1" and s.distribution == "GUILD" and ns.Sync.Decode(s.msg).type == "announce" then
+              n = n + 1
+            end
+          end
+          return n
+        end
+        local before = #sent
+        ns.SyncService:Announce()
+        assert.are.equal(0, v1Announces(before))
+        -- a v1 player announces: we request their scan over v1, and announce over v1 from now on
+        local entry = peerScan({ [2589] = 1200 })
+        entry.src = "Old Timer"
+        deliver(ns.Sync.EncodeAnnounce(SHARD, { { t = entry.t, src = entry.src } }), "GUILD", "Old Timer")
+        assert.are.equal("request", ns.Sync.Decode(sent[#sent].msg).type)
+        assert.are.equal("Old Timer", sent[#sent].target)
+        before = #sent
+        ns.SyncService:Announce()
+        assert.are.equal(1, v1Announces(before))
+        -- a v2 player's v1 announcement (sent because of the v1 player) isn't asked for over v1
+        handlers.AME2(
+          ns.SyncV2.EncodeManifest(SHARD, { hour0 = 1, hours = {}, day0 = 1, days = {} }),
+          "GUILD",
+          "New Mate"
+        )
+        before = #sent
+        deliver(ns.Sync.EncodeAnnounce(SHARD, { { t = entry.t + 60, src = "New Mate" } }), "GUILD", "New Mate")
+        assert.are.equal(before, #sent)
+        -- on v1 (the setting), no v2 at all
+        ns.Settings:Set("syncProtocol", 1)
+        ns.SyncService:InitV2()
+        assert.is_nil(ns.SyncService.v2)
+        before = #sent
+        ns.SyncService:Announce()
+        assert.are.equal(0, #v2Sent(before))
+        assert.are.equal(1, v1Announces(before))
+      end)
+
+      it("Settings, Sharing: the protocol switch, and how many of the week's hours are here", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        ns.UI:Toggle()
+        ns.UI:ShowTab("sync")
+        local v = ns.UI.syncView
+        v.scripts.OnShow(v)
+        local function choose(i)
+          local it = v.protocol.menu.items[i]
+          it.scripts.OnClick(it)
+        end
+        assert.are.equal(1, v.protocol.index) -- v2
+        assert.truthy(v.activity.text:find("Hours of the last week here: 1 of 168", 1, true), v.activity.text)
+        choose(2) -- v1
+        assert.are.equal(1, ns.Settings:Get("syncProtocol"))
+        assert.is_nil(ns.SyncService.v2)
+        assert.truthy(v.syncStatus.text:find("/reload", 1, true))
+        assert.is_nil(v.activity.text:find("Hours of the last week", 1, true))
+        choose(1)
+        assert.is_not_nil(ns.SyncService.v2)
+      end)
+
+      it("keeps a transfer that's under way for a /reload", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        local peer = v2Peer("Guild Mate")
+        local t = env.now - 5 * 3600
+        local many = {}
+        for id = 1000, 1400 do
+          many[id] = 1000 + (id * 7919) % 50000
+        end
+        local pdata = peerHistory(t, many)
+        local hour = math.floor(t / 3600)
+        local e = pdata.hours[hour]
+        local payload = ns.AME.compressor:Wire(e.s)
+        assert.truthy(#payload > 2 * ns.SyncV2.BLOCK, #payload) -- several blocks
+        peer.have[ns.SyncV2.ObjKey(SHARD, "h", hour)] = { payload, e.t, e.src, e.key }
+        peer.engine:Push(SHARD, "h", hour)
+        env:advance(0.1) -- the offer
+        env:advance(1.1) -- the first block
+        ns.SyncService:SaveV2()
+        local saved = AME_DB.sync.v2Partial
+        assert.is_not_nil(saved)
+        assert.are.equal(1, #saved.items)
+        assert.are.equal("Guild Mate", saved.items[1].sender)
+        local got = ns.SyncService.v2:Status().receiving[1].got
+        assert.truthy(got >= 1)
+        for _, b in pairs(saved.items[1].blocks) do
+          assert.is_nil(b:find("[^%w%(%)]")) -- print-safe in the saved file (EncodeForPrint's alphabet)
+        end
+        -- after the /reload: picked up where it was, and the rest arrives
+        ns.SyncService:InitV2()
+        assert.are.equal(got, ns.SyncService.v2:Status().receiving[1].got)
+        run(peer, 120)
+        assert.are.equal(e.s, AME_HistoryDB.shards[SHARD].hours[hour].s)
+      end)
     end)
 
     it("serves our scans to guildmates who ask", function()

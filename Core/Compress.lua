@@ -56,5 +56,41 @@ function Compress.New(LibDeflate)
       end
       return table.concat(out)
     end,
+    -- For sync v2's addon messages (any byte but NUL): a stored (print-safe) string compressed once more and encoded
+    -- for the addon channel - print encoding spends 8 bits per 6, so this takes ~25% off the airtime. In pieces of
+    -- CHUNK, each "<length36>:<bytes>", with yield() between them.
+    Wire = function(_, s, yield)
+      local out = {}
+      for i = 1, math.max(#s, 1), Compress.CHUNK do
+        local p =
+          LibDeflate:EncodeForWoWAddonChannel(LibDeflate:CompressDeflate(s:sub(i, i + Compress.CHUNK - 1), config))
+        out[#out + 1] = ns.Codec.ToBase36(#p) .. ":" .. p
+        if yield then
+          yield()
+        end
+      end
+      return table.concat(out)
+    end,
+    Unwire = function(_, s, yield)
+      local out, at = {}, 1
+      while at <= #s do
+        local len, start = s:match("^(%w+):()", at)
+        len = len and ns.Codec.FromBase36(len)
+        if not len then
+          return nil
+        end
+        local raw = LibDeflate:DecodeForWoWAddonChannel(s:sub(start, start + len - 1))
+        local text = raw and LibDeflate:DecompressDeflate(raw)
+        if not text then
+          return nil
+        end
+        out[#out + 1] = text
+        at = start + len
+        if yield then
+          yield()
+        end
+      end
+      return table.concat(out)
+    end,
   }
 end

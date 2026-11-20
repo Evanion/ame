@@ -46,6 +46,8 @@ Core\Portfolio.lua
 Core\Sync.lua
 Core\Trust.lua
 Core\SyncService.lua
+Core\SyncV2.lua
+Core\SyncV2Service.lua
 Core\Trading.lua
 Core\Professions.lua
 Core\CraftingData.lua

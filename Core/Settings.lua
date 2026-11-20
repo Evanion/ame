@@ -33,6 +33,7 @@ Settings.DEFAULTS = {
   crafting = false,
   syncGuild = true,
   syncTrusted = true,
+  syncProtocol = 2, -- 2: guild fan-out (Core/SyncV2.lua); 1: the lighter original
   minimap = { hide = false },
 }
 

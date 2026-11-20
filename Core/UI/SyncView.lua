@@ -135,6 +135,27 @@ function UI:CreateSyncSection(v, host)
   syncNow:SetPoint("RIGHT", 0, 0)
   v.syncNow = syncNow
   v.guild = W.SettingCheck(row, L["Share full scans with my guild"], "syncGuild", 0, -1)
+  -- the protocol: v2 (the guild at once, hourly prices for a week) or v1 (lighter)
+  row = st:Row(20, 6)
+  local protoLabel = W.Text(row, "GameFontHighlightSmall")
+  protoLabel:SetPoint("LEFT", 0, 0)
+  protoLabel:SetText(L["Sync protocol"])
+  v.protocol = W.Dropdown(row, 230, {
+    { 2, L["v2: the whole guild at once"] },
+    { 1, L["v1: lighter (if sync slows your game)"] },
+  }, function(p)
+    if p == svc:Protocol() then
+      return
+    end
+    ns.Settings:Set("syncProtocol", p)
+    svc:InitV2()
+    v.syncStatus:SetText(
+      p == 1 and L["Switched to v1. /reload to stop receiving v2 traffic altogether."] or L["Switched to v2."]
+    )
+    UI:RefreshSync()
+  end, { neutral = true, default = 2 })
+  v.protocol:SetPoint("LEFT", protoLabel, "RIGHT", 8, 0)
+  ns.Help.Explain(v.protocol, "syncProtocol")
   v.syncStatus = st:Text("GameFontDisableSmall", 4)
   v.activity = st:Text("GameFontDisableSmall", 6)
   v.activity:SetSpacing(2)
@@ -255,6 +276,7 @@ function UI:RefreshSync()
       or L["Sync is off: turn on guild or trusted sharing below"]
   )
   v.guild:SetChecked(ns.Settings:Get("syncGuild"))
+  v.protocol:SetValue(svc:Protocol())
   v.trusted:SetChecked(ns.Settings:Get("syncTrusted"))
 
   local s = AME_DB.stats
@@ -274,6 +296,18 @@ function UI:RefreshSync()
     local last = s.lastSyncReceived
     if last then
       lines[#lines + 1] = L["Last received: %d items from %s, %s"]:format(last.items, last.from, ago(last.at))
+    end
+    local v2 = svc.V2Status and svc:V2Status()
+    if v2 then
+      local parts = { L["Hours of the last week here: %d of %d"]:format(v2.hours, ns.SyncV2.HOURS) }
+      if v2.sending then
+        parts[#parts + 1] = L["sending %d%%"]:format(math.floor(100 * v2.sending.sent / math.max(1, v2.sending.n)))
+          .. (v2.queued > 0 and (" " .. L["(+%d waiting)"]:format(v2.queued)) or "")
+      end
+      for _, r in ipairs(v2.receiving) do
+        parts[#parts + 1] = L["receiving from %s %d%%"]:format(r.from, math.floor(100 * r.got / math.max(1, r.n)))
+      end
+      lines[#lines + 1] = table.concat(parts, "  ·  ")
     end
     v.activity:SetText(table.concat(lines, "\n"))
   end

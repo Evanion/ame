@@ -411,14 +411,14 @@ function Store:AddHourFrom(snap, t, src, key)
     return false
   end
   local suffixed = self.data.suffixed
-  local cols = { ids = {}, min = {}, market = {}, qty = {}, auctions = {} }
+  local cols = { ids = {}, min = {}, market = {}, qty = {}, auctions = {}, median = {} }
   local round3 = Codec.Round3
   local n = 0
   for i, id in ipairs(snap.ids) do
     if not ns.IsVariant(id) and not suffixed[id] then
       n = n + 1
       cols.ids[n], cols.min[n], cols.market[n] = id, round3(snap.min[i]), round3(snap.market[i])
-      cols.qty[n], cols.auctions[n] = snap.qty[i], snap.auctions[i]
+      cols.qty[n], cols.auctions[n], cols.median[n] = snap.qty[i], snap.auctions[i], round3(snap.median[i])
     end
   end
   self:pause()
@@ -427,9 +427,116 @@ function Store:AddHourFrom(snap, t, src, key)
   return true
 end
 
--- an hourly point decoded (Codec.HOUR_FIELDS columns)
+-- an hourly point decoded (Codec.HOUR_FIELDS columns; median is nil in points made before it was added)
 function Store:HourPoint(entry)
-  return Codec.Decode(Codec.HOUR_FIELDS, Codec.Unpack(entry.s, self.compressor, self:pauser()), nil, self:pauser())
+  return Codec.Decode(Codec.HOUR_FIELDS, Codec.Unpack(entry.s, self.compressor, self:pauser()), true, self:pauser())
+end
+
+-- An hourly point from sync (packed as stored, point = its decoded columns): kept for its hour when that hour has
+-- none, and merged into its day like a scan (a price sample; no sell-rate pair: drain needs the scans either side).
+-- key: the dedupe key of the scan it came from, so a point of a scan this day already has isn't counted twice.
+function Store:AddHourPoint(t, src, key, packed, point)
+  local data = self.data
+  local hour = floor(t / Store.HOUR)
+  if data.hours[hour] then
+    return false
+  end
+  data.hours[hour] = { t = t, src = src, key = key, s = packed }
+  local day = floor(t / Store.DAY)
+  local seen = data.seen[day] or {}
+  if key and key ~= "" and seen[key] then
+    return true
+  end
+  local slot = 2 ^ floor((t % Store.DAY) / 3600)
+  local byBucket = {}
+  local median = point.median
+  for i, id in ipairs(point.ids) do
+    if not data.suffixed[id] and not ns.IsVariant(id) then
+      local b = id % Store.BUCKETS
+      byBucket[b] = byBucket[b] or {}
+      local rows = byBucket[b]
+      local m = point.market[i]
+      rows[#rows + 1] =
+        { id, point.min[i], m, median and median[i] or m, point.qty[i], point.auctions[i], 1, slot, m, 0, 0 }
+    end
+  end
+  data.days[day] = data.days[day] or {}
+  self:mergeInto(data.days[day], byBucket)
+  data.rev = (data.rev or 0) + 1
+  seen[key ~= "" and key or ("hour:" .. t .. ":" .. tostring(src))] = true
+  data.seen[day] = seen
+  self:Rollup()
+  return true
+end
+
+-- A closed day as text, for sync: the scans merged into it (seen keys), then its packed segments.
+--   "D1\n<key>\n<key>...\n\n<bucket36>=<packed>\n..."
+function Store:ExportDay(day)
+  local buckets = self.data.days[day]
+  if not buckets then
+    return nil
+  end
+  local keys, lines = {}, {}
+  for key in pairs(self.data.seen[day] or {}) do
+    keys[#keys + 1] = key
+  end
+  sort(keys)
+  for b, packed in pairs(buckets) do
+    lines[#lines + 1] = Codec.ToBase36(b) .. "=" .. packed
+  end
+  sort(lines)
+  return "D1\n" .. table.concat(keys, "\n") .. "\n\n" .. table.concat(lines, "\n")
+end
+
+-- parse ExportDay's text: buckets { [b] = packed }, seen { [key] = true }, or nil when it doesn't parse
+function Store.ParseDay(text)
+  if type(text) ~= "string" or text:sub(1, 3) ~= "D1\n" then
+    return nil
+  end
+  local head, body = text:sub(4):match("^(.-)\n\n(.*)$")
+  if not head then
+    return nil
+  end
+  local seen, buckets = {}, {}
+  for key in head:gmatch("[^\n]+") do
+    seen[key] = true
+  end
+  for b, packed in body:gmatch("(%w+)=([^\n]+)") do
+    local n = Codec.FromBase36(b)
+    if not n or n < 0 or n >= Store.BUCKETS then
+      return nil
+    end
+    buckets[n] = packed
+  end
+  return buckets, seen
+end
+
+-- A whole day from sync, for a day this store has nothing of (so nothing is counted twice). Returns true if taken.
+function Store:ImportWholeDay(day, buckets, seen)
+  local data = self.data
+  if data.days[day] or (data.seen[day] and next(data.seen[day])) then
+    return false
+  end
+  data.days[day], data.seen[day] = buckets, seen
+  data.rev = (data.rev or 0) + 1
+  return true
+end
+
+-- a day's packed segments decoded into one snapshot-like table { ids, market } (mean market prices), to compare a
+-- received day with our prices (Sync.Plausible)
+function Store:DayPrices(buckets)
+  local ids, market = {}, {}
+  for _, packed in pairs(buckets) do
+    local seg = self:decode(packed, Store.SEGMENT_FIELDS)
+    for i, id in ipairs(seg.ids) do
+      local n = seg.scans[i] or 0
+      if n > 0 then
+        ids[#ids + 1], market[#market + 1] = id, seg.market[i] / n
+      end
+    end
+    self:pause()
+  end
+  return { ids = ids, market = market }
 end
 
 -- Backfill: add day points for items that day doesn't have yet (own data always wins). rows: list of
