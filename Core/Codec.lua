@@ -164,20 +164,36 @@ function Codec.Encode(fieldNames, cols)
 end
 
 -- allowMissing: text written before trailing fields were added decodes with those columns nil
--- yield (optional): called between columns (a full scan's columns take ~8 ms each)
-function Codec.Decode(fieldNames, text, allowMissing, yield)
-  local fields, count = split(text, "|")
-  if fields[1] ~= Codec.VERSION then
-    error("Codec: unsupported version " .. tostring(fields[1]), 2)
+-- yield (optional): called between columns (a full scan's columns take ~8 ms each), and every 500 values in them
+-- init (optional): where the encoded table starts in text (a saved market index has a header before it)
+-- The columns are cut out one at a time, as they're decoded: an 8 MB index split up front allocated twice its size
+-- in one step, and the garbage collector made the next frames pay for it.
+function Codec.Decode(fieldNames, text, allowMissing, yield, init)
+  local starts, pos = {}, init or 1
+  while true do
+    starts[#starts + 1] = pos
+    local at = text:find("|", pos, true)
+    if not at then
+      break
+    end
+    pos = at + 1
+  end
+  local count = #starts
+  local function field(i)
+    local e = starts[i + 1] and starts[i + 1] - 2 or #text
+    return sub(text, starts[i], e)
+  end
+  if field(1) ~= Codec.VERSION then
+    error("Codec: unsupported version " .. tostring(field(1)), 2)
   end
   if count ~= #fieldNames + 2 and not (allowMissing and count >= 3 and count < #fieldNames + 2) then
     error("Codec: wrong field count", 2)
   end
-  local n = Codec.FromBase36(fields[2])
+  local n = Codec.FromBase36(field(2))
   local cols = {}
   for f, name in ipairs(fieldNames) do
-    if fields[f + 2] ~= nil then
-      cols[name] = decodeColumn(fields[f + 2], n, f == 1, yield)
+    if f + 2 <= count then
+      cols[name] = decodeColumn(field(f + 2), n, f == 1, yield)
       if yield then
         yield()
       end

@@ -172,9 +172,13 @@ end
 
 -- string -> index (as MarketIndex.Build makes it)
 function MarketIndex.Decode(text, checkpoint)
-  local day, days, outliers, body = text:match("^(%-?%d+)|(%d+)|(%d+)|(.*)$")
+  -- the header "day|days|outliers|", then the columns - read in place (an 8 MB text isn't copied)
+  local day, days, outliers, from = text:match("^(%-?%d+)|(%d+)|(%d+)|()")
+  if not from then
+    error("MarketIndex: not a saved index", 2)
+  end
   -- saves from older versions lack newer columns; checkpoint between columns (a big index is ~30 columns of 25k)
-  local cols = ns.Codec.Decode(columnNames(), body, true, checkpoint)
+  local cols = ns.Codec.Decode(columnNames(), text, true, checkpoint, from)
   local index = { day = tonumber(day), days = tonumber(days), count = 0, items = {}, outliers = tonumber(outliers) }
   for i, id in ipairs(cols.ids) do
     local s = { itemID = id }
