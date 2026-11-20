@@ -423,13 +423,33 @@ function UI:ShowingIntraday()
     or false
 end
 
--- the loaded points within the current range
+-- the loaded points within the current range. Over 7D, the days before the first scan or hourly point (hourly
+-- prices only go back a week from when AME started keeping them) are filled with their daily points, so the chart
+-- spans the whole range.
 function UI:IntradayPoints()
-  local from = GetServerTime() - (self.rangeDays or 2) * DAY
+  local days = self.rangeDays or 2
+  local from = GetServerTime() - days * DAY
   local out = {}
   for _, p in ipairs(self.intraday or {}) do
     if p.t >= from then
       out[#out + 1] = p
+    end
+  end
+  self.intradayDaily = false
+  if days > 2 and #out > 0 then
+    local first, fill = out[1].t, {}
+    for _, p in ipairs(self.series or {}) do
+      local t = p.day and p.res ~= "week" and p.day * DAY + DAY / 2
+      if t and t >= from and (p.day + 1) * DAY <= first then
+        fill[#fill + 1] = { t = t, market = p.market, min = p.min, qty = p.qty, daily = true }
+      end
+    end
+    if #fill > 0 then
+      self.intradayDaily = true
+      for _, p in ipairs(out) do
+        fill[#fill + 1] = p
+      end
+      out = fill
     end
   end
   return out
@@ -614,7 +634,9 @@ function UI:DrawItemChart()
   end
   legend[#legend + 1] = { { 0.53, 0.53, 0.67 }, L["Supply"], kind = "square" }
   if intraday then
-    legend[#legend + 1] = { note = L["(each point is one scan)"] }
+    legend[#legend + 1] = {
+      note = self.intradayDaily and L["(older days: one point a day)"] or L["(each point is one scan)"],
+    }
   end
   local trades = tradePoints(self.itemID)
   if trades then

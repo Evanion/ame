@@ -72,6 +72,7 @@ L["(in use)"] = true
 L["(incomplete)"] = true
 L["(needs LibDBIcon; included in releases)"] = true
 L["(no room)"] = true
+L["(older days: one point a day)"] = true
 L["+ %d more"] = true
 L["...and close with it"] = true
 L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"] = true

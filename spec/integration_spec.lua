@@ -2374,9 +2374,26 @@ describe("addon in a stubbed client", function()
       assert.is_true(ns.UI:ShowingIntraday())
       local kinds = {}
       for _, p in ipairs(ns.UI:IntradayPoints()) do
-        kinds[p.kind] = true
+        kinds[p.kind or "day"] = true
       end
       assert.is_true(kinds.hour, "hourly points from before the scans kept in full")
+      -- hourly points only from the last 2 days (AME started keeping them then): the older days come by day, so
+      -- the chart still spans the week
+      local recent = {}
+      for _, p in ipairs(ns.UI.intraday) do
+        if p.t >= GetServerTime() - 2 * 86400 then
+          recent[#recent + 1] = p
+        end
+      end
+      ns.UI.intraday = recent
+      local points = ns.UI:IntradayPoints()
+      assert.is_true(points[1].daily)
+      assert.is_true(points[#points].t - points[1].t > 5 * 86400)
+      for i = 2, #points do
+        assert.is_true(points[i].t > points[i - 1].t)
+      end
+      ns.UI:DrawItemChart()
+      assert.truthy(ns.UI.itemView.legend.text:find("one point a day", 1, true), ns.UI.itemView.legend.text)
       ns.UI:SetRange(30, "30D")
       assert.is_false(ns.UI:ShowingIntraday())
       assert.is_false(ns.UI.chart.message:IsShown())
