@@ -68,10 +68,10 @@ function Scan:Start()
   return true
 end
 
-Scan.DONE_SHOWN = 20 -- "Recorded n items" stays this long after a scan
+Scan.DONE_SHOWN = 20 -- "Full scan recorded" stays this long after a scan
 
 -- what a running full scan is doing, for the line beside the button (nil when there's nothing to say):
--- waiting for the server, reading the auctions (done / total), updating market data, then what was recorded
+-- waiting for the server, reading the auctions (a percentage), updating market data, then done
 function Scan:Progress()
   local AME = ns.AME
   local ingest = AME.ingest
@@ -79,11 +79,7 @@ function Scan:Progress()
   local now = GetServerTime()
   local p = ingest and ingest.reading and ingest.progress
   if p and p.total > 0 then
-    return L["Reading auctions %s / %s (%d%%)"]:format(
-      W.Thousands(p.done),
-      W.Thousands(p.total),
-      math.floor(p.done * 100 / p.total)
-    )
+    return L["Reading auctions %d%%"]:format(math.floor(p.done * 100 / p.total))
   end
   local asked, read = d.lastReplicateAt, d.readDoneAt
   if ingest and ingest.requested and asked and now - asked < Scan.TIMEOUT then
@@ -93,7 +89,7 @@ function Scan:Progress()
     if AME:IndexBusy() then
       return L["Updating market data..."]
     end
-    return L["Recorded %s items"]:format(W.Thousands(d.readItems or 0))
+    return L["Full scan recorded"]
   end
   return nil
 end

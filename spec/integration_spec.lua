@@ -2436,11 +2436,11 @@ describe("addon in a stubbed client", function()
       local ingest = ns.AME.ingest
       ingest.reading, ingest.progress = true, { done = 2500, total = 10000 }
       ns.ScanButton:Refresh()
-      assert.are.equal("Reading auctions 2,500 / 10,000 (25%)", status.text)
+      assert.are.equal("Reading auctions 25%", status.text)
       ingest.reading, ingest.requested = false, false
       ns.AME:ScanDiag().readDoneAt, ns.AME:ScanDiag().readItems = GetServerTime(), 6812
       ns.ScanButton:Refresh()
-      assert.truthy(status.text:find("6,812", 1, true), status.text)
+      assert.are.equal("Full scan recorded", status.text)
       -- the scan is read: then the 15 minutes count down
       ns.AME:ScanDiag().readDoneAt = GetServerTime() + 30
       env.now = env.now + 60
