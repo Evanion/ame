@@ -1772,7 +1772,7 @@ describe("addon in a stubbed client", function()
       local market = ns.UI.chart.series.market
       assert.are.same(times, market.xs) -- one point per scan, at the scan's time
       local sma = ns.UI.chart.series.sma -- the 7-day average: from the daily history, not from the scans
-      for i = 2, #(sma and sma.xs or {}) do
+      for i = 2, #(sma and sma.xs or {}) - 1 do
         assert.are.equal(86400, sma.xs[i] - sma.xs[i - 1])
       end
       -- intraday candles: 2-hour candles from the scans
@@ -2384,9 +2384,16 @@ describe("addon in a stubbed client", function()
       local sma = ns.UI.chart.series.sma
       assert.is_not_nil(sma)
       assert.truthy(ns.UI.itemView.legend.text:find("7-day average", 1, true))
-      for i = 2, #sma.xs do
+      for i = 2, #sma.xs - 1 do
         assert.are.equal(86400, sma.xs[i] - sma.xs[i - 1])
       end
+      -- and reaching now, where the candles end (today's point is at noon: after it, the line is held level)
+      assert.is_true(sma.xs[#sma.xs] >= GetServerTime())
+      env.now = (math.floor(GetServerTime() / 86400) + 1) * 86400 - 3600 -- 23:00
+      ns.UI:DrawItemChart()
+      sma = ns.UI.chart.series.sma
+      assert.are.equal(GetServerTime(), sma.xs[#sma.xs])
+      assert.are.equal(sma.ys[#sma.ys - 1], sma.ys[#sma.ys])
       -- hourly points only from the last 2 days (AME started keeping them then): the older days come by day, so
       -- the chart still spans the week
       local recent = {}

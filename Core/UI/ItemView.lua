@@ -693,6 +693,22 @@ function UI:DrawItemChart()
   end
   self:SetLegend(legend)
   if #smaXs > 1 then
+    -- held level to the chart's right end (the last candle, the last point, or now on the scan-by-scan ranges):
+    -- a day's point sits at noon, a week's mid-week, and a candle at the middle of its period
+    local right = self.candles and self.candles.xs[#self.candles.xs] or xs[#xs]
+    if intraday then
+      right = math.max(right or 0, GetServerTime())
+    end
+    if right and right > smaXs[#smaXs] and smaYs[#smaXs] then
+      if smaXs == xs then
+        smaXs, smaYs = {}, {}
+        for i = 1, #xs do
+          smaXs[i], smaYs[i] = xs[i], sma[i]
+        end
+      end
+      local n = #smaXs
+      smaXs[n + 1], smaYs[n + 1] = right, smaYs[n]
+    end
     chart:SetSeries("sma", {
       xs = smaXs,
       ys = smaYs,
