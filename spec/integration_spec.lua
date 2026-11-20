@@ -1771,10 +1771,8 @@ describe("addon in a stubbed client", function()
       drainJobs()
       local market = ns.UI.chart.series.market
       assert.are.same(times, market.xs) -- one point per scan, at the scan's time
-      local sma = ns.UI.chart.series.sma -- the 7-day average: from the daily history, not from the scans
-      for i = 2, #(sma and sma.xs or {}) - 1 do
-        assert.are.equal(86400, sma.xs[i] - sma.xs[i - 1])
-      end
+      -- the 7-day average: at each scan, the 6 days before it and that scan's price
+      assert.are.same(times, ns.UI.chart.series.sma.xs)
       -- intraday candles: 2-hour candles from the scans
       v.style.byKey.candles.scripts.OnClick(v.style.byKey.candles)
       assert.are.equal(5, #ns.UI.candles.xs)
@@ -2380,20 +2378,13 @@ describe("addon in a stubbed client", function()
         kinds[p.kind or "day"] = true
       end
       assert.is_true(kinds.hour, "hourly points from before the scans kept in full")
-      -- the 7-day average from the daily history, one point a day
+      -- the 7-day average: at every point, up to the newest scan
       local sma = ns.UI.chart.series.sma
       assert.is_not_nil(sma)
       assert.truthy(ns.UI.itemView.legend.text:find("7-day average", 1, true))
-      for i = 2, #sma.xs - 1 do
-        assert.are.equal(86400, sma.xs[i] - sma.xs[i - 1])
-      end
-      -- and reaching now, where the candles end (today's point is at noon: after it, the line is held level)
-      assert.is_true(sma.xs[#sma.xs] >= GetServerTime())
-      env.now = (math.floor(GetServerTime() / 86400) + 1) * 86400 - 3600 -- 23:00
-      ns.UI:DrawItemChart()
-      sma = ns.UI.chart.series.sma
-      assert.are.equal(GetServerTime(), sma.xs[#sma.xs])
-      assert.are.equal(sma.ys[#sma.ys - 1], sma.ys[#sma.ys])
+      local shown = ns.UI:IntradayPoints()
+      assert.are.equal(#shown, #sma.xs)
+      assert.are.equal(shown[#shown].t, sma.xs[#sma.xs])
       -- hourly points only from the last 2 days (AME started keeping them then): the older days come by day, so
       -- the chart still spans the week
       local recent = {}

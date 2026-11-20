@@ -625,19 +625,40 @@ function UI:DrawItemChart()
     legend[#legend + 1] = { { 0.2, 0.8, 1 }, L["Market"], kind = "line" }
     legend[#legend + 1] = { { 0.4, 0.87, 0.47 }, L["Lowest"], kind = "line" }
   end
-  -- the 7-day average: over the daily points (a 7-point average of scans isn't a 7-day average), so on the
-  -- scan-by-scan ranges it's drawn from the item's daily history, one point a day
-  local smaXs, smaYs = xs, sma
+  -- the 7-day average, up to now. By day: each day's average of it and the 6 before. Today's day point holds
+  -- today so far, so it's drawn at now rather than at today's noon. On the scan-by-scan ranges (a 7-point average
+  -- of scans isn't a 7-day average): at every point, the 6 days before it (daily history) and that point's price
+  -- as its day so far - the line moves with each scan, and ends where the last one is.
+  local smaXs, smaYs = {}, {}
+  local now = GetServerTime()
   if intraday then
-    smaXs, smaYs = {}, {}
-    local daily, from = self.series or {}, GetServerTime() - ((self.rangeDays or 2) + 1) * DAY
-    local dm = {}
-    for i, p in ipairs(daily) do
-      dm[i] = p.market
-      local t = p.day and p.res ~= "week" and p.day * DAY + DAY / 2
-      if t and t >= from then
-        smaXs[#smaXs + 1], smaYs[#smaYs + 1] = t, ns.Analytics.SMA(dm, math.min(7, i), i)
+    local byDay = {}
+    for _, p in ipairs(self.series or {}) do
+      if p.day and p.res ~= "week" then
+        byDay[p.day] = p.market
       end
+    end
+    for i, x in ipairs(xs) do
+      local d, sum, n = math.floor(x / DAY), market[i], 1
+      if sum then
+        for back = 1, 6 do
+          local m = byDay[d - back]
+          if m then
+            sum, n = sum + m, n + 1
+          end
+        end
+        smaXs[#smaXs + 1], smaYs[#smaYs + 1] = x, sum / n
+      end
+    end
+  else
+    for i, x in ipairs(xs) do
+      if sma[i] then
+        smaXs[#smaXs + 1], smaYs[#smaYs + 1] = x, sma[i]
+      end
+    end
+    local last = series[#series]
+    if #smaXs > 0 and last and last.day == math.floor(now / DAY) and last.res ~= "week" then
+      smaXs[#smaXs] = math.max(smaXs[#smaXs], now)
     end
   end
   if #smaXs > 1 then
@@ -693,22 +714,6 @@ function UI:DrawItemChart()
   end
   self:SetLegend(legend)
   if #smaXs > 1 then
-    -- held level to the chart's right end (the last candle, the last point, or now on the scan-by-scan ranges):
-    -- a day's point sits at noon, a week's mid-week, and a candle at the middle of its period
-    local right = self.candles and self.candles.xs[#self.candles.xs] or xs[#xs]
-    if intraday then
-      right = math.max(right or 0, GetServerTime())
-    end
-    if right and right > smaXs[#smaXs] and smaYs[#smaXs] then
-      if smaXs == xs then
-        smaXs, smaYs = {}, {}
-        for i = 1, #xs do
-          smaXs[i], smaYs[i] = xs[i], sma[i]
-        end
-      end
-      local n = #smaXs
-      smaXs[n + 1], smaYs[n + 1] = right, smaYs[n]
-    end
     chart:SetSeries("sma", {
       xs = smaXs,
       ys = smaYs,
