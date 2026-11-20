@@ -2451,6 +2451,18 @@ describe("addon in a stubbed client", function()
       _G.Auctionator, _G.AuctionHouseFrame = nil, nil
     end)
 
+    it("Full scan finds the old auction house window too, even when it loads after the event", function()
+      seeded()
+      env:fire("AUCTION_HOUSE_SHOW") -- no window yet
+      assert.is_nil(ns.ScanButton.button)
+      _G.AuctionFrame = CreateFrame("Frame")
+      env:fire("ADDON_LOADED", "Blizzard_AuctionUI")
+      local b = ns.ScanButton.button
+      assert.is_not_nil(b)
+      assert.is_true(b:IsShown())
+      _G.AuctionFrame = nil
+    end)
+
     it("opens an item chart from /ame <link> and fills stats after loading", function()
       seeded()
       env:slash("AZEROTHMERCANTILEEXCHANGE", "|cffffffff|Hitem:2589::::|h[Linen Cloth]|h|r")

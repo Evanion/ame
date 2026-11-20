@@ -89,8 +89,12 @@ function Scan:Refresh()
 end
 
 -- over the top-right corner of the auction house window (the sell bar is under it); once
+function Scan.Frame()
+  return AuctionHouseFrame or AuctionFrame -- the game's auction house window, or the old one
+end
+
 function Scan:Attach()
-  local ah = AuctionHouseFrame
+  local ah = Scan.Frame()
   if self.button or not ah then
     return
   end
@@ -124,7 +128,18 @@ end
 
 local events = CreateFrame("Frame")
 events:RegisterEvent("AUCTION_HOUSE_SHOW")
-events:SetScript("OnEvent", function()
+events:RegisterEvent("ADDON_LOADED")
+events:SetScript("OnEvent", function(_, event)
+  -- the window's addon may load after this event reaches AME: try now, and again a moment later
+  if event == "ADDON_LOADED" and not Scan.Frame() then
+    return
+  end
   Scan:Attach()
   Scan:Refresh()
+  if event == "AUCTION_HOUSE_SHOW" and C_Timer then
+    C_Timer.After(0.5, function()
+      Scan:Attach()
+      Scan:Refresh()
+    end)
+  end
 end)
