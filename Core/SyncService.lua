@@ -281,11 +281,8 @@ end
 
 -- Announce the full scans we hold (our own and relayed ones) for every auction house of our market - faction AHs
 -- and the goblin AH - so scans reach players who weren't online when they were made.
-function Service:Announce()
-  if not self:Active() or not self.AME:LoadHistory() then
-    return
-  end
-  local realm = self.AME:MarketRealmName()
+-- trusted players online who trust us back (they get whispers; guild members the guild broadcast)
+function Service:TrustedTargets()
   local targets = {}
   if self:TrustActive() then
     for _, name in ipairs(self.trust:OnlineTargets(GetServerTime(), friendOnline)) do
@@ -295,6 +292,42 @@ function Service:Announce()
       end
     end
   end
+  return targets
+end
+
+Service.SYNC_NOW_EVERY = 60 -- seconds between Sync now clicks
+Service.ANSWER_EVERY = 30 -- seconds between answers to Sync now queries (one click reaches the whole guild)
+
+-- Sync now (Settings, Sharing): announce what we hold, and ask guild members and trusted players to announce what
+-- they hold, so missing scans are fetched now instead of within the next ANNOUNCE_EVERY. Returns ok, or nil and why.
+function Service:SyncNow()
+  if not self:Active() then
+    return nil, L["Sync is off: turn on guild or trusted sharing below"]
+  end
+  local t = GetServerTime()
+  if self.syncNowAt and t - self.syncNowAt < Service.SYNC_NOW_EVERY then
+    return nil, L["Just synced - try again in %d s"]:format(Service.SYNC_NOW_EVERY - (t - self.syncNowAt))
+  end
+  self.syncNowAt = t
+  local shard = self.AME:CurrentShard()
+  local msg = Sync.EncodeQuery(shard)
+  if self:GuildActive() then
+    self.transport:Send(Service.PREFIX, msg, "GUILD")
+  end
+  for _, name in ipairs(self:TrustedTargets()) do
+    self.transport:Send(Service.PREFIX, msg, "WHISPER", name)
+  end
+  self.outcomesAt = nil -- our auction outcomes go out too
+  self:Announce()
+  return true
+end
+
+function Service:Announce()
+  if not self:Active() or not self.AME:LoadHistory() then
+    return
+  end
+  local realm = self.AME:MarketRealmName()
+  local targets = self:TrustedTargets()
   local any = false
   for shard, data in pairs(self.AME.history.shards) do
     if ns.SplitShard(shard) == realm then
@@ -416,7 +449,7 @@ function Service:Allowed(m, distribution, sender)
   local trusted = self:TrustActive() and self.trust:IsTrusted(sender)
   if m.type == "request" then
     return trusted or self:GuildActive()
-  elseif m.type == "announce" or m.type == "outcomes" then
+  elseif m.type == "announce" or m.type == "outcomes" or m.type == "query" then
     return trusted
   elseif m.type == "scan" then
     return trusted or self.requestedFrom[ns.Trust.Key(sender) .. ":" .. m.shard .. ":" .. m.t .. ":" .. m.src]
@@ -456,6 +489,16 @@ function Service:OnMessage(msg, distribution, sender)
       if ns.UI and ns.UI.WatchChanged then
         ns.UI:WatchChanged()
       end
+    end
+    return
+  end
+  if m.type == "query" then
+    -- someone pressed Sync now: announce what we hold (once for several askers)
+    local t = GetServerTime()
+    if not self.answeredAt or t - self.answeredAt >= Service.ANSWER_EVERY then
+      self.answeredAt = t
+      self.outcomesAt = nil
+      self:Announce()
     end
     return
   end

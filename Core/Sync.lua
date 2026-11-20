@@ -3,7 +3,8 @@
 --   announce  "1|A|<shard>|<t36>:<src>;<t36>:<src>;..."   newest full scans this peer holds (GUILD broadcast)
 --   request   "1|R|<shard>|<t36>|<src>"                     whisper to the announcer
 --   scan      "1|S|<shard>|<t36>|<src>|<kind>|<packed>"     whisper reply; packed = the raw entry's compressed string
---   hello     "1|H|<shard>"                                   whisper: "I'd like to share prices with you" (trust)
+--   query     "1|Q|<shard>"                                   guild (and trusted): "announce what you hold now"
+--   hello     "1|H|<shard>"                                  whisper: "I'd like to share prices with you" (trust)
 --   accept    "1|K|<shard>"                                   whisper: "I trust you too"
 --   watchlist "1|W|<shard>|<name>|<t36>|<id36;id36;...>"      guild: a shared watchlist (empty ids = unshared)
 --   outcomes  "1|T|<shard>|<t36>|<key36:s:e:c:n:...;...>"     guild (and trusted): your auctions' sell-through
@@ -111,6 +112,11 @@ function Sync.EncodeOutcomes(shard, t, items)
   return table.concat({ Sync.PROTO, "T", shard, Codec.ToBase36(t), items }, "|")
 end
 
+-- "please announce what you hold now" (Sync now)
+function Sync.EncodeQuery(shard)
+  return table.concat({ Sync.PROTO, "Q", shard }, "|")
+end
+
 function Sync.EncodeAccept(shard)
   return table.concat({ Sync.PROTO, "K", shard }, "|")
 end
@@ -163,6 +169,8 @@ function Sync.Decode(msg)
       return { type = "shopping", shard = shard, name = f[5], t = Codec.FromBase36(f[6]), entries = entries }
     elseif kind == "T" and #f == 6 then
       return { type = "outcomes", shard = shard, t = Codec.FromBase36(f[5]), items = f[6] }
+    elseif kind == "Q" and #f == 4 then
+      return { type = "query", shard = shard }
     elseif kind == "H" and #f == 4 then
       return { type = "hello", shard = shard }
     elseif kind == "K" and #f == 4 then

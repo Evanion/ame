@@ -2328,6 +2328,46 @@ describe("addon in a stubbed client", function()
       assert.are.equal(0, ns.Posting:SellThroughTotals(shard)[2589].peers)
     end)
 
+    it("Sync now: announces ours and asks the guild to announce theirs; queries are answered once", function()
+      bootSync()
+      fullScan({ { 2589, 1000, 10 } })
+      local function kinds(from)
+        local out = {}
+        for i = from + 1, #sent do
+          local m = ns.Sync.Decode(sent[i].msg)
+          out[#out + 1] = m and m.type .. ":" .. sent[i].distribution
+        end
+        return table.concat(out, " ")
+      end
+      -- the button under Settings, Sharing
+      ns.UI:Toggle()
+      ns.UI:ShowTab("sync")
+      local v = ns.UI.syncView
+      v.scripts.OnShow(v)
+      local before = #sent
+      v.syncNow.scripts.OnClick(v.syncNow)
+      assert.truthy(kinds(before):find("query:GUILD", 1, true))
+      assert.truthy(kinds(before):find("announce:GUILD", 1, true))
+      assert.truthy(v.syncStatus.text:find("latest scans"))
+      -- again right away: not yet
+      local ok, why = ns.SyncService:SyncNow()
+      assert.is_nil(ok)
+      assert.truthy(why:find("try again"))
+      -- a guildmate pressed it: we announce, once for several askers
+      local shard = ns.AME:CurrentShard()
+      env.now = env.now + 60
+      before = #sent
+      deliver(ns.Sync.EncodeQuery(shard), "GUILD", "Guild Mate")
+      deliver(ns.Sync.EncodeQuery(shard), "GUILD", "Other Mate")
+      assert.are.equal("announce:GUILD", kinds(before))
+      -- with sync off, the button says so
+      ns.Settings:Set("syncGuild", false)
+      ns.Settings:Set("syncTrusted", false)
+      env.now = env.now + 60
+      v.syncNow.scripts.OnClick(v.syncNow)
+      assert.truthy(v.syncStatus.text:find("Sync is off"))
+    end)
+
     it("relays other players' scans for every auction house, and backfills a day of scans quickly", function()
       bootSync()
       -- we (player 2) received player 1's goblin-AH scan earlier and hold our own Horde scan

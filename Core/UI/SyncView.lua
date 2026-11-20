@@ -121,8 +121,21 @@ function UI:CreateSyncSection(v, host)
   -- Guild sharing: the switch, one line of activity, the players heard from
   local st = stack:Card(0).stack
   st:Heading(L["Guild sharing"], 0)
-  local row = st:Row(18, 6)
+  local row = st:Row(20, 6)
+  -- Sync now: announce ours, and ask everyone to announce theirs (missing scans arrive in a minute or two)
+  local syncNow = W.Button(row, L["Sync now"], 90, 20, function()
+    local ok, why = svc:SyncNow()
+    v.syncStatus:SetText(
+      ok and L["Asked your guild and trusted players for their latest scans: they arrive over the next minutes."]
+        or W.Color("bad", why or "")
+    )
+    UI:RefreshSync()
+  end)
+  syncNow:SetWidth(math.ceil(syncNow.label:GetStringWidth() or 60) + 16)
+  syncNow:SetPoint("RIGHT", 0, 0)
+  v.syncNow = syncNow
   v.guild = W.SettingCheck(row, L["Share full scans with my guild"], "syncGuild", 0, -1)
+  v.syncStatus = st:Text("GameFontDisableSmall", 4)
   v.activity = st:Text("GameFontDisableSmall", 6)
   v.activity:SetSpacing(2)
   sublabel(st, L["Players heard from"])

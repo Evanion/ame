@@ -455,6 +455,7 @@ function Help.Articles()
           body = {
             L["Sharing is a section of the Settings tab."],
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
+            L["Sharing happens on its own every 10 minutes. Sync now (in the Guild sharing card) does it right away: it sends what you have and asks your guild and trusted players to send theirs, so scans you're missing arrive within a minute or two."],
             H(L["Sell-through"]),
             L["AME also shares how your auctions went - per item, how many units sold, expired or were cancelled, and what that taught the posting prices - no prices, gold or buyers. Everyone's outcomes add up: an item that never sells is found out after a few guildmates tried it, and posting advice learns from everyone's listings."],
             H(L["Keeping data honest"]),
