@@ -37,8 +37,10 @@ function CraftingData:Installed()
   if not info then
     return false
   end
-  local ok, name, _, _, loadable = pcall(info, CraftingData.ADDON)
-  return ok and name ~= nil and loadable and true or false
+  -- a load-on-demand addon not loaded yet is "not loadable" with reason DEMAND_LOADED: installed and enabled all
+  -- the same (disabled ones say DISABLED, missing ones MISSING)
+  local ok, name, _, _, loadable, reason = pcall(info, CraftingData.ADDON)
+  return ok and name ~= nil and (loadable or reason == "DEMAND_LOADED") and true or false
 end
 
 -- Crafting is on: switched on in Settings, with its data installed

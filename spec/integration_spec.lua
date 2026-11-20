@@ -779,6 +779,25 @@ describe("addon in a stubbed client", function()
         ns.Settings:Set("crafting", false)
       end)
 
+      it("Crafting with its data addon installed but not loaded yet (load on demand): offered in Settings", function()
+        -- the client says a load-on-demand addon that isn't loaded "isn't loadable", reason DEMAND_LOADED
+        boot({
+          pre = function()
+            env.addons = { AzerothMercantileExchange_Crafting = "DEMAND_LOADED" }
+          end,
+        })
+        _G.AME_CraftingData = nil
+        ns.CraftingData.data = nil
+        assert.is_true(ns.CraftingData:Installed())
+        ns.UI:Toggle()
+        ns.UI:ShowTab("settings")
+        assert.is_not_nil(rawget(ns.UI.settingsView, "craftingCheck"))
+        -- switched off in the addon list: not offered
+        env.addons.AzerothMercantileExchange_Crafting = "DISABLED"
+        assert.is_false(ns.CraftingData:Installed())
+        env.addons = nil
+      end)
+
       it("the Market tab's Overview: market statistics, categories into the screener, remembered", function()
         seeded()
         ns.UI:Toggle()

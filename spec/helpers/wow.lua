@@ -375,9 +375,12 @@ function M.install(opts)
       end
       return false, "MISSING"
     end,
-    GetAddOnInfo = function(name) -- name, title, notes, loadable, reason: only AME's history addon is installed
-      if name == "AzerothMercantileExchange_History" then
-        return name, name, "", true, "DEMAND_LOADED"
+    -- name, title, notes, loadable, reason: only AME's history addon is installed. As in the client, a load-on-demand
+    -- addon not loaded yet says it isn't loadable, with reason DEMAND_LOADED; env.addons[name] = reason adds others
+    GetAddOnInfo = function(name)
+      local reason = name == "AzerothMercantileExchange_History" and "DEMAND_LOADED" or env.addons and env.addons[name]
+      if reason and reason ~= "MISSING" then
+        return name, name, "", false, reason
       end
       return nil, nil, nil, false, "MISSING"
     end,
