@@ -199,7 +199,10 @@ function UI:CreateItemView(parent)
       lines[#lines + 1] = { W.Dim(L["Lowest"]), W.Money(rows.min.y) }
     end
     if rows.sma and rows.sma.x == x then
-      lines[#lines + 1] = { W.Dim(L["%d-day average"]:format(UI:AverageDays())), W.Money(rows.sma.y) }
+      lines[#lines + 1] = { W.Dim(L["7-day average"]), W.Money(rows.sma.y) }
+    end
+    if rows.fast and rows.fast.x == x then
+      lines[#lines + 1] = { W.Dim(UI.fastLabel or ""), W.Money(rows.fast.y) }
     end
     if rows.qty and rows.qty.x == x then
       lines[#lines + 1] = { W.Dim(L["Supply"]), W.Count(rows.qty.y) }
@@ -215,6 +218,7 @@ function UI:CreateItemView(parent)
   W.Skin(legend, { 0.06, 0.07, 0.09, 0.85 }, { 1, 1, 1, 0.08 })
   legend:SetPoint("TOPLEFT", 10, -10)
   legend:SetFrameLevel(chart.frame:GetFrameLevel() + 3)
+  legend:EnableMouse(true)
   -- rows of swatch + label in two aligned columns; notes (no swatch) sit under the label column, dimmed.
   -- v.legend holds the same lines as text (hover checks and specs read it).
   v.legend = W.Text(legend, "GameFontHighlightSmall")
@@ -239,7 +243,9 @@ function UI:CreateItemView(parent)
     else
       self.legendBox:SetPoint("TOPLEFT", 10, -10)
     end
-    self.legendBox:SetShown(has and not hovering and (not compact or self.legendOpen))
+    -- hovering the plot fades it (still there to click: the mouse over it leaves the plot)
+    self.legendBox:SetShown(has and (not compact or self.legendOpen))
+    self.legendBox:SetAlpha(hovering and 0.25 or 1)
   end
   chart.frame:HookScript("OnEnter", function()
     v:ShowLegend(true)
@@ -527,11 +533,6 @@ local function candlePeriod(series, rangeDays)
   return math.max(1, math.ceil((span or 1) / 60))
 end
 
--- the chart's average line: over 2 days on 2D, 7 days on every longer range
-function UI:AverageDays()
-  return (self.intradayMode and (self.rangeDays or 7) < 7) and self.rangeDays or 7
-end
-
 -- A rolling average over `hours` (default 168, a week) at each of xs: every hour before counts once - its scan or
 -- hourly price (the last in that hour), kept for up to UI.CARRY_HOURS when an hour has none, else that day's daily
 -- price (byDay[day]). So a scan moves it by about 1/168th, and a gap or a day boundary doesn't make it jump.
@@ -600,6 +601,26 @@ function UI.GroupLast(xs, ys, size)
     end
   end
   return oxs, oys
+end
+
+UI.SMA_COLOR = { 1, 0.67, 0.2 }
+UI.FAST_COLOR = { 0.78, 0.55, 1 }
+UI.FAST_CANDLES = 20
+
+-- Chart layers you switch on and off by clicking them in the legend (Settings chartLayers: key -> true / false).
+-- All start on.
+UI.LAYERS_OFF = {}
+function UI:LayerShown(key)
+  local on = ns.Settings:Table("chartLayers")[key]
+  if on == nil then
+    return not UI.LAYERS_OFF[key]
+  end
+  return on
+end
+
+function UI:ToggleLayer(key)
+  ns.Settings:Table("chartLayers")[key] = not self:LayerShown(key)
+  self:DrawItemChart()
 end
 
 -- the vendor price line: drawn when the vendor pays at least this share of the lowest price on the chart
@@ -677,8 +698,8 @@ function UI:DrawItemChart()
       marker = true,
     })
     chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = { 0.4, 0.87, 0.47, 0.9 } })
-    legend[#legend + 1] = { { 0.2, 0.8, 1 }, L["Market"], kind = "line" }
-    legend[#legend + 1] = { { 0.4, 0.87, 0.47 }, L["Lowest"], kind = "line" }
+    legend[#legend + 1] = { { 0.2, 0.8, 1 }, L["Market"], kind = "line", key = "market" }
+    legend[#legend + 1] = { { 0.4, 0.87, 0.47 }, L["Lowest"], kind = "line", key = "min" }
   end
   -- the 7-day average, up to now. By day: each day's average of it and the 6 before. Today's day point holds
   -- today so far, so it's drawn at now rather than at today's noon. On the scan-by-scan ranges (a 7-point average
@@ -693,7 +714,7 @@ function UI:DrawItemChart()
         byDay[p.day] = p.market
       end
     end
-    local rolled = UI.RollingAverage(xs, market, byDay, self:AverageDays() * 24)
+    local rolled = UI.RollingAverage(xs, market, byDay)
     for i, x in ipairs(xs) do
       if rolled[i] then
         smaXs[#smaXs + 1], smaYs[#smaYs + 1] = x, rolled[i]
@@ -711,7 +732,27 @@ function UI:DrawItemChart()
     end
   end
   if #smaXs > 1 then
-    legend[#legend + 1] = { { 1, 0.67, 0.2 }, L["%d-day average"]:format(self:AverageDays()), kind = "line" }
+    legend[#legend + 1] = { UI.SMA_COLOR, L["7-day average"], kind = "line", key = "sma" }
+  end
+  -- MA 20, as trading apps draw it: the simple average of the last UI.FAST_CANDLES candles' closes (on the line,
+  -- what those candles would be), so it follows the range - 40 hours on 2D, 5 days on 7D, 20 days on 30D
+  local period = intraday and (INTRADAY_CANDLE_HOURS[self.rangeDays] or 2) * 3600
+    or candlePeriod(series, self.rangeDays) * DAY
+  local cxs, cys = UI.GroupLast(xs, market, period)
+  local fastXs, fastYs = {}, {}
+  for i = 1, #cxs do
+    local n = math.min(UI.FAST_CANDLES, i)
+    if i >= 2 then
+      fastXs[#fastXs + 1], fastYs[#fastYs + 1] = cxs[i], ns.Analytics.SMA(cys, n, i)
+    end
+  end
+  local span = UI.FAST_CANDLES * period
+  UI.fastLabel = L["MA %d (%s)"]:format(
+    UI.FAST_CANDLES,
+    span < 3 * DAY and L["%d hours"]:format(span / 3600) or L["%d days"]:format(math.floor(span / DAY + 0.5))
+  )
+  if #fastXs > 1 then
+    legend[#legend + 1] = { UI.FAST_COLOR, UI.fastLabel, kind = "line", key = "fast" }
   end
   -- what a vendor pays: a dashed line when it's near the prices (where selling to a vendor can beat the auction
   -- house); far below them, a line would squash the chart, so the legend just says it
@@ -737,12 +778,12 @@ function UI:DrawItemChart()
         width = 1.2,
         dash = { 6, 4 },
       })
-      legend[#legend + 1] = { UI.VENDOR_COLOR, L["Vendor price"], kind = "dash" }
+      legend[#legend + 1] = { UI.VENDOR_COLOR, L["Vendor price"], kind = "dash", key = "vendor" }
     else
       legend[#legend + 1] = { note = L["Vendor price %s (below the chart)"]:format(W.Money(vendor, true)) }
     end
   end
-  legend[#legend + 1] = { { 0.53, 0.53, 0.67 }, L["Supply"], kind = "square" }
+  legend[#legend + 1] = { { 0.53, 0.53, 0.67 }, L["Supply"], kind = "square", key = "qty" }
   if intraday then
     legend[#legend + 1] = {
       note = self.intradayDaily and L["(older days: one point a day)"] or L["(each point is one scan)"],
@@ -758,8 +799,8 @@ function UI:DrawItemChart()
       axis = "price",
       size = 8,
     })
-    legend[#legend + 1] = { UI.TRADE_COLORS.buy, L["You bought"], kind = "dot" }
-    legend[#legend + 1] = { UI.TRADE_COLORS.sale, L["You sold"], kind = "dot" }
+    legend[#legend + 1] = { UI.TRADE_COLORS.buy, L["You bought"], kind = "dot", key = "trades" }
+    legend[#legend + 1] = { UI.TRADE_COLORS.sale, L["You sold"], kind = "dot", key = "trades" }
   end
   self:SetLegend(legend)
   if #smaXs > 1 then
@@ -768,10 +809,30 @@ function UI:DrawItemChart()
       ys = smaYs,
       kind = "line",
       axis = "price",
-      color = { 1, 0.67, 0.2, 0.9 },
+      color = { UI.SMA_COLOR[1], UI.SMA_COLOR[2], UI.SMA_COLOR[3], 0.9 },
       width = 1.5,
     })
   end
+  if #fastXs > 1 then
+    chart:SetSeries("fast", {
+      xs = fastXs,
+      ys = fastYs,
+      kind = "line",
+      axis = "price",
+      color = { UI.FAST_COLOR[1], UI.FAST_COLOR[2], UI.FAST_COLOR[3], 0.9 },
+      width = 1.3,
+    })
+  end
+  -- the lines switched off in the legend
+  local order = {}
+  for _, key in ipairs(chart.order) do
+    if UI:LayerShown(key) then
+      order[#order + 1] = key
+    else
+      chart.series[key] = nil
+    end
+  end
+  chart.order = order
   chart.range = range
   chart:Refresh()
 end
@@ -803,6 +864,27 @@ function UI:SetLegend(entries)
       rows[i] = r
     end
     r.swatch2:Hide()
+    if not r.click then
+      -- the whole row: click to show / hide its line
+      r.click = CreateFrame("Button", nil, box)
+      r.click:SetPoint("TOPLEFT", box, "TOPLEFT", 4, -7 - (i - 1) * UI.LEGEND_ROW)
+      r.click:SetPoint("RIGHT", box, "RIGHT", -4, 0)
+      r.click:SetHeight(UI.LEGEND_ROW)
+      r.click:SetScript("OnClick", function(btn)
+        if btn.key then
+          UI:ToggleLayer(btn.key)
+        end
+      end)
+      W.Tooltip(r.click, function(tip)
+        local key = r.click.key
+        W.TipText(tip, r.click.label or "", UI:LayerShown(key) and L["Click to hide it."] or L["Click to show it."])
+      end)
+    end
+    r.click.key, r.click.label = e.key, e[2]
+    r.click:SetShown(e.key ~= nil)
+    local on = not e.key or UI:LayerShown(e.key)
+    r.swatch:SetAlpha(on and 1 or 0.3)
+    r.swatch2:SetAlpha(on and 1 or 0.3)
     if e.note then
       r.swatch:Hide()
       r.text:SetText(W.Dim(e.note))
@@ -823,13 +905,16 @@ function UI:SetLegend(entries)
         r.swatch2:Show()
       end
       r.swatch:Show()
-      r.text:SetText(e[2])
+      r.text:SetText(on and e[2] or W.Dim(e[2]))
       lines[#lines + 1] = e[2]
     end
     r.text:Show()
     widest = math.max(widest, r.text:GetStringWidth() or 60)
   end
   for i = #entries + 1, #rows do
+    if rows[i].click then
+      rows[i].click:Hide()
+    end
     rows[i].swatch:Hide()
     rows[i].swatch2:Hide()
     rows[i].text:Hide()

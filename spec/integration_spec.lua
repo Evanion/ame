@@ -732,11 +732,12 @@ describe("addon in a stubbed client", function()
         )
         assert.are.equal("wait", sig)
         assert.are.equal("Cheap, but still falling", head2)
-        -- legend: one line per series, hidden while hovering the plot
+        -- legend: one line per series, faded while hovering the plot
         assert.truthy(v.legend.text:find("Market"))
         assert.truthy(v.legend.text:find("\n"))
-        ns.UI.chart.frame.scripts.OnEnter(ns.UI.chart.frame)
-        assert.is_false(v.legendBox:IsShown())
+        ns.UI.chart.frame.scripts.OnEnter(ns.UI.chart.frame) -- faded, still there to click
+        assert.is_true(v.legendBox:IsShown())
+        assert.is_true(v.legendBox:GetAlpha() < 1)
         ns.UI.chart.frame.scripts.OnLeave(ns.UI.chart.frame)
         assert.is_true(v.legendBox:IsShown())
         -- narrow window
@@ -1819,9 +1820,27 @@ describe("addon in a stubbed client", function()
       drainJobs()
       local market = ns.UI.chart.series.market
       assert.are.same(times, market.xs) -- one point per scan, at the scan's time
-      -- the average over the range: on 2D, a 2-day one
+      -- the 7-day average at every scan, and MA 20 over 20 candles; each switched off and on in the legend
       assert.are.same(times, ns.UI.chart.series.sma.xs)
-      assert.truthy(ns.UI.itemView.legend.text:find("2-day average", 1, true), ns.UI.itemView.legend.text)
+      local legendText = ns.UI.itemView.legend.text
+      assert.truthy(legendText:find("7-day average", 1, true), legendText)
+      assert.truthy(legendText:find("MA 20 (40 hours)", 1, true), legendText)
+      assert.is_not_nil(ns.UI.chart.series.fast)
+      local rows = ns.UI.itemView.legendBox.rows
+      local function row(label)
+        for _, r in ipairs(rows) do
+          if r.click and r.click:IsShown() and r.click.label and r.click.label:find(label, 1, true) then
+            return r.click
+          end
+        end
+      end
+      row("MA 20").scripts.OnClick(row("MA 20"))
+      assert.is_nil(ns.UI.chart.series.fast)
+      row("7-day average").scripts.OnClick(row("7-day average"))
+      assert.is_nil(ns.UI.chart.series.sma)
+      assert.is_false(AME_DB.settings.chartLayers.sma) -- remembered
+      row("7-day average").scripts.OnClick(row("7-day average"))
+      assert.is_not_nil(ns.UI.chart.series.sma)
       -- intraday candles: 2-hour candles from the scans
       v.style.byKey.candles.scripts.OnClick(v.style.byKey.candles)
       assert.are.equal(5, #ns.UI.candles.xs)
