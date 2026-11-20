@@ -31,6 +31,24 @@ function C.Init(saved, map, strings)
   C.tried = {}
 end
 
+-- Variant names and item strings saved packed (Core/Packed.lua): unpacked in the background after login, keeping
+-- what was learned meanwhile. Until then a variant shows its base name; looking a key up by name waits for them.
+function C.UnpackLater(names, strings)
+  ns.Packed.Later("variants", names, C.variants, function(key, name)
+    if C.byName[name] == nil then
+      C.byName[name] = key
+    end
+  end)
+  ns.Packed.Later("variantStrings", strings, ns.itemStrings)
+end
+
+-- at logout: names, item strings, packed
+function C.PackForSave()
+  ns.Packed.Ready("variants")
+  ns.Packed.Ready("variantStrings")
+  return ns.Packed.Pack(C.variants), ns.Packed.Pack(ns.itemStrings)
+end
+
 -- a link that belongs to the auction item key (itemID, suffix): learn how links name that suffix, and the variant's
 -- name and item string. Returns the item key.
 function C.Pair(link, itemID, suffix)
@@ -115,6 +133,7 @@ function C.KeyByName(name)
   if not name then
     return nil
   end
+  ns.Packed.Ready("variants")
   local key = C.byName[name]
   if key then
     return key
@@ -126,6 +145,7 @@ end
 -- item key for an item ID that came with its full name but no link (the old sell slot): the variant of that name
 -- when it was learned, else the item ID
 function C.KeyFor(itemID, name)
+  ns.Packed.Ready("variants")
   local key = name and C.byName[name]
   if key and ns.BaseID(key) == itemID then
     return key

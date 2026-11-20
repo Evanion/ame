@@ -297,6 +297,81 @@ describe("addon in a stubbed client", function()
       assert.is_true(ns.UI.frame:IsShown())
     end)
 
+    it("logging in during combat: history and the packed tables wait until it's over", function()
+      seeded()
+      env:fire("PLAYER_LOGOUT")
+      local db, combat = AME_DB, true
+      boot({
+        pre = function()
+          _G.AME_DB = db
+          _G.InCombatLockdown = function()
+            return combat
+          end
+        end,
+      })
+      for _ = 1, 100 do
+        env:advance(0.1)
+      end
+      assert.is_false(ns.AME:HistoryLoaded())
+      assert.is_true(ns.Packed.Pending("pricing"))
+      combat = false
+      for _ = 1, 60 do
+        env:advance(0.1)
+      end
+      assert.is_true(ns.AME:HistoryLoaded())
+      assert.is_false(ns.Packed.Pending("pricing"))
+      _G.InCombatLockdown = nil
+    end)
+
+    it("saves the big tables packed at logout, and unpacks them in the background after the next login", function()
+      seeded()
+      local shard = ns.AME:CurrentShard()
+      local variant = ns.ItemKey(2589, 7)
+      ns.ItemCache.setName(variant, "Linen Cloth of the Monkey")
+      ns.itemStrings[variant] = "item:2589::::::7"
+      assert.is_not_nil(AME_DB.pricing[shard][2589])
+      local model = AME_DB.pricing[shard][2589]
+      env:fire("PLAYER_LOGOUT")
+      assert.is_nil(AME_DB.pricing)
+      assert.are.equal("string", type(AME_DB.pricingPacked[shard]))
+      assert.is_nil(AME_DB.variants)
+      assert.truthy(AME_DB.variantsPacked:find("Linen Cloth of the Monkey", 1, true))
+      assert.truthy(AME_DB.variantStringsPacked:find("item:2589::::::7", 1, true))
+
+      -- the next login: nothing unpacked during loading, all of it shortly after
+      local db = AME_DB
+      boot({
+        pre = function()
+          _G.AME_DB = db
+        end,
+      })
+      assert.is_true(ns.Packed.Pending("pricing"))
+      assert.is_true(ns.Packed.Pending("variants"))
+      assert.is_nil(ns.ItemCache.variants[variant])
+      for _ = 1, 60 do
+        env:advance(0.1)
+      end
+      assert.is_false(ns.Packed.Pending("pricing"))
+      assert.is_false(ns.Packed.Pending("variants"))
+      assert.are.equal(model, AME_DB.pricing[shard][2589])
+      assert.are.equal("Linen Cloth of the Monkey", ns.ItemCache.variants[variant])
+      assert.are.equal(variant, ns.ItemCache.KeyByName("Linen Cloth of the Monkey"))
+      assert.are.equal("item:2589::::::7", ns.itemStrings[variant])
+
+      -- needed before the background is done: unpacked on the spot
+      env:fire("PLAYER_LOGOUT")
+      db = AME_DB
+      boot({
+        pre = function()
+          _G.AME_DB = db
+        end,
+      })
+      assert.is_true(ns.Packed.Pending("pricing"))
+      assert.truthy(ns.Pricing.Samples(AME_DB.pricingPacked == nil and ns.Posting.Pricing()[shard][2589]) >= 1)
+      assert.is_false(ns.Packed.Pending("pricing"))
+      assert.are.equal(variant, ns.ItemCache.KeyByName("Linen Cloth of the Monkey"))
+    end)
+
     it("saves market indexes at logout and uses them at the next login, rebuilding only what changed", function()
       seeded()
       local shard = ns.AME:CurrentShard()

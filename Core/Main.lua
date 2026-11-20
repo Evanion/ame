@@ -450,6 +450,9 @@ function handlers.ADDON_LOADED(name)
   AME_DB.suffixMap = AME_DB.suffixMap or {}
   AME_DB.variantStrings = AME_DB.variantStrings or {}
   ns.ItemCache.Init(AME_DB.variants, AME_DB.suffixMap, AME_DB.variantStrings)
+  -- the big ones are saved packed and unpacked after login (Core/Packed.lua): a quicker loading screen
+  ns.ItemCache.UnpackLater(AME_DB.variantsPacked, AME_DB.variantStringsPacked)
+  AME_DB.variantsPacked, AME_DB.variantStringsPacked = nil, nil
   AME.compressor = ns.Compress.New(LibStub("LibDeflate"))
   ns.Settings:Init()
   AME_DB.watch = AME_DB.watch or {}
@@ -466,9 +469,15 @@ function handlers.PLAYER_LOGOUT()
   if AME:HistoryLoaded() then
     AME:SaveIndexes()
   end
+  -- big tables of small entries go out packed: one string each (Core/Packed.lua)
+  ns.Packed.ReadyAll()
+  ns.Posting:PackForSave()
+  AME_DB.variantsPacked, AME_DB.variantStringsPacked = ns.ItemCache.PackForSave()
+  AME_DB.variants, AME_DB.variantStrings = nil, nil
 end
 
 function handlers.PLAYER_LOGIN()
+  ns.Packed.Start()
   C_Timer.After(2, function()
     ns.Trading:ScanBags()
   end)
@@ -529,13 +538,20 @@ function handlers.PLAYER_LOGIN()
   if ns.Tooltip then
     ns.Tooltip:Install()
   end
-  -- load history shortly after login (not during it) so tooltips have market data
-  C_Timer.After(3, function()
-    if AME:LoadHistory() then
+  -- load history shortly after login (not during it, nor in combat) so tooltips have market data; anything that
+  -- needs it sooner loads it then (LoadHistory)
+  local function loadHistory()
+    if InCombatLockdown and InCombatLockdown() and not AME:HistoryLoaded() then
+      C_Timer.After(2, loadHistory)
+      return
+    end
+    if AME:LoadHistory() and not AME.indexesRestored then
+      AME.indexesRestored = true
       -- last session's market indexes right away; rebuilt in the background where the history changed since
       AME:RestoreIndexes()
     end
-  end)
+  end
+  C_Timer.After(3, loadHistory)
   -- build the AME window in idle moments, so opening it the first time doesn't stutter
   C_Timer.After(6, function()
     if ns.UI and ns.UI.Prebuild then

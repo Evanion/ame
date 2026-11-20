@@ -21,21 +21,58 @@ local function now()
   return GetServerTime()
 end
 
-function Posting:Init()
+-- models not seen for Posting.KEEP are dropped
+local function prune(items)
+  local cutoff = now() - Posting.KEEP
+  for id, s in pairs(items) do
+    local t = ns.Pricing.LastSeen(s)
+    if t and t < cutoff then
+      items[id] = nil
+    end
+  end
+end
+
+-- The models, saved packed (AME_DB.pricingPacked, one string per auction house: see Core/Packed.lua) and unpacked
+-- into AME_DB.pricing in the background after login. pricing() is the table, unpacked first when it isn't yet.
+local function unpackLater()
   AME_DB.pricing = AME_DB.pricing or {}
+  for shard, text in pairs(AME_DB.pricingPacked or {}) do
+    local items = AME_DB.pricing[shard] or {}
+    AME_DB.pricing[shard] = items
+    ns.Packed.Later("pricing", text, items, nil, function()
+      prune(items)
+    end)
+  end
+  AME_DB.pricingPacked = nil
+end
+
+local function pricing()
+  if not AME_DB.pricing then
+    unpackLater()
+  end
+  ns.Packed.Ready("pricing")
+  return AME_DB.pricing
+end
+Posting.Pricing = pricing
+
+function Posting:Init()
   AME_DB.listings = AME_DB.listings or {}
   AME_DB.sellThrough = AME_DB.sellThrough or {}
   AME_DB.sellThroughPeers = AME_DB.sellThroughPeers or {}
-  local cutoff = now() - Posting.KEEP
-  for _, items in pairs(AME_DB.pricing) do
-    for id, s in pairs(items) do
-      local t = ns.Pricing.LastSeen(s)
-      if t and t < cutoff then
-        items[id] = nil
-      end
-    end
+  for _, items in pairs(AME_DB.pricing or {}) do -- saved unpacked (before 0.4.1-beta.4)
+    prune(items)
   end
+  unpackLater()
   self:HookPosting()
+end
+
+-- at logout: the models go out packed
+function Posting:PackForSave()
+  local packed = {}
+  for shard, items in pairs(pricing()) do
+    packed[shard] = ns.Packed.Pack(items)
+  end
+  AME_DB.pricingPacked, AME_DB.pricing = packed, nil
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -49,7 +86,8 @@ function Posting:Profile(shard, itemID)
   end
   local p = cache[itemID]
   if not p then
-    local s = AME_DB.pricing[shard] and AME_DB.pricing[shard][itemID]
+    local all = pricing()
+    local s = all[shard] and all[shard][itemID]
     p = s and ns.Pricing.Decode(s) or ns.Pricing.NewProfile()
     cache[itemID] = p
   end
@@ -63,13 +101,15 @@ function Posting:Peek(shard, itemID)
   if cached then
     return cached
   end
-  local s = AME_DB.pricing[shard] and AME_DB.pricing[shard][itemID]
+  local all = pricing()
+  local s = all[shard] and all[shard][itemID]
   return s and ns.Pricing.Decode(s) or ns.Pricing.NewProfile()
 end
 
 function Posting:Save(shard, itemID, p)
-  AME_DB.pricing[shard] = AME_DB.pricing[shard] or {}
-  AME_DB.pricing[shard][itemID] = ns.Pricing.Encode(p)
+  local all = pricing()
+  all[shard] = all[shard] or {}
+  all[shard][itemID] = ns.Pricing.Encode(p)
 end
 
 -- A scan you ran (not synced ones: the model learns from consecutive scans of one market). Full scans touch every
@@ -109,7 +149,7 @@ function Posting:Prior(shard, itemID)
     return cached.prior
   end
   local list = {}
-  for id, s in pairs(AME_DB.pricing[shard] or {}) do
+  for id, s in pairs(pricing()[shard] or {}) do
     if ns.Pricing.Samples(s) >= 3 then
       local other = ns.ItemCache and ns.ItemCache.Get(id)
       if (other and other.classID or -1) == class then

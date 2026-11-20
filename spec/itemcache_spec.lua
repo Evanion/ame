@@ -39,7 +39,7 @@ describe("ItemCache with random-suffix variants", function()
       return { RegisterEvent = function() end, SetScript = function() end }
     end
     _G.C_Timer = { After = function() end }
-    ns = addon.load({ "Core/Init.lua", "Core/ItemCache.lua" })
+    ns = addon.load({ "Core/Init.lua", "Core/Packed.lua", "Core/ItemCache.lua" })
     C = ns.ItemCache
     C.Init({})
   end)
