@@ -2410,6 +2410,20 @@ describe("addon in a stubbed client", function()
       assert.is_not_nil(ns.UI.chart.series.candles)
       assert.is_nil(ns.UI.chart.series.market)
       assert.are.equal(10, #ns.UI.candles.xs)
+      -- one supply bar per candle, under it
+      local function barsUnderCandles()
+        local bars, c = ns.UI.chart.series.qty, ns.UI.candles
+        assert.are.equal(#c.xs, #bars.xs)
+        for i = 1, #c.xs do
+          assert.are.equal(c.xs[i], bars.xs[i])
+        end
+      end
+      barsUnderCandles()
+      ns.UI:SetRange(7, "7D") -- 6-hour candles from scans and hourly points
+      drainJobs()
+      assert.is_true(ns.UI:ShowingIntraday())
+      barsUnderCandles()
+      ns.UI:SetRange(30, "30D")
       -- pooled textures that drew the market area's slanted top must come back rectangular
       local fills = ns.UI.chart.pools.fill
       for i = 1, fills.used do

@@ -527,6 +527,26 @@ local function candlePeriod(series, rangeDays)
   return math.max(1, math.ceil((span or 1) / 60))
 end
 
+-- points grouped into buckets of `size` seconds: one per bucket, at its middle, with the last value in it (xs
+-- sorted). size nil: as they are.
+function UI.GroupLast(xs, ys, size)
+  if not size then
+    return xs, ys
+  end
+  local oxs, oys, last = {}, {}, nil
+  for i, x in ipairs(xs) do
+    local g = math.floor(x / size)
+    if ys[i] then
+      if g ~= last then
+        oxs[#oxs + 1] = (g + 0.5) * size
+        last = g
+      end
+      oys[#oxs] = ys[i]
+    end
+  end
+  return oxs, oys
+end
+
 -- the vendor price line: drawn when the vendor pays at least this share of the lowest price on the chart
 UI.VENDOR_LINE_SHARE = 0.33
 UI.VENDOR_COLOR = { 0.85, 0.85, 0.85, 0.85 }
@@ -555,7 +575,12 @@ function UI:DrawItemChart()
   chart.range = nil
   chart:ClearSeries()
   local legend = {} -- { color, label } rows, or { note = text }
-  chart:SetSeries("qty", { xs = xs, ys = qty, kind = "bars", axis = "volume", color = { 0.53, 0.53, 0.67, 1 } })
+  -- supply: one bar per candle (its last reading, like the close), or per hour on the scan-by-scan line
+  local bucket = candles
+      and (intraday and (INTRADAY_CANDLE_HOURS[self.rangeDays] or 2) * 3600 or candlePeriod(series, self.rangeDays) * DAY)
+    or (intraday and 3600)
+  local qxs, qys = UI.GroupLast(xs, qty, bucket)
+  chart:SetSeries("qty", { xs = qxs, ys = qys, kind = "bars", axis = "volume", color = { 0.53, 0.53, 0.67, 1 } })
   if candles then
     local c
     if intraday then
