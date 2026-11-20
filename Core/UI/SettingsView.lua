@@ -7,6 +7,18 @@ local L = ns.L
 local W = ns.Widgets
 local UI = ns.UI
 
+local function kb(bytes)
+  return bytes >= 1024 * 1024 and ("%.1f MB"):format(bytes / 1024 / 1024) or ("%.0f KB"):format(bytes / 1024)
+end
+
+local function count(t)
+  local n = 0
+  for _ in pairs(t or {}) do
+    n = n + 1
+  end
+  return n
+end
+
 local function ago(t)
   return W.Ago(t, GetServerTime())
 end
@@ -467,25 +479,7 @@ function UI:RefreshSettings()
       or L["Show minimap button"] .. " " .. W.Dim(L["(needs LibDBIcon; included in releases)"])
   )
 
-  -- one line: this market's history, all markets' size, the last full scan
-  local AME = ns.AME
-  local parts = { L["Market: %s"]:format(ns.ShardLabel(AME:CurrentShard())) }
-  if AME:HistoryLoaded() then
-    local bytes = 0
-    for _, data in pairs(AME.history.shards) do
-      local _, b = ns.Store.Footprint(data)
-      bytes = bytes + b
-    end
-    local here = AME.history.shards[AME:CurrentShard()]
-    local hereDays = ns.Store.Footprint(here)
-    parts[#parts + 1] = L["this market: %d days, %d recent scans"]:format(hereDays, here and #(here.raw or {}) or 0)
-    parts[#parts + 1] = L["all markets: %.0f KB"]:format(bytes / 1024)
-  else
-    parts[#parts + 1] = L["History not loaded yet."]
-  end
-  local f = AME_DB.stats.lastFull
-  parts[#parts + 1] = f and L["last full scan %s"]:format(ago(f.at)) or L["No full scan recorded yet."]
-  v.storage:SetText(table.concat(parts, "  ·  "))
+  v.storage:SetText(UI.DataSummaryText())
 
   -- the footer: Sharing says whether sync is on; the other sections, where settings are kept
   if v.current == "sharing" then
@@ -494,4 +488,70 @@ function UI:RefreshSettings()
     v.slots.status:SetText(L["Settings are saved per account"])
   end
   v:LayoutColumns()
+end
+
+-- Settings, Data: what AME holds, one paragraph per market (the one you're on first), then the totals
+function UI.DataSummaryText()
+  local AME = ns.AME
+  local lines = {}
+  if not AME:HistoryLoaded() then
+    lines[#lines + 1] = L["History not loaded yet."]
+  else
+    local now, me = GetServerTime(), UnitName("player")
+    local here = AME:CurrentShard()
+    local shards = {}
+    for shard in pairs(AME.history.shards) do
+      shards[#shards + 1] = shard
+    end
+    table.sort(shards, function(a, b)
+      if (a == here) ~= (b == here) then
+        return a == here
+      end
+      return tostring(a) < tostring(b)
+    end)
+    local total = 0
+    for _, shard in ipairs(shards) do
+      local sum = ns.Store.Summary(AME.history.shards[shard], now, me)
+      total = total + sum.bytes
+      local head = W.Color("white", ns.ShardLabel(shard)) .. (shard == here and W.Dim(" " .. L["(this market)"]) or "")
+      local parts = {}
+      if sum.from then
+        parts[#parts + 1] = L["history from %s (%d days by day, %d weeks by week)"]:format(
+          date("%b %d, %Y", sum.from * 86400),
+          sum.days,
+          sum.weeks
+        )
+      else
+        parts[#parts + 1] = L["no daily history yet"]
+      end
+      parts[#parts + 1] = L["hourly prices for %d of the last %d hours"]:format(sum.hours, sum.hoursOf)
+      parts[#parts + 1] = L["%d full scans and %d searches kept in full (%d yours, %d from others)"]:format(
+        sum.full,
+        sum.partial,
+        sum.mine,
+        sum.full + sum.partial - sum.mine
+      )
+      if sum.newest then
+        parts[#parts + 1] = L["newest full scan %s"]:format(ago(sum.newest))
+      end
+      local index = AME.indexes and AME.indexes[shard]
+      if index and index.count then
+        parts[#parts + 1] = L["%s items"]:format(W.Thousands(index.count))
+      end
+      local outcomes = count(AME_DB.sellThrough and AME_DB.sellThrough[shard])
+      if outcomes > 0 then
+        parts[#parts + 1] = L["your listing outcomes for %s items"]:format(W.Thousands(outcomes))
+      end
+      parts[#parts + 1] = kb(sum.bytes)
+      lines[#lines + 1] = head .. "\n" .. table.concat(parts, "  ·  ")
+    end
+    lines[#lines + 1] = L["All markets: %s of price history."]:format(kb(total))
+  end
+  local ledger = AME.ledger and AME.ledger.db and AME.ledger.db.entries
+  local f = AME_DB.stats.lastFull
+  lines[#lines + 1] = table.concat({
+    L["Ledger: %s entries"]:format(W.Thousands(ledger and #ledger or 0)),
+    f and L["last full scan %s"]:format(ago(f.at)) or L["No full scan recorded yet."],
+  }, "  ·  ")
+  return table.concat(lines, "\n\n")
 end

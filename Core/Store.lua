@@ -844,6 +844,54 @@ function Store.Footprint(data)
   return days, bytes
 end
 
+-- What a market's history holds, for Settings, Data: { from = oldest day, to = newest day, days = daily points,
+-- weeks = weekly points, hours = hourly points in the last week, hoursOf = hours in a week, full = full scans kept
+-- in full, partial = searches kept in full, mine = of those, scanned by `me`, newest = newest full scan's time,
+-- bytes }. Cheap: counts keys, decodes nothing.
+function Store.Summary(data, now, me)
+  local out = { days = 0, weeks = 0, hours = 0, hoursOf = Store.HOURS_KEEP / Store.HOUR, full = 0, partial = 0 }
+  out.mine = 0
+  if not data then
+    out.bytes = 0
+    return out
+  end
+  local function span(day)
+    out.from = math.min(out.from or day, day)
+    out.to = math.max(out.to or day, day)
+  end
+  for day in pairs(data.days or {}) do
+    out.days = out.days + 1
+    span(day)
+  end
+  for week in pairs(data.weeks or {}) do
+    out.weeks = out.weeks + 1
+    span(week * 7)
+  end
+  local since = floor(now / Store.HOUR) - out.hoursOf
+  for hour in pairs(data.hours or {}) do
+    if hour > since then
+      out.hours = out.hours + 1
+    end
+  end
+  for _, e in ipairs(data.raw or {}) do
+    if (e.k or "full") == "full" then
+      out.full = out.full + 1
+      out.newest = math.max(out.newest or 0, e.t)
+    else
+      out.partial = out.partial + 1
+    end
+    if e.src == me then
+      out.mine = out.mine + 1
+    end
+  end
+  local _, bytes = Store.Footprint(data)
+  for _, e in ipairs(data.raw or {}) do
+    bytes = bytes + #(e.s or "")
+  end
+  out.bytes = bytes
+  return out
+end
+
 -- Newest scan values for an item. Walks the raw scans newest first, decoding one per step outside the segment cache
 -- (a decoded full scan is ~40k numbers: caching dozens pinned ~8 MB) and yielding between them.
 function Store:Latest(itemID)

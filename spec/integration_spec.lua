@@ -2479,6 +2479,20 @@ describe("addon in a stubbed client", function()
       _G.Auctionator, _G.AuctionHouseFrame = nil, nil
     end)
 
+    it("Settings, Data: what AME holds per market, the one you're on first", function()
+      seeded()
+      ns.UI:ShowTab("settings")
+      local s = ns.UI.settingsView
+      s.scripts.OnShow(s)
+      local text = s.storage.text
+      assert.truthy(text:find("(this market)", 1, true), text)
+      assert.truthy(text:find("history from", 1, true), text)
+      assert.truthy(text:find("hourly prices for %d+ of the last 168 hours"), text)
+      assert.truthy(text:find("full scans and", 1, true), text)
+      assert.truthy(text:find("All markets:", 1, true), text)
+      assert.truthy(text:find("Ledger:", 1, true), text)
+    end)
+
     it("Full scan finds the old auction house window too, even when it loads after the event", function()
       seeded()
       env:fire("AUCTION_HOUSE_SHOW") -- no window yet
@@ -3316,7 +3330,7 @@ describe("addon in a stubbed client", function()
       local ctrlAlt = s.click.menu.items[4]
       ctrlAlt.scripts.OnClick(ctrlAlt)
       assert.are.equal("ctrlalt", ns.Settings:Get("clickModifier"))
-      assert.truthy(s.storage.text:find("Market:"))
+      assert.truthy(s.storage.text:find("Ledger:", 1, true), s.storage.text)
       env:slash("AZEROTHMERCANTILEEXCHANGE", "config")
       assert.are.equal("settings", ns.UI.current)
       env:slash("AZEROTHMERCANTILEEXCHANGE", "sync") -- Settings, Sharing
