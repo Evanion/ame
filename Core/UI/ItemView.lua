@@ -625,7 +625,22 @@ function UI:DrawItemChart()
     legend[#legend + 1] = { { 0.2, 0.8, 1 }, L["Market"], kind = "line" }
     legend[#legend + 1] = { { 0.4, 0.87, 0.47 }, L["Lowest"], kind = "line" }
   end
-  if not intraday then -- a 7-point average of scans isn't a 7-day average
+  -- the 7-day average: over the daily points (a 7-point average of scans isn't a 7-day average), so on the
+  -- scan-by-scan ranges it's drawn from the item's daily history, one point a day
+  local smaXs, smaYs = xs, sma
+  if intraday then
+    smaXs, smaYs = {}, {}
+    local daily, from = self.series or {}, GetServerTime() - ((self.rangeDays or 2) + 1) * DAY
+    local dm = {}
+    for i, p in ipairs(daily) do
+      dm[i] = p.market
+      local t = p.day and p.res ~= "week" and p.day * DAY + DAY / 2
+      if t and t >= from then
+        smaXs[#smaXs + 1], smaYs[#smaYs + 1] = t, ns.Analytics.SMA(dm, math.min(7, i), i)
+      end
+    end
+  end
+  if #smaXs > 1 then
     legend[#legend + 1] = { { 1, 0.67, 0.2 }, L["7-day average"], kind = "line" }
   end
   -- what a vendor pays: a dashed line when it's near the prices (where selling to a vendor can beat the auction
@@ -677,10 +692,10 @@ function UI:DrawItemChart()
     legend[#legend + 1] = { UI.TRADE_COLORS.sale, L["You sold"], kind = "dot" }
   end
   self:SetLegend(legend)
-  if not intraday then -- a 7-point average of scans isn't a 7-day average
+  if #smaXs > 1 then
     chart:SetSeries("sma", {
-      xs = xs,
-      ys = sma,
+      xs = smaXs,
+      ys = smaYs,
       kind = "line",
       axis = "price",
       color = { 1, 0.67, 0.2, 0.9 },

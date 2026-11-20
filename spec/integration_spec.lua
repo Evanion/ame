@@ -1771,7 +1771,10 @@ describe("addon in a stubbed client", function()
       drainJobs()
       local market = ns.UI.chart.series.market
       assert.are.same(times, market.xs) -- one point per scan, at the scan's time
-      assert.is_nil(ns.UI.chart.series.sma)
+      local sma = ns.UI.chart.series.sma -- the 7-day average: from the daily history, not from the scans
+      for i = 2, #(sma and sma.xs or {}) do
+        assert.are.equal(86400, sma.xs[i] - sma.xs[i - 1])
+      end
       -- intraday candles: 2-hour candles from the scans
       v.style.byKey.candles.scripts.OnClick(v.style.byKey.candles)
       assert.are.equal(5, #ns.UI.candles.xs)
@@ -2377,6 +2380,13 @@ describe("addon in a stubbed client", function()
         kinds[p.kind or "day"] = true
       end
       assert.is_true(kinds.hour, "hourly points from before the scans kept in full")
+      -- the 7-day average from the daily history, one point a day
+      local sma = ns.UI.chart.series.sma
+      assert.is_not_nil(sma)
+      assert.truthy(ns.UI.itemView.legend.text:find("7-day average", 1, true))
+      for i = 2, #sma.xs do
+        assert.are.equal(86400, sma.xs[i] - sma.xs[i - 1])
+      end
       -- hourly points only from the last 2 days (AME started keeping them then): the older days come by day, so
       -- the chart still spans the week
       local recent = {}
