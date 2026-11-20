@@ -2455,6 +2455,28 @@ describe("addon in a stubbed client", function()
       assert.is_false(ns.UI.chart.message:IsShown())
     end)
 
+    it("the 7-day average on the scan-by-scan ranges rolls hour by hour: one odd scan barely moves it", function()
+      seeded()
+      local H = 3600
+      local base = math.floor(env.now / H) * H
+      local xs, values, byDay = {}, {}, {}
+      for d = -10, 0 do
+        byDay[math.floor(base / 86400) + d] = 100
+      end
+      for h = 48, 0, -1 do
+        xs[#xs + 1], values[#values + 1] = base - h * H, 100
+      end
+      values[30] = 1000 -- one wild scan
+      local ys = ns.UI.RollingAverage(xs, values, byDay)
+      assert.are.equal(100, ys[1])
+      assert.is_true(ys[30] < 100 + 900 / 168 + 0.001, tostring(ys[30]))
+      assert.is_true(ys[30] > 100)
+      -- and every step stays that small
+      for i = 2, #ys do
+        assert.is_true(math.abs(ys[i] - ys[i - 1]) <= 900 / 168 + 0.001)
+      end
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)

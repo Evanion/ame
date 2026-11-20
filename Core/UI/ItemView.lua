@@ -527,6 +527,55 @@ local function candlePeriod(series, rangeDays)
   return math.max(1, math.ceil((span or 1) / 60))
 end
 
+-- A rolling 7-day (168-hour) average at each of xs: every hour of the week before counts once - its scan or hourly
+-- price (the last in that hour), carried on for up to UI.CARRY_HOURS when an hour has none, else that day's daily
+-- price (byDay[day]). So a scan moves it by about 1/168th, and a gap or a day boundary doesn't make it jump.
+-- Returns ys aligned with xs (nil where there's nothing to average).
+UI.ROLL_HOURS, UI.CARRY_HOURS = 168, 6
+function UI.RollingAverage(xs, values, byDay)
+  local hourly = {}
+  for i, x in ipairs(xs) do
+    if values[i] then
+      hourly[math.floor(x / 3600)] = values[i]
+    end
+  end
+  local out = {}
+  if #xs == 0 then
+    return out
+  end
+  local first = math.floor(xs[1] / 3600) - UI.ROLL_HOURS + 1
+  local last = math.floor(xs[#xs] / 3600)
+  -- each hour's value, then running sums over the window
+  local sum, n, vals, seen, seenAt = {}, {}, {}, nil, nil
+  local s, c = 0, 0
+  for h = first, last do
+    local v = hourly[h]
+    if v then
+      seen, seenAt = v, h
+    elseif seen and h - seenAt <= UI.CARRY_HOURS then
+      v = seen
+    else
+      v = byDay[math.floor(h / 24)]
+    end
+    vals[h] = v
+    if v then
+      s, c = s + v, c + 1
+    end
+    local drop = vals[h - UI.ROLL_HOURS]
+    if drop then
+      s, c = s - drop, c - 1
+    end
+    sum[h], n[h] = s, c
+  end
+  for i, x in ipairs(xs) do
+    local h = math.floor(x / 3600)
+    if values[i] and n[h] and n[h] > 0 then
+      out[i] = sum[h] / n[h]
+    end
+  end
+  return out
+end
+
 -- points grouped into buckets of `size` seconds: one per bucket, at its middle, with the last value in it (xs
 -- sorted). size nil: as they are.
 function UI.GroupLast(xs, ys, size)
@@ -627,8 +676,8 @@ function UI:DrawItemChart()
   end
   -- the 7-day average, up to now. By day: each day's average of it and the 6 before. Today's day point holds
   -- today so far, so it's drawn at now rather than at today's noon. On the scan-by-scan ranges (a 7-point average
-  -- of scans isn't a 7-day average): at every point, the 6 days before it (daily history) and that point's price
-  -- as its day so far - the line moves with each scan, and ends where the last one is.
+  -- of scans isn't a 7-day average): at every point, the average over the 168 hours before it (see
+  -- UI.RollingAverage) - each hour moves it by 1/168, and it ends where the last scan is.
   local smaXs, smaYs = {}, {}
   local now = GetServerTime()
   if intraday then
@@ -638,16 +687,10 @@ function UI:DrawItemChart()
         byDay[p.day] = p.market
       end
     end
+    local rolled = UI.RollingAverage(xs, market, byDay)
     for i, x in ipairs(xs) do
-      local d, sum, n = math.floor(x / DAY), market[i], 1
-      if sum then
-        for back = 1, 6 do
-          local m = byDay[d - back]
-          if m then
-            sum, n = sum + m, n + 1
-          end
-        end
-        smaXs[#smaXs + 1], smaYs[#smaYs + 1] = x, sum / n
+      if rolled[i] then
+        smaXs[#smaXs + 1], smaYs[#smaYs + 1] = x, rolled[i]
       end
     end
   else
