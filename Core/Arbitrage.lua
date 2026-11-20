@@ -81,11 +81,11 @@ end
 
 -- Listing deposit: a share of the item's vendor sell price by listing length, refunded when the item sells and lost
 -- when it doesn't (sources: Classic rules, confirmed for WoW Forever by community guides, Nov 2026). Goblin
--- (neutral) auction houses charge 5x the faction rate. At least 1 silver per post, however few
--- items it holds.
+-- (neutral) auction houses charge 5x the faction rate. At least 1 copper (it was 1 silver before Nov 17): the game
+-- asks 60c for two Medium Leather (vendor 50c) over 24 hours, and 13s 50c for 15 Silk Cloth (vendor 1s 50c).
 Arbitrage.DEPOSIT_RATE = { [2] = 0.05, [8] = 0.20, [24] = 0.60 }
 Arbitrage.NEUTRAL_DEPOSIT_FACTOR = 5
-Arbitrage.MIN_DEPOSIT = 100
+Arbitrage.MIN_DEPOSIT = 1
 
 function Arbitrage.Deposit(vendorPrice, house, hours, minDeposit)
   if not vendorPrice then

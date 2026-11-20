@@ -82,7 +82,7 @@ Help.TERMS = {
   },
   arbNet = {
     L["Net"],
-    L["Per item: what it sells for, minus the AH cut, minus the listing deposit, minus what you paid. The deposit is counted for one post of the units the route pays for (or up to 20), at least 1 silver per post - you get it back when it sells."],
+    L["Per item: what it sells for, minus the AH cut, minus the listing deposit, minus what you paid. The deposit is counted for one post of the units the route pays for (or up to 20), 60% of the vendor price for a 24-hour listing - you get it back when it sells."],
   },
   arbUnits = {
     L["Units"],

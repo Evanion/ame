@@ -1969,7 +1969,7 @@ describe("addon in a stubbed client", function()
       local advice = ns.Posting:Suggest(shard, 2589, 5, 24)
       assert.is_not_nil(advice)
       assert.truthy(advice.quick.price <= advice.normal.price and advice.normal.price <= advice.patient.price)
-      assert.truthy(advice.deposit >= 100) -- 1 silver minimum per post
+      assert.truthy(advice.deposit >= 1) -- 1 copper minimum per post
       -- you post 5 at the suggested price: recorded with the model's chance
       C_AuctionHouse.PostCommodity({ itemID = 2589 }, 3, 5, advice.normal.price)
       assert.are.equal(1, #AME_DB.listings)
