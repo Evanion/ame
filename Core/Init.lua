@@ -1,7 +1,7 @@
 -- Namespace and shared constants. Pure: no WoW API calls (loaded by busted specs too).
 local _, ns = ...
 
-ns.VERSION = "0.2.0-beta.4"
+ns.VERSION = "dev" -- stamped with the release version by scripts/package.sh
 
 -- Translated text. Core\Locale.lua sets it up in game; specs that load modules directly get the English key back.
 ns.L = ns.L or setmetatable({}, {

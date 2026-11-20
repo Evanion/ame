@@ -699,6 +699,7 @@ end
 
 -- the game's item tooltip for an item key (a random-suffix variant shows its own stats)
 function W.SetItemTip(tip, key)
+  W.NudgeItemName(key)
   if ns.IsVariant(key) then
     local itemID, suffix = ns.SplitKey(key)
     -- the auction house's item key tooltip is the group's ("may vary in stats"): only when no link with the
@@ -734,25 +735,100 @@ function W.QualityText(quality, text)
   return (color and color.hex or "|cffffffff") .. text .. "|r"
 end
 
--- An item's name in its quality colour; one the client hasn't loaded is asked for once a session, and redraw() runs
--- (debounced) when names arrive. Until then "item:<id>".
-local namePending, redrawQueue = {}, {}
+-- An item's name in its quality colour; until the client has it, "item:<id>", and redraw() runs (debounced) once it
+-- arrives. The load callback and the item data events don't always come (WoW Forever left Overview rows unnamed
+-- while their tooltips loaded fine), so missing names are also checked every half second for a minute, asking the
+-- client again every few seconds. Hovering the item (see SetItemTip) starts that minute over.
+local redrawQueue = {}
+local missing = {} -- [key] = { ticks = left, redraws = { [fn] = true } }
+local redrawsOf = {} -- [key] = { [fn] = true }: who shows the key, kept after giving up for a later hover
+local POLL, TICKS, ASK_EVERY = 0.5, 120, 10
+local polling = false
+
+local function queueRedraw(redraw)
+  if redraw and not redrawQueue[redraw] then
+    redrawQueue[redraw] = true
+    C_Timer.After(0.2, function()
+      redrawQueue[redraw] = nil
+      redraw()
+    end)
+  end
+end
+
+local function ask(key)
+  ns.ItemCache.Get(key)
+  local request = C_Item and C_Item.RequestLoadItemDataByID
+  if request then
+    pcall(request, ns.BaseID(key))
+  end
+end
+
+local function poll()
+  polling = false
+  for key, m in pairs(missing) do
+    if W.ItemInfo(key) then
+      missing[key] = nil
+      for fn in pairs(m.redraws) do
+        queueRedraw(fn)
+      end
+    else
+      m.ticks = m.ticks - 1
+      if m.ticks <= 0 then
+        missing[key] = nil
+      elseif m.ticks % ASK_EVERY == 0 then
+        ask(key)
+      end
+    end
+  end
+  if next(missing) then
+    polling = true
+    C_Timer.After(POLL, poll)
+  end
+end
+
+-- start (or restart) watching a key that has no name yet
+local function watch(key)
+  local m = missing[key]
+  if m then
+    m.ticks = TICKS
+    return
+  end
+  local redraws = redrawsOf[key] or {}
+  redrawsOf[key] = redraws
+  missing[key] = { ticks = TICKS, redraws = redraws }
+  ask(key)
+  W.OnItemLoaded(key, function()
+    for fn in pairs(redraws) do
+      queueRedraw(fn)
+    end
+  end)
+  if not polling then
+    polling = true
+    C_Timer.After(POLL, poll)
+  end
+end
+
 function W.ItemNameOrLoad(key, redraw)
   local name, _, quality = W.ItemInfo(key)
   name = name or ns.ItemCache.Name(key)
-  if not name and key and not namePending[key] then
-    namePending[key] = true
-    W.OnItemLoaded(key, function()
-      if redraw and not redrawQueue[redraw] then
-        redrawQueue[redraw] = true
-        C_Timer.After(0.2, function()
-          redrawQueue[redraw] = nil
-          redraw()
-        end)
-      end
-    end)
+  if not name and key then
+    local redraws = redrawsOf[key] or {}
+    redrawsOf[key] = redraws
+    if redraw then
+      redraws[redraw] = true
+    end
+    if not missing[key] then
+      watch(key)
+    end
   end
   return W.QualityText(quality, name or ("item:" .. tostring(key)))
+end
+
+-- a tooltip is loading this key: if a list shows it unnamed, look again
+function W.NudgeItemName(key)
+  if key and redrawsOf[key] and next(redrawsOf[key]) and not W.ItemInfo(key) then
+    watch(key)
+  end
 end
 
 -- run fn once item data is cached

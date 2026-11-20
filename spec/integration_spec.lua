@@ -858,6 +858,57 @@ describe("addon in a stubbed client", function()
         assert.is_nil(ns.AME.index.stats)
       end)
 
+      it("the Overview names its items once they load, even with no load callback or item data event", function()
+        seeded()
+        local getInfo = C_Item.GetItemInfo
+        local known = false
+        _G.C_Item.GetItemInfo = function(id)
+          if not known then
+            return nil
+          end
+          return getInfo(id)
+        end
+        -- an item load callback that never comes (the client only fires the event)
+        _G.Item = {
+          CreateFromItemID = function()
+            return {
+              IsItemEmpty = function()
+                return false
+              end,
+              ContinueOnItemLoad = function() end,
+            }
+          end,
+        }
+        ns.Settings:Set("marketOverview", true)
+        ns.UI:MarketOverviewChanged(true)
+        ns.UI:Toggle()
+        ns.UI:ShowTab("market")
+        drainJobs()
+        ns.UI:SetMarketMode("overview")
+        drainJobs()
+        local row = ns.UI.overviewView.largestRows[1]
+        assert.is_true(row:IsShown())
+        local id = row.data.id
+        assert.truthy(row.cells[1].text:find("item:" .. id, 1, true), row.cells[1].text)
+        known = true -- the client has it now, and says nothing
+        env:advance(1)
+        assert.truthy(row.cells[1].text:find("Item " .. id, 1, true), row.cells[1].text)
+        -- one that takes longer than a minute: the next hover over it picks the name up
+        known = false
+        ns.UI:RenderOverview()
+        assert.truthy(row.cells[1].text:find("item:" .. id, 1, true), row.cells[1].text)
+        env:advance(61)
+        known = true
+        env:advance(1)
+        assert.truthy(row.cells[1].text:find("item:" .. id, 1, true), "stopped looking after a minute")
+        row.scripts.OnEnter(row)
+        env:advance(1)
+        assert.truthy(row.cells[1].text:find("Item " .. id, 1, true), row.cells[1].text)
+        _G.C_Item.GetItemInfo, _G.Item = getInfo, nil
+        ns.Settings:Set("marketOverview", false)
+        ns.UI:MarketOverviewChanged(false)
+      end)
+
       it("the footer is the window's: each tab's status text on the left, version on the right", function()
         seeded()
         ns.UI:Toggle()

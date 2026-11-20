@@ -191,24 +191,11 @@ local function rowList(parent, count, cols, top, opts)
 end
 
 -- an item's name; one the client hasn't loaded yet is asked for, and the overview redraws once it arrives
-local pendingNames = {}
-local redrawQueued = false
+local function redrawOverview()
+  UI:RenderOverview()
+end
 local function itemName(key)
-  local name, _, quality = W.ItemInfo(key)
-  name = name or ns.ItemCache.Name(key)
-  if not name and not pendingNames[key] then
-    pendingNames[key] = true -- asked once a session (an item that never loads mustn't redraw forever)
-    W.OnItemLoaded(key, function()
-      if not redrawQueued then
-        redrawQueued = true
-        C_Timer.After(0.2, function()
-          redrawQueued = false
-          UI:RenderOverview()
-        end)
-      end
-    end)
-  end
-  return W.QualityText(quality, name or ("item:" .. tostring(key)))
+  return W.ItemNameOrLoad(key, redrawOverview)
 end
 
 local function changeText(x)
