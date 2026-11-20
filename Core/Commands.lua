@@ -118,6 +118,9 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     ns.SelfTest.Run(AME)
   elseif cmd == "backfill" then
     AME:Backfill(true)
+  elseif cmd == "scan" then
+    local ok, why = ns.ScanButton:Start()
+    say(ok and L["full scan started: it's recorded when the auction house has sent everything"] or why)
   elseif cmd == "config" or cmd == "settings" or cmd == "options" then
     ns.Settings:Open()
   elseif cmd == "sync" or cmd == "sharing" then
@@ -131,7 +134,7 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
       L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"]
     )
     say(
-      L["/ame item <link> - print history  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync"]
+      L["/ame item <link> - print history  ·  /ame scan  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync"]
     )
   elseif itemIDFrom(msg) then
     ns.UI:ShowItem(itemIDFrom(msg))

@@ -486,6 +486,7 @@ function handlers.PLAYER_LOGIN()
       AME.scanRequestedAt = debugprofilestop()
       local d = AME:ScanDiag()
       d.requests, d.lastRequestAt, d.eventsSinceRequest = (d.requests or 0) + 1, GetServerTime(), 0
+      d.lastReplicateAt = GetServerTime() -- the game allows one every 15 minutes (ScanButton)
       AME.ingest:OnReplicateRequested()
     end)
   end

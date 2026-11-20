@@ -2380,6 +2380,43 @@ describe("addon in a stubbed client", function()
       assert.is_not_nil(ns.UI.chart.series.market)
     end)
 
+    it("Full scan over the auction house window, without a scanning addon: one every 15 minutes", function()
+      seeded()
+      _G.AuctionHouseFrame = CreateFrame("Frame")
+      local asked = 0
+      hooksecurefunc(C_AuctionHouse, "ReplicateItems", function()
+        asked = asked + 1
+      end)
+      ns.AME:ScanDiag().lastReplicateAt = nil -- seeded's scans were long enough ago
+      env:fire("AUCTION_HOUSE_SHOW")
+      local b = ns.ScanButton.button
+      assert.is_not_nil(b)
+      assert.is_true(b:IsShown())
+      assert.are.equal("Full scan", b.label.text)
+      b.scripts.OnClick(b)
+      assert.are.equal(1, asked)
+      assert.are.equal("Scanning...", b.label.text)
+      -- the scan is read: then the 15 minutes count down
+      ns.AME:ScanDiag().readDoneAt = GetServerTime() + 30
+      env.now = env.now + 60
+      ns.ScanButton:Refresh()
+      assert.truthy(b.label.text:find("Full scan in 14:", 1, true), b.label.text)
+      b.scripts.OnClick(b)
+      assert.are.equal(1, asked)
+      assert.is_true(env:chatContains("one full scan every 15 minutes"))
+      env:slash("AZEROTHMERCANTILEEXCHANGE", "scan")
+      assert.are.equal(1, asked)
+      env.now = env.now + 15 * 60
+      env:slash("AZEROTHMERCANTILEEXCHANGE", "scan")
+      assert.are.equal(2, asked)
+      assert.is_true(env:chatContains("full scan started"))
+      -- with a scanning addon loaded, it stays out of the way
+      _G.Auctionator = {}
+      ns.ScanButton:Refresh()
+      assert.is_false(b:IsShown())
+      _G.Auctionator, _G.AuctionHouseFrame = nil, nil
+    end)
+
     it("opens an item chart from /ame <link> and fills stats after loading", function()
       seeded()
       env:slash("AZEROTHMERCANTILEEXCHANGE", "|cffffffff|Hitem:2589::::|h[Linen Cloth]|h|r")

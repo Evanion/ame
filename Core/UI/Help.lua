@@ -255,7 +255,7 @@ Help.GUIDE = {
   },
   {
     L["Commands"],
-    L["/ame - open the window.   /ame <item link> - chart an item.   /ame item <item link> - its history in chat.   /ame status - data and sharing status.   /ame config - settings.   /ame sync - sharing settings.   /ame backfill - import Auctionator's history now.   /ame selftest - check everything is working.   /ame help - the commands in chat."],
+    L["/ame - open the window.   /ame <item link> - chart an item.   /ame item <item link> - its history in chat.   /ame scan - a full scan of the open auction house.   /ame status - data and sharing status.   /ame config - settings.   /ame sync - sharing settings.   /ame backfill - import Auctionator's history now.   /ame selftest - check everything is working.   /ame help - the commands in chat."],
   },
 }
 
@@ -285,7 +285,7 @@ function Help.Articles()
           key = "start",
           title = L["Getting started"],
           body = {
-            L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan (Auctionator's, or the game's own), and AME records it."],
+            L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan, and AME records it - with your scanning addon, or, without one, with the Full scan button over the auction house window (or /ame scan). The game allows one full scan every 15 minutes."],
             H(L["After your first scan"]),
             L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."],
             H(L["Opening AME"]),

@@ -78,6 +78,7 @@ Core\UI\LevelingView.lua
 Core\UI\CraftingView.lua
 Core\UI\Tooltip.lua
 Core\UI\SellAssist.lua
+Core\UI\ScanButton.lua
 Core\UI\Launcher.lua
 Core\Dev\Profiler.lua
 Core\Dev\RecipeProbe.lua
