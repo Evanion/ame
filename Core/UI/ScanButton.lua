@@ -113,7 +113,16 @@ function Scan:Attach()
   else
     b:SetPoint("BOTTOMRIGHT", ah, "TOPRIGHT", -4, 2)
   end
-  b:SetFrameLevel((ah:GetFrameLevel() or 0) + 20)
+  -- the window's border pieces sit at high frame levels (its close button above them): over all of them
+  local top = ah:GetFrameLevel() or 0
+  if ah.GetChildren then
+    for _, child in ipairs({ ah:GetChildren() }) do
+      if child ~= b and child.GetFrameLevel then
+        top = math.max(top, child:GetFrameLevel() or 0)
+      end
+    end
+  end
+  b:SetFrameLevel(top + 5)
   W.Tooltip(b, function(tip)
     W.TipText(
       tip,

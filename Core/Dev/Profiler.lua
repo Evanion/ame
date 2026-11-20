@@ -361,6 +361,15 @@ SlashCmdList.AMEDEV = function(msg)
       tostring(ah and ah:GetTop()),
       tostring(ah and ah:GetRight())
     )
+    local close = ah and rawget(ah, "CloseButton")
+    say(
+      "close button: %s  level %s strata %s  top %s left %s",
+      tostring(close ~= nil),
+      tostring(close and close:GetFrameLevel()),
+      tostring(close and close:GetFrameStrata()),
+      tostring(close and close:GetTop()),
+      tostring(close and close:GetLeft())
+    )
   elseif cmd == "" or cmd == "stats" then
     summary()
   else
