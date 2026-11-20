@@ -2332,6 +2332,40 @@ describe("addon in a stubbed client", function()
       _G.C_Item.GetItemInfo, _G.C_Container = getInfo, nil
     end)
 
+    it("marks the vendor price: a dashed line near the prices, a legend note far below them", function()
+      seeded()
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      ns.UI:SetRange(30, "30D")
+      local lowest
+      for _, p in ipairs(ns.UI.series) do
+        lowest = math.min(lowest or p.min, p.min, p.market)
+      end
+      local function redraw(price)
+        env.sellPrices[2589] = price
+        ns.ItemCache.info[2589] = nil -- facts are cached: read the price again
+        ns.UI:DrawItemChart()
+      end
+      redraw(math.floor(lowest * 0.6))
+      local line = ns.UI.chart.series.vendor
+      assert.is_not_nil(line)
+      assert.are.same({ math.floor(lowest * 0.6), math.floor(lowest * 0.6) }, line.ys)
+      assert.is_not_nil(line.dash)
+      assert.truthy(ns.UI.itemView.legend.text:find("Vendor price", 1, true))
+      local hover = ns.UI.chart.hoverFormatter(ns.UI.chart, line.xs[1], {})
+      local text = {}
+      for _, l in ipairs(hover) do
+        text[#text + 1] = type(l) == "table" and (l[1] .. " " .. l[2]) or l
+      end
+      assert.truthy(table.concat(text, "\n"):find("Vendor price", 1, true))
+      redraw(math.max(1, math.floor(lowest * 0.05)))
+      assert.is_nil(ns.UI.chart.series.vendor)
+      assert.truthy(ns.UI.itemView.legend.text:find("below the chart", 1, true), ns.UI.itemView.legend.text)
+      redraw(nil) -- no vendor price (can't be sold to one)
+      assert.is_nil(ns.UI.chart.series.vendor)
+      assert.is_nil(ns.UI.itemView.legend.text:find("Vendor", 1, true))
+    end)
+
     it("plots the 7-day range from hourly points, and the longer ones by day", function()
       seeded()
       ns.UI:ShowItem(2589)

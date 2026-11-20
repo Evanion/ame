@@ -204,6 +204,9 @@ function UI:CreateItemView(parent)
     if rows.qty and rows.qty.x == x then
       lines[#lines + 1] = { W.Dim(L["Supply"]), W.Count(rows.qty.y) }
     end
+    if UI.vendorLine then
+      lines[#lines + 1] = { W.Dim(L["Vendor price"]), W.Money(UI.vendorLine) }
+    end
     return lines
   end)
   self.chart = chart
@@ -504,6 +507,10 @@ local function candlePeriod(series, rangeDays)
   return math.max(1, math.ceil((span or 1) / 60))
 end
 
+-- the vendor price line: drawn when the vendor pays at least this share of the lowest price on the chart
+UI.VENDOR_LINE_SHARE = 0.33
+UI.VENDOR_COLOR = { 0.85, 0.85, 0.85, 0.85 }
+
 -- (Re)draw the item chart in the current style from self.series.
 function UI:DrawItemChart()
   local intraday = self:ShowingIntraday()
@@ -575,6 +582,35 @@ function UI:DrawItemChart()
   end
   if not intraday then -- a 7-point average of scans isn't a 7-day average
     legend[#legend + 1] = { { 1, 0.67, 0.2 }, L["7-day average"], kind = "line" }
+  end
+  -- what a vendor pays: a dashed line when it's near the prices (where selling to a vendor can beat the auction
+  -- house); far below them, a line would squash the chart, so the legend just says it
+  local vendor = self.itemID and ns.ItemCache.Get(self.itemID).sellPrice
+  self.vendorLine = nil
+  if vendor and vendor > 0 then
+    local lowest
+    for i = 1, #xs do
+      for _, y in ipairs({ low[i], market[i] }) do
+        if y and y > 0 and (not lowest or y < lowest) then
+          lowest = y
+        end
+      end
+    end
+    if lowest and vendor >= lowest * UI.VENDOR_LINE_SHARE then
+      self.vendorLine = vendor
+      chart:SetSeries("vendor", {
+        xs = { xs[1], math.max(xs[#xs], GetServerTime() + DAY) },
+        ys = { vendor, vendor },
+        kind = "line",
+        axis = "price",
+        color = UI.VENDOR_COLOR,
+        width = 1.2,
+        dash = { 6, 4 },
+      })
+      legend[#legend + 1] = { UI.VENDOR_COLOR, L["Vendor price"], kind = "dash" }
+    else
+      legend[#legend + 1] = { note = L["Vendor price %s (below the chart)"]:format(W.Money(vendor, true)) }
+    end
   end
   legend[#legend + 1] = { { 0.53, 0.53, 0.67 }, L["Supply"], kind = "square" }
   if intraday then

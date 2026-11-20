@@ -336,8 +336,9 @@ function M.install(opts)
     GetItemID = function(location) -- item locations are faked as { itemID = id }
       return location and location.itemID
     end,
+    -- env.sellPrices[id]: what a vendor pays (the 11th value)
     GetItemInfo = function(id)
-      return "Item " .. id, "|Hitem:" .. id .. "|h", 1, nil, nil, nil, nil, nil, nil, 134400
+      return "Item " .. id, "|Hitem:" .. id .. "|h", 1, nil, nil, nil, nil, nil, nil, 134400, env.sellPrices[id]
     end,
     GetItemInfoInstant = function(id)
       return id, "Trade Goods", "Cloth", "", 134400, 7, id % 2 == 0 and 5 or 6
@@ -353,6 +354,7 @@ function M.install(opts)
   set("C_AuctionHouse", env.ah)
   -- legacy AH API (Forever): env.legacyRows = { { itemID, buyout, count } }, 1-based
   env.legacyRows = {}
+  env.sellPrices = {}
   set("QueryAuctionItems", function() end)
   set("GetNumAuctionItems", function()
     return #env.legacyRows, #env.legacyRows
