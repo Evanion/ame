@@ -526,6 +526,67 @@ describe("addon in a stubbed client", function()
       assert.are.equal(4306, ns.UI.itemID)
     end)
 
+    it(
+      "/amedev lag: measures each fight per addon with the game's addon profiler, and says who held frames up",
+      function()
+        seeded()
+        local names = { "AzerothMercantileExchange", "SlowAddon", "QuickAddon" }
+        local cost = { AzerothMercantileExchange = 0.2, SlowAddon = 6, QuickAddon = 0.5 } -- ms a frame
+        local over5 = { SlowAddon = 0 }
+        rawset(C_AddOns, "GetNumAddOns", function()
+          return #names
+        end)
+        local info = C_AddOns.GetAddOnInfo
+        rawset(C_AddOns, "GetAddOnInfo", function(i)
+          if type(i) == "number" then
+            return names[i]
+          end
+          return info(i)
+        end)
+        rawset(C_AddOns, "IsAddOnLoaded", function()
+          return true
+        end)
+        rawset(Enum, "AddOnProfilerMetric", { LastTime = 1, CountTimeOver5Ms = 2, CountTimeOver50Ms = 3 })
+        _G.C_AddOnProfiler = {
+          IsEnabled = function()
+            return true
+          end,
+          GetAddOnMetric = function(name, m)
+            if m == 1 then
+              over5[name] = (over5[name] or 0) + ((cost[name] or 0) > 5 and 1 or 0)
+              return cost[name]
+            end
+            return m == 2 and over5[name] or 0
+          end,
+        }
+        finally(function()
+          _G.C_AddOnProfiler = nil
+        end)
+        env:slash("AMEDEV", "lag")
+        assert.is_true(AME_DB.dev.lag.armed)
+        env:fire("PLAYER_REGEN_DISABLED")
+        env:update(60)
+        env:fire("PLAYER_REGEN_ENABLED")
+        local report = AME_DB.dev.lag.reports[1]
+        assert.are.equal("fight", report.label)
+        assert.are.equal(60, report.frames)
+        assert.are.equal("SlowAddon", report.top[1].name)
+        assert.are.equal(360, report.top[1].ms)
+        assert.are.equal(60, report.top[1].over5)
+        -- a fight too short to say anything: no report
+        env:fire("PLAYER_REGEN_DISABLED")
+        env:update(3)
+        env:fire("PLAYER_REGEN_ENABLED")
+        assert.are.equal(1, #AME_DB.dev.lag.reports)
+        -- disarmed: fights aren't measured
+        env:slash("AMEDEV", "lag")
+        env:fire("PLAYER_REGEN_DISABLED")
+        env:update(60)
+        env:fire("PLAYER_REGEN_ENABLED")
+        assert.are.equal(1, #AME_DB.dev.lag.reports)
+      end
+    )
+
     it("can open AME together with the auction house, and close it with it", function()
       seeded()
       env:fire("AUCTION_HOUSE_CLOSED")

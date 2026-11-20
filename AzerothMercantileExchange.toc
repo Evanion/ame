@@ -81,5 +81,6 @@ Core\UI\SellAssist.lua
 Core\UI\ScanButton.lua
 Core\UI\Launcher.lua
 Core\Dev\Profiler.lua
+Core\Dev\LagProbe.lua
 Core\Dev\RecipeProbe.lua
 Core\Dev\AHProbe.lua
