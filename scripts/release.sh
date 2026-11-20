@@ -103,10 +103,9 @@ meta = {
     "releaseType": rtype,
 }
 data_slug = data_slug or "ame-crafting-data"
-# the crafting data library: its own project. CurseForge refuses a link to a project it hasn't approved yet, so none
-# until then (AME hides Crafting without the library); once approved, "requiredDependency", so the CurseForge app
-# installs it with AME
-DATA_RELATION = None
+# the crafting data library: its own project (approved), linked as a required dependency so the CurseForge app
+# installs it with AME. AME's own TOC doesn't require it: without the library AME still loads and hides Crafting.
+DATA_RELATION = "requiredDependency"
 if data_slug and DATA_RELATION:
     meta["relations"] = {"projects": [{"slug": data_slug, "type": DATA_RELATION}]}
 print(json.dumps(meta))
