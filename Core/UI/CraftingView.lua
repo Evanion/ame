@@ -502,6 +502,12 @@ function UI:CreateCraftingView(parent, contentArea)
   end)
   v.action:SetPoint("LEFT")
   v.action:SetPoint("RIGHT", -70, 0)
+  -- its label changes with the tab ("Add all reagents to a shopping list"): kept inside the button, cut short with
+  -- "..." when the sidebar is narrow
+  v.action.label:ClearAllPoints()
+  v.action.label:SetPoint("LEFT", 6, 0)
+  v.action.label:SetPoint("RIGHT", -6, 0)
+  v.action.label:SetWordWrap(false)
   v.chart = W.Button(actions, L["Chart"], 64, 26, function()
     local e = UI.craftSelected
     local id = e and (e.recipe and e.recipe.product or e.itemID)

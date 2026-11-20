@@ -133,6 +133,13 @@ function W.Button(parent, label, width, height, onClick, opts)
   b.tone = false -- coloured choices (signals): set by W.Segmented
   b.label = W.Text(b, "GameFontHighlightSmall", "CENTER")
   b.label:SetText(label)
+  -- the label is AME's own font string (the button has none of the game's): its text goes there
+  function b:SetText(text)
+    self.label:SetText(text)
+  end
+  function b:GetText()
+    return self.label:GetText()
+  end
   if opts and opts.icon then
     b.icon = b:CreateTexture(nil, "OVERLAY")
     b.icon:SetSize(opts.icon, opts.icon)

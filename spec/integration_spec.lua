@@ -682,6 +682,8 @@ describe("addon in a stubbed client", function()
         ns.UI.craftSelected = rows[1]
         ns.UI:RenderCraftingDetail()
         assert.truthy(v.note.text:find("Missing a price"), v.note.text)
+        -- the sidebar's button says what it does (its label is AME's own font string)
+        assert.are.equal("Add reagents to a shopping list", v.action.label.text)
         -- sell or refine: the linen sells raw (the bandage has no price)
         v.modes:Select("refine")
         rows = ns.UI.craftRows
