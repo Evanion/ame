@@ -711,9 +711,15 @@ describe("addon in a stubbed client", function()
           step = step or (not r.note and r)
         end
         assert.truthy(v.levelCards.cards[1].value.text:find("-"), v.levelCards.cards[1].value.text) -- a cost, in red
+        -- no step picked: no button; a step picked: the whole path's reagents to a shopping list
+        ns.UI.craftSelected = nil
+        ns.UI:RenderCraftingDetail()
+        assert.is_false(v.action:IsShown())
         ns.UI.craftSelected = step
         ns.UI:RenderCraftingDetail()
         assert.is_true(v.colorBar:IsShown())
+        assert.is_true(v.action:IsShown())
+        assert.are.equal("Add all reagents to a shopping list", v.action.label.text)
         -- a craft re-records the profession and rebuilds the rows: the same step stays selected
         ns.UI:RefreshCrafting()
         assert.is_not_nil(ns.UI.craftSelected)

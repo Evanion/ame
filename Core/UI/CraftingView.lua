@@ -733,13 +733,12 @@ function UI:RenderCraftingDetailRows()
       noteText = noteText()
     end
     v.subtitle:SetText(
-      noteText
-        or L["Click a step for its skill colors, the reagents to buy and where the results go. The button puts the whole path's reagents on a shopping list."]
+      noteText or L["Click a step for its skill colors, the reagents to buy and where the results go."]
     )
     setLines(v, {})
     v.note:SetText("")
     v.action:SetText(L["Add all reagents to a shopping list"])
-    v.action:SetShown(self.leveling ~= nil)
+    v.action:SetShown(e ~= nil and self.leveling ~= nil) -- a step picked (learn / train steps too); none: no button
     return
   end
   if not e then

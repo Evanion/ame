@@ -208,7 +208,7 @@ L["Clear all filters"] = true
 L["Click a row for its breakdown: where each reagent comes from, what selling nets, and how much the market takes."] = true
 L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] = true
 L["Click a row to see what the route pays after the cut and the deposit, and how fresh both prices are."] = true
-L["Click a step for its skill colors, the reagents to buy and where the results go. The button puts the whole path's reagents on a shopping list."] = true
+L["Click a step for its skill colors, the reagents to buy and where the results go."] = true
 L["Click to open this category in the screener."] = true
 L["Click to put it in your chat box"] = true
 L["Click: price chart  ·  Shift-click: link in chat"] = true
