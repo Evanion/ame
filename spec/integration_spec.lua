@@ -587,6 +587,24 @@ describe("addon in a stubbed client", function()
       end
     )
 
+    it("/amedev hud: a box on screen with what AME is doing", function()
+      seeded()
+      env:slash("AMEDEV", "hud")
+      assert.is_true(AME_DB.dev.hud.on)
+      ns.AME.jobs:Add("index-test", function()
+        for _ = 1, 3 do
+          coroutine.yield()
+        end
+      end)
+      local text = table.concat(ns.Dev.Hud.Lines({}), "\n")
+      assert.truthy(text:find("jobs: index-test", 1, true), text)
+      assert.truthy(text:find("Lua memory", 1, true), text)
+      env:update(70) -- a little over a second of frames: one line logged
+      assert.is_true(#AME_DB.dev.hudLog.seconds >= 1)
+      env:slash("AMEDEV", "hud")
+      assert.is_false(AME_DB.dev.hud.on)
+    end)
+
     it("background work waits out combat, unless AME's window is open (then on a smaller budget)", function()
       seeded()
       local fighting = true

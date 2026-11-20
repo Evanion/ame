@@ -322,6 +322,8 @@ SlashCmdList.AMEDEV = function(msg)
     if not ok then
       say("recipe probe failed: %s", tostring(err))
     end
+  elseif cmd == "hud" then
+    Dev.HudCommand()
   elseif cmd == "lag" then
     Dev.LagCommand((msg or ""):match("^%s*%S+%s*(.*)$"))
   elseif cmd == "scanbutton" then
@@ -377,7 +379,7 @@ SlashCmdList.AMEDEV = function(msg)
   else
     say(
       "/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev recipes"
-        .. "  ·  /amedev crafting  ·  /amedev ah <item>  ·  /amedev scanbutton  ·  /amedev lag [now | last]"
+        .. "  ·  /amedev crafting  ·  /amedev ah <item>  ·  /amedev scanbutton  ·  /amedev lag [now | last]  ·  /amedev hud"
         .. "  ·  /amedev reset"
     )
   end
