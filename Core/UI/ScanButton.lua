@@ -88,7 +88,7 @@ function Scan:Refresh()
   b:SetWidth(math.ceil(b.label:GetStringWidth() or 60) + 20)
 end
 
--- over the top-right corner of the auction house window (the sell bar is under it); once
+-- on the auction house window, top right; once
 function Scan.Frame()
   return AuctionHouseFrame or AuctionFrame -- the game's auction house window, or the old one
 end
@@ -104,7 +104,16 @@ function Scan:Attach()
       ns.AME.Say(why)
     end
   end)
-  b:SetPoint("BOTTOMRIGHT", ah, "TOPRIGHT", -4, 2)
+  -- in the window's title bar, left of its close button (above the window, other frames covered it); drawn over
+  -- the window's own pieces
+  local close = rawget(ah, "CloseButton")
+  if type(close) == "table" and close.GetObjectType then
+    b:SetHeight(18)
+    b:SetPoint("RIGHT", close, "LEFT", -4, 0)
+  else
+    b:SetPoint("BOTTOMRIGHT", ah, "TOPRIGHT", -4, 2)
+  end
+  b:SetFrameLevel((ah:GetFrameLevel() or 0) + 20)
   W.Tooltip(b, function(tip)
     W.TipText(
       tip,

@@ -322,12 +322,51 @@ SlashCmdList.AMEDEV = function(msg)
     if not ok then
       say("recipe probe failed: %s", tostring(err))
     end
+  elseif cmd == "scanbutton" then
+    -- why the Full scan button isn't where it should be
+    local S = ns.ScanButton
+    local b = S and S.button
+    local ah = AuctionHouseFrame or AuctionFrame
+    say(
+      "frames: modern %s, old %s  ·  auctionator %s, tsm %s  ·  ReplicateItems %s",
+      tostring(AuctionHouseFrame ~= nil),
+      tostring(AuctionFrame ~= nil),
+      tostring(_G.Auctionator ~= nil),
+      tostring(_G.TSM_API ~= nil),
+      tostring(C_AuctionHouse and C_AuctionHouse.ReplicateItems ~= nil)
+    )
+    if not b then
+      return say("no button made (Attach never ran or failed)")
+    end
+    local state, left = S:State()
+    say(
+      "button: shown %s, visible %s, text %s, state %s %s, parent %s",
+      tostring(b:IsShown()),
+      tostring(b:IsVisible()),
+      tostring(b:GetText()),
+      tostring(state),
+      tostring(left or ""),
+      tostring(b:GetParent() and b:GetParent():GetName())
+    )
+    say(
+      "where: left %s top %s size %sx%s alpha %s strata %s level %s  ·  screen top %s  ·  window top %s right %s",
+      tostring(b:GetLeft()),
+      tostring(b:GetTop()),
+      tostring(b:GetWidth()),
+      tostring(b:GetHeight()),
+      tostring(b:GetEffectiveAlpha()),
+      tostring(b:GetFrameStrata()),
+      tostring(b:GetFrameLevel()),
+      tostring(UIParent:GetTop()),
+      tostring(ah and ah:GetTop()),
+      tostring(ah and ah:GetRight())
+    )
   elseif cmd == "" or cmd == "stats" then
     summary()
   else
     say(
       "/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev recipes"
-        .. "  ·  /amedev crafting  ·  /amedev ah <item>"
+        .. "  ·  /amedev crafting  ·  /amedev ah <item>  ·  /amedev scanbutton"
         .. "  ·  /amedev reset"
     )
   end
