@@ -102,6 +102,7 @@ function Service:OnV2Message(msg, distribution, sender)
   if self.trust:IsBlocked(sender) then
     return
   end
+  self.trust:Heard(sender, GetServerTime(), "GUILD")
   self.v2:OnMessage(msg, sender)
 end
 
@@ -132,6 +133,15 @@ function Service:HeardProtocol(sender, v)
   local k = ns.Trust.Key(sender)
   proto[k] = proto[k] or {}
   proto[k][v] = GetServerTime()
+end
+
+-- which protocol a player was last heard on: 2, 1, or nil (not heard since AME started telling them apart)
+function Service:ProtocolOf(sender)
+  local p = AME_DB.sync and AME_DB.sync.proto and AME_DB.sync.proto[ns.Trust.Key(sender)]
+  if not p then
+    return nil
+  end
+  return self:IsV1Only(sender) and 1 or (p[2] and 2) or (p[1] and 1) or nil
 end
 
 -- a player heard over v1 and not over v2 around then (a v2 player announcing over v1 sends v2 manifests too)

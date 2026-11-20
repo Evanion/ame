@@ -14,6 +14,7 @@ end
 -- Sync
 
 local MAX_TRUSTED, MAX_PENDING, MAX_PEERS, MAX_BLOCKED = 8, 3, 5, 4
+local MAX_PEERS_ALL = 200 -- Show all: a whole guild
 local LIST_W = 320 -- list rows (their text truncates, buttons sit at the right)
 
 -- the auction houses in the order a player cares about: their own faction's, the goblin one, the other faction's
@@ -160,7 +161,9 @@ function UI:CreateSyncSection(v, host)
   v.activity = st:Text("GameFontDisableSmall", 6)
   v.activity:SetSpacing(2)
   sublabel(st, L["Players heard from"])
-  v.peerList = list(st, MAX_PEERS, 20, {
+  -- a big guild: a summary line, the few heard from last, and Show all (by name) for the rest
+  v.peerSummary = st:Text("GameFontHighlightSmall", 2)
+  v.peerList = list(st, MAX_PEERS_ALL, 20, {
     buttons = {
       {
         key = "block",
@@ -176,6 +179,14 @@ function UI:CreateSyncSection(v, host)
     empty = L["No one yet."],
   })
   v.peers = v.peerList.rows
+  row = st:Row(18, 2)
+  v.peersMore = W.Button(row, L["Show all"], 90, 18, function()
+    v.peersExpanded = not v.peersExpanded
+    UI:RefreshSync()
+  end)
+  v.peersMore:SetPoint("LEFT", 0, 0)
+  v.peersMoreRow = row
+  v.peersExpanded = false
 
   -- Trusted players: intro, the switch, ask by name, the list, then requests
   st = stack:Card().stack
@@ -322,12 +333,54 @@ function UI:RefreshSync()
     end
     return out
   end
-  v.peerList:SetItems(others(svc.trust and svc.trust:PeerList()), function(row, p)
+  local peers = others(svc.trust and svc.trust:PeerList()) -- most recently heard first
+  local counts = { [1] = 0, [2] = 0, hour = 0, blocked = 0 }
+  for _, p in ipairs(peers) do
+    local proto = svc.ProtocolOf and svc:ProtocolOf(p.name)
+    if proto then
+      counts[proto] = counts[proto] + 1
+    end
+    if now - (p.at or 0) < 3600 then
+      counts.hour = counts.hour + 1
+    end
+    if svc.trust:IsBlocked(p.name) then
+      counts.blocked = counts.blocked + 1
+    end
+  end
+  local summary = {}
+  if #peers > 0 then
+    summary[#summary + 1] = L["%d players"]:format(#peers)
+    summary[#summary + 1] = L["%d on v2, %d on v1"]:format(counts[2], counts[1])
+    summary[#summary + 1] = L["%d in the last hour"]:format(counts.hour)
+    if counts.blocked > 0 then
+      summary[#summary + 1] = W.Color("bad", L["%d blocked"]:format(counts.blocked))
+    end
+  end
+  v.peerSummary:SetText(table.concat(summary, "  ·  "))
+  v.peerSummary:SetShown(#peers > 0)
+  local shown = peers
+  if v.peersExpanded then
+    shown = {}
+    for i, p in ipairs(peers) do
+      shown[i] = p
+    end
+    table.sort(shown, function(a, b)
+      return tostring(a.name):lower() < tostring(b.name):lower()
+    end)
+  elseif #peers > MAX_PEERS then
+    shown = { unpack(peers, 1, MAX_PEERS) }
+  end
+  v.peersMoreRow:SetShown(#peers > MAX_PEERS)
+  v.peersMore:SetText(v.peersExpanded and L["Show fewer"] or L["Show all %d"]:format(#peers))
+  v.peersMore:SetWidth(math.ceil(v.peersMore.label:GetStringWidth() or 60) + 16)
+  v.peerList:SetItems(shown, function(row, p)
     local blocked = svc.trust:IsBlocked(p.name)
+    local proto = svc.ProtocolOf and svc:ProtocolOf(p.name)
     row.text:SetText(p.name)
     row.state:SetText(
       W.Dim(
-        (p.via == "GUILD" and L["guild"] or L["whisper"])
+        (proto and ("v" .. proto .. "  ·  ") or "")
+          .. (p.via == "GUILD" and L["guild"] or L["whisper"])
           .. "  ·  "
           .. L["heard %s"]:format(ago(p.at))
           .. (blocked and "  ·  " .. W.Color("bad", L["blocked"]) or "")

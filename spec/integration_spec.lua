@@ -3129,6 +3129,41 @@ describe("addon in a stubbed client", function()
         assert.is_not_nil(ns.SyncService.v2)
       end)
 
+      it("Players heard from: v1 or v2 per player, a summary, and Show all for a big guild", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        local peer = v2Peer("Guild Mate") -- on v2 only: heard all the same
+        peer.engine:Announce()
+        run(peer, 60) -- everything it had to say
+        deliver(ns.Sync.EncodeAnnounce(SHARD, {}), "GUILD", "Old Timer") -- on v1
+        env.now = env.now + 60
+        for i = 1, 30 do
+          deliver(ns.Sync.EncodeHello(SHARD), "GUILD", "Member" .. i)
+        end
+        ns.UI:Toggle()
+        ns.UI:ShowTab("sync")
+        local v = ns.UI.syncView
+        v.scripts.OnShow(v)
+        local function rowOf(name)
+          for _, r in ipairs(v.peers) do
+            if r:IsShown() and r.name == name then
+              return r
+            end
+          end
+        end
+        assert.truthy(v.peerSummary.text:find("32 players", 1, true), v.peerSummary.text)
+        assert.truthy(v.peerSummary.text:find("1 on v2, 1 on v1", 1, true), v.peerSummary.text)
+        -- the five heard from last, then Show all, by name
+        assert.is_nil(rowOf("Guild Mate"))
+        assert.truthy(v.peersMore.label.text:find("Show all 32", 1, true))
+        v.peersMore.scripts.OnClick(v.peersMore)
+        assert.truthy(rowOf("Guild Mate").state.text:find("v2", 1, true))
+        assert.truthy(rowOf("Old Timer").state.text:find("v1", 1, true))
+        assert.are.equal("Guild Mate", v.peers[1].name) -- by name
+        v.peersMore.scripts.OnClick(v.peersMore)
+        assert.is_nil(rowOf("Guild Mate"))
+      end)
+
       it("keeps a transfer that's under way for a /reload", function()
         bootSync(2)
         fullScan({ { 2589, 1000, 10 } })

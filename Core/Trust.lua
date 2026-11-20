@@ -207,6 +207,9 @@ end
 
 function Trust:PeerList()
   return sorted(self.db.peers, function(a, b)
-    return (a.at or 0) > (b.at or 0)
+    if (a.at or 0) ~= (b.at or 0) then
+      return (a.at or 0) > (b.at or 0)
+    end
+    return tostring(a.name) < tostring(b.name)
   end)
 end
