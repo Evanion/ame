@@ -813,7 +813,7 @@ L["What your characters' professions earn at today's prices: top earners, sellin
 L["What's left to buy"] = true
 L["When"] = true
 L["Where the data comes from"] = true
-L["While the Item tab is showing, it follows the item you search at the auction house. Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."] = true
+L["While the Item tab is showing, it follows the item you pick at the auction house: a row you click, or a name you type into the search box (the item named exactly that, or the only one listed). Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."] = true
 L["Whose, and since when"] = true
 L["Window"] = true
 L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] = true

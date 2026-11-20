@@ -763,7 +763,6 @@ L["What your characters' professions earn at today's prices: top earners, sellin
 L["What's left to buy"] = "남은 구매 항목"
 L["When"] = "시간"
 L["Where the data comes from"] = "데이터 출처"
-L["While the Item tab is showing, it follows the item you search at the auction house. Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."] = "아이템 탭이 표시되는 동안에는 경매장에서 검색한 아이템을 따라갑니다. 아이템을 판매하려고 올리면 AME가 어디에 있든 그 아이템의 아이템 탭으로 전환합니다 (설정 > 일반: 판매하려고 올린 아이템은 아이템 탭으로 전환)."
 L["Whose, and since when"] = "누구의 데이터, 언제부터"
 L["Window"] = "창"
 L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] = "시장 개요를 켜면(설정 > 일반) 도구 모음의 첫 버튼들로 시장 탭을 스크리너(이 목록)와 개요 - 경매장 전체의 지수와 합계 - 사이에서 전환할 수 있습니다 (시장 개요 참고)."

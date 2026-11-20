@@ -763,7 +763,6 @@ L["What your characters' professions earn at today's prices: top earners, sellin
 L["What's left to buy"] = "还需购买的物品"
 L["When"] = "时间"
 L["Where the data comes from"] = "数据来源"
-L["While the Item tab is showing, it follows the item you search at the auction house. Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."] = "物品标签页显示时，会跟随你在拍卖行搜索的物品。把物品放上出售时，无论 AME 当前在哪个页面，都会切换到该物品的物品标签页（设置 > 常规：“上架物品时切换到物品标签页”）。"
 L["Whose, and since when"] = "来自谁，从何时起"
 L["Window"] = "窗口"
 L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] = "开启市场概览后（设置 > 常规），工具栏最前面的按钮可在“筛选器”（此列表）和“概览”之间切换市场标签页：概览显示整个拍卖行的指数和合计（见“市场概览”）。"

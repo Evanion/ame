@@ -763,7 +763,6 @@ L["What your characters' professions earn at today's prices: top earners, sellin
 L["What's left to buy"] = "Что осталось купить"
 L["When"] = "Когда"
 L["Where the data comes from"] = "Откуда берутся данные"
-L["While the Item tab is showing, it follows the item you search at the auction house. Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."] = "Пока открыта вкладка «Предмет», она следует за предметом, который вы ищете на аукционе. Выставьте предмет на продажу, и AME переключится на его вкладку «Предмет», где бы он ни был («Настройки», «Общие»: «Переключаться на вкладку «Предмет» для выставляемого товара»)."
 L["Whose, and since when"] = "Чьи и с какого времени"
 L["Window"] = "Окно"
 L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] = "Когда обзор рынка включён («Настройки», «Общие»), первые кнопки панели инструментов переключают вкладку «Рынок» между «Скринером» (этим списком) и «Обзором» - индексами и итогами по всему аукциону (см. «Обзор рынка»)."

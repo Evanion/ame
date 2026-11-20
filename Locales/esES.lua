@@ -762,7 +762,6 @@ L["What your characters' professions earn at today's prices: top earners, sellin
 L["What's left to buy"] = "Lo que queda por comprar"
 L["When"] = "Cuándo"
 L["Where the data comes from"] = "De dónde vienen los datos"
-L["While the Item tab is showing, it follows the item you search at the auction house. Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."] = "Mientras se muestra la pestaña Objeto, sigue al objeto que buscas en la casa de subastas. Pon un objeto a la venta y AME cambia a la pestaña Objeto para él, esté donde esté (Ajustes, General: Cambiar a la pestaña Objeto con lo que pones a la venta)."
 L["Whose, and since when"] = "De quién y desde cuándo"
 L["Window"] = "Ventana"
 L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] = "Con el resumen del mercado activado (Ajustes, General), los primeros botones de la barra de herramientas cambian la pestaña Mercado entre el Filtro (esta lista) y el Resumen: índices y totales de toda la casa de subastas (ver Resumen del mercado)."

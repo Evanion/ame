@@ -478,6 +478,54 @@ describe("addon in a stubbed client", function()
       assert.are.equal("market", ns.UI.current)
     end)
 
+    it("follows a name typed into the game's search box, and an item put in its sell slot", function()
+      seeded()
+      ns.UI:ShowItem(4306)
+      drainJobs()
+      env:fire("AUCTION_HOUSE_SHOW")
+      -- a typed search lists several items: the one named exactly that is followed
+      C_AuctionHouse.SendBrowseQuery({ searchString = "  item 2589 ", sorts = {}, filters = {} })
+      env.ah.browse = { { 2590, 500, 3 }, { 2589, 120, 40 } }
+      env:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+      env:advance(1)
+      drainJobs()
+      assert.are.equal(2589, ns.UI.itemID)
+      -- a search listing several items, none named that: nothing picked
+      ns.UI:ShowItem(4306)
+      drainJobs()
+      C_AuctionHouse.SendBrowseQuery({ searchString = "item", sorts = {}, filters = {} })
+      env:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+      env:advance(1)
+      assert.are.equal(4306, ns.UI.itemID)
+      -- one item listed: that one
+      C_AuctionHouse.SendBrowseQuery({ searchString = "linen", sorts = {}, filters = {} })
+      env.ah.browse = { { 2589, 120, 40 } }
+      env:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+      env:advance(1)
+      drainJobs()
+      assert.are.equal(2589, ns.UI.itemID)
+      env:fire("AUCTION_HOUSE_CLOSED")
+      -- the game's sell slot
+      local sell = CreateFrame("Frame")
+      function sell.SetItem() end
+      local ah = CreateFrame("Frame")
+      ah.CommoditiesSellFrame = sell
+      _G.AuctionHouseFrame = ah
+      local getItemID = C_Item.GetItemID
+      rawset(C_Item, "GetItemID", function(location)
+        return location.id
+      end)
+      finally(function()
+        _G.AuctionHouseFrame = nil
+        rawset(C_Item, "GetItemID", getItemID)
+      end)
+      env:fire("AUCTION_HOUSE_SHOW")
+      sell:SetItem({ id = 4306 })
+      env:advance(1)
+      drainJobs()
+      assert.are.equal(4306, ns.UI.itemID)
+    end)
+
     it("can open AME together with the auction house, and close it with it", function()
       seeded()
       env:fire("AUCTION_HOUSE_CLOSED")

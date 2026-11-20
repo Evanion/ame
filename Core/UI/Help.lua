@@ -410,7 +410,7 @@ function Help.Articles()
             H(L["Ranges"]),
             L["2D shows every scan from the last two days, with 2-hour candles. 7D adds a point per hour before that (the newest full scan of each hour), with 6-hour candles. The longer ranges show a point per day, and per week beyond 60 days."],
             H(L["Following the auction house"]),
-            L["While the Item tab is showing, it follows the item you search at the auction house. Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."],
+            L["While the Item tab is showing, it follows the item you pick at the auction house: a row you click, or a name you type into the search box (the item named exactly that, or the only one listed). Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."],
             H(L["Post at"]),
             L["The sidebar's Post at card gives the same choices as the sell bar - Normal, Quick and Patient - with how long each takes to sell and what you net after the cut."],
           },

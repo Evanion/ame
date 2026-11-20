@@ -494,6 +494,8 @@ function handlers.PLAYER_LOGIN()
   if C_AuctionHouse and C_AuctionHouse.SendBrowseQuery then
     hooksecurefunc(C_AuctionHouse, "SendBrowseQuery", function(query)
       AME.ingest:OnBrowseQuery(query)
+      local text = type(query) == "table" and query.searchString
+      AME.browseText = text and text:match("^%s*(.-)%s*$") ~= "" and text:match("^%s*(.-)%s*$") or nil
       if AME.ingest.browseRequested then
         AME.scanRequestedAt = debugprofilestop()
         local d = AME:ScanDiag()
@@ -572,8 +574,49 @@ function handlers.PLAYER_LOGIN()
   end
 end
 
+-- The AH searched one item (you picked it to sell or buy - in the game's window or an addon's, like Auctionator's
+-- sell tab): the Item tab shows it right away. Debounced, so a shopping list searching item after item doesn't flick
+-- through them all.
+local followGen = 0
+local function followSearch(itemID)
+  if not (itemID and ns.UI and ns.UI.FollowAuctionItem) then
+    return
+  end
+  followGen = followGen + 1
+  local gen = followGen
+  C_Timer.After(0.25, function()
+    if gen == followGen then
+      ns.UI:FollowAuctionItem(itemID)
+    end
+  end)
+end
+
+-- the game's sell tabs: an item put in the sell slot (dragged, or right-clicked from the bags) is followed even when
+-- the game runs no search for it
+local sellHooked = false
+local function hookSellSlots()
+  local ah = AuctionHouseFrame
+  if sellHooked or not ah then
+    return
+  end
+  sellHooked = true
+  for _, key in ipairs({ "CommoditiesSellFrame", "ItemSellFrame" }) do
+    local f = rawget(ah, key)
+    if type(f) == "table" and f.SetItem then
+      hooksecurefunc(f, "SetItem", function(_, location)
+        local id = location and C_Item and C_Item.GetItemID and select(2, pcall(C_Item.GetItemID, location))
+        if type(id) == "number" then
+          followSearch(id)
+        end
+      end)
+    end
+  end
+end
+
 function handlers.AUCTION_HOUSE_SHOW()
   AME.ahOpen = true
+  hookSellSlots()
+  C_Timer.After(0.5, hookSellSlots) -- the game's window may load after this event reaches AME
   AME.house = UnitFactionGroup("npc") or "Neutral"
   AME_DB.lastHouse = AME.house
   if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
@@ -674,29 +717,52 @@ function handlers.REPLICATE_ITEM_LIST_UPDATE()
   AME.ingest:OnReplicateUpdate()
 end
 
+-- A name typed into the auction house's search box (the game's Buy tab): the list it shows names no single item, so
+-- the Item tab follows the row named exactly what you typed, or the only item listed. Once per search.
+function AME:FollowBrowseText()
+  local text = self.browseText
+  local api = C_AuctionHouse
+  if not (text and api and api.GetBrowseResults) then
+    return nil
+  end
+  local results = api.GetBrowseResults() or {}
+  local want, only, ids = text:lower(), nil, {}
+  for _, row in ipairs(results) do
+    local key = row.itemKey
+    local id = key and key.itemID
+    if id then
+      local item = ns.ItemKey(id, key.itemSuffix)
+      if not ids[item] then
+        ids[item], only = true, only == nil and item or false
+      end
+      local name = ns.ItemCache.Name(item)
+      if name and name:lower() == want then
+        self.browseText = nil
+        return item
+      end
+    end
+  end
+  if only then
+    self.browseText = nil
+    return only
+  end
+  return nil
+end
+
 function handlers.AUCTION_HOUSE_BROWSE_RESULTS_UPDATED()
   local d = AME:ScanDiag()
   d.events = (d.events or 0) + 1
   d.eventsSinceRequest = (d.eventsSinceRequest or 0) + 1
   AME.ingest:OnBrowseResults()
+  AME.followBrowse()
 end
 handlers.AUCTION_HOUSE_BROWSE_RESULTS_ADDED = handlers.AUCTION_HOUSE_BROWSE_RESULTS_UPDATED
 
--- The AH searched one item (you picked it to sell or buy - in the game's window or an addon's, like Auctionator's
--- sell tab): the Item tab shows it right away. Debounced, so a shopping list searching item after item doesn't flick
--- through them all.
-local followGen = 0
-local function followSearch(itemID)
-  if not (itemID and ns.UI and ns.UI.FollowAuctionItem) then
-    return
+AME.followBrowse = function()
+  local item = AME:FollowBrowseText()
+  if item then
+    followSearch(item)
   end
-  followGen = followGen + 1
-  local gen = followGen
-  C_Timer.After(0.25, function()
-    if gen == followGen then
-      ns.UI:FollowAuctionItem(itemID)
-    end
-  end)
 end
 
 function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)
