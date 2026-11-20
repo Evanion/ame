@@ -533,7 +533,7 @@ function UI:AverageDays()
 end
 
 -- A rolling average over `hours` (default 168, a week) at each of xs: every hour before counts once - its scan or
--- hourly price (the last in that hour), carried on for up to UI.CARRY_HOURS when an hour has none, else that day's daily
+-- hourly price (the last in that hour), kept for up to UI.CARRY_HOURS when an hour has none, else that day's daily
 -- price (byDay[day]). So a scan moves it by about 1/168th, and a gap or a day boundary doesn't make it jump.
 -- Returns ys aligned with xs (nil where there's nothing to average).
 UI.ROLL_HOURS, UI.CARRY_HOURS = 168, 6
