@@ -68,12 +68,46 @@ function Scan:Start()
   return true
 end
 
+Scan.DONE_SHOWN = 20 -- "Recorded n items" stays this long after a scan
+
+-- what a running full scan is doing, for the line beside the button (nil when there's nothing to say):
+-- waiting for the server, reading the auctions (done / total), updating market data, then what was recorded
+function Scan:Progress()
+  local AME = ns.AME
+  local ingest = AME.ingest
+  local d = AME:ScanDiag()
+  local now = GetServerTime()
+  local p = ingest and ingest.reading and ingest.progress
+  if p and p.total > 0 then
+    return L["Reading auctions %s / %s (%d%%)"]:format(
+      W.Thousands(p.done),
+      W.Thousands(p.total),
+      math.floor(p.done * 100 / p.total)
+    )
+  end
+  local asked, read = d.lastReplicateAt, d.readDoneAt
+  if ingest and ingest.requested and asked and now - asked < Scan.TIMEOUT then
+    return L["Waiting for the server... %ds"]:format(now - asked)
+  end
+  if read and asked and read >= asked and now - read < Scan.DONE_SHOWN then
+    if AME:IndexBusy() then
+      return L["Updating market data..."]
+    end
+    return L["Recorded %s items"]:format(W.Thousands(d.readItems or 0))
+  end
+  return nil
+end
+
 function Scan:Refresh()
   local b = self.button
   if not b then
     return
   end
-  b:SetShown(not Scan.OtherScanner())
+  local shown = not Scan.OtherScanner()
+  b:SetShown(shown)
+  local progress = shown and self:Progress()
+  self.status:SetText(progress or "")
+  self.status:SetShown(progress ~= nil)
   local state, left = self:State()
   if state == "scanning" then
     b:SetText(L["Scanning..."])
@@ -131,12 +165,16 @@ function Scan:Attach()
     )
   end)
   self.button = b
-  -- the countdown, while the auction house is open
+  -- what the scan is doing, left of the button
+  local status = W.Text(b, "GameFontHighlightSmall", "RIGHT")
+  status:SetPoint("RIGHT", b, "LEFT", -6, 0)
+  self.status = status
+  -- the countdown and progress, while the auction house is open (quicker while a scan runs)
   local elapsed = 0
   local ticker = CreateFrame("Frame", nil, ah)
   ticker:SetScript("OnUpdate", function(_, dt)
     elapsed = elapsed + dt
-    if elapsed >= 1 then
+    if elapsed >= ((Scan.status:IsShown() or Scan:State() == "scanning") and 0.25 or 1) then
       elapsed = 0
       Scan:Refresh()
     end
