@@ -100,6 +100,13 @@ function UI:WarmItemFacts()
   if not index or self.factsWarmed == index then
     return
   end
+  -- not while the saved variant names are still unpacking: the first variant looked up would unpack the rest at
+  -- once (a 96 ms frame after login)
+  if ns.Packed and ns.Packed.tasks and next(ns.Packed.tasks) then
+    return C_Timer.After(1, function()
+      self:WarmItemFacts()
+    end)
+  end
   self.factsWarmed = index
   ns.AME.jobs:Add("item-facts", function(job)
     local n = 0

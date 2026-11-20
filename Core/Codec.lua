@@ -141,7 +141,7 @@ local function decodeColumn(text, n, delta, yield)
       prev = v
     end
     values[i] = v
-    if yield and i % 2000 == 0 then -- a column of 25k values is ~45 ms
+    if yield and i % 500 == 0 then -- a column of 25k values is ~45 ms
       yield()
     end
   end

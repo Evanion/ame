@@ -190,7 +190,7 @@ function MarketIndex.Decode(text, checkpoint)
     end
     index.items[id] = s
     index.count = index.count + 1
-    if checkpoint and i % 500 == 0 then
+    if checkpoint and i % 100 == 0 then -- 500 items of ~30 fields held a frame up 20-45 ms
       checkpoint()
     end
   end
