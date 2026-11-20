@@ -587,6 +587,34 @@ describe("addon in a stubbed client", function()
       end
     )
 
+    it("background work waits out combat, unless AME's window is open (then on a smaller budget)", function()
+      seeded()
+      local fighting = true
+      _G.InCombatLockdown = function()
+        return fighting
+      end
+      finally(function()
+        _G.InCombatLockdown = nil
+      end)
+      local ran = 0
+      ns.AME.jobs:Add("test", function()
+        ran = ran + 1
+      end)
+      env:update(5)
+      assert.are.equal(0, ran)
+      ns.UI:Toggle() -- the window open: you asked for something
+      env:update(1)
+      assert.are.equal(1, ran)
+      assert.are.equal(ns.AME.COMBAT_JOB_BUDGET, ns.AME.jobs.budgetMs)
+      fighting = false
+      ns.AME.jobs:Add("test", function()
+        ran = ran + 1
+      end)
+      env:update(1)
+      assert.are.equal(2, ran)
+      assert.are.equal(ns.AME.JOB_BUDGET, ns.AME.jobs.budgetMs)
+    end)
+
     it("can open AME together with the auction house, and close it with it", function()
       seeded()
       env:fire("AUCTION_HOUSE_CLOSED")

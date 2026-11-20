@@ -39,9 +39,23 @@ end
 -- background jobs
 
 AME.jobs = ns.Jobs.New({ budgetMs = 8, clock = debugprofilestop })
+AME.JOB_BUDGET, AME.COMBAT_JOB_BUDGET = 8, 2
+-- In combat, background work waits (rebuilding market data, storing a scan received from the guild...): every
+-- millisecond counts there. With AME's window open you asked for something, so it carries on, on a smaller budget.
+function AME:JobsMayRun()
+  if not (InCombatLockdown and InCombatLockdown()) then
+    self.jobs.budgetMs = AME.JOB_BUDGET
+    return true
+  end
+  if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
+    self.jobs.budgetMs = AME.COMBAT_JOB_BUDGET
+    return true
+  end
+  return false
+end
 local driver = CreateFrame("Frame")
 driver:SetScript("OnUpdate", function()
-  if AME.jobs:Busy() then
+  if AME.jobs:Busy() and AME:JobsMayRun() then
     AME.jobs:Tick()
   end
 end)

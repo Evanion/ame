@@ -299,10 +299,15 @@ function AME:RestoreIndexes()
   local today = ns.Today(GetServerTime())
   self:WithStore("index-restore", self:CurrentShard(), function(_, job)
     local restored = {}
+    local function checkpoint()
+      job:Checkpoint()
+    end
     for shard, entry in pairs(saved) do
       if self.history.shards[shard] then
-        local ok, index = pcall(ns.MarketIndex.Decode, entry.s)
-        if ok and index then
+        -- decoded in steps (a big index took 1.4 s in one frame): no pcall around it, since WoW's Lua can't yield
+        -- across one - a broken save fails the job, and every index is rebuilt instead
+        local index = type(entry.s) == "string" and ns.MarketIndex.Decode(entry.s, checkpoint) or nil
+        if index then
           index.rev, index.saveVersion = entry.rev, entry.v or 1 -- saves before versioning: 1
           index.stats = type(entry.st) == "table" and entry.st or nil
           restored[shard] = index

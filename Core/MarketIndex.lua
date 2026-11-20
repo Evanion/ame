@@ -18,6 +18,7 @@ function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached
   if cached then
     store:KeepTexts(true)
   end
+  local n = 0
   for b = 0, ns.Store.BUCKETS - 1 do
     local from = today - days + 1
     local series = store:BucketSeries(b, from, today)
@@ -36,6 +37,10 @@ function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached
       end
       if stats then
         stats:Add(id, points, clean, s)
+      end
+      n = n + 1
+      if checkpoint and n % 64 == 0 then -- a bucket of 30 days took 30-70 ms at once
+        checkpoint()
       end
     end
     if checkpoint then

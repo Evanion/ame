@@ -121,7 +121,7 @@ local function encodeColumn(values, n, delta)
   return concat(parts, ",")
 end
 
-local function decodeColumn(text, n, delta)
+local function decodeColumn(text, n, delta, yield)
   local values = {}
   if n == 0 then
     if text ~= "" then
@@ -141,6 +141,9 @@ local function decodeColumn(text, n, delta)
       prev = v
     end
     values[i] = v
+    if yield and i % 2000 == 0 then -- a column of 25k values is ~45 ms
+      yield()
+    end
   end
   return values
 end
@@ -174,7 +177,7 @@ function Codec.Decode(fieldNames, text, allowMissing, yield)
   local cols = {}
   for f, name in ipairs(fieldNames) do
     if fields[f + 2] ~= nil then
-      cols[name] = decodeColumn(fields[f + 2], n, f == 1)
+      cols[name] = decodeColumn(fields[f + 2], n, f == 1, yield)
       if yield then
         yield()
       end

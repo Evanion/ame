@@ -21,6 +21,9 @@ Lag.KEEP = 10
 Lag.NOW_SECONDS = 15
 Lag.SLOW_FRAME_MS = 33 -- under 30 fps
 Lag.MIN_FRAMES = 30 -- shorter fights aren't worth a report
+Lag.SELF = "AzerothMercantileExchange"
+Lag.SELF_HITCH_MS = 20 -- AME's own frames over this are logged with what it was doing
+Lag.SELF_HITCHES_KEEP = 10
 
 local function say(fmt, ...)
   print("|cff33ccffAME dev|r " .. fmt:format(...))
@@ -78,6 +81,8 @@ function Lag.Begin(label)
     over50 = {},
     frames = 0,
     slow = 0,
+    hitches = {},
+    mem = collectgarbage("count"),
     worstFrame = 0,
     addonMs = 0,
   }
@@ -112,6 +117,20 @@ function Lag.Frame(m, elapsed)
     return
   end
   local P, last = C_AddOnProfiler, metric("LastTime")
+  -- AME's own: what it was running (its background job), and whether Lua's garbage collector ran (memory fell)
+  local mem = collectgarbage("count")
+  local mine = P.GetAddOnMetric(Lag.SELF, last) or 0
+  if mine > Lag.SELF_HITCH_MS and #m.hitches < Lag.SELF_HITCHES_KEEP then
+    local jobs = ns.AME and ns.AME.jobs
+    m.hitches[#m.hitches + 1] = {
+      ms = math.floor(mine * 10 + 0.5) / 10,
+      job = jobs and jobs.lastName or nil,
+      busy = jobs and jobs:Busy() or false,
+      memKB = math.floor(mem - m.mem),
+      ui = ns.UI and ns.UI.frame and ns.UI.frame:IsShown() and ns.UI.current or nil,
+    }
+  end
+  m.mem = mem
   local all = 0
   for _, name in ipairs(m.addons) do
     local t = P.GetAddOnMetric(name, last) or 0
@@ -171,6 +190,7 @@ function Lag.Finish(m)
     addonMs = m.addonMs,
     source = m.source,
     top = rows,
+    hitches = m.hitches,
   }
 end
 
@@ -190,6 +210,16 @@ function Lag.Print(r)
     r.worstFrame,
     r.frames > 0 and r.addonMs / r.frames or 0
   )
+  for _, h in ipairs(r.hitches or {}) do
+    say(
+      "AME took %.0f ms in one frame: job %s%s, memory %+d KB%s",
+      h.ms,
+      tostring(h.job),
+      h.busy and "" or " (none queued)",
+      h.memKB,
+      h.ui and (", window on " .. h.ui) or ""
+    )
+  end
   if #r.top == 0 then
     return say("no addon took measurable time")
   end
