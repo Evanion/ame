@@ -312,6 +312,11 @@ SlashCmdList.AMEDEV = function(msg)
       ns.Professions:RecordSpellbook()
       ns.Professions:Record() -- a profession window that's already open
     end
+  elseif cmd == "ah" then
+    local ok, err = pcall(Dev.ProbeAH, say, (msg or ""):match("^%s*%S+%s*(.*)$"))
+    if not ok then
+      say("auction house probe failed: %s", tostring(err))
+    end
   elseif cmd == "recipes" then
     local ok, err = pcall(Dev.ProbeRecipes, say)
     if not ok then
@@ -322,7 +327,7 @@ SlashCmdList.AMEDEV = function(msg)
   else
     say(
       "/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev recipes"
-        .. "  ·  /amedev crafting"
+        .. "  ·  /amedev crafting  ·  /amedev ah <item>"
         .. "  ·  /amedev reset"
     )
   end
