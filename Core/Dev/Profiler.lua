@@ -2,7 +2,7 @@
 -- client while you play:
 --   CPU     time per background job (by name) and per game event handler: total, calls, worst single run
 --   frames  AME's share of each frame (jobs + events), and spikes over SPIKE_MS with what caused them
---   memory  AME's Lua memory sampled every SAMPLE_S seconds (current, peak, the last hour)
+--   memory  AME's Lua memory: on /amedev, and every SAMPLE_S seconds while /amedev memory is on
 --   sizes   an estimate of what each big structure takes in memory and in SavedVariables (/amedev sizes)
 -- /amedev prints the summary; everything is kept in AME_DB.dev (saved on logout / reload) so it can be read from the
 -- SavedVariables file. /amedev reset starts over.
@@ -13,8 +13,8 @@ ns.Dev = Dev
 
 Dev.SPIKE_MS = 12 -- a frame where AME took longer than this is logged
 Dev.SPIKES_KEEP = 40
-Dev.SAMPLE_S = 10
-Dev.SAMPLES_KEEP = 360 -- an hour of memory samples
+Dev.SAMPLE_S = 60
+Dev.SAMPLES_KEEP = 360 -- six hours of memory samples
 
 ---------------------------------------------------------------------------------------------------------------------
 -- pure helpers (spec/dev_spec.lua)
@@ -175,7 +175,9 @@ frames:SetScript("OnUpdate", function(_, elapsed)
   end
   frameMs, frameWhat = 0, nil
   sinceSample = sinceSample + elapsed
-  if sinceSample >= Dev.SAMPLE_S then
+  -- the game's per-addon memory count walks every addon's memory: ~100 ms each time with many addons loaded, so it
+  -- was the stutter every 10 seconds (Nov 21 hud log). Off unless asked for (/amedev memory), never in combat.
+  if Dev.memoryWatch and sinceSample >= Dev.SAMPLE_S and not (InCombatLockdown and InCombatLockdown()) then
     sinceSample = 0
     local m = memoryKB()
     if m then
@@ -322,6 +324,12 @@ SlashCmdList.AMEDEV = function(msg)
     if not ok then
       say("recipe probe failed: %s", tostring(err))
     end
+  elseif cmd == "memory" then
+    Dev.memoryWatch = not Dev.memoryWatch
+    say(
+      "memory sampling %s",
+      Dev.memoryWatch and "on: every minute out of combat (each costs ~100 ms with many addons)" or "off"
+    )
   elseif cmd == "hud" then
     Dev.HudCommand()
   elseif cmd == "lag" then
@@ -379,7 +387,7 @@ SlashCmdList.AMEDEV = function(msg)
   else
     say(
       "/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev recipes"
-        .. "  ·  /amedev crafting  ·  /amedev ah <item>  ·  /amedev scanbutton  ·  /amedev lag [now | last]  ·  /amedev hud"
+        .. "  ·  /amedev crafting  ·  /amedev ah <item>  ·  /amedev scanbutton  ·  /amedev lag [now | last]  ·  /amedev hud  ·  /amedev memory"
         .. "  ·  /amedev reset"
     )
   end

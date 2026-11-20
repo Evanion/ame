@@ -209,7 +209,7 @@ local function build()
         t = GetServerTime(),
         frame = math.floor(frameMs),
         ame = ms and math.floor(ms * 10 + 0.5) / 10,
-        job = jobs and jobs.lastName,
+        job = jobs and jobs:Busy() and jobs.lastName or "none", -- lastName stays after the queue empties
         queue = queueNames(),
         memKB = math.floor(mem - lastMem),
         gc = gc or nil,
