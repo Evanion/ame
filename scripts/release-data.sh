@@ -61,7 +61,9 @@ if ! git diff --quiet -- "$DIR"; then
   git commit -q -m "Crafting data $VERSION: WoW Forever build $BUILD"
 fi
 git tag "data-v$VERSION"
-git push -q origin HEAD "data-v$VERSION"
+# the tag only: main takes changes through reviewed pull requests (its ruleset), and the bot can't be exempted on a
+# personal repository. The data commit lives on the tag; the next run compares against the latest tag.
+git push -q origin "data-v$VERSION"
 
 # upload
 : "${CURSEFORGE_CI_API_TOKEN:?missing}"

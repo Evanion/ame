@@ -3,9 +3,11 @@ name: Crafting data
 # Keeps the crafting data library (AzerothMercantileExchange_Crafting) in step with the game, hands-off:
 #   1. once a day, ask wago.tools for the latest WoW Forever build (one small request)
 #   2. a build already handled (remembered in the Actions cache, with the generator's version) ends the run
-#   3. otherwise regenerate the data; unchanged data (the same as what's released) ends the run
+#   3. otherwise regenerate the data; unchanged data (the same as the latest data-v* tag) ends the run
 #   4. changed data is checked (the shrink guard in the generator, the crafting data specs), then released as the
-#      next patch version on its own CurseForge project (scripts/release-data.sh) - never AME itself
+#      next patch version on its own CurseForge project (scripts/release-data.sh) - never AME itself. The data
+#      commit is pushed as its tag only: main is protected (reviewed pull requests), so merge a data tag into main by
+#      hand when you want main's copy current.
 #   5. any failure opens an issue instead of releasing
 # Secret: CURSEFORGE_CI_API_TOKEN (the same CurseForge token AME's releases use). The data project's ID is public.
 
@@ -56,7 +58,7 @@ jobs:
           elif [ -z "$(git tag --list 'data-v*')" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT" # nothing released yet: the first release
             echo "Build ${{ steps.build.outputs.build }}: first crafting data release." >> "$GITHUB_STEP_SUMMARY"
-          elif git diff --quiet -- AzerothMercantileExchange_Crafting; then
+          elif git diff --quiet "$(git tag --list 'data-v*' --sort=-v:refname | head -n 1)" -- AzerothMercantileExchange_Crafting; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Build ${{ steps.build.outputs.build }}: crafting data unchanged." >> "$GITHUB_STEP_SUMMARY"
           else
