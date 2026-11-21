@@ -2059,6 +2059,15 @@ describe("addon in a stubbed client", function()
         end)
         rawset(_G, "AuctionHouseFrame", ahFrame)
         rawset(_G, "AuctionHouseFrameDisplayMode", {})
+        -- the game's tab template puts the tab in its parent's Tabs itself (parentArray)
+        local create = _G.CreateFrame
+        _G.CreateFrame = function(kind, name, parent, template, ...)
+          local made = create(kind, name, parent, template, ...)
+          if template == "AuctionHouseFrameDisplayModeTabTemplate" then
+            table.insert(rawget(parent, "Tabs"), made)
+          end
+          return made
+        end
         local sent, bought = {}, {}
         local ah = env.ah
         ah.MakeItemKey = function(id, level, suffix)
@@ -2077,14 +2086,18 @@ describe("addon in a stubbed client", function()
           bought[#bought + 1] = { "confirm", id, n }
         end
         finally(function()
+          _G.CreateFrame = create
           rawset(_G, "AuctionHouseFrame", nil)
           rawset(_G, "AuctionHouseFrameDisplayMode", nil)
         end)
         env.npcFaction = "Horde"
         env:fire("AUCTION_HOUSE_SHOW")
+        env:advance(1)
+        env:fire("AUCTION_HOUSE_SHOW")
         local T = ns.AHShopping
         assert.is_not_nil(T.tab) -- no Auctionator: AME's tab is on the window
-        assert.are.equal(2, #ahFrame.Tabs)
+        assert.are.equal(2, #ahFrame.Tabs) -- once, however often the auction house opens
+        assert.are.equal(2, ahFrame.tabsForDisplayMode[T.mode])
         local i = ns.AME.shopping:AddList("Raid")
         ns.AME.shopping:SetItem(i, 2589, 30)
         T:Open()

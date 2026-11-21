@@ -158,6 +158,7 @@ function T:Create(ah)
       T.selected = self.itemID
       T:Render()
     end)
+    r:Hide() -- until Render fills it
     p.rows[i] = r
   end
 
@@ -166,6 +167,7 @@ function T:Create(ah)
   detail:SetPoint("BOTTOMLEFT", 0, 0)
   detail:SetPoint("RIGHT", 0, 0)
   detail:SetHeight(T.LISTINGS * 16 + 52)
+  detail:Hide()
   p.detail = detail
   p.detailTitle = W.Text(detail, "GameFontNormalSmall")
   p.detailTitle:SetPoint("TOPLEFT", 0, 0)
@@ -372,9 +374,10 @@ end
 function T:Attach()
   local ah = _G.AuctionHouseFrame
   local modes = _G.AuctionHouseFrameDisplayMode
-  if self.tab or not (ah and modes and rawget(ah, "Tabs")) or _G.Auctionator then
+  if self.attached or not (ah and modes and rawget(ah, "Tabs")) or _G.Auctionator then
     return
   end
+  self.attached = true -- once, whatever happens below: never a second panel or tab
   local panel = self:Create(ah)
   rawset(ah, "AMEShopping", panel)
   self.mode = { "AMEShopping" }
@@ -386,19 +389,37 @@ function T:Attach()
       T:Open()
     end)
   end
+  self.tab = tab
   tab.displayMode = self.mode
   tab:SetText(L["AME Shopping"])
   tab:SetPoint("LEFT", last, "RIGHT", -15, 0)
-  ah.Tabs[#ah.Tabs + 1] = tab
+  -- the game's tab template puts itself in the frame's Tabs already (a second entry anchors the tab to itself)
+  local index
+  for i, t in ipairs(ah.Tabs) do
+    if t == tab then
+      index = i
+    end
+  end
+  if not index then
+    ah.Tabs[#ah.Tabs + 1] = tab
+    index = #ah.Tabs
+  end
   local setNum = _G.PanelTemplates_SetNumTabs
   if setNum then
-    setNum(ah, #ah.Tabs)
+    pcall(setNum, ah, #ah.Tabs)
   end
   if rawget(ah, "tabsForDisplayMode") then
-    ah.tabsForDisplayMode[self.mode] = #ah.Tabs
+    ah.tabsForDisplayMode[self.mode] = index
+  end
+  -- the window's title for the tab, as the game's own tabs have theirs
+  if ah.SetDisplayMode and hooksecurefunc then
+    hooksecurefunc(ah, "SetDisplayMode", function(frame, mode)
+      if mode == T.mode and frame.SetTitle then
+        frame:SetTitle(L["AME Shopping"])
+      end
+    end)
   end
   panel:HookScript("OnShow", function()
     T:Render()
   end)
-  self.tab = tab
 end

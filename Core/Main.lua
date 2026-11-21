@@ -648,12 +648,6 @@ function handlers.AUCTION_HOUSE_SHOW()
   AME.ahOpen = true
   hookSellSlots()
   C_Timer.After(0.5, hookSellSlots) -- the game's window may load after this event reaches AME
-  if ns.AHShopping then -- AME's shopping tab on the game's window (once it's there)
-    ns.AHShopping:Attach()
-    C_Timer.After(0.5, function()
-      ns.AHShopping:Attach()
-    end)
-  end
   AME.house = UnitFactionGroup("npc") or "Neutral"
   AME_DB.lastHouse = AME.house
   if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
@@ -676,6 +670,17 @@ function handlers.AUCTION_HOUSE_SHOW()
     AME:Backfill(false)
   end
   ns.Trading:QueryAuctions()
+  -- AME's shopping tab on the game's window (once it's there), last: whatever goes wrong adding it is reported, and
+  -- the auction house works on (the house, the history, a scan's recording)
+  if ns.AHShopping then
+    local function attach()
+      xpcall(function()
+        ns.AHShopping:Attach()
+      end, _G.geterrorhandler and _G.geterrorhandler() or print)
+    end
+    attach()
+    C_Timer.After(0.5, attach)
+  end
 end
 
 function handlers.GUILD_ROSTER_UPDATE()
