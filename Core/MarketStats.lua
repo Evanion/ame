@@ -59,6 +59,8 @@ function MarketStats.New(from, to, factor, classOf)
   }, { __index = MarketStats })
 end
 
+local EMPTY = {}
+
 local function bump(t, k, v)
   t[k] = (t[k] or 0) + v
 end
@@ -139,8 +141,9 @@ function MarketStats:Add(id, raw, clean, s)
       day.auctions = day.auctions + (p.auctions or 0)
       day.units = day.units + qty
       bump(day.cls, cls, value)
-      if value > 0 then
-        keepTop(day.top, { id = id, qty = qty, price = price, raw = capped and p.market or nil, value = value })
+      local top = day.top
+      if value > 0 and (#top < MarketStats.TOP or top[#top].value < value) then -- a table only for what makes it
+        keepTop(top, { id = id, qty = qty, price = price, raw = capped and p.market or nil, value = value })
       end
     end
   end
@@ -180,7 +183,7 @@ function MarketStats:Add(id, raw, clean, s)
         local gap = p.day - prev.day
         bump(slot(self.ret, p.day, gap), n, r)
         bump(slot(self.cnt, p.day, gap), n, 1)
-        for w, weight in pairs(weights or {}) do
+        for w, weight in pairs(weights or EMPTY) do
           local byDay = slot(self.cpi[w], p.day, gap)
           local acc = byDay[n]
           if not acc then

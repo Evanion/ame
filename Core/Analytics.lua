@@ -79,40 +79,51 @@ local function meanStd(values, first, last)
   return mean, sqrt(sq / n)
 end
 
-function Analytics.Volatility(values)
-  local returns = {}
-  for i = 2, #values do
+-- first, last (optional, here and in ZScore / Trend): a range of values - the market index summarises ~30k items,
+-- so no copies and no garbage
+function Analytics.Volatility(values, first, last)
+  first, last = first or 1, last or #values
+  -- the standard deviation of the log returns, in two passes (no table of returns)
+  local n, sum = 0, 0
+  for i = first + 1, last do
     if values[i - 1] > 0 and values[i] > 0 then
-      returns[#returns + 1] = log(values[i] / values[i - 1])
+      n, sum = n + 1, sum + log(values[i] / values[i - 1])
     end
   end
-  if #returns < 1 then
+  if n < 1 then
     return nil
   end
-  local _, std = meanStd(returns, 1, #returns)
-  return std
+  local mean, sq = sum / n, 0
+  for i = first + 1, last do
+    if values[i - 1] > 0 and values[i] > 0 then
+      sq = sq + (log(values[i] / values[i - 1]) - mean) ^ 2
+    end
+  end
+  return sqrt(sq / n)
 end
 
-function Analytics.ZScore(values)
-  local mean, std = meanStd(values, 1, #values)
+function Analytics.ZScore(values, first, last)
+  first, last = first or 1, last or #values
+  local mean, std = meanStd(values, first, last)
   if not mean then
     return nil
   end
   if std == 0 then
     return 0
   end
-  return (values[#values] - mean) / std
+  return (values[last] - mean) / std
 end
 
 -- least-squares slope per step, divided by the mean (relative drift per step)
-function Analytics.Trend(values)
-  local n = #values
+function Analytics.Trend(values, first, last)
+  first, last = first or 1, last or #values
+  local n = last - first + 1
   if n < 2 then
     return nil
   end
   local sx, sy, sxx, sxy = 0, 0, 0, 0
   for i = 1, n do
-    local y = values[i]
+    local y = values[first + i - 1]
     sx, sy, sxx, sxy = sx + i, sy + y, sxx + i * i, sxy + i * y
   end
   local denom = n * sxx - sx * sx
@@ -123,23 +134,23 @@ function Analytics.Trend(values)
   return ((n * sxy - sx * sy) / denom) / mean
 end
 
-local function tail(values, n)
-  local out = {}
-  for i = max(1, #values - n + 1), #values do
-    out[#out + 1] = values[i]
-  end
-  return out
-end
+-- scratch columns for Summarize, reused (no garbage per item); size: entries in use
+local M, Q, size = {}, {}, 0
 
 function Analytics.Summarize(series)
   local n = #series
   if n == 0 then
     return nil
   end
-  local markets, qtys = {}, {}
-  for i, p in ipairs(series) do
+  local markets, qtys = M, Q
+  for i = 1, n do
+    local p = series[i]
     markets[i], qtys[i] = p.market, p.qty or 0
   end
+  for i = n + 1, size do
+    markets[i], qtys[i] = nil, nil
+  end
+  size = n
   local last = series[n]
   local s = {
     market = last.market,
@@ -169,11 +180,11 @@ function Analytics.Summarize(series)
   if observed >= 120 then -- at least two hours of scan pairs
     s.sellRate = drained / (observed / 1440)
   end
-  local window = tail(markets, 30)
-  s.vol30 = Analytics.Volatility(window)
-  s.z30 = Analytics.ZScore(window)
-  s.trend30 = Analytics.Trend(window)
-  s.supplyTrend30 = Analytics.Trend(tail(qtys, 30))
+  local from = max(1, n - 29) -- the last 30
+  s.vol30 = Analytics.Volatility(markets, from, n)
+  s.z30 = Analytics.ZScore(markets, from, n)
+  s.trend30 = Analytics.Trend(markets, from, n)
+  s.supplyTrend30 = Analytics.Trend(qtys, from, n)
 
   -- opportunity score: how far below its usual price an item is (negative z), damped for volatile items, nudged by
   -- a rising trend. Squashed to (-100, 100) so it sorts nicely in the screener.
@@ -305,6 +316,7 @@ local function partialLastDay(series, n, from)
   return last * 2 < best
 end
 
+local P = {} -- scratch: Phase's supply column (at most 7)
 function Analytics.Phase(series)
   local n = #series
   if n >= 2 and partialLastDay(series, n, math.max(1, n - 7)) then
@@ -314,13 +326,12 @@ function Analytics.Phase(series)
     return nil
   end
   local from = math.max(1, n - 6)
-  local markets, qtys = {}, {}
+  local qtys, count = P, n - from + 1
   for k = from, n do
-    markets[#markets + 1] = series[k].market
-    qtys[#qtys + 1] = series[k].qty or 0
+    qtys[k - from + 1] = series[k].qty or 0
   end
-  local price = Analytics.Change(markets[1], markets[#markets])
-  local supply = (Analytics.Trend(qtys) or 0) * #qtys
+  local price = Analytics.Change(series[from].market, series[n].market)
+  local supply = (Analytics.Trend(qtys, 1, count) or 0) * count
   if not price then
     return nil
   end
@@ -378,40 +389,58 @@ end
 -- dropped. factor nil/false/<= 1 disables.
 Analytics.OUTLIER_NEIGHBOURS = 7
 
-local function median(values)
-  table.sort(values)
-  local n = #values
-  if n % 2 == 1 then
-    return values[(n + 1) / 2]
+-- the median of a point's neighbours' markets (nil with fewer than 3), sorted in a reused buffer: the market index
+-- cleans ~30k items, and a table per point kept the garbage collector stalling the game
+local around = {}
+local function neighbourMedian(series, i, k)
+  local n = 0
+  for j = max(1, i - k), min(#series, i + k) do
+    local m = j ~= i and series[j].market
+    if m then
+      n = n + 1
+      around[n] = m
+    end
   end
-  return (values[n / 2] + values[n / 2 + 1]) / 2
+  if n < 3 then
+    return nil
+  end
+  for a = 2, n do -- insertion sort: at most 2k values
+    local v, b = around[a], a - 1
+    while b >= 1 and around[b] > v do
+      around[b + 1] = around[b]
+      b = b - 1
+    end
+    around[b + 1] = v
+  end
+  if n % 2 == 1 then
+    return around[(n + 1) / 2]
+  end
+  return (around[n / 2] + around[n / 2 + 1]) / 2
 end
 
+-- the series without its outlier points: the series itself (not a copy) when none is dropped
 function Analytics.Clean(series, factor)
   if not factor or factor <= 1 or #series < 4 then
     return series, 0
   end
-  local out, dropped = {}, 0
+  local out, dropped = nil, 0
   local k = Analytics.OUTLIER_NEIGHBOURS
-  for i, p in ipairs(series) do
-    local around = {}
-    for j = math.max(1, i - k), math.min(#series, i + k) do
-      if j ~= i and series[j].market then
-        around[#around + 1] = series[j].market
+  for i = 1, #series do
+    local p = series[i]
+    local m = p.market and neighbourMedian(series, i, k)
+    if m and m > 0 and (p.market > m * factor or p.market < m / factor) then
+      if not out then
+        out = {}
+        for j = 1, i - 1 do
+          out[j] = series[j]
+        end
       end
-    end
-    local bad = false
-    if p.market and #around >= 3 then
-      local m = median(around)
-      bad = m > 0 and (p.market > m * factor or p.market < m / factor)
-    end
-    if bad then
       dropped = dropped + 1
-    else
+    elseif out then
       out[#out + 1] = p
     end
   end
-  return out, dropped
+  return out or series, dropped
 end
 
 -- How much to trust an item's numbers: "high" (6+ scans in its last week of data, seen within a day, a week of

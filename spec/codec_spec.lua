@@ -85,6 +85,19 @@ describe("Codec", function()
       assert.has_error(function()
         Codec.DecodeSnapshot("1|3|!!")
       end)
+      -- read off the text without splitting it: every malformed number still errors
+      local F = { "ids", "v" }
+      assert.are.same({ ids = { 1, 3 }, v = { -5, 71 } }, Codec.Decode(F, "1|2|1,2|-5,1z"))
+      for _, bad in ipairs({
+        "1|2|1,2|5,",
+        "1|2|1,2|-,1",
+        "1|2|1,2|5,1-2",
+        "1|2|1,2|5,6,7",
+        "1|2|1,2|5",
+        "1|2|1,,2|5,6",
+      }) do
+        assert.is_false((pcall(Codec.Decode, F, bad)), bad)
+      end
     end)
 
     it("rejects unsorted ids", function()

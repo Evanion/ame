@@ -53,6 +53,24 @@ describe("MarketIndex", function()
     assert.are.equal(1, #series[1 + ns.Store.BUCKETS])
   end)
 
+  it("BucketSeries from a pool gives the same points as fresh tables, bucket after bucket", function()
+    local B = ns.Store.BUCKETS
+    for d = 1991, 2000 do
+      scan(d, { [1] = 100 + d % 3, [2] = 50 + d % 5, [1 + B] = 7, [2 + 2 * B] = 900 + d % 2 })
+    end
+    local pool = ns.Store.NewPool()
+    for round = 1, 2 do -- the second time round, every point and list comes out of the pool
+      for b = 0, 3 do
+        local fresh = store:BucketSeries(b, 1990, 2000)
+        local reused = store:BucketSeries(b, 1990, 2000, pool)
+        assert.are.same(fresh, reused, "bucket " .. b .. " round " .. round)
+        ns.Store.Recycle(reused, pool)
+        assert.is_nil(next(reused))
+      end
+    end
+    assert.truthy(pool.points.n > 0)
+  end)
+
   it("builds a summary per item across all buckets", function()
     for d = 1971, 2000 do
       scan(d, { [5] = 100, [6] = (d == 2000) and 60 or 100 + (d % 2) })

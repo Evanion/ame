@@ -91,21 +91,6 @@ function Codec.FromBase36(s)
   return neg and -x or x
 end
 
--- split keeping empty fields
-local function split(s, sep)
-  local out, n, start = {}, 0, 1
-  while true do
-    local at = s:find(sep, start, true)
-    n = n + 1
-    if not at then
-      out[n] = sub(s, start)
-      return out, n
-    end
-    out[n] = sub(s, start, at - 1)
-    start = at + 1
-  end
-end
-
 local function encodeColumn(values, n, delta)
   local parts, prev = {}, 0
   for i = 1, n do
@@ -121,6 +106,8 @@ local function encodeColumn(values, n, delta)
   return concat(parts, ",")
 end
 
+-- The numbers are read straight off the text, byte by byte: splitting it into a string per number first made a
+-- market index rebuild (~30 days x 11 columns x 30k items) allocate a million strings for the garbage collector.
 local function decodeColumn(text, n, delta, yield)
   local values = {}
   if n == 0 then
@@ -129,21 +116,47 @@ local function decodeColumn(text, n, delta, yield)
     end
     return values
   end
-  local parts, count = split(text, ",")
+  local count, prev, x, neg, digits = 0, 0, 0, false, 0
+  local pos = 1
+  while true do
+    local b = byte(text, pos)
+    if b == 44 or b == nil then -- "," or the end: a number is done
+      if digits == 0 then
+        error("Codec: empty number", 3)
+      end
+      if x >= MAX_SAFE then
+        error("Codec: number out of range", 3)
+      end
+      count = count + 1
+      if count > n then
+        error("Codec: column length mismatch", 3)
+      end
+      local v = neg and -x or x
+      if delta then
+        v = prev + v
+        prev = v
+      end
+      values[count] = v
+      if yield and count % 500 == 0 then -- a column of 25k values is ~45 ms
+        yield()
+      end
+      if not b then
+        break
+      end
+      x, neg, digits = 0, false, 0
+    elseif b == 45 and digits == 0 and not neg then -- "-"
+      neg = true
+    else
+      local v = VALUES[b]
+      if not v then
+        error("Codec: bad digit", 3)
+      end
+      x, digits = x * 36 + v, digits + 1
+    end
+    pos = pos + 1
+  end
   if count ~= n then
     error("Codec: column length mismatch", 3)
-  end
-  local prev = 0
-  for i = 1, n do
-    local v = Codec.FromBase36(parts[i])
-    if delta then
-      v = prev + v
-      prev = v
-    end
-    values[i] = v
-    if yield and i % 500 == 0 then -- a column of 25k values is ~45 ms
-      yield()
-    end
   end
   return values
 end

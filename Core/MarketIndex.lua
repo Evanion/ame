@@ -19,9 +19,12 @@ function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached
     store:KeepTexts(true)
   end
   local n = 0
+  -- one bucket's points are reused for the next (summaries and stats copy what they keep): a rebuild made ~a million
+  -- tables, and collecting them showed up as 100+ ms frames
+  local pool = ns.Store.NewPool()
   for b = 0, ns.Store.BUCKETS - 1 do
     local from = today - days + 1
-    local series = store:BucketSeries(b, from, today)
+    local series = store:BucketSeries(b, from, today, pool)
     for id, points in pairs(series) do
       local clean, dropped = ns.Analytics.Clean(points, outlierFactor)
       index.outliers = index.outliers + dropped
@@ -43,6 +46,7 @@ function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached
         checkpoint()
       end
     end
+    ns.Store.Recycle(series, pool)
     if checkpoint then
       checkpoint()
     end

@@ -741,29 +741,33 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- reads
 
-local function point(seg, i, res, period)
+-- p (optional): a table to fill instead of a new one (BucketSeries with a pool); every field is set
+local function point(seg, i, res, period, p)
   local scans = seg.scans[i]
   local high = seg.high and seg.high[i]
   local obs = seg.obs and seg.obs[i] or 0
-  local p = {
-    res = res,
-    min = seg.min[i],
-    high = high and high > 0 and high or nil,
-    scans = scans,
-    drain = obs > 0 and seg.drain[i] or nil,
-    obs = obs > 0 and obs or nil,
-  }
+  p = p or {}
+  p.res = res
+  p.min = seg.min[i]
+  p.high = high and high > 0 and high or nil
+  p.scans = scans
+  p.drain = obs > 0 and seg.drain[i] or nil
+  p.obs = obs > 0 and obs or nil
   for _, f in ipairs(SUMMED) do
     p[f] = round(seg[f][i] / scans)
   end
   if res == "week" then
-    p.week, p.day = period, period * 7
+    p.week, p.day, p.hours = period, period * 7, nil
   else
-    p.day = period
+    p.week, p.day = nil, period
     local hours = seg.hours and seg.hours[i]
     p.hours = hours and hours > 0 and hours or nil -- bitmask of UTC hours sampled that day
   end
   return p
+end
+
+local function byDay(x, y)
+  return x.day < y.day
 end
 
 function Store:Series(itemID, fromDay, toDay)
@@ -799,7 +803,9 @@ end
 
 -- Every item's points in one bucket over a day range: { [itemID] = { points oldest first } }. Used to build the
 -- market index bucket by bucket, so memory stays bounded.
-function Store:BucketSeries(b, fromDay, toDay)
+-- pool (optional, Store.NewPool): the points and lists come from it, and go back with Store.Recycle once the
+-- bucket is done - a rebuild of ~30k items x 30 days made a million tables, and collecting them stalled the game
+function Store:BucketSeries(b, fromDay, toDay, pool)
   local out = {}
   local function add(tier, res)
     for period, buckets in pairs(tier) do
@@ -811,10 +817,10 @@ function Store:BucketSeries(b, fromDay, toDay)
         for i, id in ipairs(seg.ids) do
           local list = out[id]
           if not list then
-            list = {}
+            list = pool and Store.Take(pool.lists) or {}
             out[id] = list
           end
-          list[#list + 1] = point(seg, i, res, period)
+          list[#list + 1] = point(seg, i, res, period, pool and Store.Take(pool.points))
         end
       end
     end
@@ -822,11 +828,39 @@ function Store:BucketSeries(b, fromDay, toDay)
   add(self.data.weeks, "week")
   add(self.data.days, "day")
   for _, list in pairs(out) do
-    sort(list, function(x, y)
-      return x.day < y.day
-    end)
+    sort(list, byDay)
   end
   return out
+end
+
+-- tables to reuse across BucketSeries calls: { points = { n, ... }, lists = { n, ... } }
+function Store.NewPool()
+  return { points = { n = 0 }, lists = { n = 0 } }
+end
+
+function Store.Take(stack)
+  local n = stack.n
+  if n == 0 then
+    return nil
+  end
+  local t = stack[n]
+  stack[n], stack.n = nil, n - 1
+  return t
+end
+
+-- a bucket's series back into the pool (nothing may hold on to its points or lists after this)
+function Store.Recycle(series, pool)
+  local points, lists = pool.points, pool.lists
+  for id, list in pairs(series) do
+    for i = #list, 1, -1 do
+      points.n = points.n + 1
+      points[points.n] = list[i]
+      list[i] = nil
+    end
+    lists.n = lists.n + 1
+    lists[lists.n] = list
+    series[id] = nil
+  end
 end
 
 -- Size of a shard's stored history: days of daily points, and the bytes of their packed segments and hourly points.
