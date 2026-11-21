@@ -675,7 +675,10 @@ function Service:Merge(m, sender)
     if not plausible then
       return { rejected = why }
     end
-    return { added = store:AddScan(snap, m.t, m.src, m.kind == "partial" and "partial" or "full", m.packed) }
+    -- a guildmate's summary scan (cheapest only): its market from our spreads; then it's stored as we read it
+    local raised = ns.Spread.Take(m.shard, snap)
+    local packed = raised == 0 and m.packed or nil
+    return { added = store:AddScan(snap, m.t, m.src, m.kind == "partial" and "partial" or "full", packed) }
   end, function(done, result)
     self:Received(m.shard, sender, done, result, snap and { src = m.src, items = #snap.ids })
   end)

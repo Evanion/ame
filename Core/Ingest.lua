@@ -7,7 +7,8 @@
 --
 -- Browse summary scans (Auctionator's default "Full Scan" when its replicate option is off): an empty
 -- C_AuctionHouse.SendBrowseQuery paged with RequestMoreBrowseResults until HasFullBrowseResults(). Each result is one
--- item key with minPrice and totalQuantity only, so the snapshot's market/median equal the minimum.
+-- item key with minPrice and totalQuantity only, so the snapshot's market/median equal the minimum (Spread then
+-- sets the market from each item's usual spread above its cheapest listing).
 --
 -- Legacy full scans (Auctionator on classic flavours with the old AH): QueryAuctionItems(..., getAll = true).
 -- Auctionator unregisters every other frame's AUCTION_ITEM_LIST_UPDATE during its scan, so instead of waiting for the

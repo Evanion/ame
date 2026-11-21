@@ -162,6 +162,27 @@ describe("addon in a stubbed client", function()
     assert.are.equal(1, AME_DB.stats.scan.browseRequests)
   end)
 
+  it("a summary scan's market sits at the item's usual spread above its cheapest, not at the cheapest", function()
+    boot()
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    -- a scan that sees every listing: cheapest 1s, market 1s 17c (10 at 1s, 10 at 1s 10c, 80 at 1s 20c)
+    fullScan({ { 2589, 1000, 10 }, { 2589, 1100, 10 }, { 2589, 9600, 80 } })
+    local shard = "TestRealm|Horde"
+    assert.are.equal(109, AME_DB.spread[shard][2589]) -- halfway from 1.00 to 1.17, kept as x100
+    -- Auctionator's quick full scan: only the cheapest (1s) - the market is 1s 9c, the cheapest stays 1s
+    env:advance(1000)
+    env.ah.browse = { { 2589, 100, 40 } }
+    C_AuctionHouse.SendBrowseQuery({ searchString = "", sorts = {}, filters = {}, itemClassFilters = {} })
+    env:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+    drainJobs()
+    local raw = AME_HistoryDB.shards[shard].raw
+    local last = raw[#raw]
+    local snap = ns.Codec.DecodeSnapshot(ns.Codec.Unpack(last.s, ns.AME.compressor))
+    assert.are.equal(100, snap.min[1])
+    assert.are.equal(109, snap.market[1])
+  end)
+
   it("records a legacy getAll full scan (classic AH)", function()
     boot()
     env.npcFaction = "Horde"

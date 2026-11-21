@@ -26,6 +26,7 @@ Core\Packed.lua
 Core\Settings.lua
 Core\ItemCache.lua
 Core\Stats.lua
+Core\Spread.lua
 Core\Pricing.lua
 Core\SellThrough.lua
 Core\Codec.lua

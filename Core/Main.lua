@@ -218,6 +218,9 @@ function AME:OnSnapshot(snap, t, kind, info)
   local shard = self:CurrentShard()
   local src = UnitName("player") or "?"
   local started = self.scanRequestedAt
+  -- a summary scan (cheapest price only): its market from each item's spread; a scan that saw every listing teaches
+  -- the spread
+  ns.Spread.Take(shard, snap, (info and info.source == "browse") or false)
   ns.Posting:OnSnapshot(shard, snap, t) -- the pricing model learns each item's market from consecutive scans
   self:WithStore("store-" .. kind, shard, function(store)
     local added = store:AddScan(snap, t, src, kind)
