@@ -583,6 +583,9 @@ function handlers.PLAYER_LOGIN()
   if ns.ProfessionBar then
     ns.ProfessionBar:Start()
   end
+  if ns.RecipeSources then
+    ns.RecipeSources:Start()
+  end
   if ns.SyncService:Init(AME, AME.syncTransport) then
     -- hide "No player named X is currently playing" when X logged off while AME was whispering them
     local addFilter = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or _G.ChatFrame_AddMessageEventFilter

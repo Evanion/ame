@@ -437,6 +437,11 @@ local function addLines(tooltip, itemID)
   for _, r in ipairs(recipe or {}) do
     W.TipPair(tooltip, r[1], r[2])
   end
+  -- a recipe item: where it's sold or drops (learned as you and your guild play), else the game's own words
+  for i, line in ipairs(ns.RecipeSources and ns.RecipeSources.TooltipLines(itemID) or {}) do
+    local label = i == 1 and (W.Color("brand", "AME") .. " " .. W.Dim(L["Source:"]) .. " ") or "      "
+    tooltip:AddLine(label .. line, 1, 1, 1, true)
+  end
   local detail = ns.Settings:Get("tooltipDetail") or (IsShiftKeyDown and IsShiftKeyDown())
   local s, opts = Tooltip.Gather(itemID, detail)
   if not s then

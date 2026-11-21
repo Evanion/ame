@@ -57,6 +57,7 @@ Core\Crafting.lua
 Core\CraftQueue.lua
 Core\AHSearch.lua
 Core\Crafters.lua
+Core\RecipeSources.lua
 Core\Disenchant.lua
 Core\Leveling.lua
 Core\Posting.lua

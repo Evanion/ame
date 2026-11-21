@@ -4005,6 +4005,65 @@ describe("addon in a stubbed client", function()
       end
     )
 
+    it("recipe sources: a merchant's patterns are recorded, shown on the recipe's tooltip and shared", function()
+      bootSync()
+      local RS = ns.RecipeSources
+      RS.IsRecipe = function(id)
+        return id == 7978
+      end
+      local stubs = {
+        GetMerchantNumItems = function()
+          return 2
+        end,
+        GetMerchantItemLink = function(i)
+          return ({
+            "|cffffffff|Hitem:7978::::::::60:::::|h[Plans: Thick Bronze Darts]|h|r",
+            "|cffffffff|Hitem:2589::::::::60:::::|h[Linen Cloth]|h|r",
+          })[i]
+        end,
+        GetMerchantItemInfo = function(i)
+          return "x", 0, i == 1 and 1200 or 10
+        end,
+        GetRealZoneText = function()
+          return "Stonetalon Mountains"
+        end,
+      }
+      for k, fn in pairs(stubs) do
+        rawset(_G, k, fn)
+      end
+      local unitName = _G.UnitName
+      rawset(_G, "UnitName", function(u)
+        return u == "npc" and "Kulwia" or unitName(u)
+      end)
+      finally(function()
+        for k in pairs(stubs) do
+          rawset(_G, k, nil)
+        end
+        rawset(_G, "UnitName", unitName)
+      end)
+      env:fire("MERCHANT_SHOW")
+      env:advance(1)
+      local list = AME_DB.recipeSources[7978]
+      assert.are.equal(1, #list)
+      assert.are.same(
+        { "vendor", "Kulwia", "Stonetalon Mountains", 1200 },
+        { list[1].kind, list[1].npc, list[1].zone, list[1].price }
+      )
+      assert.is_nil(AME_DB.recipeSources[2589]) -- not a recipe
+      local lines = RS.TooltipLines(7978)
+      assert.truthy(lines[1]:find("Sold by Kulwia, Stonetalon Mountains", 1, true), lines[1])
+      -- shared with the guild; a guildmate's drop arrives
+      ns.SyncService:ShareSources()
+      local m = ns.Sync.Decode(sent[#sent].msg)
+      assert.are.equal("sources", m.type)
+      local body = RS.Encode({
+        [7978] = { { kind = "drop", npc = "Venture Co. Enforcer", zone = "Stonetalon Mountains", t = 1 } },
+      })
+      deliver(ns.Sync.EncodeSources("TestRealm|Horde", env.now, body), "GUILD", "Guild Mate")
+      assert.are.equal(2, #AME_DB.recipeSources[7978])
+      assert.are.equal("drop", AME_DB.recipeSources[7978][2].kind)
+    end)
+
     it("shares watchlists with the guild and shows guild members' lists in the sidebar", function()
       bootSync()
       local watch = ns.AME.watch

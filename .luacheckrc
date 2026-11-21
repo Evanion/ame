@@ -24,7 +24,7 @@ read_globals = {
   "strsplit", "strtrim", "strjoin", "wipe", "tinsert", "tremove", "debugprofilestop", "date", "time",
   -- frames, timers, UI
   "CreateFrame", "C_Timer", "UIParent", "GameTooltip", "ChatFrame_OpenChat", "hooksecurefunc", "DEFAULT_CHAT_FRAME", "ReloadUI",
-  "GetCoinTextureString", "GOLD_AMOUNT_SYMBOL", "SILVER_AMOUNT_SYMBOL", "COPPER_AMOUNT_SYMBOL", "C_Spell",
+  "GetCoinTextureString", "GOLD_AMOUNT_SYMBOL", "SILVER_AMOUNT_SYMBOL", "COPPER_AMOUNT_SYMBOL", "C_Spell", "C_MerchantFrame", "UnitIsDead",
   "GetGuildInfo", "GetNumGuildBankTabs", "GetCurrentGuildBankTab", "GetGuildBankTabInfo", "QueryGuildBankTab",
   "MAX_GUILDBANK_SLOTS_PER_TAB",
   "SecondsToTime", "BackdropTemplateMixin", "GameFontNormal", "GameFontHighlight",

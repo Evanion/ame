@@ -108,6 +108,13 @@ function Professions.Snapshot(api, now)
       snap.recipes[id] = recipe
     end
     local info = call(api, "GetRecipeInfo", id)
+    if recipe and type(info) == "table" and not plain(info.learned) then
+      -- where to get it, in the game's own words ("Vendor: ...|nZone: ...|nCost: ..."), for the recipe's tooltip
+      local src = plain(call(api, "GetRecipeSourceText", id))
+      if type(src) == "string" and src ~= "" then
+        recipe.src = src
+      end
+    end
     if type(info) == "table" and plain(info.learned) then
       snap.learned[id] = true
       local cooldown = call(api, "GetRecipeCooldown", id)
@@ -178,6 +185,9 @@ function Professions:Record()
   AME_DB.crafting = AME_DB.crafting or {}
   Professions.Save(AME_DB.crafting, ns.Trading.CharKey(), snap, GetServerTime())
   self.changed = true -- goes out with the next sync (who can make it)
+  if ns.RecipeSources then
+    ns.RecipeSources.CatalogChanged()
+  end
   if self.onChange then
     self.onChange(snap.skillLine)
   end

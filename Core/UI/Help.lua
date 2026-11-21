@@ -547,6 +547,8 @@ function Help.Articles()
             H(L["Who can make it"]),
             L["Looking for someone to craft something? /ame who (or Who can make it in an item's right-click menu) searches the recipes your guildmates, trusted players and your own characters know, by name - enchants too. Crafters online now come first; Whisper opens the chat box to them with the item linked, for you to send. Hold Shift on a craftable item's tooltip to see who can make it."],
             L["Each AME shares what its characters can craft (recipe IDs only) along with the guild's sync - open each of your professions once so yours count. Turn it off under Settings, Sharing: Share what my characters can craft."],
+            H(L["Where to get a recipe"]),
+            L["A recipe item's tooltip (pattern, plans, formula...) says where it comes from: which vendor sells it, where and for how much, or what drops it. AME learns this as you and your guild play - from merchants you open and recipes you loot - and shares it over sync. Until someone has seen it, the tooltip shows the game's own source text for recipes your profession window lists but you haven't learned."],
           },
         },
         {

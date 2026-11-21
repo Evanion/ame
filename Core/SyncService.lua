@@ -356,6 +356,27 @@ function Service:Announce()
   self:ShareWatchlists()
   self:ShareOutcomes(targets)
   self:ShareRecipes(targets)
+  self:ShareSources(targets)
+end
+
+-- where recipe items are sold or drop (what this account saw at merchants and in loot), hourly or when it grew
+function Service:ShareSources(targets)
+  local rs = ns.RecipeSources
+  if not (rs and AME_DB.recipeSources and next(AME_DB.recipeSources)) then
+    return
+  end
+  local t = GetServerTime()
+  if not rs.changed and self.sourcesAt and t - self.sourcesAt < Service.SHARE_RECIPES_EVERY then
+    return
+  end
+  self.sourcesAt, rs.changed = t, false
+  local msg = Sync.EncodeSources(self.AME:FactionShard(), t, rs.Encode(AME_DB.recipeSources))
+  if self:GuildActive() then
+    self.transport:Send(Service.PREFIX, msg, "GUILD")
+  end
+  for _, who in ipairs(targets or {}) do
+    self.transport:Send(Service.PREFIX, msg, "WHISPER", who)
+  end
 end
 
 Service.SHARE_RECIPES_EVERY = 3600 -- seconds: your recipes go out at most this often unless they changed
@@ -487,7 +508,13 @@ function Service:Allowed(m, distribution, sender)
   local trusted = self:TrustActive() and self.trust:IsTrusted(sender)
   if m.type == "request" then
     return trusted or self:GuildActive()
-  elseif m.type == "announce" or m.type == "outcomes" or m.type == "query" or m.type == "recipes" then
+  elseif
+    m.type == "announce"
+    or m.type == "outcomes"
+    or m.type == "query"
+    or m.type == "recipes"
+    or m.type == "sources"
+  then
     return trusted
   elseif m.type == "scan" then
     return trusted or self.requestedFrom[ns.Trust.Key(sender) .. ":" .. m.shard .. ":" .. m.t .. ":" .. m.src]
@@ -537,6 +564,12 @@ function Service:OnMessage(msg, distribution, sender)
       self.answeredAt = t
       self.outcomesAt = nil
       self:Announce()
+    end
+    return
+  end
+  if m.type == "sources" then
+    if ns.RecipeSources and ns.RecipeSources:Merge(m.body, m.t, ns.Trust.Key(sender)) then
+      self.stats.syncSources = (self.stats.syncSources or 0) + 1
     end
     return
   end

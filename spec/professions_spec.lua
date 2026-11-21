@@ -80,6 +80,19 @@ describe("Professions", function()
     assert.are.equal(279970, snap.recipes[1263005].out)
   end)
 
+  it("keeps the game's own source text for recipes not learned yet (where to get them)", function()
+    local snap = P.Snapshot(
+      alchemy({
+        GetRecipeSourceText = function(id)
+          return "Vendor: Kulwia|nZone: Stonetalon (" .. id .. ")"
+        end,
+      }),
+      1000
+    )
+    assert.are.equal("Vendor: Kulwia|nZone: Stonetalon (1263005)", snap.recipes[1263005].src)
+    assert.is_nil(snap.recipes[7837].src) -- learned: no need
+  end)
+
   it("saves nothing from someone else's window, an unready one, or one with no profession", function()
     assert.is_nil(P.Snapshot(
       alchemy({
