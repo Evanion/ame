@@ -6,7 +6,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION="${1:?usage: scripts/package.sh <version>}"
+VERSION="${1:?usage: scripts/package.sh <version> [dev]}"
+# dev: a build for a beta tester that keeps the profiler (Core/Dev, /amedev); DEV_REPORT_TO=<Name-Realm> sets who
+# /amedev send whispers without a name. Never uploaded: scripts/release.sh builds without it.
+DEV="${2:-}"
 STAGE=.release
 CORE="$STAGE/AzerothMercantileExchange"
 HIST="$STAGE/AzerothMercantileExchange_History"
@@ -38,9 +41,15 @@ done
 find "$STAGE" \( -name .git -o -name .github -o -name tests -o -name '*.md' -o -name '*.textile' \) -prune \
   -exec rm -rf {} +
 
-# dev-only tools (Core/Dev: the profiler) never ship
-rm -rf "$CORE/Core/Dev"
-sed -i '/^Core\\Dev\\/d' "$CORE/AzerothMercantileExchange.toc"
+# dev-only tools (Core/Dev: the profiler) never ship - except in a dev build for a tester
+if [ "$DEV" = dev ]; then
+  if [ -n "${DEV_REPORT_TO:-}" ]; then
+    sed -i "s/@dev-report-to@/$DEV_REPORT_TO/" "$CORE/Core/Dev/Report.lua"
+  fi
+else
+  rm -rf "$CORE/Core/Dev"
+  sed -i '/^Core\\Dev\\/d' "$CORE/AzerothMercantileExchange.toc"
+fi
 
 # version stamps
 sed -i "s/@project-version@/$VERSION/" "$CORE/AzerothMercantileExchange.toc" "$HIST/AzerothMercantileExchange_History.toc"

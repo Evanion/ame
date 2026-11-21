@@ -34,4 +34,12 @@ describe("Dev profiler helpers", function()
     assert.are.equal(3, steps)
     assert.is_true(b.mem > s.mem)
   end)
+
+  it("serializes a report and reads it back without loading any code", function()
+    local R = addon.load({ "Core/Init.lua", "Core/Dev/Profiler.lua", "Core/Dev/Report.lua" }).Dev.Report
+    local v = { a = 1.5, b = "x|y:z;", list = { 1, 2, { deep = true } }, [7] = false, neg = -3 }
+    assert.are.same(v, R.Deserialize(R.Serialize(v)))
+    assert.is_nil(R.Deserialize("t" .. string.rep("t", 30)))
+    assert.is_nil(R.Deserialize("s99:short"))
+  end)
 end)

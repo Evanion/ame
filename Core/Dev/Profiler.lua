@@ -324,6 +324,10 @@ SlashCmdList.AMEDEV = function(msg)
     if not ok then
       say("recipe probe failed: %s", tostring(err))
     end
+  elseif cmd == "send" then
+    Dev.Report.Send((msg or ""):match("^%s*%S+%s*(%S*)"))
+  elseif cmd == "receive" then
+    Dev.Report.Receive()
   elseif cmd == "memory" then
     Dev.memoryWatch = not Dev.memoryWatch
     say(
@@ -387,7 +391,7 @@ SlashCmdList.AMEDEV = function(msg)
   else
     say(
       "/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev recipes"
-        .. "  ·  /amedev crafting  ·  /amedev ah <item>  ·  /amedev scanbutton  ·  /amedev lag [now | last]  ·  /amedev hud  ·  /amedev memory"
+        .. "  ·  /amedev crafting  ·  /amedev ah <item>  ·  /amedev scanbutton  ·  /amedev lag [now | last]  ·  /amedev hud  ·  /amedev memory  ·  /amedev send <name>  ·  /amedev receive"
         .. "  ·  /amedev reset"
     )
   end

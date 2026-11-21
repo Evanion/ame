@@ -83,5 +83,6 @@ Core\UI\Launcher.lua
 Core\Dev\Profiler.lua
 Core\Dev\LagProbe.lua
 Core\Dev\Hud.lua
+Core\Dev\Report.lua
 Core\Dev\RecipeProbe.lua
 Core\Dev\AHProbe.lua

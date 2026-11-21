@@ -587,6 +587,42 @@ describe("addon in a stubbed client", function()
       end
     )
 
+    it("/amedev send: a tester whispers their profiler report; /amedev receive keeps it", function()
+      seeded()
+      env:slash("AMEDEV", "hud")
+      env:update(70)
+      local sent = {}
+      _G.C_ChatInfo = {
+        RegisterAddonMessagePrefix = function() end,
+        SendAddonMessage = function(prefix, msg, channel, target)
+          sent[#sent + 1] = { prefix = prefix, msg = msg, channel = channel, target = target }
+        end,
+      }
+      finally(function()
+        _G.C_ChatInfo = nil
+      end)
+      env:slash("AMEDEV", "send Developer")
+      for _ = 1, 600 do
+        env:advance(1.1)
+      end
+      assert.is_true(#sent >= 1)
+      assert.are.equal("Developer", sent[1].target)
+      for _, m in ipairs(sent) do
+        assert.is_true(#m.msg <= 255)
+      end
+      -- not taking reports: ignored
+      env:fire("CHAT_MSG_ADDON", sent[1].prefix, sent[1].msg, "WHISPER", "Tester")
+      assert.is_nil(AME_DB.dev.received)
+      env:slash("AMEDEV", "receive")
+      for i = #sent, 1, -1 do -- in any order
+        env:fire("CHAT_MSG_ADDON", sent[i].prefix, sent[i].msg, "WHISPER", "Tester")
+      end
+      local got = AME_DB.dev.received.Tester.report
+      assert.are.equal(ns.VERSION, got.ame)
+      assert.is_true(#got.minutes >= 1)
+      assert.is_table(got.jobs)
+    end)
+
     it("/amedev hud: a box on screen with what AME is doing", function()
       seeded()
       env:slash("AMEDEV", "hud")
