@@ -30,16 +30,39 @@ describe("Tooltip.Lines", function()
     return (table.concat(out, "\n"):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) -- without colour codes
   end
 
-  it("is three lines by default: market vs the chosen average, supply and sells/day, a Shift hint", function()
-    local rows = T.Lines(s, { avgDays = 14 })
-    assert.are.equal(3, #rows)
+  local held = {
+    total = 43,
+    bags = 20,
+    bank = 18,
+    auctions = 0,
+    guildBank = 5,
+    chars = {
+      { name = "Mainchar", bags = 12, bank = 10, auctions = 0, me = true },
+      { name = "Bankalt", bags = 8, bank = 8 },
+    },
+    guilds = { { name = "Iron Ledger", qty = 5 } },
+  }
+
+  it("by default: a header with the auction house and freshness, the market price, context and a Shift hint", function()
+    local rows = T.Lines(s, { avgDays = 14, house = "Horde AH", age = "2 hr ago" })
     local t = text(rows)
-    assert.truthy(t:find("market"))
-    assert.truthy(t:find("vs 14d avg"))
-    assert.truthy(t:find("-13.9%", 1, true)) -- 55g 98s vs 65g
-    assert.truthy(t:find("supply = 13 listed"))
-    assert.truthy(t:find("Hold Shift"))
+    assert.truthy(t:find("AME  Horde AH · 2 hr ago", 1, true), t)
+    assert.truthy(t:find("Market = 55g 98s", 1, true), t)
+    assert.truthy(t:find("-13.9%", 1, true), t) -- 55g 98s vs 65g
+    assert.truthy(t:find("vs 14d avg", 1, true), t)
+    assert.truthy(t:find("13 listed", 1, true), t)
+    assert.truthy(t:find("Hold Shift"), t)
     assert.is_nil(t:find("lowest"))
+    assert.is_nil(t:find("You have"))
+    assert.is_nil(t:find("Vendor")) -- nothing owned: the game's sell price says it
+  end)
+
+  it("with more than one owned: each and a total for all of yours, the vendor total, and where they are", function()
+    local t = text(T.Lines(s, { held = held, vendor = 200, house = "Horde AH" }))
+    assert.truthy(t:find("= your 43", 1, true), t)
+    assert.truthy(t:find("Market  55g 98s = 2,407g", 1, true), t)
+    assert.truthy(t:find("Vendor = 86s", 1, true), t)
+    assert.truthy(t:find("You have 43  ·  bags 20 · bank 18 · guild bank 5", 1, true), t)
   end)
 
   it("leaves out the comparison on the first day (nothing to compare with)", function()
@@ -47,25 +70,68 @@ describe("Tooltip.Lines", function()
     assert.is_nil(text(T.Lines(young, {})):find("avg"))
   end)
 
-  it("shows the signal as the third line, with the Shift hint beside it", function()
+  it("shows the signal with the Shift hint beside it, and says when the goblin AH pays better", function()
     local buy = setmetatable({ signal = "buy", sellRate = 12 }, { __index = s })
-    local rows = T.Lines(buy, {})
-    assert.are.equal(3, #rows)
-    local t = text(rows)
-    assert.truthy(t:find("BUY"))
-    assert.truthy(t:find("Shift: more"))
-    assert.truthy(t:find("~12/d"))
+    local t = text(T.Lines(buy, { better = 0.16 }))
+    assert.truthy(t:find("BUY = Shift: more", 1, true), t)
+    assert.truthy(t:find("~12/d"), t)
+    assert.truthy(t:find("Sells 16% better at the goblin AH, after its cut", 1, true), t)
   end)
 
-  it("adds supply, volatility, score and data age in detail - never other auction houses", function()
-    local t = text(T.Lines(s, { detail = true, today = 102 }))
-    assert.truthy(t:find("lowest"))
-    assert.truthy(t:find("13"))
-    assert.truthy(t:find("/week"))
-    assert.truthy(t:find("volatility"))
-    assert.truthy(t:find("score"))
-    assert.is_nil(t:find("AH"))
-    assert.truthy(t:find("2 days ago"))
-    assert.is_nil(t:find("Hold Shift"))
+  it("compact (little room): no freshness, holdings or context lines; the goblin AH joins the signal line", function()
+    local buy = setmetatable({ signal = "buy" }, { __index = s })
+    local rows = T.Lines(buy, { compact = true, held = held, house = "Horde AH", age = "now", better = 0.16 })
+    local t = text(rows)
+    assert.is_nil(t:find("Horde AH"))
+    assert.is_nil(t:find("You have"))
+    assert.is_nil(t:find("listed"))
+    assert.truthy(t:find("BUY  ·  goblin AH +16% = Shift: more", 1, true), t)
+    assert.are.equal(3, #rows) -- header (with "your 43"), market, signal
   end)
+
+  it("gear: the disenchant value, and with Shift what it disenchants into by chance", function()
+    local de = {
+      value = 9900,
+      outcomes = {
+        { name = "Strange Dust", chance = 0.75, min = 4, max = 6, price = 1400 },
+        { name = "Lesser Astral Essence", chance = 0.2, min = 1, max = 2, price = 12000 },
+        { name = "Small Glimmering Shard", chance = 0.05, min = 1, max = 1 },
+      },
+    }
+    local t = text(T.Lines(s, { de = de }))
+    assert.truthy(t:find("Disenchant ~ = 99s", 1, true), t)
+    assert.is_nil(t:find("Strange Dust"))
+    t = text(T.Lines(s, { de = de, detail = true }))
+    assert.truthy(t:find("75%  4-6 Strange Dust = 70s", 1, true), t)
+    assert.truthy(t:find("20%  1-2 Lesser Astral Essence = 1g 80s", 1, true), t)
+    assert.truthy(t:find("5%  1 Small Glimmering Shard = -", 1, true), t) -- no price for it
+    assert.truthy(t:find("Expected, weighted by chance = 99s", 1, true), t)
+  end)
+
+  it(
+    "with Shift: yours per character and guild bank, your cost, every auction house after its cut, the details",
+    function()
+      local t = text(T.Lines(s, {
+        detail = true,
+        today = 102,
+        held = held,
+        basis = { units = 10, unit = 500000 },
+        houses = {
+          { label = "Horde AH", market = 559800, net = 531810, cut = 0.05, mine = true },
+          { label = "Goblin AH", market = 700000, net = 595000, cut = 0.15 },
+        },
+      }))
+      assert.truthy(t:find("Mainchar (you) = bags 12 · bank 10", 1, true), t)
+      assert.truthy(t:find("Bankalt = bags 8 · bank 8", 1, true), t)
+      assert.truthy(t:find("<Iron Ledger> guild bank = 5", 1, true), t)
+      assert.truthy(t:find("Average cost = 50g", 1, true), t)
+      assert.truthy(t:find("Unrealized = +59g 80s", 1, true), t) -- (55g 98s - 50g) x 10
+      assert.truthy(t:find("Goblin AH (15%) = 70g  >  59g 50s  +12%", 1, true), t)
+      assert.truthy(t:find("lowest"))
+      assert.truthy(t:find("/week"))
+      assert.truthy(t:find("volatility"))
+      assert.truthy(t:find("2 days ago"))
+      assert.is_nil(t:find("Hold Shift"))
+    end
+  )
 end)

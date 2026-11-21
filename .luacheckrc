@@ -25,6 +25,8 @@ read_globals = {
   -- frames, timers, UI
   "CreateFrame", "C_Timer", "UIParent", "GameTooltip", "ChatFrame_OpenChat", "hooksecurefunc", "DEFAULT_CHAT_FRAME", "ReloadUI",
   "GetCoinTextureString", "GOLD_AMOUNT_SYMBOL", "SILVER_AMOUNT_SYMBOL", "COPPER_AMOUNT_SYMBOL",
+  "GetGuildInfo", "GetNumGuildBankTabs", "GetCurrentGuildBankTab", "GetGuildBankTabInfo", "QueryGuildBankTab",
+  "MAX_GUILDBANK_SLOTS_PER_TAB",
   "SecondsToTime", "BackdropTemplateMixin", "GameFontNormal", "GameFontHighlight",
   "GameFontHighlightSmall", "GameFontNormalLarge", "GameFontDisableSmall", "UISpecialFrames", "GetCursorPosition",
   "StaticPopup_Show", "RELOADUI", "CANCEL", "ACCEPT", "DELETE", "UIErrorsFrame", "PlaySound", "SOUNDKIT", "C_Texture", "ERR_AUCTION_SOLD_S", "ERR_AUCTION_EXPIRED_S",

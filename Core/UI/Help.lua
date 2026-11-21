@@ -297,8 +297,10 @@ function Help.Articles()
           key = "tooltips",
           title = L["Item tooltips"],
           body = {
-            L["Every item tooltip in the game gets AME's lines: the market price against its average, how many are listed and how many sell a day, and the signal with the market phase. Hold Shift for more - the average, the lowest listing, the 7-day change, the supply trend, volatility, the score and how much data it rests on - or show it all the time with Always show details."],
-            L["Tooltips show your own faction's auction house. Turn them off, or change the average they compare with, under Settings, Tooltips & charts."],
+            L["Every item tooltip in the game gets AME's block: which auction house the prices come from and how fresh they are, the market price, and for gear what disenchanting it is worth. Own more than one? Each price shows per item and, on the right, for all of yours - with what a vendor pays for them all. Under that: how many you have and where (bags, bank, on the auction house, guild banks), how it trades against its average, and the signal with the market phase."],
+            L["Prices are your own faction's auction house. When the goblin auction house pays clearly more, even after its bigger cut, a line says so."],
+            L["Hold Shift for more: what gear disenchants into (each result with its chance and value), yours per character and guild bank with your average cost, every auction house you have prices for and what you'd get there after its cut, then the average, the lowest listing, the supply trend, volatility, the score and how much data it rests on. Always show details keeps it open."],
+            L["Guild banks count as AME last saw them: open the guild bank once (each tab) to count it. On a small screen with a large UI scale, tooltips leave out the freshness, holdings and context lines on their own. Turn tooltips off, or change the average they compare with, under Settings, Tooltips & charts."],
             H(L["Recipes"]),
             L["With Crafting on, a recipe's tooltip (pattern, plans, formula...) also shows what it makes at today's market price, and what one craft earns after buying the reagents at market and the auction house's cut - red when it loses money. It prices every reagent at market; the Crafting tab also counts the reagents you hold and those cheaper to craft yourself, so its number can differ."],
           },

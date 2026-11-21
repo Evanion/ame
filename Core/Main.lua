@@ -546,6 +546,8 @@ function handlers.PLAYER_LOGIN()
     "BAG_UPDATE_DELAYED",
     "BANKFRAME_OPENED",
     "PLAYERBANKSLOTS_CHANGED",
+    "GUILDBANKFRAME_OPENED",
+    "GUILDBANKBAGSLOTS_CHANGED",
     "OWNED_AUCTIONS_UPDATED",
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "COMMODITY_SEARCH_RESULTS_UPDATED",
@@ -695,6 +697,22 @@ function handlers.BANKFRAME_OPENED()
   ns.Trading:ScanBank()
 end
 handlers.PLAYERBANKSLOTS_CHANGED = handlers.BANKFRAME_OPENED
+
+-- the guild bank: every tab is asked for on opening; what arrives (and each change) is counted again
+function handlers.GUILDBANKFRAME_OPENED()
+  ns.Trading:ScanGuildBank(true)
+end
+local guildBankPending
+function handlers.GUILDBANKBAGSLOTS_CHANGED()
+  if guildBankPending then -- it comes in bursts (a tab arriving, each move): count once they settle
+    return
+  end
+  guildBankPending = true
+  C_Timer.After(0.3, function()
+    guildBankPending = nil
+    ns.Trading:ScanGuildBank()
+  end)
+end
 
 function handlers.OWNED_AUCTIONS_UPDATED()
   ns.Trading:ScanAuctions()

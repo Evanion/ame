@@ -65,9 +65,10 @@ local function avg(lo, hi)
   return (lo + hi) / 2
 end
 
--- Expected materials from one disenchant: { { itemID, expected count }, ... }, or nil when the item can't be
--- disenchanted (not armor / weapon, below uncommon, or too low). classID: 2 weapon, 4 armor; quality: 2 / 3 / 4.
-function Disenchant.Expected(itemLevel, quality, classID)
+-- What one disenchant can give: { { itemID, chance (0-1), min, max }, ... } (one of them, by chance), or nil when
+-- the item can't be disenchanted (not armor / weapon, below uncommon, or too low). classID: 2 weapon, 4 armor;
+-- quality: 2 / 3 / 4.
+function Disenchant.Outcomes(itemLevel, quality, classID)
   if not itemLevel or itemLevel < 5 or (classID ~= 2 and classID ~= 4) then
     return nil
   end
@@ -80,25 +81,37 @@ function Disenchant.Expected(itemLevel, quality, classID)
     if classID == 2 then -- weapons: the other way round
       dustShare, essenceShare = 0.20, 0.75
     end
-    local shardShare = b[4] and 0.05 or 0
     if not b[4] then -- the lowest band has no shard: dust and essence share it all
       dustShare, essenceShare = dustShare / 0.95, essenceShare / 0.95
     end
     local out = {
-      { b[2][1], dustShare * avg(b[2][2], b[2][3]) },
-      { b[3][1], essenceShare * avg(b[3][2], b[3][3]) },
+      { b[2][1], dustShare, b[2][2], b[2][3] },
+      { b[3][1], essenceShare, b[3][2], b[3][3] },
     }
     if b[4] then
-      out[#out + 1] = { b[4], shardShare }
+      out[#out + 1] = { b[4], 0.05, 1, 1 }
     end
     return out
   elseif quality == 3 then
     local b = band(RARE, itemLevel)
-    return b and { { b[2], 1 } } or nil
+    return b and { { b[2], 1, 1, 1 } } or nil
   elseif quality == 4 then
     local b = band(EPIC, itemLevel)
-    return b and { { b[2], avg(b[3], b[4]) } } or nil
+    return b and { { b[2], 1, b[3], b[4] } } or nil
   end
+end
+
+-- Expected materials from one disenchant: { { itemID, expected count }, ... }, or nil (see Outcomes)
+function Disenchant.Expected(itemLevel, quality, classID)
+  local outcomes = Disenchant.Outcomes(itemLevel, quality, classID)
+  if not outcomes then
+    return nil
+  end
+  local out = {}
+  for i, o in ipairs(outcomes) do
+    out[i] = { o[1], o[2] * avg(o[3], o[4]) }
+  end
+  return out
 end
 
 -- What disenchanting an item is worth: the expected materials at price(itemID) (what selling them would net).

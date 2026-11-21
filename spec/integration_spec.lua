@@ -1893,6 +1893,62 @@ describe("addon in a stubbed client", function()
       assert.are.equal("Neutral", ns.AME:CurrentHouse())
       local s = ns.Tooltip.Summary(2589)
       assert.are.equal(100, s.market)
+      -- the goblin AH pays far more, even after its cut: the tooltip says so, and Shift compares both
+      local _, opts = ns.Tooltip.Gather(2589, true)
+      assert.are.equal("Horde AH", opts.house)
+      assert.truthy(opts.better and opts.better > 3, tostring(opts.better)) -- 4.25s vs 0.95s
+      assert.are.equal(2, #opts.houses)
+      assert.is_true(opts.houses[1].mine)
+    end)
+
+    it("counts the guild bank (every tab, as last seen) with what your characters hold, for the tooltip", function()
+      boot()
+      local slots = { [1] = { [3] = { 2589, 20 } }, [2] = { [1] = { 2589, 5 }, [2] = { 2592, 1 } } }
+      local saved = {}
+      local stubs = {
+        GetGuildInfo = function()
+          return "Iron Ledger"
+        end,
+        GetNumGuildBankTabs = function()
+          return 2
+        end,
+        GetCurrentGuildBankTab = function()
+          return 1
+        end,
+        QueryGuildBankTab = function() end,
+        GetGuildBankItemLink = function(tab, slot)
+          local e = slots[tab] and slots[tab][slot]
+          return e and ("|cffffffff|Hitem:" .. e[1] .. "::::::::60:::::|h[x]|h|r") or nil
+        end,
+        GetGuildBankItemInfo = function(tab, slot)
+          local e = slots[tab] and slots[tab][slot]
+          return e and 134400, e and e[2]
+        end,
+      }
+      for k, fn in pairs(stubs) do
+        saved[k] = rawget(_G, k) or false
+        rawset(_G, k, fn)
+      end
+      finally(function()
+        for k, v in pairs(saved) do
+          rawset(_G, k, v or nil)
+        end
+      end)
+      env:fire("GUILDBANKFRAME_OPENED")
+      local key = ns.AME:MarketRealmName() .. ":Iron Ledger"
+      assert.are.equal(20, AME_DB.guildBanks[key].tabs[1][2589])
+      assert.are.equal(5, AME_DB.guildBanks[key].tabs[2][2589])
+      -- a tab that isn't loaded yet looks empty: what it held before stays
+      slots[2] = nil
+      env:fire("GUILDBANKBAGSLOTS_CHANGED")
+      env:advance(1)
+      assert.are.equal(5, AME_DB.guildBanks[key].tabs[2][2589])
+      AME_DB.holdings[ns.Trading.CharKey()] = { bags = { [2589] = 3 }, bank = { [2589] = 2 } }
+      local held = ns.Trading.Held(2589)
+      assert.are.equal(30, held.total)
+      assert.are.equal(25, held.guildBank)
+      assert.are.same({ name = "Iron Ledger", qty = 25 }, held.guilds[1])
+      assert.is_true(held.chars[1].me)
     end)
 
     it("lets you pick a fixed window theme in Settings, saved with the settings", function()
@@ -2219,10 +2275,10 @@ describe("addon in a stubbed client", function()
       local found
       for _, row in ipairs(rows) do
         if row[1]:find("sell%-through") then
-          found = row[2]
+          found = row[1]
         end
       end
-      assert.truthy(found and found:find("0%%") and found:find("0 of 40 sold"), found)
+      assert.truthy(found and found:find("0%% sell%-through") and found:find("0 of 40 sold"), found)
       -- saved with the index and read back
       local back = ns.MarketIndex.Decode(ns.MarketIndex.Encode(ns.AME.index)).items[2589]
       assert.are.equal(0, back.sellThrough)

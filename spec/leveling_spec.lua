@@ -119,6 +119,15 @@ describe("Disenchant", function()
     assert.are.equal(0.75 * 1.5, weapon[2][2])
   end)
 
+  it("lists what a disenchant can give, each with its chance and count range", function()
+    assert.are.same(
+      { { 10940, 0.75, 2, 3 }, { 10939, 0.20, 1, 2 }, { 10978, 0.05, 1, 1 } },
+      D.Outcomes(18, 2, 4) -- green armor, item level 18
+    )
+    assert.are.same({ { 20725, 1, 1, 2 } }, D.Outcomes(65, 4, 2)) -- an epic weapon: 1-2 Nexus Crystals
+    assert.is_nil(D.Outcomes(30, 1, 4))
+  end)
+
   it("gives a shard for blues and Nexus Crystals for high epics, nothing for the rest", function()
     assert.are.same({ { 11084, 1 } }, D.Expected(30, 3, 4)) -- Large Glimmering Shard
     assert.are.same({ { 20725, 1 } }, D.Expected(58, 4, 2)) -- Nexus Crystal

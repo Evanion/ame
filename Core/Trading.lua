@@ -113,6 +113,105 @@ function Trading:ScanBank()
   h.bank, h.bankAt = main, GetServerTime()
 end
 
+-- The guild bank: what's in it, per tab, as last seen. The game only hands addons a tab's items once it has been
+-- shown or queried, so a scan keeps tabs it found empty only if they're the one on screen (an unloaded tab looks
+-- empty too). AME_DB.guildBanks["<market>:<guild>"] = { tabs = { [tab] = { [itemID] = qty } }, t }
+local function guildKey()
+  local guild = GetGuildInfo and GetGuildInfo("player")
+  return guild and (ns.AME:MarketRealmName() .. ":" .. guild) or nil
+end
+
+function Trading:ScanGuildBank(query)
+  local key = guildKey()
+  local info, link = _G.GetGuildBankItemInfo, _G.GetGuildBankItemLink
+  if not (key and info and link and GetNumGuildBankTabs) then
+    return
+  end
+  AME_DB.guildBanks = AME_DB.guildBanks or {}
+  local bank = AME_DB.guildBanks[key] or { tabs = {} }
+  AME_DB.guildBanks[key] = bank
+  local current = GetCurrentGuildBankTab and GetCurrentGuildBankTab()
+  local tabs = GetNumGuildBankTabs() or 0
+  for tab = 1, tabs do
+    local viewable = true
+    if GetGuildBankTabInfo then
+      viewable = select(3, GetGuildBankTabInfo(tab)) ~= false
+    end
+    if viewable then
+      if query and QueryGuildBankTab and tab ~= current then
+        pcall(QueryGuildBankTab, tab) -- its items arrive with GUILDBANKBAGSLOTS_CHANGED
+      end
+      local items, any = {}, false
+      for slot = 1, (MAX_GUILDBANK_SLOTS_PER_TAB or 98) do
+        local itemLink = link(tab, slot)
+        if itemLink then
+          local _, count = info(tab, slot)
+          local id = ns.ItemCache.Learn(itemLink)
+          if id then
+            items[id] = (items[id] or 0) + (count or 1)
+            any = true
+          end
+        end
+      end
+      if any or tab == current then
+        bank.tabs[tab] = items
+      end
+    end
+  end
+  for tab in pairs(bank.tabs) do
+    if tab > tabs then
+      bank.tabs[tab] = nil
+    end
+  end
+  bank.t = GetServerTime()
+end
+
+-- How many of an item your characters on this market have, and where: per character, and each guild bank.
+--   { total, bags, bank, auctions, guildBank, chars = { { name, bags, bank, auctions, me } },
+--     guilds = { { name, qty } } }
+-- holdings / guildBanks / market / me: for specs (default: the saved data, this market, this character)
+function Trading.Held(itemID, holdings, guildBanks, market, me)
+  holdings = holdings or AME_DB.holdings or {}
+  guildBanks = guildBanks or AME_DB.guildBanks or {}
+  market = market or ns.AME:MarketRealmName()
+  me = me or charKey()
+  local out = { total = 0, bags = 0, bank = 0, auctions = 0, guildBank = 0, chars = {}, guilds = {} }
+  local prefix = market .. ":"
+  for key, h in pairs(holdings) do
+    if key:sub(1, #prefix) == prefix then
+      local b, k, a =
+        h.bags and h.bags[itemID] or 0, h.bank and h.bank[itemID] or 0, h.auctions and h.auctions[itemID] or 0
+      if b + k + a > 0 then
+        out.chars[#out.chars + 1] = { name = key:sub(#prefix + 1), bags = b, bank = k, auctions = a, me = key == me }
+        out.bags, out.bank, out.auctions = out.bags + b, out.bank + k, out.auctions + a
+      end
+    end
+  end
+  for key, g in pairs(guildBanks) do
+    if key:sub(1, #prefix) == prefix then
+      local n = 0
+      for _, items in pairs(g.tabs or {}) do
+        n = n + (items[itemID] or 0)
+      end
+      if n > 0 then
+        out.guilds[#out.guilds + 1] = { name = key:sub(#prefix + 1), qty = n }
+        out.guildBank = out.guildBank + n
+      end
+    end
+  end
+  table.sort(out.chars, function(x, y)
+    if x.me ~= y.me then
+      return x.me
+    end
+    return x.bags + x.bank + x.auctions > y.bags + y.bank + y.auctions
+  end)
+  table.sort(out.guilds, function(x, y)
+    return x.qty > y.qty
+  end)
+  out.total = out.bags + out.bank + out.auctions + out.guildBank
+  return out
+end
+
 -- your active auctions (C_AuctionHouse owned auctions; sold ones wait in the mail)
 function Trading:ScanAuctions()
   local ah = C_AuctionHouse
