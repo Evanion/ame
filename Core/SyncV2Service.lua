@@ -379,6 +379,7 @@ function Service:AcceptV2(shard, obj, sender)
         self:AcceptV2(shard, obj, sender)
       else
         self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
+        self:CountRejection(ok and "checksum" or "checksum error")
         if self.v2 then
           self.v2.stats.bad = self.v2.stats.bad + 1
         end
@@ -434,12 +435,22 @@ function Service:AcceptV2(shard, obj, sender)
   end)
 end
 
+-- why received things were turned down, counted by reason (stats.rejectedWhy) - "undecodable" too, which the last
+-- rejection line leaves out
+function Service:CountRejection(why)
+  local by = self.stats.rejectedWhy or {}
+  self.stats.rejectedWhy = by
+  why = tostring(why)
+  by[why] = (by[why] or 0) + 1
+end
+
 -- after merging something received (v1 scan, v2 object): stats, and the market index catches up
 function Service:Received(shard, sender, done, result, scanned)
   local AME = self.AME
   local why = done and result and result.rejected
   if why then
     self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
+    self:CountRejection(why)
     if why ~= "undecodable" then
       self.stats.lastSyncRejection = ("%s: %s"):format(tostring(sender), tostring(why))
     end
