@@ -336,7 +336,7 @@ function Service:V2Host()
           text, t, src, key = e.s, e.t, e.src, e.key
         end
       elseif kind == "d" then
-        text, t = store:ExportDay(ref, true), ref * DAY -- plain items: variants make a day ~5x the size
+        text, t = store:ExportDay(ref), ref * DAY
       end
       if not text then
         return nil

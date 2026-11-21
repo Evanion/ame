@@ -489,8 +489,17 @@ function UI:LoadIntraday()
   else
     show() -- what's there (the daily points, or the points being reloaded) while they load
   end
+  -- reloading what's on screen (a search of this item was just stored): only the scans after its newest point -
+  -- reading every scan of the last two days again took seconds of background work after each search
+  local have = self.intradayStale
+    and self.intradayItem == itemID
+    and (self.intradayDays or 0) >= days
+    and self.intraday
+    and #self.intraday > 0
+    and self.intraday
+  local from = have and (have[#have].t + 1) or (GetServerTime() - days * DAY)
   ns.AME:WithStore("intraday-" .. itemID .. "-" .. days, self:ViewShard(), function(store)
-    return store:Intraday(itemID, GetServerTime() - days * DAY)
+    return store:Intraday(itemID, from)
   end, function(ok, points)
     if not ok then
       ns.AME:ReportError("recent scans", points)
@@ -498,7 +507,21 @@ function UI:LoadIntraday()
     if self.itemID ~= itemID or not self.intradayMode or (self.rangeDays or 2) > days then
       return
     end
-    self.intraday, self.intradayItem, self.intradayDays = ok and points or {}, itemID, days
+    points = ok and points or {}
+    if have and ok then
+      local merged = {}
+      for i, p in ipairs(have) do
+        merged[i] = p
+      end
+      for _, p in ipairs(points) do
+        merged[#merged + 1] = p
+      end
+      table.sort(merged, function(a, b)
+        return a.t < b.t
+      end)
+      points = merged
+    end
+    self.intraday, self.intradayItem, self.intradayDays = points, itemID, have and self.intradayDays or days
     self.intradayStale = nil
     show()
   end)

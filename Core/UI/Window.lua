@@ -242,14 +242,45 @@ end
 -- the window's status row (bottom right): a scan being read with its real progress, market data being updated,
 -- and the version
 function UI:FooterText()
-  local ingest, busy = ns.AME.ingest, nil
+  local ingest, busy = ns.AME.ingest
   local p = ingest and ingest.reading and ingest.progress
   if p and p.total > 0 then
     busy = L["Reading scan %s / %s"]:format(W.Thousands(p.done), W.Thousands(p.total))
-  elseif ns.AME:IndexBusy() then
-    busy = L["Updating market data…"]
+  else
+    busy = UI.BusyText(ns.AME.jobs and ns.AME.jobs.queue, ns.AME:IndexBusy())
   end
   return (busy and (W.Color("hold", busy) .. W.SEP) or "") .. "v" .. ns.VERSION
+end
+
+-- What the background work is doing, for the status row: the most telling job queued (storing a search before
+-- the chart that waits for it, before market data), or nil. A search you just ran is stored, then the item's
+-- chart and numbers reload, then the market's data is rebuilt: until then what's on screen may be behind.
+UI.BUSY = {
+  { "^ingest", L["Storing scan…"] },
+  { "^store%-", L["Storing scan…"] },
+  { "^sync", L["Storing data from your guild…"] },
+  { "^chart%-", L["Updating the chart…"] },
+  { "^intraday%-", L["Updating the chart…"] },
+  { "^index", L["Updating market data…"] },
+  { "^pricing%-", L["Learning posting prices…"] },
+}
+function UI.BusyText(queue, indexBusy)
+  local best
+  for _, job in ipairs(queue or {}) do
+    for rank, b in ipairs(UI.BUSY) do
+      if job.name:find(b[1]) and (not best or rank < best) then
+        best = rank
+      end
+    end
+  end
+  if best then
+    local text = UI.BUSY[best][2]
+    if ns.AME.JobsMayRun and not ns.AME:JobsMayRun() then
+      text = text .. " " .. L["(after combat)"]
+    end
+    return text
+  end
+  return indexBusy and L["Updating market data…"] or nil
 end
 
 local function clamp(x, lo, hi)

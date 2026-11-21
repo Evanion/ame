@@ -2649,6 +2649,35 @@ describe("addon in a stubbed client", function()
       end
     end)
 
+    it("after a search of the item on screen, its chart reads only the newer scans; the status row says so", function()
+      seeded()
+      ns.UI:ShowItem(2589)
+      drainJobs()
+      assert.is_true(ns.UI:ShowingIntraday())
+      local before = #ns.UI.intraday
+      local last = ns.UI.intraday[before].t
+      local froms = {}
+      local intraday = ns.Store.Intraday
+      ns.Store.Intraday = function(store, id, from)
+        froms[#froms + 1] = from
+        return intraday(store, id, from)
+      end
+      finally(function()
+        ns.Store.Intraday = intraday
+      end)
+      env:fire("AUCTION_HOUSE_SHOW")
+      env:advance(60)
+      env.ah.commodities[2589] = { { 117, 20 } }
+      env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
+      env:update(1)
+      assert.truthy(ns.UI:FooterText():find("Storing scan", 1, true) or ns.UI:FooterText():find("Updating", 1, true))
+      env:advance(2)
+      drainJobs()
+      assert.are.equal(last + 1, froms[#froms]) -- not the whole two days again
+      assert.are.equal(before + 1, #ns.UI.intraday) -- the search's point added
+      assert.is_nil(ns.UI:FooterText():find("…", 1, true))
+    end)
+
     it("switches the item chart to candles and back", function()
       seeded()
       ns.UI:ShowItem(2589)
