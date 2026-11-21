@@ -461,6 +461,7 @@ function Help.Articles()
             L["Open Settings with the cog at the top right of the window, left of the notification bell (or /ame config)."],
             L["Pick a section on the left: General (the window and notifications), Tooltips & charts, Selling, Sharing and Data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored)."],
             L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."],
+            L["Full scans, under Data, picks what AME's own full scan reads (the Full scan button and /ame scan): Detailed reads every listing, once per 15 minutes; Fast reads each item's cheapest listing, any time. See Quick scans and full scans under Where the data comes from."],
           },
         },
         {
@@ -559,6 +560,7 @@ function Help.Articles()
           title = Help.GUIDE[8][1],
           body = {
             guideText(8),
+            L["Also: /ame who <item> - who in your guild (or of your characters) can make it.   /ame scan runs a detailed or fast full scan, as Settings, Data says."],
             L["Helping test AME, or is it slowing your game? /amedev on starts measuring what AME costs (and every fight, quietly), until /amedev off. Play a while, then /amedev send: it sends what was measured to AME's developer in the background. /amedev help lists the rest."],
           },
         },
