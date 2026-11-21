@@ -544,6 +544,9 @@ function Help.Articles()
             H(L["The craft queue"]),
             L["The queue opens beside the profession window. Parts come first: queue gauntlets and the bars they need are smelted ahead of them - when making the bars is cheaper than buying them (Buy or Make on the line switches it). Each material shows its source in a fixed order: your bags, your bank, your other characters, a guild bank, a vendor, a step of the queue, and the auction house for the rest."],
             L["Craft next crafts the next step this character can make right now. A step only another character knows says whose it is: log over to craft it there. Missing to shopping list puts what's left to buy on the Craft queue shopping list."],
+            H(L["Who can make it"]),
+            L["Looking for someone to craft something? /ame who (or Who can make it in an item's right-click menu) searches the recipes your guildmates, trusted players and your own characters know, by name - enchants too. Crafters online now come first; Whisper opens the chat box to them with the item linked, for you to send. Hold Shift on a craftable item's tooltip to see who can make it."],
+            L["Each AME shares what its characters can craft (recipe IDs only) along with the guild's sync - open each of your professions once so yours count. Turn it off under Settings, Sharing: Share what my characters can craft."],
           },
         },
         {

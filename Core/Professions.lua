@@ -177,6 +177,7 @@ function Professions:Record()
   end
   AME_DB.crafting = AME_DB.crafting or {}
   Professions.Save(AME_DB.crafting, ns.Trading.CharKey(), snap, GetServerTime())
+  self.changed = true -- goes out with the next sync (who can make it)
   if self.onChange then
     self.onChange(snap.skillLine)
   end

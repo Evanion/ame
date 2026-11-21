@@ -443,6 +443,11 @@ local function addLines(tooltip, itemID)
     return
   end
   local rows = Tooltip.Lines(s, opts)
+  -- with Shift: who among your guild, trusted players and your characters can make it
+  local madeBy = detail and ns.CraftersView and ns.CraftersView.MadeBy(itemID)
+  if madeBy then
+    rows[#rows + 1] = { W.Color("dim", L["Made by"]), madeBy }
+  end
   for _, r in ipairs(rows) do
     if r[2] then
       W.TipPair(tooltip, r[1], r[2])

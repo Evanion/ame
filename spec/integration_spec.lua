@@ -3960,6 +3960,51 @@ describe("addon in a stubbed client", function()
       _G.GetGuildInfoText = nil
     end)
 
+    it(
+      "who can make it: your characters' recipes go out with sync, guildmates' come in, and the finder searches them",
+      function()
+        bootSync()
+        local svc = ns.SyncService
+        local me = ns.Trading.CharKey()
+        AME_DB.crafting = {
+          chars = { [me] = { professions = { [164] = { skill = 230, learned = { [100] = true, [101] = true } } } } },
+        }
+        ns.Professions.changed = true
+        svc:ShareRecipes()
+        local m = ns.Sync.Decode(sent[#sent].msg)
+        assert.are.equal("recipes", m.type)
+        assert.are.equal("GUILD", sent[#sent].distribution)
+        assert.are.same({ [164] = { skill = 230, ids = { [100] = true, [101] = true } } }, ns.Crafters.Decode(m.body))
+        -- unchanged: not again within the hour
+        local before = #sent
+        svc:ShareRecipes()
+        assert.are.equal(before, #sent)
+        -- a guildmate's crafter arrives; a whisper from someone untrusted is ignored
+        local body = ns.Crafters.Encode({ [164] = { skill = 300, ids = { [100] = true } } })
+        deliver(ns.Sync.EncodeRecipes("TestRealm|Horde", env.now, "Brakka", body), "GUILD", "Guild Mate")
+        deliver(ns.Sync.EncodeRecipes("TestRealm|Horde", env.now, "Faker", body), "WHISPER", "Stranger")
+        local who = ns.Crafters.Shared():WhoKnows(100)
+        assert.are.equal(2, #who)
+        assert.is_true(who[1].mine) -- yours first
+        assert.are.equal("Brakka", who[2].name)
+        assert.is_nil(AME_DB.crafters.Faker)
+        -- the finder: by name (the recipe's spell name)
+        rawset(_G, "GetSpellInfo", function(id)
+          return ({ [100] = "Heavy Mithril Gauntlet", [101] = "Mithril Coif" })[id]
+        end)
+        finally(function()
+          rawset(_G, "GetSpellInfo", nil)
+        end)
+        local results = ns.Crafters.Shared():Search("gauntlet")
+        assert.are.equal(1, #results)
+        assert.are.equal(2, #results[1].who)
+        ns.CraftersView:Open("gauntlet")
+        local lines = ns.CraftersView.Lines(results)
+        assert.are.equal("recipe", lines[1].kind)
+        assert.are.equal("Brakka", lines[3].name)
+      end
+    )
+
     it("shares watchlists with the guild and shows guild members' lists in the sidebar", function()
       bootSync()
       local watch = ns.AME.watch

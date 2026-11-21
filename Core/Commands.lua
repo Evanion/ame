@@ -123,6 +123,8 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     say(ok and L["full scan started: it's recorded when the auction house has sent everything"] or why)
   elseif cmd == "config" or cmd == "settings" or cmd == "options" then
     ns.Settings:Open()
+  elseif cmd == "who" then
+    ns.CraftersView:Open(itemIDFrom(rest) and ns.ItemCache.Name(itemIDFrom(rest)) or rest)
   elseif cmd == "sync" or cmd == "sharing" then
     ns.UI:Create()
     ns.UI.frame:Show()
@@ -134,7 +136,7 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
       L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"]
     )
     say(
-      L["/ame item <link> - print history  ·  /ame scan  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync"]
+      L["/ame item <link> - print history  ·  /ame scan  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync  ·  /ame who <item>"]
     )
   elseif itemIDFrom(msg) then
     ns.UI:ShowItem(itemIDFrom(msg))

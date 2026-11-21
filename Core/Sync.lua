@@ -8,6 +8,8 @@
 --   accept    "1|K|<shard>"                                   whisper: "I trust you too"
 --   watchlist "1|W|<shard>|<name>|<t36>|<id36;id36;...>"      guild: a shared watchlist (empty ids = unshared)
 --   outcomes  "1|T|<shard>|<t36>|<key36:s:e:c:n:...;...>"     guild (and trusted): your auctions' sell-through
+--   recipes   "1|C|<shard>|<t36>|<char>|<Crafters.Encode>"      guild (and trusted): what one of your characters
+--             can craft (recipe IDs per profession), for "who can make it"
 --
 -- Transport (chunking + pacing at BULK priority) is AceComm/ChatThrottleLib in the WoW glue. Received scans are
 -- merged with Store:AddScan, whose dedupe makes repeats harmless; announcements repeat, so dropped whispers retry
@@ -112,6 +114,11 @@ function Sync.EncodeOutcomes(shard, t, items)
   return table.concat({ Sync.PROTO, "T", shard, Codec.ToBase36(t), items }, "|")
 end
 
+-- the recipes one of your characters knows (Crafters.Encode)
+function Sync.EncodeRecipes(shard, t, char, body)
+  return table.concat({ Sync.PROTO, "C", shard, Codec.ToBase36(t), cleanName(char), body }, "|")
+end
+
 -- "please announce what you hold now" (Sync now)
 function Sync.EncodeQuery(shard)
   return table.concat({ Sync.PROTO, "Q", shard }, "|")
@@ -169,6 +176,8 @@ function Sync.Decode(msg)
       return { type = "shopping", shard = shard, name = f[5], t = Codec.FromBase36(f[6]), entries = entries }
     elseif kind == "T" and #f == 6 then
       return { type = "outcomes", shard = shard, t = Codec.FromBase36(f[5]), items = f[6] }
+    elseif kind == "C" and #f == 7 then
+      return { type = "recipes", shard = shard, t = Codec.FromBase36(f[5]), char = f[6], body = f[7] }
     elseif kind == "Q" and #f == 4 then
       return { type = "query", shard = shard }
     elseif kind == "H" and #f == 4 then

@@ -94,6 +94,12 @@ function UI:ItemMenu(anchor, key, opts)
     end,
   }
   entries[#entries + 1] = {
+    text = L["Who can make it"],
+    func = function()
+      UI:WhoCanMake(key)
+    end,
+  }
+  entries[#entries + 1] = {
     text = L["Set an alert..."],
     func = function()
       UI:ShowItem(key)

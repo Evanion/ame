@@ -355,6 +355,38 @@ function Service:Announce()
   end
   self:ShareWatchlists()
   self:ShareOutcomes(targets)
+  self:ShareRecipes(targets)
+end
+
+Service.SHARE_RECIPES_EVERY = 3600 -- seconds: your recipes go out at most this often unless they changed
+
+-- What your characters on this market can craft (Settings: Share my recipes), for guildmates' "who can make it".
+function Service:ShareRecipes(targets)
+  if not ns.Settings:Get("shareRecipes") or not ns.Crafters then
+    return
+  end
+  local t = GetServerTime()
+  local changed = ns.Professions and ns.Professions.changed
+  if not changed and self.recipesAt and t - self.recipesAt < Service.SHARE_RECIPES_EVERY then
+    return
+  end
+  self.recipesAt = t
+  if ns.Professions then
+    ns.Professions.changed = false
+  end
+  local shard = self.AME:FactionShard()
+  for name, c in pairs(ns.Crafters.Mine()) do
+    local body = ns.Crafters.Encode(c.profs)
+    if body ~= "" then
+      local msg = Sync.EncodeRecipes(shard, t, name, body)
+      if self:GuildActive() then
+        self.transport:Send(Service.PREFIX, msg, "GUILD")
+      end
+      for _, who in ipairs(targets or {}) do
+        self.transport:Send(Service.PREFIX, msg, "WHISPER", who)
+      end
+    end
+  end
 end
 
 Service.SHARE_OUTCOMES_EVERY = 3600 -- seconds: your auction outcomes go out at most this often unless they changed
@@ -455,7 +487,7 @@ function Service:Allowed(m, distribution, sender)
   local trusted = self:TrustActive() and self.trust:IsTrusted(sender)
   if m.type == "request" then
     return trusted or self:GuildActive()
-  elseif m.type == "announce" or m.type == "outcomes" or m.type == "query" then
+  elseif m.type == "announce" or m.type == "outcomes" or m.type == "query" or m.type == "recipes" then
     return trusted
   elseif m.type == "scan" then
     return trusted or self.requestedFrom[ns.Trust.Key(sender) .. ":" .. m.shard .. ":" .. m.t .. ":" .. m.src]
@@ -505,6 +537,13 @@ function Service:OnMessage(msg, distribution, sender)
       self.answeredAt = t
       self.outcomesAt = nil
       self:Announce()
+    end
+    return
+  end
+  if m.type == "recipes" then
+    local crafters = ns.Crafters.Shared()
+    if crafters and crafters:Set(ns.Trust.Key(sender), m.char, m.t, ns.Crafters.Decode(m.body)) then
+      self.stats.syncRecipes = (self.stats.syncRecipes or 0) + 1
     end
     return
   end

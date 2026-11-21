@@ -136,6 +136,8 @@ function UI:CreateSyncSection(v, host)
   syncNow:SetPoint("RIGHT", 0, 0)
   v.syncNow = syncNow
   v.guild = W.SettingCheck(row, L["Share full scans with my guild"], "syncGuild", 0, -1)
+  row = st:Row(18, 6)
+  v.recipes = W.SettingCheck(row, L["Share what my characters can craft (who can make it)"], "shareRecipes", 0, -1)
   -- the protocol: v2 (the guild at once, hourly prices for a week) or v1 (lighter)
   row = st:Row(20, 6)
   local protoLabel = W.Text(row, "GameFontHighlightSmall")
