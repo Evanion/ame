@@ -2385,7 +2385,15 @@ describe("addon in a stubbed client", function()
       seeded()
       ns.UI:ShowItem(4306)
       drainJobs()
-      assert.are.equal("7D", ns.UI.rangeKey) -- 7 days by default (Forever is young)
+      assert.are.equal("2D", ns.UI.rangeKey) -- 2 days by default: every recent scan
+      -- no scan of it in two days: 7D, and it stays there as data comes in
+      env:advance(3 * 86400)
+      ns.UI:ShowItem(4306)
+      drainJobs()
+      assert.are.equal("7D", ns.UI.rangeKey)
+      ns.UI:ReloadItem()
+      drainJobs()
+      assert.are.equal("7D", ns.UI.rangeKey)
       assert.truthy(ns.UI.itemView.cards[3].label.text:find("7%-day average"))
       local box = ns.UI.searchBox
       box.scripts.OnEditFocusGained(box)
@@ -2987,8 +2995,20 @@ describe("addon in a stubbed client", function()
 
     it("plots the 7-day range from hourly points, and the longer ones by day", function()
       seeded()
+      ns.UI.rangePicked, ns.UI.rangeDays, ns.UI.rangeKey = true, 7, "7D" -- as if picked
       ns.UI:ShowItem(2589)
+      -- the history arrives first: no daily candles meanwhile (six-hour candles would replace them), it's loading
+      for _ = 1, 5000 do
+        if ns.UI.series ~= nil or not ns.AME.jobs:Busy() then
+          break
+        end
+        env:update(1)
+      end
+      assert.is_not_nil(ns.UI.series)
+      assert.is_true(ns.UI:IntradayPending())
+      assert.is_nil(ns.UI.chart.series.market)
       drainJobs()
+      assert.is_false(ns.UI:IntradayPending())
       assert.are.equal("7D", ns.UI.rangeKey)
       assert.is_true(ns.UI:ShowingIntraday())
       local kinds = {}

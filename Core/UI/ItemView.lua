@@ -127,6 +127,7 @@ function UI:CreateItemView(parent)
   v.ranges = W.Segmented(bar, ranges, {
     minWidth = 40,
     onSelect = function(key)
+      UI.rangePicked = true -- yours from now on; until then each item opens on 2D or 7D (FillItem)
       UI:SetRange(days[key], key)
     end,
   })
@@ -429,6 +430,15 @@ function UI:ShowingIntraday()
     or false
 end
 
+-- a scan-by-scan range (2D, 7D) whose points aren't loaded yet: they wait while a scan is being stored, which can
+-- take a while. The chart says so rather than drawing the daily points meanwhile - one candle a day, then six-hour
+-- candles once they arrive, looked like the prices themselves had changed.
+function UI:IntradayPending()
+  return self.intradayMode
+      and not (self.intraday and self.intradayItem == self.itemID and (self.intradayDays or 0) >= (self.rangeDays or 0))
+    or false
+end
+
 -- the loaded points within the current range. Over 7D, the days before the first scan or hourly point (hourly
 -- prices only go back a week from when AME started keeping them) are filled with their daily points, so the chart
 -- spans the whole range.
@@ -474,6 +484,8 @@ function UI:LoadIntraday()
     if self:ShowingIntraday() then
       self.chart:SetMessage(nil)
       self.chart:SetXRange(now - days * DAY, now + 3600)
+    elseif self:IntradayPending() then
+      self.chart:SetMessage(L["Loading recent scans..."])
     elseif days <= 2 then
       self.chart:SetMessage(L["No scans of this item in the last 2 days. Daily history is on the other ranges."])
     else -- the daily points
@@ -484,11 +496,7 @@ function UI:LoadIntraday()
   if self.intradayItem == itemID and self.intraday and (self.intradayDays or 0) >= days and not self.intradayStale then
     return show()
   end
-  if days <= 2 and not self:ShowingIntraday() then
-    self.chart:SetMessage(L["Loading recent scans..."])
-  else
-    show() -- what's there (the daily points, or the points being reloaded) while they load
-  end
+  show() -- the points being reloaded while they load, or that they're loading
   -- reloading what's on screen (a search of this item was just stored): only the scans after its newest point -
   -- reading every scan of the last two days again took seconds of background work after each search
   local have = self.intradayStale
@@ -654,6 +662,9 @@ UI.VENDOR_COLOR = { 0.85, 0.85, 0.85, 0.85 }
 function UI:DrawItemChart()
   local intraday = self:ShowingIntraday()
   local series, v, chart = intraday and self:IntradayPoints() or self.series, self.itemView, self.chart
+  if self:IntradayPending() then
+    series = nil -- not the daily points meanwhile (UI.IntradayPending)
+  end
   if not series or #series == 0 then
     chart:ClearSeries()
     v.legend:SetText("")
@@ -1006,6 +1017,7 @@ function UI:ShowItem(itemID)
   self:ShowTab("item")
   self.itemID = itemID
   self.intraday, self.intradayItem, self.intradayStale = nil, nil, nil
+  self.autoRangeFor = nil
   local v = self.itemView
 
   local function header()
@@ -1056,6 +1068,8 @@ function UI:ReloadItem()
 end
 
 -- mixed: the item has random suffixes, and each has its own history (see Store:Mixed)
+UI.RECENT_DAYS = 2 -- an item with a scan this recent opens on 2D, else on 7D
+
 function UI:FillItem(_, series, latest, mixed)
   local v = self.itemView
   if #series == 0 then
@@ -1083,10 +1097,17 @@ function UI:FillItem(_, series, latest, mixed)
   series, dropped = ns.Analytics.Clean(series, factor)
   self.series = series
   self:DrawItemChart()
+  -- Until you pick a range: 2D (every scan of the last two days) when the item has a recent one, else 7D. Chosen
+  -- once per item shown, so the scale stays put as new scans and searches come in.
+  if not self.rangePicked and self.autoRangeFor ~= self.itemID then
+    self.autoRangeFor = self.itemID
+    local recent = latest and latest.t and GetServerTime() - latest.t <= UI.RECENT_DAYS * DAY
+    self.rangeDays, self.rangeKey = recent and 2 or 7, recent and "2D" or "7D"
+  end
   if self.rangeKey == "All" then
     self:SetRange(nil, "All")
   else
-    self:SetRange(self.rangeDays or 7, self.rangeKey or "7D")
+    self:SetRange(self.rangeDays or 2, self.rangeKey or "2D")
   end
 
   local s = ns.Analytics.Summarize(series)
