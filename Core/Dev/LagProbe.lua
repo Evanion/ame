@@ -20,6 +20,7 @@ Lag.TOP = 8
 Lag.KEEP = 10
 Lag.NOW_SECONDS = 15
 Lag.SLOW_FRAME_MS = 33 -- under 30 fps
+Lag.HITCH_MS = 100 -- a fight with a frame this long says so in chat (the rest are kept quietly)
 Lag.MIN_FRAMES = 30 -- shorter fights aren't worth a report
 Lag.SELF = "AzerothMercantileExchange"
 Lag.SELF_HITCH_MS = 20 -- AME's own frames over this are logged with what it was doing
@@ -271,7 +272,13 @@ local function finish()
   for i = Lag.KEEP + 1, #db.reports do
     db.reports[i] = nil
   end
-  Lag.Print(report)
+  if m.label ~= "fight" then
+    return Lag.Print(report) -- /amedev lag now: you asked for it
+  end
+  -- fights are kept quietly (for /amedev send); one line only when one had a real hitch
+  if (report.worstFrame or 0) >= Lag.HITCH_MS then
+    say("fight: a %.0f ms frame - /amedev lag last for the details", report.worstFrame)
+  end
 end
 
 local function begin(label, seconds)
@@ -321,7 +328,7 @@ function Dev.LagCommand(rest)
     local source, why = Lag.Source()
     if db.armed then
       say(
-        "lag: measuring every fight from now on (%s); a report when each ends. /amedev lag again to stop.",
+        "lag: measuring every fight from now on (%s), quietly: /amedev lag last shows the latest. /amedev lag again to stop.",
         source and (source == "profiler" and "the game's addon profiler" or "CPU counters") or ("can't: " .. why)
       )
     else
