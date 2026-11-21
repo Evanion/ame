@@ -117,4 +117,34 @@ describe("Jobs", function()
     assert.is_false(finished)
     assert.is_false(runner:Busy())
   end)
+
+  it("Try: a job can pause inside it (pcall can't), and errors come back as from pcall", function()
+    local result, ticks = nil, 0
+    runner:Add("decode", function(job)
+      local ok, value = Jobs.Try(function(a)
+        for _ = 1, 30 do
+          clock = clock + 1
+          job:Checkpoint() -- over budget: pauses inside Try
+        end
+        return a * 2
+      end, 21)
+      local bad, why = Jobs.Try(function()
+        error("broken")
+      end)
+      return { ok, value, bad, why }
+    end, function(_, r)
+      result = r
+    end)
+    while runner:Busy() do
+      runner:Tick()
+      ticks = ticks + 1
+    end
+    assert.is_true(ticks > 1) -- it really paused
+    assert.are.same({ true, 42, false }, { result[1], result[2], result[3] })
+    assert.truthy(tostring(result[4]):find("broken"))
+    -- outside a job, it just runs
+    assert.are.same({ true, 5 }, { Jobs.Try(function()
+      return 5
+    end) })
+  end)
 end)

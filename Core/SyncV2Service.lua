@@ -370,14 +370,14 @@ function Service:AcceptV2(shard, obj, sender)
   end
   AME:WithStore("sync2-merge", shard, function(store)
     local pause = store:pauser()
-    local ok, text = pcall(AME.compressor.Unwire, AME.compressor, obj.payload, pause)
+    local ok, text = ns.Try(AME.compressor.Unwire, AME.compressor, obj.payload, pause)
     if not ok or not text then
       return { rejected = "undecodable" }
     end
     local ref = AME:CachedIndex(shard)
     local prices, add
     if obj.kind == "h" then
-      local decoded, point = pcall(function()
+      local decoded, point = ns.Try(function()
         return ns.Codec.Decode(ns.Codec.HOUR_FIELDS, ns.Codec.Unpack(text, AME.compressor, pause), true, pause)
       end)
       if not decoded then
@@ -392,7 +392,7 @@ function Service:AcceptV2(shard, obj, sender)
       if not buckets then
         return { rejected = "undecodable" }
       end
-      local decoded, dayPrices = pcall(store.DayPrices, store, buckets)
+      local decoded, dayPrices = ns.Try(store.DayPrices, store, buckets)
       if not decoded then
         return { rejected = "undecodable" }
       end

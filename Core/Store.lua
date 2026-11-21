@@ -585,7 +585,7 @@ function Store:previousFull(pos)
       if self.lastFull and self.lastFull.t == e.t then
         return self.lastFull.qty, floor((entry.t - e.t) / 60)
       end
-      local ok, snap = pcall(function()
+      local ok, snap = (ns.Try or pcall)(function()
         return Codec.Decode(
           Codec.SNAPSHOT_FIELDS,
           Codec.Unpack(e.s, self.compressor, self:pauser()),
@@ -645,7 +645,7 @@ function Store:Rollup()
       -- a full scan from before hourly points existed: keep its hour before it goes
       local hour = floor(e.t / Store.HOUR)
       if (e.k or "full") == "full" and not data.hours[hour] and e.t >= now - Store.HOURS_KEEP then
-        local ok, snap = pcall(function()
+        local ok, snap = (ns.Try or pcall)(function()
           return Codec.Decode(
             Codec.SNAPSHOT_FIELDS,
             Codec.Unpack(e.s, self.compressor, self:pauser()),

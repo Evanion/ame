@@ -21,6 +21,23 @@ function Job:Checkpoint()
   end
 end
 
+-- pcall that a background job can pause inside. WoW's Lua 5.1 can't yield across pcall: a job that paused (a
+-- Checkpoint) inside one failed with "attempt to yield across metamethod/C-call boundary", and pcall reported that
+-- as the call failing - big objects received over sync were rejected as undecodable. Here fn runs in a coroutine of
+-- its own; its pauses are passed on to the job running it (or just run on, outside a job). Returns as pcall does.
+function Jobs.Try(fn, ...)
+  local co = coroutine.create(fn)
+  local res = { coroutine.resume(co, ...) }
+  while coroutine.status(co) ~= "dead" do
+    if coroutine.running() then
+      coroutine.yield()
+    end
+    res = { coroutine.resume(co) }
+  end
+  return unpack(res)
+end
+ns.Try = Jobs.Try
+
 function Jobs.New(opts)
   return setmetatable({
     budgetMs = opts.budgetMs or 8,

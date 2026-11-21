@@ -581,7 +581,7 @@ function Service:Merge(m, sender)
   local AME = self.AME
   local snap
   AME:WithStore("sync-merge", m.shard, function(store)
-    local ok, decoded = pcall(function()
+    local ok, decoded = ns.Try(function()
       -- in pieces, pausing between them: a full scan is ~450 KB of text
       local pause = store:pauser()
       if m.wire then -- sync v2: as it travelled (Compress Wire) - stored as the packed string inside it
