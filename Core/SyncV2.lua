@@ -695,6 +695,32 @@ function V2:Status()
   for _, inc in pairs(self.incoming) do
     s.receiving[#s.receiving + 1] = { kind = inc.kind, ref = inc.ref, got = inc.got, n = inc.n, from = inc.sender }
   end
+  -- the same, per sender (a player catching up gets a dozen objects queued from one guildmate): objects, blocks
+  -- in and in all, sorted by name; a sender sends one block every PACE seconds, so blocks left x PACE is the wait
+  local by = {}
+  s.senders = {}
+  for _, r in ipairs(s.receiving) do
+    local e = by[r.from]
+    if not e then
+      e = { from = r.from, objects = 0, got = 0, n = 0 }
+      by[r.from] = e
+      s.senders[#s.senders + 1] = e
+    end
+    e.objects, e.got, e.n = e.objects + 1, e.got + (r.got or 0), e.n + (r.n or 0)
+  end
+  for _, e in ipairs(s.senders) do
+    e.secondsLeft = math.ceil((e.n - e.got) * V2.PACE)
+  end
+  table.sort(s.senders, function(a, b)
+    return tostring(a.from) < tostring(b.from)
+  end)
+  -- and what I'm sending: blocks left over everything queued
+  s.sendLeft = 0
+  for _, o in ipairs(self.order) do
+    if not o.cancelled then
+      s.sendLeft = s.sendLeft + #o.pending
+    end
+  end
   return s
 end
 

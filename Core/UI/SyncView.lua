@@ -314,11 +314,20 @@ function UI:RefreshSync()
       if v2.sending then
         parts[#parts + 1] = L["sending %d%%"]:format(math.floor(100 * v2.sending.sent / math.max(1, v2.sending.n)))
           .. (v2.queued > 0 and (" " .. L["(+%d waiting)"]:format(v2.queued)) or "")
-      end
-      for _, r in ipairs(v2.receiving) do
-        parts[#parts + 1] = L["receiving from %s %d%%"]:format(r.from, math.floor(100 * r.got / math.max(1, r.n)))
+          .. " "
+          .. L["(~%s left)"]:format(UI.Duration(math.ceil((v2.sendLeft or 0) * ns.SyncV2.PACE)))
       end
       lines[#lines + 1] = table.concat(parts, "  ·  ")
+      -- one line per sender, however many objects they're sending
+      for _, e in ipairs(v2.senders or {}) do
+        lines[#lines + 1] = L["Receiving from %s: %d %s, %d%% (~%s left)"]:format(
+          e.from,
+          e.objects,
+          e.objects == 1 and L["object"] or L["objects"],
+          math.floor(100 * e.got / math.max(1, e.n)),
+          UI.Duration(e.secondsLeft)
+        )
+      end
     end
     v.activity:SetText(table.concat(lines, "\n"))
   end
@@ -425,4 +434,17 @@ function UI:RefreshSync()
   end)
   v:FitLists()
   v:LayoutColumns()
+end
+
+-- a wait in seconds, roughly: "40 s", "12 min", "1 h 50 min"
+function UI.Duration(seconds)
+  seconds = math.max(0, math.floor(seconds or 0))
+  if seconds < 60 then
+    return L["%d s"]:format(seconds)
+  elseif seconds < 3600 then
+    return L["%d min"]:format(math.ceil(seconds / 60))
+  end
+  local h = math.floor(seconds / 3600)
+  local m = math.floor((seconds % 3600) / 60)
+  return m > 0 and L["%d h %d min"]:format(h, m) or L["%d h"]:format(h)
 end

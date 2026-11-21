@@ -105,8 +105,14 @@ function Hud.Lines(state)
     if (v2.queued or 0) > 0 then
       parts[#parts + 1] = ("%d waiting"):format(v2.queued)
     end
-    for _, r in ipairs(v2.receiving or {}) do
-      parts[#parts + 1] = ("from %s %d/%d"):format(r.from, r.got or 0, r.n or 0)
+    for _, e in ipairs(v2.senders or {}) do -- per sender: a catch-up queues a dozen objects from one guildmate
+      parts[#parts + 1] = ("from %s: %d obj, %d/%d blocks, ~%d min left"):format(
+        e.from,
+        e.objects,
+        e.got,
+        e.n,
+        math.ceil(e.secondsLeft / 60)
+      )
     end
     lines[#lines + 1] = "sync v2: " .. (#parts > 0 and table.concat(parts, ", ") or "idle")
   end

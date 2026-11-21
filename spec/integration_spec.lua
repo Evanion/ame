@@ -3263,6 +3263,25 @@ describe("addon in a stubbed client", function()
         end
         assert.are.equal(1, v.protocol.index) -- v2
         assert.truthy(v.activity.text:find("Hours of the last week here: 1 of 168", 1, true), v.activity.text)
+        -- a catch-up: a dozen objects queued from one guildmate read as one line, with the time left
+        local incoming = ns.SyncService.v2.incoming
+        for i = 1, 12 do
+          incoming["Guild Mate#" .. i] =
+            { kind = "h", ref = i, got = i == 1 and 50 or 0, n = 100, sender = "Guild Mate" }
+        end
+        ns.UI:RefreshSync()
+        local lines = 0
+        for _ in v.activity.text:gmatch("Receiving from") do
+          lines = lines + 1
+        end
+        assert.are.equal(1, lines)
+        assert.truthy(
+          v.activity.text:find("Receiving from Guild Mate: 12 objects, 4%% %(~21 min left%)"),
+          v.activity.text
+        )
+        for k in pairs(incoming) do
+          incoming[k] = nil
+        end
         choose(2) -- v1
         assert.are.equal(1, ns.Settings:Get("syncProtocol"))
         assert.is_nil(ns.SyncService.v2)
