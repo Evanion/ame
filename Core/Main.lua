@@ -603,6 +603,9 @@ local function followSearch(itemID)
   if not (itemID and ns.UI and ns.UI.FollowAuctionItem) then
     return
   end
+  if ns.AHSearch and ns.AHSearch:Busy() then
+    return -- AME's own searches (the shopping tab) don't pull the window along
+  end
   followGen = followGen + 1
   local gen = followGen
   C_Timer.After(0.25, function()
@@ -638,6 +641,12 @@ function handlers.AUCTION_HOUSE_SHOW()
   AME.ahOpen = true
   hookSellSlots()
   C_Timer.After(0.5, hookSellSlots) -- the game's window may load after this event reaches AME
+  if ns.AHShopping then -- AME's shopping tab on the game's window (once it's there)
+    ns.AHShopping:Attach()
+    C_Timer.After(0.5, function()
+      ns.AHShopping:Attach()
+    end)
+  end
   AME.house = UnitFactionGroup("npc") or "Neutral"
   AME_DB.lastHouse = AME.house
   if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then

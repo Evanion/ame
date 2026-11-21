@@ -224,7 +224,14 @@ function UI:SearchShoppingList()
   if #keys == 0 or ns.AME:AuctionatorSearch(keys) then
     return
   end
-  -- without Auctionator: the first one in the default window (it searches one name at a time)
+  -- without Auctionator: AME's own tab on the auction house window searches them one after another
+  local tab, sel = ns.AHShopping, self:ShoppingSelected()
+  if tab and tab.tab and sel and sel.own then
+    tab.temp, tab.list, tab.selected = nil, sel.own, nil
+    tab:Open()
+    tab:SearchAll()
+    return
+  end
   ns.AME:SearchAuctionHouse(keys[1])
 end
 

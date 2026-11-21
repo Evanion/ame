@@ -1996,6 +1996,74 @@ describe("addon in a stubbed client", function()
       assert.are.equal(0, #AME_DB.craftQueue.items)
     end)
 
+    it(
+      "the AME shopping tab on the auction house: search each item in turn, then buy with the game's purchase",
+      function()
+        boot()
+        local ahFrame = CreateFrame("Frame")
+        local firstTab = CreateFrame("Button")
+        rawset(ahFrame, "Tabs", { firstTab })
+        rawset(ahFrame, "tabsForDisplayMode", {})
+        rawset(ahFrame, "SetDisplayMode", function(self, mode)
+          for _, n in ipairs(mode) do
+            rawget(self, n):Show()
+          end
+        end)
+        rawset(_G, "AuctionHouseFrame", ahFrame)
+        rawset(_G, "AuctionHouseFrameDisplayMode", {})
+        local sent, bought = {}, {}
+        local ah = env.ah
+        ah.MakeItemKey = function(id, level, suffix)
+          return { itemID = id, itemLevel = level, itemSuffix = suffix }
+        end
+        ah.IsThrottledMessageSystemReady = function()
+          return true
+        end
+        ah.SendSearchQuery = function(itemKey)
+          sent[#sent + 1] = itemKey.itemID
+        end
+        ah.StartCommoditiesPurchase = function(id, n)
+          bought[#bought + 1] = { "start", id, n }
+        end
+        ah.ConfirmCommoditiesPurchase = function(id, n)
+          bought[#bought + 1] = { "confirm", id, n }
+        end
+        finally(function()
+          rawset(_G, "AuctionHouseFrame", nil)
+          rawset(_G, "AuctionHouseFrameDisplayMode", nil)
+        end)
+        env.npcFaction = "Horde"
+        env:fire("AUCTION_HOUSE_SHOW")
+        local T = ns.AHShopping
+        assert.is_not_nil(T.tab) -- no Auctionator: AME's tab is on the window
+        assert.are.equal(2, #ahFrame.Tabs)
+        local i = ns.AME.shopping:AddList("Raid")
+        ns.AME.shopping:SetItem(i, 2589, 30)
+        T:Open()
+        assert.is_true(T.panel:IsShown())
+        T.panel.searchAll.scripts.OnClick(T.panel.searchAll)
+        assert.are.same({ 2589 }, sent)
+        ah.commodities[2589] = { { 90, 10 }, { 100, 50 } }
+        env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
+        local rows, totals = T.Rows(ns.AME.shopping:Lists()[i].items, AME_DB.holdings, nil, ns.AHSearch.results)
+        assert.are.equal(90, rows[1].cheapest)
+        assert.are.equal(10 * 90 + 20 * 100, totals.left) -- the 30 climb the listings
+        -- buy: the game prices the 30, then a second click buys them
+        T.selected = 2589
+        T:Render()
+        T.panel.qty:SetText("30")
+        T.panel.buy.scripts.OnClick(T.panel.buy)
+        assert.are.same({ "start", 2589, 30 }, bought[1])
+        env:fire("COMMODITY_PRICE_UPDATED", 97, 2900)
+        assert.are.equal(2900, ns.AHSearch.pending.total)
+        T.panel.buy.scripts.OnClick(T.panel.buy)
+        assert.are.same({ "confirm", 2589, 30 }, bought[2])
+        env:fire("COMMODITY_PURCHASE_SUCCEEDED")
+        assert.is_true(ns.AHSearch.last.ok)
+        assert.are.equal(2589, sent[2]) -- searched again: what's left of it now
+      end
+    )
+
     it("counts the guild bank (every tab, as last seen) with what your characters hold, for the tooltip", function()
       boot()
       local slots = { [1] = { [3] = { 2589, 20 } }, [2] = { [1] = { 2589, 5 }, [2] = { 2592, 1 } } }

@@ -55,6 +55,7 @@ Core\Professions.lua
 Core\CraftingData.lua
 Core\Crafting.lua
 Core\CraftQueue.lua
+Core\AHSearch.lua
 Core\Disenchant.lua
 Core\Leveling.lua
 Core\Posting.lua
@@ -80,6 +81,7 @@ Core\UI\PortfolioView.lua
 Core\UI\LevelingView.lua
 Core\UI\CraftingView.lua
 Core\UI\ProfessionBar.lua
+Core\UI\AHShopping.lua
 Core\UI\Tooltip.lua
 Core\UI\SellAssist.lua
 Core\UI\ScanButton.lua
