@@ -116,6 +116,35 @@ function Hud.Lines(state)
     end
     lines[#lines + 1] = "sync v2: " .. (#parts > 0 and table.concat(parts, ", ") or "idle")
   end
+  -- what sync kept and turned down: since the box came on, and all time (with the reasons)
+  local st = svc and svc.stats
+  if st then
+    local base = state.syncBase
+    if not base then
+      base = { ok = st.syncReceived or 0, bad = st.syncRejected or 0, why = {} }
+      for k, n in pairs(st.rejectedWhy or {}) do
+        base.why[k] = n
+      end
+      state.syncBase = base
+    end
+    local why = {}
+    for k, n in pairs(st.rejectedWhy or {}) do
+      local d = n - (base.why[k] or 0)
+      if d > 0 then
+        why[#why + 1] = ("%s %d"):format(k, d)
+      end
+    end
+    table.sort(why)
+    local ok, bad = (st.syncReceived or 0) - base.ok, (st.syncRejected or 0) - base.bad
+    lines[#lines + 1] = ("sync: accepted |cff66dd77%d|r, rejected %s%d|r%s  ·  all time %d / %d"):format(
+      ok,
+      bad > 0 and "|cffff6159" or "|cff66dd77",
+      bad,
+      #why > 0 and (" (" .. table.concat(why, ", ") .. ")") or "",
+      st.syncReceived or 0,
+      st.syncRejected or 0
+    )
+  end
   -- memory and the garbage collector
   lines[#lines + 1] = ("Lua memory %.1f MB (all addons)%s"):format(
     (collectgarbage("count") or 0) / 1024,

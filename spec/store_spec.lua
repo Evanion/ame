@@ -611,4 +611,24 @@ describe("Store", function()
       assert.are.equal(3, store:Series(10)[#store:Series(10)].min)
     end)
   end)
+
+  it("exports a day without random-suffix variants for sync, keeping its plain items whole", function()
+    local store = newStore()
+    local variant = ns.ItemKey(12, 7)
+    store:AddScan(snap({ [10] = { 100, 110, 120, 5, 2 }, [variant] = { 900, 950, 960, 1, 1 } }), clock, "a")
+    local day = math.floor(clock / DAY)
+    local buckets = Store.ParseDay(store:ExportDay(day, true))
+    local ids = {}
+    for _, packed in pairs(buckets) do
+      for _, id in ipairs(store:decode(packed, Store.SEGMENT_FIELDS).ids) do
+        ids[#ids + 1] = id
+      end
+    end
+    assert.are.same({ 10 }, ids)
+    local all = 0
+    for _, packed in pairs(Store.ParseDay(store:ExportDay(day))) do
+      all = all + #store:decode(packed, Store.SEGMENT_FIELDS).ids
+    end
+    assert.are.equal(2, all)
+  end)
 end)

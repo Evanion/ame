@@ -471,7 +471,10 @@ end
 
 -- A closed day as text, for sync: the scans merged into it (seen keys), then its packed segments.
 --   "D1\n<key>\n<key>...\n\n<bucket36>=<packed>\n..."
-function Store:ExportDay(day)
+-- plainOnly: without random-suffix variants (each "of the Monkey" its own item): a day of them is ~5 times the
+-- size of the plain items' day, and over sync that's half an hour per day for gear few people trade. Takes a
+-- moment then (each bucket is decoded and written again): call it from a background job.
+function Store:ExportDay(day, plainOnly)
   local buckets = self.data.days[day]
   if not buckets then
     return nil
@@ -482,7 +485,24 @@ function Store:ExportDay(day)
   end
   sort(keys)
   for b, packed in pairs(buckets) do
-    lines[#lines + 1] = Codec.ToBase36(b) .. "=" .. packed
+    if plainOnly then
+      local seg = self:decode(packed, Store.SEGMENT_FIELDS)
+      local out, n = emptySegment(), 0
+      for i, id in ipairs(seg.ids) do
+        if not ns.IsVariant(id) then
+          n = n + 1
+          for _, field in ipairs(Store.SEGMENT_FIELDS) do
+            local col = seg[field]
+            out[field][n] = col and col[i] or 0
+          end
+        end
+      end
+      packed = n == #seg.ids and packed or (n > 0 and self:encode(out, Store.SEGMENT_FIELDS) or nil)
+      self:pause()
+    end
+    if packed then
+      lines[#lines + 1] = Codec.ToBase36(b) .. "=" .. packed
+    end
   end
   sort(lines)
   return "D1\n" .. table.concat(keys, "\n") .. "\n\n" .. table.concat(lines, "\n")

@@ -302,16 +302,19 @@ function Service:V2Host()
     table.sort(recent, desc)
     table.sort(older, desc)
     table.sort(days, desc)
-    for _, h in ipairs(recent) do
-      out[#out + 1] = { kind = "h", ref = h }
+    -- every hour before any whole day: an hour is a few minutes over the wire and fills a gap on the 7D chart, a
+    -- day takes much longer. A day some of whose hours are on the way isn't sent at all: those hours make it (a
+    -- day is only taken whole where the store has nothing for it)
+    local hourDays = {}
+    for _, list in ipairs({ recent, older }) do
+      for _, h in ipairs(list) do
+        out[#out + 1] = { kind = "h", ref = h }
+        hourDays[floor(h * HOUR / DAY)] = true
+      end
     end
     for _, day in ipairs(days) do
-      out[#out + 1] = { kind = "d", ref = day }
-    end
-    for _, h in ipairs(older) do
-      -- an hour inside a day being asked for whole comes with it
-      if not m.days[floor(h * HOUR / DAY)] or not wanted(d, "d", floor(h * HOUR / DAY), now) then
-        out[#out + 1] = { kind = "h", ref = h }
+      if not hourDays[day] then
+        out[#out + 1] = { kind = "d", ref = day }
       end
     end
     return out
@@ -333,7 +336,7 @@ function Service:V2Host()
           text, t, src, key = e.s, e.t, e.src, e.key
         end
       elseif kind == "d" then
-        text, t = store:ExportDay(ref), ref * DAY
+        text, t = store:ExportDay(ref, true), ref * DAY -- plain items: variants make a day ~5x the size
       end
       if not text then
         return nil

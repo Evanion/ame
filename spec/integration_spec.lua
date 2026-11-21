@@ -635,6 +635,15 @@ describe("addon in a stubbed client", function()
       local text = table.concat(ns.Dev.Hud.Lines({}), "\n")
       assert.truthy(text:find("jobs: index-test", 1, true), text)
       assert.truthy(text:find("Lua memory", 1, true), text)
+      -- sync kept / turned down, since the box came on
+      local state = {}
+      ns.Dev.Hud.Lines(state)
+      ns.SyncService.stats.syncReceived = (ns.SyncService.stats.syncReceived or 0) + 2
+      ns.SyncService.stats.syncRejected = (ns.SyncService.stats.syncRejected or 0) + 1
+      ns.SyncService:CountRejection("undecodable")
+      text = table.concat(ns.Dev.Hud.Lines(state), "\n")
+      assert.truthy(text:find("accepted |cff66dd772|r", 1, true), text)
+      assert.truthy(text:find("1|r (undecodable 1)", 1, true), text)
       env:update(70) -- a little over a second of frames: one line logged
       assert.is_true(#AME_DB.dev.hudLog.seconds >= 1)
       env:slash("AMEDEV", "hud")
@@ -3289,6 +3298,25 @@ describe("addon in a stubbed client", function()
         assert.is_nil(v.activity.text:find("Hours of the last week", 1, true))
         choose(1)
         assert.is_not_nil(ns.SyncService.v2)
+      end)
+
+      it("asks for every hour before any whole day, and not for a day whose hours are coming", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        local host = ns.SyncService:V2Host()
+        local today = math.floor(env.now / 86400)
+        local recent = math.floor(env.now / 3600) - 3
+        local inDay = (today - 3) * 24 + 12 -- noon, three days ago
+        local wants = host:Wants(SHARD, {
+          scanT = 0,
+          hours = { [recent] = true, [inDay] = true },
+          days = { [today - 3] = true, [today - 5] = true },
+        })
+        local got = {}
+        for _, w in ipairs(wants) do
+          got[#got + 1] = w.kind .. ":" .. w.ref
+        end
+        assert.are.same({ "h:" .. recent, "h:" .. inDay, "d:" .. (today - 5) }, got)
       end)
 
       it("in combat, blocks still arrive, but checking and storing them waits until it ends", function()
