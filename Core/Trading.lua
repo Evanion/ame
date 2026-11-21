@@ -100,14 +100,37 @@ function Trading:ScanBags()
   end
 end
 
+-- The bank's containers: the character bank tabs where the game has them (Enum.BagIndex.CharacterBankTab_1...),
+-- else the bank itself, the reagent bank and the bank bags (which come after the bags and, where there is one, the
+-- reagent bag: never counted twice).
+function Trading.BankBags(bagIndex)
+  local B = bagIndex or (Enum and Enum.BagIndex) or {}
+  local list = {}
+  if B.CharacterBankTab_1 then
+    for i = 1, 12 do
+      if B["CharacterBankTab_" .. i] then
+        list[#list + 1] = B["CharacterBankTab_" .. i]
+      end
+    end
+    return list
+  end
+  list[1] = B.Bank or -1
+  if B.Reagentbank then
+    list[#list + 1] = B.Reagentbank
+  end
+  local first = B.BankBag_1 or ((B.ReagentBag and B.ReagentBag + 1) or (NUM_BAG_SLOTS or 4) + 1)
+  for i = 0, (NUM_BANKBAGSLOTS or 7) - 1 do
+    list[#list + 1] = first + i
+  end
+  return list
+end
+
 function Trading:ScanBank()
-  local bankBag = (Enum and Enum.BagIndex and Enum.BagIndex.Bank) or -1
-  local first = (NUM_BAG_SLOTS or 4) + 1
-  local last = first + (NUM_BANKBAGSLOTS or 7)
-  local main = countBags(bankBag, bankBag) or {}
-  local bags = countBags(first, last) or {}
-  for id, n in pairs(bags) do
-    main[id] = (main[id] or 0) + n
+  local main = {}
+  for _, bag in ipairs(Trading.BankBags()) do
+    for id, n in pairs(countBags(bag, bag) or {}) do
+      main[id] = (main[id] or 0) + n
+    end
   end
   local h = mine()
   h.bank, h.bankAt = main, GetServerTime()

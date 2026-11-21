@@ -42,3 +42,21 @@ describe("Trading.Pattern", function()
     _G.issecretvalue = nil
   end)
 end)
+
+describe("Trading.BankBags", function()
+  local Trading
+  before_each(function()
+    Trading = addon.load({ "Core/Init.lua", "Core/Trading.lua" }).Trading
+  end)
+
+  it("reads the character bank's tabs where the game has them", function()
+    local tabs = { Bank = -1, ReagentBag = 5, CharacterBankTab_1 = 6, CharacterBankTab_2 = 7, CharacterBankTab_3 = 8 }
+    assert.are.same({ 6, 7, 8 }, Trading.BankBags(tabs))
+  end)
+
+  it("else the bank, the reagent bank and the bank bags, never the reagent bag", function()
+    local B = { Bank = -1, Reagentbank = -3, ReagentBag = 5 }
+    assert.are.same({ -1, -3, 6, 7, 8, 9, 10, 11, 12 }, Trading.BankBags(B))
+    assert.are.same({ -1, 5, 6, 7, 8, 9, 10, 11 }, Trading.BankBags({ Bank = -1 })) -- classic: no reagent bag
+  end)
+end)

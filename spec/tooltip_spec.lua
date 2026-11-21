@@ -25,7 +25,7 @@ describe("Tooltip.Lines", function()
   local function text(rows)
     local out = {}
     for _, r in ipairs(rows) do
-      out[#out + 1] = r[1] .. " = " .. (r[2] or "")
+      out[#out + 1] = r[1] .. " = " .. (r[3] and (r[3] .. " | ") or "") .. (r[2] or "")
     end
     return (table.concat(out, "\n"):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) -- without colour codes
   end
@@ -46,9 +46,10 @@ describe("Tooltip.Lines", function()
   it("by default: a header with the auction house and freshness, the market price, context and a Shift hint", function()
     local rows = T.Lines(s, { avgDays = 14, house = "Horde AH", age = "2 hr ago" })
     local t = text(rows)
-    assert.truthy(t:find("AME  Horde AH · 2 hr ago", 1, true), t)
+    assert.truthy(t:find("AME = Horde AH · 2 hr ago", 1, true), t)
     assert.truthy(t:find("Market = 55g 98s", 1, true), t)
-    assert.truthy(t:find("-13.9%", 1, true), t) -- 55g 98s vs 65g
+    assert.truthy(t:find("-14%", 1, true), t) -- 55g 98s vs 65g
+    assert.is_nil(t:find("each")) -- one column: no heads
     assert.truthy(t:find("vs 14d avg", 1, true), t)
     assert.truthy(t:find("13 listed", 1, true), t)
     assert.truthy(t:find("Hold Shift"), t)
@@ -59,9 +60,10 @@ describe("Tooltip.Lines", function()
 
   it("with more than one owned: each and a total for all of yours, the vendor total, and where they are", function()
     local t = text(T.Lines(s, { held = held, vendor = 200, house = "Horde AH" }))
-    assert.truthy(t:find("= your 43", 1, true), t)
-    assert.truthy(t:find("Market  55g 98s = 2,407g", 1, true), t)
-    assert.truthy(t:find("Vendor = 86s", 1, true), t)
+    assert.truthy(t:find("AME = Horde AH", 1, true), t) -- the header on a line of its own
+    assert.truthy(t:find("  = each | your 43", 1, true), t) -- then the columns' heads
+    assert.truthy(t:find("Market = 55g 98s | 2,407g", 1, true), t) -- each in the middle, all of yours on the right
+    assert.truthy(t:find("Vendor = · | 86s", 1, true), t)
     assert.truthy(t:find("You have 43  ·  bags 20 · bank 18 · guild bank 5", 1, true), t)
   end)
 
@@ -74,7 +76,9 @@ describe("Tooltip.Lines", function()
     local buy = setmetatable({ signal = "buy", sellRate = 12 }, { __index = s })
     local t = text(T.Lines(buy, { better = 0.16 }))
     assert.truthy(t:find("BUY = Shift: more", 1, true), t)
-    assert.truthy(t:find("~12/d"), t)
+    assert.truthy(t:find("~12 sold/day", 1, true), t)
+    buy.sellRate = 2.5
+    assert.truthy(text(T.Lines(buy, {})):find("~2.5 sold/day", 1, true))
     assert.truthy(t:find("Sells 16% better at the goblin AH, after its cut", 1, true), t)
   end)
 
@@ -86,7 +90,8 @@ describe("Tooltip.Lines", function()
     assert.is_nil(t:find("You have"))
     assert.is_nil(t:find("listed"))
     assert.truthy(t:find("BUY  ·  goblin AH +16% = Shift: more", 1, true), t)
-    assert.are.equal(3, #rows) -- header (with "your 43"), market, signal
+    assert.are.equal(3, #rows) -- header (with the columns' heads), market, signal
+    assert.truthy(t:find("AME = each | your 43", 1, true), t)
   end)
 
   it("goes compact on a small screen or a UI scaled far up, not at the default scale", function()
@@ -121,6 +126,8 @@ describe("Tooltip.Lines", function()
     }
     local t = text(T.Lines(s, { de = de }))
     assert.truthy(t:find("Disenchant ~ = 99s", 1, true), t)
+    t = text(T.Lines(s, { de = de, held = held }))
+    assert.truthy(t:find("Disenchant ~ = 99s | 42g 57s", 1, true), t)
     assert.is_nil(t:find("Strange Dust"))
     t = text(T.Lines(s, { de = de, detail = true }))
     assert.truthy(t:find("75%  4-6 Strange Dust = 70s", 1, true), t)
@@ -155,4 +162,84 @@ describe("Tooltip.Lines", function()
       assert.is_nil(t:find("Hold Shift"))
     end
   )
+end)
+
+describe("Tooltip.AddRows", function()
+  local T
+  before_each(function()
+    T = addon.load({ "Core/Init.lua", "Core/UI/Widgets.lua", "Core/UI/Tooltip.lua" }).Tooltip
+  end)
+
+  -- a game tooltip: numbered left and right texts, font strings of their own, a minimum width
+  local function fakeTip()
+    local function fs(text)
+      local f = { text = text, shown = true }
+      function f.SetText(self, t)
+        self.text = t
+      end
+      function f.GetStringWidth(self)
+        return #(self.text or "") * 6
+      end
+      function f.GetFontObject()
+        return "font"
+      end
+      function f.SetFontObject() end
+      function f.Show(self)
+        self.shown = true
+      end
+      function f.Hide(self)
+        self.shown = false
+      end
+      function f.ClearAllPoints() end
+      function f.SetPoint(self, ...)
+        self.point = { ... }
+      end
+      return f
+    end
+    local tip = { n = 0, made = {}, hooks = {} }
+    function tip.GetName()
+      return "FakeTip"
+    end
+    function tip.NumLines(self)
+      return self.n
+    end
+    function tip.AddDoubleLine(self, l, r)
+      self.n = self.n + 1
+      _G["FakeTipTextLeft" .. self.n], _G["FakeTipTextRight" .. self.n] = fs(l), fs(r)
+    end
+    function tip.AddLine(self, l)
+      self:AddDoubleLine(l, "")
+    end
+    function tip.CreateFontString(self)
+      local f = fs()
+      self.made[#self.made + 1] = f
+      return f
+    end
+    function tip.SetMinimumWidth(self, w)
+      self.minWidth = w
+    end
+    function tip.HookScript(self, event, fn)
+      self.hooks[event] = fn
+    end
+    return tip
+  end
+
+  it("puts each in a middle column lined up left of the totals, and widens the tooltip for it", function()
+    local tip = fakeTip()
+    T.AddRows(
+      tip,
+      { { "AME", "Horde AH" }, { " ", "your 43", "each" }, { "Market", "2,407g", "55g 98s" }, { "plain" } }
+    )
+    assert.are.equal(4, tip.n)
+    assert.are.equal(2, #tip.made)
+    assert.are.equal("each", tip.made[1].text)
+    assert.are.equal("55g 98s", tip.made[2].text)
+    -- both right-aligned the widest total ("your 43", 42) plus the gap left of the right texts
+    assert.are.equal(-(42 + T.GAP), tip.made[2].point[4])
+    assert.are.equal(_G.FakeTipTextRight3, tip.made[2].point[2])
+    assert.truthy(tip.minWidth > 6 * (#"Market" + #"55g 98s" + #"your 43"))
+    tip.hooks.OnTooltipCleared(tip)
+    assert.is_false(tip.made[1].shown)
+    assert.are.equal(0, tip.minWidth)
+  end)
 end)

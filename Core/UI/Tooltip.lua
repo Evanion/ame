@@ -1,15 +1,18 @@
 -- Item tooltip lines from the market index (no history decoding on hover), and the modified click (Settings) that
 -- opens an item's chart.
 --
--- The AME block, under the game's lines (prices from your faction's auction house):
---   AME  Horde AH · 2 h ago                       your 43
---   Market  1g 20s                                 51g 60s     (each on the left, all of yours on the right)
---   Vendor                                          86s        (only a total: the game shows the price per item)
---   Disenchant ≈  99s                                          (gear)
+-- The AME block, under the game's lines (prices from your faction's auction house), after a gap:
+--   AME                                     Horde AH · 2 h ago
+--                                          each        your 43   (the columns: only when you have more than one)
+--   Market                               1g 20s        51g 60s
+--   Vendor                                    ·            86s   (only a total: the game shows the price per item)
+--   Disenchant ~                            99s        42g 57s   (gear)
 --   You have 43 · bags 20 · bank 18 · guild bank 5
---   +8% vs 7d avg · ~140/d · 62% sell-through
---   Sells 16% better at the goblin AH, after its cut           (when it does)
---   BUY  supply falling                           Shift: more
+--   +8% vs 7d avg · 3.4k listed · ~140 sold/day
+--   Sells 16% better at the goblin AH, after its cut              (when it does)
+--   (icon) BUY  supply falling                          Shift: more
+-- A row is { left, right, middle }: the middle column (each) is a font string of its own, lined up across the rows
+-- (a game tooltip line has only a left and a right text).
 -- Shift (or the "always" setting) adds what it disenchants into, yours per character and guild bank (with your
 -- average cost), every auction house you have prices for, and the price and data details. When the UI has little
 -- room (a large UI scale on a small screen) the block is compact: no freshness, holdings or context lines.
@@ -79,22 +82,27 @@ function Tooltip.Lines(s, opts)
   local many = n > 1
   local function row(left, each, total)
     if many and total then
-      rows[#rows + 1] = { left .. "  " .. money(each), money(total) }
+      rows[#rows + 1] = { left, money(total), money(each) }
     else
       rows[#rows + 1] = { left, money(each) }
     end
   end
 
-  -- header: AME, where the prices come from and how fresh, and the column for all of yours
-  local where = ""
-  if not opts.compact and opts.house then
-    where = Dim("  " .. opts.house .. (opts.age and (" · " .. opts.age) or ""))
+  -- header: AME, and where the prices come from and how fresh; then the columns' heads (compact: on one line)
+  local brand = W.Color("brand", "AME")
+  local heads = many and { Dim(L["your %s"]:format(W.Count(n))), Dim(L["each"]) } or nil
+  if opts.compact or not opts.house then
+    rows[#rows + 1] = { brand, heads and heads[1], heads and heads[2] }
+  else
+    rows[#rows + 1] = { brand, Dim(opts.house .. (opts.age and (" · " .. opts.age) or "")) }
+    if heads then
+      rows[#rows + 1] = { " ", heads[1], heads[2] }
+    end
   end
-  rows[#rows + 1] = { W.Color("brand", "AME") .. where, many and Dim(L["your %s"]:format(W.Count(n))) or nil }
 
   row(L["Market"], s.market, s.market and s.market * n)
   if many and (opts.vendor or 0) > 0 then
-    rows[#rows + 1] = { L["Vendor"], money(opts.vendor * n) }
+    rows[#rows + 1] = { L["Vendor"], money(opts.vendor * n), Dim("·") }
   end
   local de = opts.de
   if de and de.value then
@@ -111,11 +119,13 @@ function Tooltip.Lines(s, opts)
     local avg = s["avg" .. days] or s.avg30
     local parts = {}
     if s.market and avg and avg > 0 and s.days ~= 1 then
-      parts[#parts + 1] = W.Percent(s.market / avg - 1) .. Dim(" " .. L["vs %dd avg"]:format(days))
+      parts[#parts + 1] = W.Percent(s.market / avg - 1, 0) .. Dim(" " .. L["vs %dd avg"]:format(days))
     end
     parts[#parts + 1] = Dim(W.Count(s.qty or 0) .. " " .. L["listed"])
     if s.sellRate then
-      parts[#parts + 1] = Dim(W.Rate(s.sellRate))
+      local r = s.sellRate
+      local count = r >= 10 and W.Count(r) or (("%.1f"):format(r):gsub("%.0$", ""))
+      parts[#parts + 1] = Dim(L["~%s sold/day"]:format(count))
     end
     if s.sellThrough and s.stEnded then
       -- real auction outcomes (yours and your guildmates'): how much of what was listed sold
@@ -141,7 +151,14 @@ function Tooltip.Lines(s, opts)
     goblin = W.Color("warn", "  ·  " .. L["goblin AH +%d%%"]:format(pct(opts.better)))
   end
   if s.signal and s.signal ~= "none" then
-    rows[#rows + 1] = { W.Signal(s.signal) .. (phase and Dim("  " .. phase:lower()) or "") .. goblin, hint }
+    local icon = W.SignalIcon and W.SignalIcon(s.signal, 12) or ""
+    rows[#rows + 1] = {
+      (icon ~= "" and icon .. " " or "")
+        .. W.Signal(s.signal)
+        .. (phase and Dim("  " .. phase:lower()) or "")
+        .. goblin,
+      hint,
+    }
   elseif not opts.detail then
     rows[#rows + 1] = { Dim(L["Hold Shift for more AME data"]) .. goblin }
   end
@@ -453,12 +470,81 @@ local function addLines(tooltip, itemID)
   if madeBy then
     rows[#rows + 1] = { W.Color("dim", L["Made by"]), madeBy }
   end
+  tooltip:AddLine(" ") -- a gap: AME's block apart from the game's lines and other addons'
+  Tooltip.AddRows(tooltip, rows)
+end
+
+-- The middle column: a font string per line, right-aligned a fixed distance left of the right texts (the widest of
+-- them, plus a gap), and the tooltip made wide enough for all three. Hidden again when the tooltip is cleared.
+Tooltip.GAP = 14
+local function middles(tooltip)
+  local m = tooltip.ameMiddle
+  if not m then
+    m = { strings = {} }
+    tooltip.ameMiddle = m
+    if tooltip.HookScript then
+      tooltip:HookScript("OnTooltipCleared", function(self)
+        for _, fs in pairs(self.ameMiddle.strings) do
+          fs:Hide()
+        end
+        if self.ameMiddle.width and self.SetMinimumWidth then
+          self:SetMinimumWidth(0)
+        end
+        self.ameMiddle.width = nil
+      end)
+    end
+  end
+  return m
+end
+
+-- rows (Tooltip.Lines) onto a game tooltip
+function Tooltip.AddRows(tooltip, rows)
+  local name = tooltip.GetName and tooltip:GetName()
+  local columns = name and tooltip.CreateFontString and tooltip.NumLines
+  local placed = {}
   for _, r in ipairs(rows) do
-    if r[2] then
-      W.TipPair(tooltip, r[1], r[2])
+    if r[3] and not columns then
+      W.TipPair(tooltip, r[1], r[3] .. "   " .. (r[2] or "")) -- no font strings to add: both on the right
+    elseif r[2] or r[3] then
+      W.TipPair(tooltip, r[1], r[2] or " ")
+      if r[3] then
+        placed[#placed + 1] = { line = tooltip:NumLines(), text = r[3] }
+      end
     else
       tooltip:AddLine(r[1])
     end
+  end
+  if #placed == 0 then
+    return
+  end
+  local m = middles(tooltip)
+  local wLeft, wMid, wRight = 0, 0, 0
+  for _, p in ipairs(placed) do
+    local left, right = _G[name .. "TextLeft" .. p.line], _G[name .. "TextRight" .. p.line]
+    if not (left and right) then
+      return
+    end
+    local fs = m.strings[p.line]
+    if not fs then
+      fs = tooltip:CreateFontString(nil, "ARTWORK")
+      m.strings[p.line] = fs
+    end
+    fs:SetFontObject(right:GetFontObject() or _G.GameTooltipText)
+    fs:SetText(p.text)
+    fs:Show()
+    p.fs, p.right = fs, right
+    wLeft = math.max(wLeft, left:GetStringWidth() or 0)
+    wMid = math.max(wMid, fs:GetStringWidth() or 0)
+    wRight = math.max(wRight, right:GetStringWidth() or 0)
+  end
+  for _, p in ipairs(placed) do
+    p.fs:ClearAllPoints()
+    p.fs:SetPoint("RIGHT", p.right, "RIGHT", -(wRight + Tooltip.GAP), 0)
+  end
+  if tooltip.SetMinimumWidth then
+    local width = math.ceil(wLeft + wMid + wRight + 2 * Tooltip.GAP + 22) -- and the tooltip's own padding
+    m.width = math.max(m.width or 0, width)
+    tooltip:SetMinimumWidth(m.width)
   end
 end
 

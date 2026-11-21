@@ -548,6 +548,7 @@ function handlers.PLAYER_LOGIN()
     "CHAT_MSG_SYSTEM",
     "BAG_UPDATE_DELAYED",
     "BANKFRAME_OPENED",
+    "BANKFRAME_CLOSED",
     "PLAYERBANKSLOTS_CHANGED",
     "GUILDBANKFRAME_OPENED",
     "GUILDBANKBAGSLOTS_CHANGED",
@@ -704,6 +705,9 @@ end
 
 function handlers.BAG_UPDATE_DELAYED()
   ns.Trading:ScanBags()
+  if ns.Trading.bankOpen then -- the bank's tabs can fill in after it opens, and items move to and from it
+    ns.Trading:ScanBank()
+  end
   -- a shopping list on screen counts what you hold
   local ui = ns.UI
   if ui and ui.marketView and ui.marketView:IsShown() and ui.ShoppingSelected and ui:ShoppingSelected() then
@@ -712,9 +716,15 @@ function handlers.BAG_UPDATE_DELAYED()
 end
 
 function handlers.BANKFRAME_OPENED()
+  ns.Trading.bankOpen = true
   ns.Trading:ScanBank()
 end
-handlers.PLAYERBANKSLOTS_CHANGED = handlers.BANKFRAME_OPENED
+function handlers.PLAYERBANKSLOTS_CHANGED()
+  ns.Trading:ScanBank()
+end
+function handlers.BANKFRAME_CLOSED()
+  ns.Trading.bankOpen = nil
+end
 
 -- the guild bank: every tab is asked for on opening; what arrives (and each change) is counted again
 function handlers.GUILDBANKFRAME_OPENED()
