@@ -225,7 +225,7 @@ function UI:CreateShell()
       return
     end
     elapsed = 0
-    footer:SetText(UI:FooterText())
+    UI:UpdateFooter()
   end)
 
   f:SetScript("OnShow", function()
@@ -239,17 +239,28 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- size, position, docking
 
--- the window's status row (bottom right): a scan being read with its real progress, market data being updated,
--- and the version
-function UI:FooterText()
-  local ingest, busy = ns.AME.ingest
+-- what AME is busy with, for the status row: a scan being read with its real progress, a search being stored,
+-- the chart or market data being updated (nil when it's caught up)
+function UI:BusyNow()
+  local ingest = ns.AME.ingest
   local p = ingest and ingest.reading and ingest.progress
   if p and p.total > 0 then
-    busy = L["Reading scan %s / %s"]:format(W.Thousands(p.done), W.Thousands(p.total))
-  else
-    busy = UI.BusyText(ns.AME.jobs and ns.AME.jobs.queue, ns.AME:IndexBusy())
+    return L["Reading scan %s / %s"]:format(W.Thousands(p.done), W.Thousands(p.total))
   end
-  return (busy and (W.Color("hold", busy) .. W.SEP) or "") .. "v" .. ns.VERSION
+  return UI.BusyText(ns.AME.jobs and ns.AME.jobs.queue, ns.AME:IndexBusy())
+end
+
+-- the status row's left side: what AME is busy with, then the tab's own status (where its prices come from) - side
+-- by side, since the one says how current the other is
+function UI:FooterText()
+  local view = self.views and self.views[self.current]
+  local status = view and view.slots and view.slots.status
+  local text = status and status.text or ""
+  local busy = self:BusyNow()
+  if busy then -- first: a long status is cut short at the right, and this is the part that changes
+    text = W.Color("hold", busy) .. (text ~= "" and (W.SEP .. text) or "")
+  end
+  return text
 end
 
 -- What the background work is doing, for the status row: the most telling job queued (storing a search before
@@ -618,12 +629,10 @@ function contentArea(parent)
 end
 UI.ContentArea = contentArea
 
--- the footer's left side: the current tab's status text
+-- the footer: the tab's status and what AME is busy with on the left, the version on the right
 function UI:UpdateFooter()
   if not self.footerLeft then
     return
   end
-  local view = self.views and self.views[self.current]
-  local status = view and view.slots and view.slots.status
-  self.footerLeft:SetText(status and status.text or "")
+  self.footerLeft:SetText(self:FooterText())
 end

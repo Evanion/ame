@@ -1550,7 +1550,8 @@ describe("addon in a stubbed client", function()
       ns.AME.ingest.reading, ns.AME.ingest.progress = true, { done = 12345, total = 60000 }
       assert.truthy(ns.UI:FooterText():find("12,345 / 60,000", 1, true))
       ns.AME.ingest.reading = false
-      assert.truthy(ns.UI:FooterText():find("^v"))
+      assert.is_nil(ns.UI:FooterText():find("Reading scan", 1, true))
+      assert.truthy(ns.UI.footer.text:find("^v"))
       -- empty states say what to do next
       ns.UI:ShowTab("market")
       ns.UI.mq.text = "nothing like this"
