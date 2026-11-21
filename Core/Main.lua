@@ -471,6 +471,8 @@ function handlers.ADDON_LOADED(name)
   ns.Settings:Init()
   AME_DB.watch = AME_DB.watch or {}
   AME.watch = ns.Watch.New(AME_DB.watch)
+  AME_DB.notices = AME_DB.notices or {}
+  AME.notices = ns.Notices.New(AME_DB.notices)
   AME_DB.shopping = AME_DB.shopping or {}
   AME.shopping = ns.Shopping.New(AME_DB.shopping)
   ns.Trading:Init()

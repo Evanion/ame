@@ -520,6 +520,9 @@ function Service:OnMessage(msg, distribution, sender)
       self.trust:MarkMutual(sender)
       self.transport:Send(Service.PREFIX, Sync.EncodeAccept(m.shard), "WHISPER", sender)
     elseif self.trust:Request(sender, GetServerTime()) then
+      if self.AME.notices then
+        self.AME.notices:Add({ kind = "request", who = sender }, GetServerTime())
+      end
       self.AME.Say(
         L["%s wants to share auction prices with you. Type |cffffffff/ame config|r and open Sharing to approve."],
         sender

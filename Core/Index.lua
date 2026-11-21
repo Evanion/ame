@@ -26,6 +26,9 @@ function AME:CheckAlerts(index)
     if UIErrorsFrame then
       UIErrorsFrame:AddMessage(L["AME alert: %s %s"]:format(link or a.itemID, what), 1, 0.82, 0)
     end
+    if self.notices then -- kept for the notification center
+      self.notices:Add({ kind = "alert", text = what, itemID = a.itemID }, GetServerTime())
+    end
   end
   if #fired > 0 and ns.Settings:Get("alertSound") and PlaySound and SOUNDKIT then
     PlaySound(SOUNDKIT.RAID_WARNING or SOUNDKIT.TELL_MESSAGE or 3081)

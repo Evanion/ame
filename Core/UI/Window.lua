@@ -201,7 +201,10 @@ function UI:CreateShell()
       UI:ShowTab(name)
     end,
   })
-  self.tabBar:SetPoint("TOPRIGHT", -34, -8) -- right-aligned: long labels push the row left
+  -- the notification center's bell, then the tabs right-aligned left of it (long labels push the row left)
+  local bell = self:CreateNotices(f)
+  bell:SetPoint("TOPRIGHT", -34, -8)
+  self.tabBar:SetPoint("TOPRIGHT", bell, "TOPLEFT", -8, 0)
   self:LayoutTabs()
 
   -- The footer, part of the window like the title bar: on the left, where the tab's numbers come from (each tab

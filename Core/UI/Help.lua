@@ -247,7 +247,7 @@ Help.GUIDE = {
   },
   {
     L["Watchlists and alerts"],
-    L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price (12 or 12g is gold; 9s 50c works too), or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."],
+    L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price (12 or 12g is gold; 9s 50c works too), or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound; the bell left of the tabs keeps them, with a count of the ones you haven't seen."],
   },
   {
     L["Reading the numbers"],
@@ -511,6 +511,8 @@ function Help.Articles()
           body = {
             guideText(6),
             L["An alert fires once when its condition comes true, and again only after the price has moved back past its line. Alerts are checked after scans, after prices arrive from guild members and at login, and show on screen as well as in chat; the sound can be turned off under Settings, General. Signal alerts fire on Buy and Sell."],
+            H(L["Notifications"]),
+            L["The bell left of the tabs is the notification center: it keeps the alerts that fired (and players asking to share prices with you), newest first, with a red count of the ones you haven't seen. Click one to open its item (or, for a request, Settings, Sharing); Clear all empties it."],
             L["Right-click a guild member's shared list to copy it into your own watchlists."],
           },
         },

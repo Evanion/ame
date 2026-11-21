@@ -1643,14 +1643,29 @@ describe("addon in a stubbed client", function()
       ns.UI:ShowItem(id)
       drainJobs()
       local below = ns.UI.itemView.alertBelow
-      below:SetText("1000")
+      below:SetText("1000g 50s")
       below.scripts.OnTextChanged(below, true)
-      assert.are.equal(1000 * 10000, ns.AME.watch:Alert(id).below)
+      assert.are.equal(1000 * 10000 + 5000, ns.AME.watch:Alert(id).below)
       assert.truthy(ns.UI.itemView.watch.label.text:find("^Watching"))
+      assert.is_false(ns.UI.bell.badge:IsShown())
       fullScan({ { 2589, 900, 10 }, { 4306, 4000, 5 } })
       drainJobs()
       assert.is_true(env:chatContains("Alert:"))
       assert.is_true(env:chatContains("dropped to"))
+      -- the notification center keeps it: a count on the bell, the alert in its panel, a click opens the item
+      assert.is_true(ns.UI.bell.badge:IsShown())
+      assert.are.equal("1", ns.UI.bell.count:GetText())
+      ns.UI:ShowTab("market")
+      ns.UI.bell.scripts.OnClick(ns.UI.bell)
+      local first = ns.UI.noticePanel.rows[1]
+      assert.is_true(first:IsShown())
+      assert.truthy(first.text:GetText():find("dropped to"), first.text:GetText())
+      assert.is_true(first.dot:IsShown()) -- new
+      assert.is_false(ns.UI.bell.badge:IsShown()) -- seen now
+      first.scripts.OnClick(first)
+      assert.are.equal("item", ns.UI.current)
+      assert.are.equal(id, ns.UI.itemID)
+      assert.is_false(ns.UI.noticePanel:IsShown())
       -- the Guide tab exists and hover explanations are wired
       ns.UI:ShowTab("guide")
       local header = v.headers[#v.headers]
