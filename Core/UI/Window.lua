@@ -109,13 +109,9 @@ function UI:WarmItemFacts()
   end
   self.factsWarmed = index
   ns.AME.jobs:Add("item-facts", function(job)
-    local n = 0
     for id in pairs(index.items) do
       ns.ItemCache.Get(id)
-      n = n + 1
-      if n % 100 == 0 then
-        job:Checkpoint()
-      end
+      job:Checkpoint() -- after each: one item can cost a few ms (the game's item data), so 100 at once made 300 ms
     end
   end)
 end

@@ -104,6 +104,64 @@ describe("ItemCache with random-suffix variants", function()
     _G.C_TooltipInfo = nil
   end)
 
+  it("looks up thousands of variant tooltips a few ms per frame, not all in one", function()
+    -- each tooltip costs 1 ms of a fake clock; a frame is one GetTime value
+    local ms, frame, calls = 0, 1, 0
+    local onUpdate
+    local before = { _G.debugprofilestop, _G.GetTime, _G.C_TooltipInfo }
+    finally(function()
+      _G.debugprofilestop, _G.GetTime, _G.C_TooltipInfo = before[1], before[2], before[3]
+    end)
+    _G.debugprofilestop = function()
+      return ms
+    end
+    _G.GetTime = function()
+      return frame
+    end
+    _G.CreateFrame = function()
+      return {
+        SetScript = function(_, _, fn)
+          onUpdate = fn
+        end,
+      }
+    end
+    _G.C_TooltipInfo = {
+      GetItemKey = function(_, _, suffix)
+        calls = calls + 1
+        ms = ms + 1
+        return { lines = { { leftText = "Item 15211 of " .. suffix } } }
+      end,
+    }
+    _G.C_Item.GetItemInfo = function(id)
+      return "Item " .. id, nil, 2
+    end
+    local names = 0
+    C.OnNamesChanged(function()
+      names = names + 1
+    end)
+    _G.C_Timer = {
+      After = function(_, fn)
+        fn()
+      end,
+    }
+    local keys = {}
+    for s = 1, 50 do
+      keys[s] = ns.ItemKey(15211, 20000 + s)
+      C.Get(keys[s])
+    end
+    assert.are.equal(C.RESOLVE_MS, calls) -- this frame's share; the rest wait
+    assert.are.equal("Item 15211", C.Get(keys[50]).name) -- the base name meanwhile
+    local frames = 0
+    while onUpdate and calls < 50 and frames < 100 do
+      frame, frames = frame + 1, frames + 1
+      onUpdate()
+    end
+    assert.are.equal(50, calls)
+    assert.are.equal(math.ceil((50 - C.RESOLVE_MS) / C.RESOLVE_MS), frames)
+    assert.are.equal("Item 15211 of 20050", C.Get(keys[50]).name)
+    assert.truthy(names > 0) -- the window hears the names arrived
+  end)
+
   it("builds a variant's link from another item with the same suffix, or the suffix's learned bonus", function()
     local forever = "|cff1eff00|Hitem:15211::::::::1:1488:::1:12917::::::|h[Raider Shortsword of Magic]|h|r"
     C.Pair(forever, 15211, 14324)

@@ -118,6 +118,68 @@ function C.Resolve(key)
   return nil
 end
 
+-- A variant's tooltip costs the game a few ms: looking up thousands at once (the market list's quality filter,
+-- warming names after a rebuild) made 300 ms frames. Each frame resolves up to RESOLVE_MS right away - one item
+-- on screen still gets its name at once - and the rest wait in a queue worked off the same way in the next frames
+-- (names arriving refresh the window, like item data does).
+C.RESOLVE_MS = 4
+local spentAt, spent = nil, 0
+local queue, queued = {}, {}
+local driver
+
+local function clock()
+  return debugprofilestop and debugprofilestop() or nil
+end
+
+local function budgetLeft()
+  local now = GetTime and GetTime() or 0
+  if now ~= spentAt then
+    spentAt, spent = now, 0
+  end
+  return spent < C.RESOLVE_MS
+end
+
+local function timed(key)
+  local t0 = clock()
+  C.Resolve(key)
+  local t1 = clock()
+  spent = spent + ((t0 and t1) and (t1 - t0) or 0)
+  return C.variants[key] ~= nil
+end
+
+local function drain()
+  local got = false
+  while #queue > 0 and budgetLeft() do
+    local key = table.remove(queue, 1)
+    queued[key] = nil
+    got = timed(key) or got
+  end
+  if got then
+    C.NamesArrived()
+  end
+  if #queue == 0 and driver then
+    driver:SetScript("OnUpdate", nil)
+  end
+end
+
+function C.ResolveSoon(key)
+  if C.tried[key] or queued[key] then
+    return
+  end
+  if budgetLeft() then
+    timed(key)
+    return
+  end
+  queued[key] = true
+  queue[#queue + 1] = key
+  if not driver and CreateFrame then
+    driver = CreateFrame("Frame")
+  end
+  if driver then
+    driver:SetScript("OnUpdate", drain)
+  end
+end
+
 -- remember a variant's name from its link; returns the key. Plain items need nothing (the client knows their name).
 function C.Learn(link)
   local key = ns.ItemIDFrom(link)
@@ -198,7 +260,7 @@ function C.Get(key)
     end
     if name and ns.IsVariant(key) then
       if not C.variants[key] then
-        C.Resolve(key) -- ask the game for the variant's link and name
+        C.ResolveSoon(key) -- ask the game for the variant's link and name
       end
       -- the base name until the variant's own is known
       name = C.variants[key] or name
@@ -263,6 +325,11 @@ local function notify()
       fn()
     end
   end)
+end
+
+-- names learned in the background (queued variant tooltips): the window refreshes as for item data
+function C.NamesArrived()
+  notify()
 end
 
 -- GET_ITEM_INFO_RECEIVED / ITEM_DATA_LOAD_RESULT: the payload is a base item ID; its variants fill in too
