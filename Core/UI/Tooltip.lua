@@ -86,9 +86,73 @@ function Tooltip.Summary(itemID)
   return index and itemID and index.items[itemID] or nil
 end
 
+-- A recipe (pattern, plans, formula...): what it makes, at its market price, and what a craft earns after the
+-- reagents (bought at market) and the AH cut and deposit. Needs Crafting on (its data says what a recipe teaches).
+-- -> rows like Tooltip.Lines, or nil when the item teaches nothing
+Tooltip.RECIPE_MAX = 2 -- a recipe teaching more than one craft (rare): the first two
+function Tooltip.RecipeLines(itemID)
+  local data = ns.CraftingData
+  if not (itemID and data and data:Enabled() and data:Load()) then
+    return nil
+  end
+  local teaches = data:Teaches(itemID)
+  local index = factionIndex()
+  if not (teaches and index) then
+    return nil
+  end
+  local house = UnitFactionGroup and UnitFactionGroup("player")
+  local cut = (house == "Neutral" and ns.Settings:Get("cutNeutral") or ns.Settings:Get("cutFaction")) / 100
+  local craft = ns.Crafting.New({
+    market = function(id)
+      return index.items[id]
+    end,
+    vendorBuy = function(id)
+      return data:VendorPrice(id)
+    end,
+    vendorSell = function(id)
+      return ns.ItemCache.Get(id).sellPrice
+    end,
+    cut = cut,
+    deposit = function(id)
+      local sell = ns.ItemCache.Get(id).sellPrice
+      return sell and ns.Arbitrage.Deposit(sell, house, ns.Settings:Get("listingHours")) or 0
+    end,
+    factor = ns.Settings:Get("outlierFactor"),
+  })
+  local rows = {}
+  for i, spell in ipairs(teaches.spells) do
+    if i > Tooltip.RECIPE_MAX then
+      break
+    end
+    local recipe = data:Recipe(spell)
+    local product = recipe and recipe.product
+    if product then
+      local name = ns.ItemCache.Name(product) or ("item:" .. product)
+      local made = (recipe.made or 1) > 1 and (" x" .. recipe.made) or ""
+      local price = craft:Price(product)
+      rows[#rows + 1] = {
+        L["Makes %s"]:format(name .. made),
+        price and W.Money(price) or Dim(L["no price yet"]),
+      }
+      local e = craft:Evaluate(recipe)
+      if e.profit then
+        rows[#rows + 1] = {
+          Dim("  " .. L["Per craft, after reagents"]),
+          W.Color(e.profit >= 0 and "good" or "bad", e.profit < 0 and "-" or "+") .. W.Money(math.abs(e.profit)),
+        }
+      end
+    end
+  end
+  return #rows > 0 and rows or nil
+end
+
 local function addLines(tooltip, itemID)
   if ns.Settings and not ns.Settings:Get("tooltip") then
     return
+  end
+  local recipe = Tooltip.RecipeLines(itemID)
+  for _, r in ipairs(recipe or {}) do
+    W.TipPair(tooltip, r[1], r[2])
   end
   local s = Tooltip.Summary(itemID)
   if not s then

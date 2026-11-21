@@ -298,6 +298,7 @@ function Help.Articles()
           title = L["Item tooltips"],
           body = {
             L["Every item tooltip in the game gets AME's lines: the market price against its average, how many are listed and how many sell a day, and the signal with the market phase. Hold Shift for more - the average, the lowest listing, the 7-day change, the supply trend, volatility, the score and how much data it rests on - or show it all the time with Always show details."],
+            L["With Crafting on, a recipe's tooltip (pattern, plans, formula...) also shows what it makes at today's market price, and what one craft earns after buying the reagents at market and the auction house's cut."],
             L["Tooltips show your own faction's auction house. Turn them off, or change the average they compare with, under Settings, Tooltips & charts."],
           },
         },

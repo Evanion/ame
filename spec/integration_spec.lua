@@ -1782,6 +1782,25 @@ describe("addon in a stubbed client", function()
       assert.are.equal("PvP · Goblin AH", ns.ShardLabel("PvP|Neutral"))
     end)
 
+    it("a recipe's tooltip shows what it makes at market, and what a craft earns after reagents", function()
+      seeded()
+      ns.CraftingData:Use({
+        recipes = { [7001] = { 197, 4306, 1, 50, 75, 2589, 2 } }, -- 2 Linen -> 1 Silk, say
+        items = { [99001] = { 197, 50, 7001 } }, -- the pattern teaching it
+      })
+      finally(function()
+        ns.CraftingData:Use(nil)
+      end)
+      local rows = ns.Tooltip.RecipeLines(99001)
+      assert.is_nil(rows) -- Crafting off: nothing
+      ns.Settings:Set("crafting", true)
+      rows = ns.Tooltip.RecipeLines(99001)
+      assert.truthy(rows[1][1]:find("Makes", 1, true), rows[1][1])
+      assert.truthy(rows[1][2]:find("[sgc]"), rows[1][2]) -- a price
+      assert.truthy(rows[2][1]:find("Per craft", 1, true))
+      assert.is_nil(ns.Tooltip.RecipeLines(2589)) -- not a recipe
+    end)
+
     it("tooltips use your faction's auction house even right after visiting the goblin AH", function()
       boot()
       env.npcFaction = "Horde"
