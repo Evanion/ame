@@ -5,6 +5,11 @@
 --
 -- The game allows one full scan every 15 minutes (per account, whoever asks); AME counts from the last one asked
 -- for by anyone (AME:ScanDiag().lastReplicateAt) and says when the next can go.
+--
+-- Settings, Data picks the kind (scanMode):
+--   detailed  every listing (ReplicateItems): the market price, cheapest and spread of each item; once per 15 minutes
+--   fast      the browse list paged to the end: each item's cheapest listing only (its market price then comes from
+--             its usual spread, Spread.lua); any time, no wait
 local _, ns = ...
 local L = ns.L
 
@@ -15,6 +20,12 @@ ns.ScanButton = Scan
 
 Scan.COOLDOWN = 15 * 60
 Scan.TIMEOUT = 120 -- asked this long ago with nothing read: the game didn't answer (throttled)
+Scan.FAST_TIMEOUT = 180 -- a fast scan still paging after this long: given up
+Scan.PAGE_DELAY = 0.05 -- between asking for the next page of the browse list
+
+function Scan.Fast()
+  return ns.Settings:Get("scanMode") == "fast"
+end
 
 -- seconds as m:ss
 local function clock(s)
@@ -28,6 +39,15 @@ end
 
 -- "ready", "scanning" or "wait" (with the seconds left)
 function Scan:State()
+  if self.fast then
+    if GetServerTime() - self.fast.at < Scan.FAST_TIMEOUT then
+      return "scanning"
+    end
+    self.fast = nil
+  end
+  if Scan.Fast() then
+    return "ready" -- a fast scan has no wait
+  end
   local d = ns.AME:ScanDiag()
   local asked, read = d.lastReplicateAt, d.readDoneAt
   local now = GetServerTime()
@@ -44,9 +64,63 @@ function Scan:State()
   return "ready"
 end
 
--- start a full scan; true, or nil and why
+-- the browse list, paged to the end: each page asks for the next until the game says it has them all
+local function nextPage()
+  local api = C_AuctionHouse
+  if not (Scan.fast and api) then
+    return
+  end
+  if api.HasFullBrowseResults and api.HasFullBrowseResults() then
+    Scan.fast = nil -- complete: AME records it as a full scan (Ingest)
+    return
+  end
+  if api.RequestMoreBrowseResults then
+    pcall(api.RequestMoreBrowseResults)
+  end
+end
+
+function Scan:OnBrowsePage()
+  if self.fast and not self.fast.pending then
+    self.fast.pending = true
+    C_Timer.After(Scan.PAGE_DELAY, function()
+      if Scan.fast then
+        Scan.fast.pending = false
+      end
+      nextPage()
+    end)
+  end
+end
+
+function Scan:StartFast()
+  local api = C_AuctionHouse
+  if not (api and api.SendBrowseQuery) then
+    return nil, L["This game version has no full scan."]
+  end
+  local order = Enum and Enum.AuctionHouseSortOrder and Enum.AuctionHouseSortOrder.Price or 0
+  local query =
+    { searchString = "", sorts = { { sortOrder = order, reverseSort = false } }, filters = {}, itemClassFilters = {} }
+  self.fast = { at = GetServerTime() }
+  local ok, err = pcall(api.SendBrowseQuery, query)
+  if not ok then
+    self.fast = nil
+    return nil, tostring(err)
+  end
+  self:Refresh()
+  return true
+end
+
+-- start a full scan (the kind Settings picks); true, or nil and why
 function Scan:Start()
   local AME = ns.AME
+  if Scan.Fast() then
+    if not AME.ahOpen then
+      return nil, L["Open the auction house first."]
+    end
+    if self.fast then
+      return nil, L["A full scan is already running."]
+    end
+    return self:StartFast()
+  end
   local api = C_AuctionHouse and C_AuctionHouse.ReplicateItems
   if not api then
     return nil, L["This game version has no full scan."]
@@ -81,6 +155,11 @@ function Scan:Progress()
   if p and p.total > 0 then
     return L["Reading auctions %d%%"]:format(math.floor(p.done * 100 / p.total))
   end
+  if self.fast then
+    local api = C_AuctionHouse
+    local got = api and api.GetBrowseResults and #(api.GetBrowseResults() or {}) or 0
+    return L["Fetching items... %d"]:format(got)
+  end
   local asked, read = d.lastReplicateAt, d.readDoneAt
   if ingest and ingest.requested and asked and now - asked < Scan.TIMEOUT then
     return L["Waiting for the server... %ds"]:format(now - asked)
@@ -112,7 +191,7 @@ function Scan:Refresh()
     b:SetText(L["Full scan in %s"]:format(clock(left)))
     b:SetEnabled(false)
   else
-    b:SetText(L["Full scan"])
+    b:SetText(Scan.Fast() and L["Fast scan"] or L["Full scan"])
     b:SetEnabled(true)
   end
   b:SetWidth(math.ceil(b.label:GetStringWidth() or 60) + 20)
@@ -156,8 +235,10 @@ function Scan:Attach()
   W.Tooltip(b, function(tip)
     W.TipText(
       tip,
-      L["Full scan"],
-      L["Reads every auction on this auction house at once (AME records it like any scan). The game allows one every 15 minutes. Shown because no scanning addon is loaded."]
+      Scan.Fast() and L["Fast scan"] or L["Full scan"],
+      Scan.Fast()
+          and L["Reads each item's cheapest listing on this auction house, any time; the market price comes from how far above the cheapest each item usually sells. Detailed scans (Settings, Data) read every listing, once per 15 minutes."]
+        or L["Reads every auction on this auction house at once (AME records it like any scan). The game allows one every 15 minutes. Shown because no scanning addon is loaded."]
     )
   end)
   self.button = b
@@ -181,7 +262,17 @@ end
 local events = CreateFrame("Frame")
 events:RegisterEvent("AUCTION_HOUSE_SHOW")
 events:RegisterEvent("ADDON_LOADED")
+pcall(events.RegisterEvent, events, "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+pcall(events.RegisterEvent, events, "AUCTION_HOUSE_BROWSE_RESULTS_ADDED")
+pcall(events.RegisterEvent, events, "AUCTION_HOUSE_CLOSED")
 events:SetScript("OnEvent", function(_, event)
+  if event == "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED" or event == "AUCTION_HOUSE_BROWSE_RESULTS_ADDED" then
+    Scan:OnBrowsePage()
+    return
+  elseif event == "AUCTION_HOUSE_CLOSED" then
+    Scan.fast = nil
+    return
+  end
   -- the window's addon may load after this event reaches AME: try now, and again a moment later
   if event == "ADDON_LOADED" and not Scan.Frame() then
     return

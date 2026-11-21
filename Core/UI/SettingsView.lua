@@ -313,6 +313,19 @@ function UI:CreateSettingsView(parent, contentArea)
 
   -- Data
   _, st = card("data", L["Data"], 0)
+  v.scanMode = dropdown(st, L["Full scans"], 170, {
+    { "detailed", L["Detailed: every listing"] },
+    { "fast", L["Fast: cheapest per item"] },
+  }, function(value)
+    ns.Settings:Set("scanMode", value)
+    if ns.ScanButton then
+      ns.ScanButton:Refresh()
+    end
+  end)
+  paragraph(
+    st,
+    L["Detailed reads every listing - the most accurate prices - and the game allows one every 15 minutes. Fast reads only each item's cheapest listing, any time; its market prices come from how far above the cheapest each item usually sells, learned from detailed scans and searches. For the Full scan button and /ame scan."]
+  )
   v.storage = st:Text("GameFontDisableSmall", 6)
   v.storage:SetSpacing(2)
   -- the data actions in a row, sized to their labels (wrapping when narrow); what each does is on its tooltip
@@ -459,6 +472,7 @@ function UI:RefreshSettings()
   v.outliers:SetValue(ns.Settings:Get("outlierFactor"))
   v.avgDays:SetValue(ns.Settings:Get("tooltipAvgDays"))
   v.theme:SetValue(ns.Settings:Get("theme"))
+  v.scanMode:SetValue(ns.Settings:Get("scanMode"))
   v.scale:SetValue(ns.Settings:Get("windowScale"))
   v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
   v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))

@@ -162,6 +162,33 @@ describe("addon in a stubbed client", function()
     assert.are.equal(1, AME_DB.stats.scan.browseRequests)
   end)
 
+  it("fast full scans (Settings, Data): AME pages the browse list to the end, any time, no 15-minute wait", function()
+    boot()
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    ns.Settings:Set("scanMode", "fast")
+    local pages = 0
+    env.ah.browseFull = false
+    env.ah.browse = { { 2589, 120, 40 } }
+    env.ah.RequestMoreBrowseResults = function()
+      pages = pages + 1
+      env.ah.browse[#env.ah.browse + 1] = { 4306, 900, 12 }
+      env.ah.browseFull = true
+    end
+    local ok = ns.ScanButton:Start()
+    assert.is_true(ok)
+    assert.are.equal("scanning", ns.ScanButton:State())
+    env:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED") -- the first page: ask for the next
+    env:advance(1)
+    assert.are.equal(1, pages)
+    env:fire("AUCTION_HOUSE_BROWSE_RESULTS_ADDED") -- the last page: recorded as a full scan
+    env:advance(1)
+    drainJobs()
+    assert.is_true(env:chatContains("recorded full scan: 2 items"))
+    assert.are.equal("ready", ns.ScanButton:State()) -- and another can go right away
+    ns.Settings:Set("scanMode", "detailed")
+  end)
+
   it("a summary scan's market sits at the item's usual spread above its cheapest, not at the cheapest", function()
     boot()
     env.npcFaction = "Horde"

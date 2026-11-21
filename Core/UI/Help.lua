@@ -311,7 +311,8 @@ function Help.Articles()
           body = {
             guideText(1),
             H(L["Quick scans and full scans"]),
-            L["Auctionator's Full Scan button runs a quick scan by default: it reads only each item's cheapest listing. AME then sets the market price from how far above the cheapest that item usually sells, learned from scans that see every listing - /ame scan (or the Full scan button without a scanning addon), Auctionator's replicate full scan, and your searches. Run /ame scan now and then and quick scans stay accurate; candles keep their wicks."],
+            L["Auctionator's Full Scan button runs a quick scan by default: it reads only each item's cheapest listing. AME then sets the market price from how far above the cheapest that item usually sells, learned from scans that see every listing - /ame scan (or the Full scan button without a scanning addon), Auctionator's replicate full scan, and your searches. Run a detailed scan now and then and quick scans stay accurate; candles keep their wicks."],
+            L["AME's own full scan (the Full scan button, /ame scan) is detailed by default: every listing, once per 15 minutes. Settings, Data can make it fast instead: each item's cheapest listing, any time."],
             H(L["Other auction houses"]),
             L["The button next to AME's title picks which auction house you're looking at: yours, the other faction's or the goblin AH. Each keeps its own history; scan there (any character on this account counts) to fill it."],
             H(L["Importing from Auctionator"]),
