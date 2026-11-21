@@ -6,7 +6,7 @@
 --   catalog: per profession (skill line), every recipe's product, yield and reagents - the same for every character,
 --            saved once per account and refreshed whenever any character opens that profession
 --   chars:   per character, per profession: skill, max skill, which recipes are learned, cooldowns, when recorded
--- Recorded only while Crafting is switched on (Settings): no work and nothing saved otherwise.
+-- Recorded for every character: the profession window's bar and craft queue use it, as does Crafting.
 --
 -- AME_DB.crafting = {
 --   catalog = { [skillLine] = { at, recipes = { [recipeID] = { out, min, max, type, r = { {itemID, n}, ... } } } } },
@@ -170,14 +170,7 @@ function Professions:Catalog(skillLine)
   return c and c.recipes
 end
 
-local function enabled()
-  return ns.Settings and ns.CraftingData and ns.CraftingData:Enabled()
-end
-
 function Professions:Record()
-  if not enabled() then
-    return
-  end
   local snap = Professions.Snapshot(C_TradeSkillUI, GetServerTime())
   if not snap then
     return
@@ -190,9 +183,6 @@ function Professions:Record()
 end
 
 function Professions:RecordSpellbook()
-  if not enabled() then
-    return
-  end
   AME_DB.crafting = AME_DB.crafting or {}
   local chars = AME_DB.crafting.chars or {}
   AME_DB.crafting.chars = chars

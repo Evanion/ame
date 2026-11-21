@@ -1901,6 +1901,101 @@ describe("addon in a stubbed client", function()
       assert.is_true(opts.houses[1].mine)
     end)
 
+    it("the profession window: profit on each recipe, the bar for the picked one, and the craft queue", function()
+      boot()
+      env.npcFaction = "Horde"
+      env:fire("AUCTION_HOUSE_SHOW")
+      -- bars 1s 20c, cloth 45c, gauntlets 20s at the Horde AH
+      fullScan({ { 3860, 6000, 50 }, { 4338, 3600, 80 }, { 7919, 10000, 5 } }) -- buyouts for the whole stack
+      env:fire("AUCTION_HOUSE_CLOSED")
+      env:advance(4)
+      drainJobs()
+      local crafted = {}
+      rawset(_G, "C_TradeSkillUI", {
+        IsTradeSkillReady = function()
+          return true
+        end,
+        GetBaseProfessionInfo = function()
+          return { professionID = 164, professionName = "Blacksmithing", skillLevel = 230, maxSkillLevel = 300 }
+        end,
+        GetAllRecipeIDs = function()
+          return { 100 }
+        end,
+        GetRecipeSchematic = function(id)
+          if id == 100 then
+            return {
+              outputItemID = 7919,
+              quantityMin = 1,
+              quantityMax = 1,
+              reagentSlotSchematics = {
+                { reagentType = 1, quantityRequired = 6, reagents = { { itemID = 3860 } } },
+                { reagentType = 1, quantityRequired = 4, reagents = { { itemID = 4338 } } },
+              },
+            }
+          end
+        end,
+        GetRecipeInfo = function(id)
+          return id == 100 and { recipeID = 100, learned = true, numAvailable = 1 } or nil
+        end,
+        CraftRecipe = function(id, n)
+          crafted[#crafted + 1] = { id, n }
+        end,
+      })
+      local page = { SelectRecipe = function() end, SchematicForm = { Init = function() end } }
+      local frame = CreateFrame("Frame")
+      rawset(frame, "CraftingPage", page)
+      rawset(_G, "ProfessionsFrame", frame)
+      rawset(_G, "ProfessionsRecipeListRecipeMixin", { Init = function() end })
+      finally(function()
+        rawset(_G, "C_TradeSkillUI", nil)
+        rawset(_G, "ProfessionsFrame", nil)
+        rawset(_G, "ProfessionsRecipeListRecipeMixin", nil)
+      end)
+      AME_DB.holdings[ns.Trading.CharKey()] = { bags = { [3860] = 4, [4338] = 20 } }
+      env:fire("ADDON_LOADED", "Blizzard_Professions")
+      local PB = ns.ProfessionBar
+      assert.is_not_nil(PB.bar)
+      ns.Professions:Record() -- the window is recorded: who knows what
+      -- picking a recipe: cost (6 bars + 4 cloth = 9s), sells for 19s after the 5% cut, profit 10s
+      page:SelectRecipe({ recipeID = 100 })
+      assert.are.equal(100, PB.selected)
+      local line = PB.bar.line:GetText():gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+      assert.truthy(line:find("Cost to craft 9s", 1, true), line)
+      assert.truthy(line:find("Sells for 19s", 1, true), line)
+      assert.truthy(line:find("Profit +10s", 1, true), line)
+      local batch = PB.bar.batch:GetText():gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+      assert.truthy(batch:find("to buy 2s 40c", 1, true), batch) -- 2 bars short
+      -- a row in the recipe list gets its profit
+      local rowFrame = CreateFrame("Frame")
+      rawget(_G, "ProfessionsRecipeListRecipeMixin").Init(rowFrame, {
+        GetData = function()
+          return { recipeInfo = { recipeID = 100 } }
+        end,
+      })
+      local fs = rawget(rowFrame, "ameProfit")
+      assert.truthy(fs:GetText():find("10s"), fs:GetText())
+      -- queue it: the plan buys the 2 missing bars, then crafts
+      PB.bar.queue.scripts.OnClick(PB.bar.queue)
+      assert.are.same({ { recipe = 100, count = 1 } }, AME_DB.craftQueue.items)
+      local plan = PB.Plan()
+      assert.are.equal(1, #plan.steps)
+      assert.is_true(plan.steps[1].mine)
+      assert.are.equal(240, plan.toBuy)
+      PB:QueueToShopping()
+      local list
+      for _, l in ipairs(ns.AME.shopping:Lists()) do
+        if l.name == "Craft queue" then
+          list = l
+        end
+      end
+      assert.are.equal(6, list.items[3860].need) -- the whole need: the list counts down from what you hold
+      -- craft next, and the finished craft counts off the queue
+      PB.panel.next.scripts.OnClick(PB.panel.next)
+      assert.are.same({ { 100, 1 } }, crafted)
+      env:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-1", 100)
+      assert.are.equal(0, #AME_DB.craftQueue.items)
+    end)
+
     it("counts the guild bank (every tab, as last seen) with what your characters hold, for the tooltip", function()
       boot()
       local slots = { [1] = { [3] = { 2589, 20 } }, [2] = { [1] = { 2589, 5 }, [2] = { 2592, 1 } } }

@@ -89,6 +89,27 @@ describe("Tooltip.Lines", function()
     assert.are.equal(3, #rows) -- header (with "your 43"), market, signal
   end)
 
+  it("goes compact on a small screen or a UI scaled far up, not at the default scale", function()
+    local saved = { _G.UIParent, _G.GetPhysicalScreenSize }
+    finally(function()
+      _G.UIParent, _G.GetPhysicalScreenSize = saved[1], saved[2]
+    end)
+    local h, ph = 768, 1080
+    _G.UIParent = {
+      GetHeight = function()
+        return h
+      end,
+    }
+    _G.GetPhysicalScreenSize = function()
+      return 1920, ph
+    end
+    assert.is_false(T.Compact()) -- 1080p, default scale: the UI is 768 units tall
+    ph = 768
+    assert.is_true(T.Compact()) -- a 768-pixel laptop screen
+    ph, h = 1440, 668
+    assert.is_true(T.Compact()) -- UI scale 1.15
+  end)
+
   it("gear: the disenchant value, and with Shift what it disenchants into by chance", function()
     local de = {
       value = 9900,

@@ -25,7 +25,8 @@ local Dim = W.Dim
 
 Tooltip.BETTER = 0.10 -- the goblin AH is mentioned when it pays this much more, after its cut
 Tooltip.BETTER_DAYS = 3 -- ... and its prices are this recent
-Tooltip.COMPACT_HEIGHT = 820 -- the UI (UIParent) shorter than this: compact tooltips
+Tooltip.COMPACT_HEIGHT = 700 -- the UI (UIParent) shorter than this (a UI scale over ~1.1): compact tooltips
+Tooltip.SMALL_SCREEN = 900 -- ... or a screen fewer pixels tall than this
 
 local function money(c)
   return W.Money(c and math.floor(c + 0.5))
@@ -239,8 +240,17 @@ function Tooltip.Summary(itemID)
   return index and itemID and index.items[itemID] or nil
 end
 
--- the UI has little room (a large UI scale on a small screen): compact tooltips
+-- little room: a small screen (a laptop's 768 or 800 pixels), or a UI scaled up so far that the game's UI (768 units
+-- tall at the default scale, on any screen) has less height than that -> compact tooltips
 function Tooltip.Compact()
+  local getSize = _G.GetPhysicalScreenSize
+  local ph
+  if getSize then
+    ph = select(2, getSize())
+  end
+  if type(ph) == "number" and ph > 0 and ph < Tooltip.SMALL_SCREEN then
+    return true
+  end
   local h = UIParent and UIParent.GetHeight and UIParent:GetHeight()
   return type(h) == "number" and h > 0 and h < Tooltip.COMPACT_HEIGHT
 end

@@ -263,6 +263,11 @@ function UI:AddRecipeReagents(listIndex)
   local sel = self:ShoppingSelected()
   listIndex = listIndex or (sel and sel.own)
   local ok, recipe = pcall(ns.Shopping.Recipe, recipeApi())
+  -- the modern profession window (WoW Forever, retail): the recipe picked in it
+  local picked = ns.ProfessionBar and ns.ProfessionBar:SelectedRecipe()
+  if (not (ok and recipe)) and picked and #picked.reagents > 0 then
+    ok, recipe = true, { name = ns.ItemCache.Name(picked.product), reagents = picked.reagents }
+  end
   if not (ok and recipe) then
     print("|cff33ccffAME|r " .. L["open your profession window and select a recipe first"])
     return
