@@ -468,11 +468,11 @@ function handlers.ADDON_LOADED(name)
   ns.ItemCache.UnpackLater(AME_DB.variantsPacked, AME_DB.variantStringsPacked)
   AME_DB.variantsPacked, AME_DB.variantStringsPacked = nil, nil
   AME.compressor = ns.Compress.New(LibStub("LibDeflate"))
+  AME_DB.notices = AME_DB.notices or {}
+  AME.notices = ns.Notices.New(AME_DB.notices) -- before Settings: the broker feed (Launcher) shows it
   ns.Settings:Init()
   AME_DB.watch = AME_DB.watch or {}
   AME.watch = ns.Watch.New(AME_DB.watch)
-  AME_DB.notices = AME_DB.notices or {}
-  AME.notices = ns.Notices.New(AME_DB.notices)
   AME_DB.shopping = AME_DB.shopping or {}
   AME.shopping = ns.Shopping.New(AME_DB.shopping)
   ns.Trading:Init()

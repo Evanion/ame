@@ -13,6 +13,7 @@ local TITLE = W.Color("brand", "Azeroth") .. " Mercantile Exchange"
 function Launcher:Init()
   self:RegisterOptionsPage()
   self:CreateLauncher()
+  self:CreateNoticeFeed()
 end
 
 function Launcher:RegisterOptionsPage()
@@ -114,4 +115,61 @@ function Launcher:CreateLauncher()
   if icon and launcher then
     icon:Register(ADDON, launcher, AME_DB.settings.minimap)
   end
+end
+
+-- Notifications on info bars (Titan Panel, ChocolateBar, Bazooka...): a LibDataBroker data source, "AME
+-- Notifications", whose text says how many notices you haven't seen ("2 new"; nothing new: no text, just the bell).
+-- Hover: the newest few. Click: AME's window with the notification center open.
+Launcher.FEED = ADDON .. "_Notifications"
+Launcher.FEED_TIP = 5
+
+function Launcher.FeedText(unread)
+  return unread > 0 and W.Color("bad", L["%d new"]:format(unread)) or ""
+end
+
+function Launcher:CreateNoticeFeed()
+  local LDB = LibStub("LibDataBroker-1.1", true)
+  local notices = ns.AME and ns.AME.notices
+  if not (LDB and notices) then
+    return
+  end
+  local feed = LDB:NewDataObject(Launcher.FEED, {
+    type = "data source",
+    label = L["AME notifications"],
+    text = "",
+    icon = "Interface\\Icons\\INV_Misc_Bell_01",
+    OnClick = function()
+      ns.UI:Create()
+      ns.UI.frame:Show()
+      if not (ns.UI.noticePanel and ns.UI.noticePanel:IsShown()) then
+        ns.UI:ToggleNotices()
+      end
+    end,
+    OnTooltipShow = function(tt)
+      tt:AddLine(TITLE)
+      local list, now = notices:List(), GetServerTime()
+      if #list == 0 then
+        tt:AddLine(L["No notifications."], 0.7, 0.7, 0.7)
+      end
+      for i = 1, math.min(Launcher.FEED_TIP, #list) do
+        local e = list[i]
+        local line = ns.UI.NoticeLine(e)
+        tt:AddDoubleLine(line, W.Ago(e.at, now), 1, 1, 1, 0.6, 0.6, 0.6)
+      end
+      if #list > Launcher.FEED_TIP then
+        tt:AddLine(L["+ %d older"]:format(#list - Launcher.FEED_TIP), 0.6, 0.6, 0.6)
+      end
+      tt:AddLine(" ")
+      tt:AddLine(W.Dim(L["Click: open the notifications"]))
+    end,
+  })
+  if not feed then
+    return
+  end
+  self.feed = feed
+  local function update()
+    feed.text = Launcher.FeedText(notices:Unread())
+  end
+  notices:OnChange(update)
+  update()
 end

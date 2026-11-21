@@ -299,6 +299,7 @@ function M.install(opts)
   set("LibStub", nil)
   dofile("Libs/Ace3/LibStub/LibStub.lua")
   dofile("Libs/Ace3/CallbackHandler-1.0/CallbackHandler-1.0.lua")
+  dofile("Libs/LibDataBroker-1.1/LibDataBroker-1.1.lua")
   dofile("Libs/LibDeflate/LibDeflate.lua")
   dofile("LibAMEChart-1.0/LibAMEChart-1.0.lua")
   -- UI globals

@@ -1655,6 +1655,17 @@ describe("addon in a stubbed client", function()
       -- the notification center keeps it: a count on the bell, the alert in its panel, a click opens the item
       assert.is_true(ns.UI.bell.badge:IsShown())
       assert.are.equal("1", ns.UI.bell.count:GetText())
+      -- and info bars (Titan Panel and the like) read it from the LibDataBroker feed
+      local feed = LibStub("LibDataBroker-1.1"):GetDataObjectByName(ns.Launcher.FEED)
+      assert.are.equal("data source", feed.type)
+      assert.truthy(feed.text:find("1 new"), feed.text)
+      local tip = wow.newObject("GameTooltip")
+      local said = {}
+      tip.AddDoubleLine = function(_, left)
+        said[#said + 1] = left
+      end
+      feed.OnTooltipShow(tip)
+      assert.truthy(said[1] and said[1]:find("dropped to"), tostring(said[1]))
       ns.UI:ShowTab("market")
       ns.UI.bell.scripts.OnClick(ns.UI.bell)
       local first = ns.UI.noticePanel.rows[1]
@@ -1662,6 +1673,7 @@ describe("addon in a stubbed client", function()
       assert.truthy(first.text:GetText():find("dropped to"), first.text:GetText())
       assert.is_true(first.dot:IsShown()) -- new
       assert.is_false(ns.UI.bell.badge:IsShown()) -- seen now
+      assert.are.equal("", feed.text)
       first.scripts.OnClick(first)
       assert.are.equal("item", ns.UI.current)
       assert.are.equal(id, ns.UI.itemID)

@@ -513,6 +513,7 @@ function Help.Articles()
             L["An alert fires once when its condition comes true, and again only after the price has moved back past its line. Alerts are checked after scans, after prices arrive from guild members and at login, and show on screen as well as in chat; the sound can be turned off under Settings, General. Signal alerts fire on Buy and Sell."],
             H(L["Notifications"]),
             L["The bell left of the tabs is the notification center: it keeps the alerts that fired (and players asking to share prices with you), newest first, with a red count of the ones you haven't seen. Click one to open its item (or, for a request, Settings, Sharing); Clear all empties it."],
+            L["Using an info bar addon (Titan Panel, ChocolateBar, Bazooka and others that read LibDataBroker)? Add its \"AME notifications\" entry: it shows how many you haven't seen, the newest on hover, and opens the list on a click."],
             L["Right-click a guild member's shared list to copy it into your own watchlists."],
           },
         },
