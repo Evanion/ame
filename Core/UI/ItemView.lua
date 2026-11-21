@@ -1096,6 +1096,9 @@ function UI:FillItem(_, series, latest, mixed)
       latest, dropped = nil, dropped + 1
     end
   end
+  if latest then -- the posting prices (here and on the sell bar) go by the same market as this page
+    ns.Posting:NoteMarket(self:ViewShard(), self.itemID, latest.market, latest.t)
+  end
   local cards = v.cards
   cards[1].value:SetText(W.Money(latest and latest.market or s.market))
   cards[2].value:SetText(W.Money(latest and latest.min or s.min))

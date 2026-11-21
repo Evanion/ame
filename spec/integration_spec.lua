@@ -2179,6 +2179,27 @@ describe("addon in a stubbed client", function()
       assert.are.equal(40, math.floor(back.stEnded + 0.5)) -- the cancel a day earlier has faded a little
     end)
 
+    it("posting prices follow a price that jumped today, and cheap items get room above a wall", function()
+      seeded()
+      local shard = ns.AME:CurrentShard()
+      local s = ns.AME.index.items[2589]
+      assert.is_not_nil(s)
+      -- the newest scan says the market jumped well over the index's (whole-day) market
+      local jumped = math.floor((s.avg7 or s.market) * 1.8)
+      ns.Posting:NoteMarket(shard, 2589, jumped, GetServerTime())
+      local advice = ns.Posting:Suggest(shard, 2589, 5, 24)
+      assert.are.equal(jumped, advice.market.price) -- the sell bar's Market is the page's market
+      -- the ceiling: from the highest of usual, market and the cheapest listing; twice that under 1g
+      assert.are.equal(400, ns.Posting.Ceiling(143, 129, 200, 200)) -- 2s wall, 1s 43c average: up to 4s
+      assert.are.equal(30000, ns.Posting.Ceiling(15000, 20000, nil, 12000)) -- 2g: half again
+      assert.is_nil(ns.Posting.Ceiling(nil, 500))
+      -- an old or wild print doesn't count
+      ns.Posting.fresh[shard][2589] = { market = jumped, t = GetServerTime() - 3 * 86400 }
+      assert.are.equal(math.floor(s.market + 0.5), ns.Posting:Suggest(shard, 2589, 5, 24).market.price)
+      ns.Posting:NoteMarket(shard, 2589, (s.avg7 or s.market) * 50, GetServerTime())
+      assert.are.equal(math.floor(s.market + 0.5), ns.Posting:Suggest(shard, 2589, 5, 24).market.price)
+    end)
+
     it("learns each item's market from scans, suggests posting prices, and learns from your posts", function()
       seeded()
       local shard = ns.AME:CurrentShard()

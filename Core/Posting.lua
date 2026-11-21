@@ -112,6 +112,37 @@ function Posting:Save(shard, itemID, p)
   all[shard][itemID] = ns.Pricing.Encode(p)
 end
 
+-- The newest scan's market price per item (in memory): the market index sums up whole days, so on a day the price
+-- moves its market lags behind the last scan - the one the item page shows. The sell bar's Market choice and the
+-- model's ceiling go by the newer one. Fed by your scans and searches, and by the item page (synced scans too).
+Posting.fresh = {}
+Posting.FRESH_AGE = 48 * 3600
+
+function Posting:NoteMarket(shard, itemID, market, t)
+  if not (shard and itemID and market and market > 0 and t) then
+    return
+  end
+  local f = self.fresh[shard] or {}
+  self.fresh[shard] = f
+  local old = f[itemID]
+  if not old or t >= old.t then
+    f[itemID] = { market = market, t = t }
+  end
+end
+
+-- the newest scan's market when it's recent and not wildly off the usual price (a lone bad print), else nil
+function Posting:FreshMarket(shard, itemID, reference)
+  local e = self.fresh[shard] and self.fresh[shard][itemID]
+  if not e or now() - e.t > Posting.FRESH_AGE then
+    return nil
+  end
+  local factor = ns.Settings:Get("outlierFactor")
+  if reference and reference > 0 and factor and (e.market > reference * factor or e.market < reference / factor) then
+    return nil
+  end
+  return e.market
+end
+
 -- A scan you ran (not synced ones: the model learns from consecutive scans of one market). Full scans touch every
 -- item, so they're processed in the background.
 function Posting:OnSnapshot(shard, snap, t)
@@ -122,6 +153,7 @@ function Posting:OnSnapshot(shard, snap, t)
     for i, id in ipairs(snap.ids) do
       local p = self:Peek(shard, id)
       ns.Pricing.Observe(p, { t = t, min = snap.min[i], qty = snap.qty[i], ladder = snap.ladder and snap.ladder[i] })
+      self:NoteMarket(shard, id, snap.market and snap.market[i], t)
       self:Save(shard, id, p)
       if job and i % 50 == 0 then
         job:Checkpoint()
@@ -182,6 +214,21 @@ function Posting.DurationHours(index)
   return type(label) == "string" and tonumber(label:match("%d+")) or ({ 2, 8, 24 })[index or 3] or 24
 end
 
+-- The highest price worth suggesting: half again over the highest of the usual price, the market (the index's and
+-- the newest scan's) and the cheapest listing now - so a price that jumped today isn't held to last week's. Cheap
+-- items get twice: their listings sit coppers apart, and half again of 1s 40c leaves no room above a 2s wall.
+Posting.CHEAP = 10000 -- 1g
+function Posting.Ceiling(reference, ...)
+  if not reference then
+    return nil
+  end
+  local base = reference
+  for i = 1, select("#", ...) do
+    base = math.max(base, select(i, ...) or 0)
+  end
+  return base * (base < Posting.CHEAP and 2 or 1.5)
+end
+
 -- Everything the model needs for one item at one auction house, and its suggestion.
 --   qty: units you post; hours: listing time; returns advice (see Pricing.Suggest) plus .book, .params, or nil
 function Posting:Suggest(shard, itemID, qty, hours)
@@ -204,6 +251,8 @@ function Posting:Suggest(shard, itemID, qty, hours)
   qty, hours = qty or 1, hours or 24
   local deposit = ns.Arbitrage.Deposit((vendor or 0) * qty, house, hours)
   local reference = s and (s.avg7 or s.market)
+  -- the market now: the newest scan's when there is one, else the index's (its last day)
+  local market = self:FreshMarket(shard, itemID, reference) or (s and s.market)
   local advice = ns.Pricing.Suggest(book, params, {
     qty = qty,
     hours = hours,
@@ -212,12 +261,12 @@ function Posting:Suggest(shard, itemID, qty, hours)
     deposit = deposit,
     vendor = vendor,
     reference = reference,
-    ceiling = reference and math.max(reference, s.market or 0) * 1.5,
+    ceiling = Posting.Ceiling(reference, s and s.market, market, book.prices[1]),
   })
   if advice then
     advice.book, advice.params, advice.deposit, advice.qty, advice.hours = book, params, deposit, qty, hours
-    if s and s.market then
-      advice.market = { price = math.floor(s.market + 0.5) } -- the item's market price (the sell bar's fourth choice)
+    if market then
+      advice.market = { price = math.floor(market + 0.5) } -- the item's market price (the sell bar's fourth choice)
     end
   end
   return advice
