@@ -359,6 +359,7 @@ L["HOLD"] = true
 L["Have"] = true
 L["Held"] = true
 L["Held by"] = true
+L["Helping test AME, or is it slowing your game? /amedev on starts measuring what AME costs (and every fight, quietly), until /amedev off. Play a while, then /amedev send: it sends what was measured to AME's developer in the background. /amedev help lists the rest."] = true
 L["Hidden"] = true
 L["Hidden from lists"] = true
 L["Hidden items"] = true

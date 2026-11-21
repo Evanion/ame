@@ -562,7 +562,14 @@ describe("addon in a stubbed client", function()
         finally(function()
           _G.C_AddOnProfiler = nil
         end)
+        -- off until asked: nothing measured, nothing kept
         env:slash("AMEDEV", "lag")
+        assert.is_nil(AME_DB.dev and AME_DB.dev.lag)
+        env:fire("PLAYER_REGEN_DISABLED")
+        env:update(60)
+        env:fire("PLAYER_REGEN_ENABLED")
+        assert.is_nil(AME_DB.dev and AME_DB.dev.lag)
+        env:slash("AMEDEV", "on") -- on: every fight is measured
         assert.is_true(AME_DB.dev.lag.armed)
         env:fire("PLAYER_REGEN_DISABLED")
         env:update(60)
@@ -589,6 +596,7 @@ describe("addon in a stubbed client", function()
 
     it("/amedev send: a tester whispers their profiler report; /amedev receive keeps it", function()
       seeded()
+      env:slash("AMEDEV", "on")
       env:slash("AMEDEV", "hud")
       env:update(70)
       local sent = {}
@@ -613,7 +621,8 @@ describe("addon in a stubbed client", function()
       -- not taking reports: ignored
       env:fire("CHAT_MSG_ADDON", sent[1].prefix, sent[1].msg, "WHISPER", "Tester")
       assert.is_nil(AME_DB.dev.received)
-      env:slash("AMEDEV", "receive")
+      env:slash("AMEDEV", "receive") -- on until /amedev receive again
+      env:advance(3600)
       for i = #sent, 1, -1 do -- in any order
         env:fire("CHAT_MSG_ADDON", sent[i].prefix, sent[i].msg, "WHISPER", "Tester")
       end
@@ -621,10 +630,30 @@ describe("addon in a stubbed client", function()
       assert.are.equal(ns.VERSION, got.ame)
       assert.is_true(#got.minutes >= 1)
       assert.is_table(got.jobs)
+      assert.truthy(table.concat(ns.Dev.Hud.Lines({}), " "):find("receiving", 1, true))
+      env:slash("AMEDEV", "receive")
+      assert.is_nil(AME_DB.dev.receiving)
+      assert.truthy(table.concat(ns.Dev.Hud.Lines({}), " "):find("not receiving", 1, true))
+      -- no name: the developer
+      sent = {}
+      env:slash("AMEDEV", "send")
+      assert.are.equal("Tyken Evanion", sent[1].target)
+      -- off: measuring stops, the hud goes away, what was kept stays
+      env:slash("AMEDEV", "off")
+      assert.is_nil(AME_DB.dev.on)
+      assert.is_nil(AME_DB.dev.lag.armed)
+      assert.is_nil(AME_DB.dev.hud.on)
+      local runs = AME_DB.dev.frames.n
+      ns.AME.jobs:Add("after-off", function() end)
+      env:update(30)
+      assert.are.equal(runs, AME_DB.dev.frames.n)
     end)
 
     it("/amedev hud: a box on screen with what AME is doing", function()
       seeded()
+      env:slash("AMEDEV", "hud")
+      assert.is_nil(AME_DB.dev and AME_DB.dev.hud) -- the profiler's off
+      env:slash("AMEDEV", "on")
       env:slash("AMEDEV", "hud")
       assert.is_true(AME_DB.dev.hud.on)
       ns.AME.jobs:Add("index-test", function()

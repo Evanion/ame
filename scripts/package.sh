@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
-# Build a release zip (no tests, docs, dev tooling): dist/AzerothMercantileExchange-<version>.zip
+# Build a release zip (no tests, docs or build scripts; the profiler, /amedev, ships switched off): dist/AzerothMercantileExchange-<version>.zip
 #   scripts/package.sh 0.1.0-beta.1
 # Mirrors .pkgmeta for local/manual releases. The zip holds two addon folders (core + load-on-demand history) with
 # their embedded libraries, ready to unzip into Interface/AddOns. Needs: bash, zip, luac5.1, lua5.1.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION="${1:?usage: scripts/package.sh <version> [dev]}"
-# dev: a build for a beta tester that keeps the profiler (Core/Dev, /amedev); DEV_REPORT_TO=<Name-Realm> sets who
-# /amedev send whispers without a name. Never uploaded: scripts/release.sh builds without it.
-DEV="${2:-}"
+VERSION="${1:?usage: scripts/package.sh <version>}"
 STAGE=.release
 CORE="$STAGE/AzerothMercantileExchange"
 HIST="$STAGE/AzerothMercantileExchange_History"
@@ -40,16 +37,6 @@ for d in LibDataBroker-1.1 LibDBIcon-1.0; do
 done
 find "$STAGE" \( -name .git -o -name .github -o -name tests -o -name '*.md' -o -name '*.textile' \) -prune \
   -exec rm -rf {} +
-
-# dev-only tools (Core/Dev: the profiler) never ship - except in a dev build for a tester
-if [ "$DEV" = dev ]; then
-  if [ -n "${DEV_REPORT_TO:-}" ]; then
-    sed -i "s/@dev-report-to@/$DEV_REPORT_TO/" "$CORE/Core/Dev/Report.lua"
-  fi
-else
-  rm -rf "$CORE/Core/Dev"
-  sed -i '/^Core\\Dev\\/d' "$CORE/AzerothMercantileExchange.toc"
-fi
 
 # version stamps
 sed -i "s/@project-version@/$VERSION/" "$CORE/AzerothMercantileExchange.toc" "$HIST/AzerothMercantileExchange_History.toc"

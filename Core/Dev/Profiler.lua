@@ -1,11 +1,11 @@
--- Dev-only profiler (Core/Dev never ships: scripts/package.sh and .pkgmeta strip it). Measures what AME costs the
--- client while you play:
+-- The profiler: /amedev on measures what AME costs the client while you play, until /amedev off (kept across
+-- /reload). It ships, but does nothing while off: no timing, no saved data, nothing in chat.
 --   CPU     time per background job (by name) and per game event handler: total, calls, worst single run
 --   frames  AME's share of each frame (jobs + events), and spikes over SPIKE_MS with what caused them
---   memory  AME's Lua memory: on /amedev, and every SAMPLE_S seconds while /amedev memory is on
 --   sizes   an estimate of what each big structure takes in memory and in SavedVariables (/amedev sizes)
--- /amedev prints the summary; everything is kept in AME_DB.dev (saved on logout / reload) so it can be read from the
--- SavedVariables file. /amedev reset starts over.
+--   fights  every fight, per addon (LagProbe.lua), kept quietly while on
+-- /amedev prints the summary, /amedev send whispers it all to the developer (Report.lua). Everything is kept in
+-- AME_DB.dev (saved on logout / reload). /amedev reset starts over.
 local ADDON, ns = ...
 
 local Dev = {}
@@ -13,8 +13,6 @@ ns.Dev = Dev
 
 Dev.SPIKE_MS = 12 -- a frame where AME took longer than this is logged
 Dev.SPIKES_KEEP = 40
-Dev.SAMPLE_S = 60
-Dev.SAMPLES_KEEP = 360 -- six hours of memory samples
 
 ---------------------------------------------------------------------------------------------------------------------
 -- pure helpers (spec/dev_spec.lua)
@@ -106,14 +104,11 @@ if not (AME and AME.jobs and CreateFrame) then
 end
 
 local clock = debugprofilestop
-local db -- AME_DB.dev
+local db -- AME_DB.dev while profiling is on (/amedev on), nil while it's off
 local frameMs = 0 -- AME's time in the current frame
 local frameWhat -- the biggest single cost in it
 
 local function account(kind, name, ms)
-  if not db then
-    return
-  end
   Dev.Record(db[kind], name, ms)
   frameMs = frameMs + ms
   if not frameWhat or ms > frameWhat.ms then
@@ -121,10 +116,13 @@ local function account(kind, name, ms)
   end
 end
 
--- jobs: time each Tick (the runner records which job it ran)
+-- jobs: time each Tick (the runner records which job it ran); while off, straight through
 local runner = AME.jobs
 local tick = runner.Tick
 runner.Tick = function(self, ...)
+  if not db then
+    return tick(self, ...)
+  end
   local t0 = clock()
   tick(self, ...)
   account("jobs", self.lastName or "?", clock() - t0)
@@ -133,6 +131,9 @@ end
 -- events: wrap AME's handlers (Main.lua dispatches through this table on every event)
 for event, fn in pairs(AME.handlers or {}) do
   AME.handlers[event] = function(...)
+    if not db then
+      return fn(...)
+    end
     local t0 = clock()
     fn(...)
     account("events", event, clock() - t0)
@@ -147,13 +148,8 @@ local function memoryKB()
   return nil
 end
 
-local frames = CreateFrame("Frame")
-local sinceSample = 0
-frames:SetScript("OnUpdate", function(_, elapsed)
-  if not db then
-    return
-  end
-  -- the frame that just ended
+-- the frame that just ended (only while profiling is on)
+local function onUpdate()
   if frameMs > 0 then
     local f = db.frames
     f.n, f.ms = f.n + 1, f.ms + frameMs
@@ -174,45 +170,56 @@ frames:SetScript("OnUpdate", function(_, elapsed)
     end
   end
   frameMs, frameWhat = 0, nil
-  sinceSample = sinceSample + elapsed
-  -- the game's per-addon memory count walks every addon's memory: ~100 ms each time with many addons loaded, so it
-  -- was the stutter every 10 seconds (Nov 21 hud log). Off unless asked for (/amedev memory), never in combat.
-  if Dev.memoryWatch and sinceSample >= Dev.SAMPLE_S and not (InCombatLockdown and InCombatLockdown()) then
-    sinceSample = 0
-    local m = memoryKB()
-    if m then
-      local mem = db.memory
-      mem.now = math.floor(m)
-      mem.peak = math.max(mem.peak or 0, mem.now)
-      local list = mem.samples
-      list[#list + 1] = { GetServerTime(), mem.now }
-      while #list > Dev.SAMPLES_KEEP do
-        table.remove(list, 1)
-      end
-    end
-  end
-end)
+end
+local frames = CreateFrame("Frame")
 
-local function fresh()
+local function fresh(on)
   return {
+    on = on,
     since = GetServerTime(),
     jobs = {},
     events = {},
     frames = { n = 0, ms = 0, max = 0 },
     spikes = {},
-    memory = { samples = {} },
   }
 end
 
 local function say(fmt, ...)
   print("|cff33ccffAME dev|r " .. fmt:format(...))
 end
+Dev.Say = say
+
+-- profiling on or off: kept across /reload; on also measures every fight quietly (/amedev lag)
+local function start(on)
+  if on then
+    AME_DB.dev = AME_DB.dev or fresh()
+    AME_DB.dev.on = true
+    for k, v in pairs(fresh()) do
+      if AME_DB.dev[k] == nil then
+        AME_DB.dev[k] = v
+      end
+    end
+    db = AME_DB.dev
+    frameMs, frameWhat = 0, nil
+    frames:SetScript("OnUpdate", onUpdate)
+  else
+    if AME_DB.dev then
+      AME_DB.dev.on = nil
+    end
+    db = nil
+    frames:SetScript("OnUpdate", nil)
+  end
+end
+
+function Dev.On()
+  return db ~= nil
+end
 
 local function summary()
   local mins = math.max(1, (GetServerTime() - db.since) / 60)
   say("since %s (%.0f min)", date("%H:%M", db.since), mins)
   local m = memoryKB()
-  say("memory: %s now, peak %s", m and kb(m * 1024) or "?", kb((db.memory.peak or 0) * 1024))
+  say("memory: %s now", m and kb(m * 1024) or "?")
   local f = db.frames
   say(
     "frames with AME work: %d, %.1f ms each on average, worst %.1f ms, %d over %d ms",
@@ -272,7 +279,9 @@ local function sizes()
     if not ok then
       return say("sizes failed: %s", tostring(out))
     end
-    db.sizes = { at = GetServerTime(), parts = out }
+    if db then
+      db.sizes = { at = GetServerTime(), parts = out }
+    end
     say("estimated sizes (memory / as saved data / tables):")
     for i, p in ipairs(out) do
       if i > 14 then
@@ -284,126 +293,67 @@ local function sizes()
   say("measuring sizes in the background...")
 end
 
+local HELP = "/amedev on - start measuring what AME costs (and every fight, quietly)  ·  /amedev send - send it to the"
+  .. " developer  ·  /amedev off  ·  /amedev - the summary  ·  /amedev lag [now | last]  ·  /amedev hud  ·"
+  .. "  /amedev sizes  ·  /amedev reset"
+
 SLASH_AMEDEV1 = "/amedev"
 SlashCmdList.AMEDEV = function(msg)
-  local cmd = (msg or ""):match("^%s*(%S*)"):lower()
+  local cmd, rest = (msg or ""):match("^%s*(%S*)%s*(.-)%s*$")
+  cmd = cmd:lower()
+  if cmd == "on" then
+    if db then
+      return say("already on - /amedev send when you're done")
+    end
+    start(true)
+    if Dev.Lag then
+      Dev.Lag.Arm(true)
+    end
+    return say("on: measuring what AME costs, and every fight, until /amedev off. Play a while, then /amedev send.")
+  elseif cmd == "off" then
+    start(false)
+    if Dev.Lag then
+      Dev.Lag.Arm(false)
+    end
+    if Dev.Hud then
+      Dev.Hud.Off()
+    end
+    return say("off (what was measured is kept: /amedev send still sends it)")
+  elseif cmd == "send" then
+    return Dev.Report.Send(rest:match("^(.-)%s*$"))
+  elseif cmd == "receive" then
+    return Dev.Report.Receive()
+  elseif cmd == "help" or cmd == "?" then
+    return say(HELP)
+  end
   if not db then
-    return say("not started yet")
+    return say("off - /amedev on to start measuring  ·  /amedev help for the rest")
   end
   if cmd == "reset" then
-    AME_DB.dev = fresh()
+    AME_DB.dev = fresh(true)
     db = AME_DB.dev
     say("reset")
   elseif cmd == "sizes" then
     sizes()
-  elseif cmd == "gc" then
-    local before = collectgarbage("count")
-    collectgarbage("collect")
-    say("garbage collected: %s -> %s (all addons)", kb(before * 1024), kb(collectgarbage("count") * 1024))
-  elseif cmd == "ui" then
-    local ok, err = pcall(Dev.ProbeUI, say)
-    if not ok then
-      say("ui probe failed: %s", tostring(err))
-    end
-  elseif cmd == "crafting" then
-    -- switch Crafting's recording on / off before it has its Settings checkbox
-    local on = not ns.Settings:Get("crafting")
-    ns.Settings:Set("crafting", on)
-    say("crafting %s", on and "on: open your professions, then /reload" or "off")
-    if on and ns.Professions then
-      ns.Professions:RecordSpellbook()
-      ns.Professions:Record() -- a profession window that's already open
-    end
-  elseif cmd == "ah" then
-    local ok, err = pcall(Dev.ProbeAH, say, (msg or ""):match("^%s*%S+%s*(.*)$"))
-    if not ok then
-      say("auction house probe failed: %s", tostring(err))
-    end
-  elseif cmd == "recipes" then
-    local ok, err = pcall(Dev.ProbeRecipes, say)
-    if not ok then
-      say("recipe probe failed: %s", tostring(err))
-    end
-  elseif cmd == "send" then
-    Dev.Report.Send((msg or ""):match("^%s*%S+%s*(%S*)"))
-  elseif cmd == "receive" then
-    Dev.Report.Receive()
-  elseif cmd == "memory" then
-    Dev.memoryWatch = not Dev.memoryWatch
-    say(
-      "memory sampling %s",
-      Dev.memoryWatch and "on: every minute out of combat (each costs ~100 ms with many addons)" or "off"
-    )
   elseif cmd == "hud" then
     Dev.HudCommand()
   elseif cmd == "lag" then
-    Dev.LagCommand((msg or ""):match("^%s*%S+%s*(.*)$"))
-  elseif cmd == "scanbutton" then
-    -- why the Full scan button isn't where it should be
-    local S = ns.ScanButton
-    local b = S and S.button
-    local ah = AuctionHouseFrame or AuctionFrame
-    say(
-      "frames: modern %s, old %s  ·  auctionator %s, tsm %s  ·  ReplicateItems %s",
-      tostring(AuctionHouseFrame ~= nil),
-      tostring(AuctionFrame ~= nil),
-      tostring(_G.Auctionator ~= nil),
-      tostring(_G.TSM_API ~= nil),
-      tostring(C_AuctionHouse and C_AuctionHouse.ReplicateItems ~= nil)
-    )
-    if not b then
-      return say("no button made (Attach never ran or failed)")
-    end
-    local state, left = S:State()
-    say(
-      "button: shown %s, visible %s, text %s, state %s %s, parent %s",
-      tostring(b:IsShown()),
-      tostring(b:IsVisible()),
-      tostring(b:GetText()),
-      tostring(state),
-      tostring(left or ""),
-      tostring(b:GetParent() and b:GetParent():GetName())
-    )
-    say(
-      "where: left %s top %s size %sx%s alpha %s strata %s level %s  ·  screen top %s  ·  window top %s right %s",
-      tostring(b:GetLeft()),
-      tostring(b:GetTop()),
-      tostring(b:GetWidth()),
-      tostring(b:GetHeight()),
-      tostring(b:GetEffectiveAlpha()),
-      tostring(b:GetFrameStrata()),
-      tostring(b:GetFrameLevel()),
-      tostring(UIParent:GetTop()),
-      tostring(ah and ah:GetTop()),
-      tostring(ah and ah:GetRight())
-    )
-    local close = ah and rawget(ah, "CloseButton")
-    say(
-      "close button: %s  level %s strata %s  top %s left %s",
-      tostring(close ~= nil),
-      tostring(close and close:GetFrameLevel()),
-      tostring(close and close:GetFrameStrata()),
-      tostring(close and close:GetTop()),
-      tostring(close and close:GetLeft())
-    )
+    Dev.LagCommand(rest)
   elseif cmd == "" or cmd == "stats" then
     summary()
   else
-    say(
-      "/amedev - CPU, frames and memory since the last reset  ·  /amedev sizes  ·  /amedev gc  ·  /amedev recipes"
-        .. "  ·  /amedev crafting  ·  /amedev ah <item>  ·  /amedev scanbutton  ·  /amedev lag [now | last]  ·  /amedev hud  ·  /amedev memory  ·  /amedev send <name>  ·  /amedev receive"
-        .. "  ·  /amedev reset"
-    )
+    say(HELP)
   end
 end
 
 local boot = CreateFrame("Frame")
 boot:RegisterEvent("ADDON_LOADED")
-boot:SetScript("OnEvent", function(_, _, name)
+boot:SetScript("OnEvent", function(self, _, name)
   if name == ADDON then
-    AME_DB = AME_DB or {}
-    AME_DB.dev = AME_DB.dev or fresh()
-    db = AME_DB.dev
-    say("profiling (dev build) - /amedev")
+    self:UnregisterEvent("ADDON_LOADED")
+    if AME_DB and AME_DB.dev and AME_DB.dev.on then
+      start(true)
+      say("measuring (/amedev send when you're done, /amedev off to stop)")
+    end
   end
 end)

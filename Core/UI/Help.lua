@@ -530,7 +530,14 @@ function Help.Articles()
             L["Right-click a list to add a recipe's reagents, rename it, share it with your guild or delete it. Guild members' shared lists appear under yours: right-click one to copy it into your own."],
           },
         },
-        { key = "commands", title = Help.GUIDE[8][1], body = { guideText(8) } },
+        {
+          key = "commands",
+          title = Help.GUIDE[8][1],
+          body = {
+            guideText(8),
+            L["Helping test AME, or is it slowing your game? /amedev on starts measuring what AME costs (and every fight, quietly), until /amedev off. Play a while, then /amedev send: it sends what was measured to AME's developer in the background. /amedev help lists the rest."],
+          },
+        },
       },
     },
   }

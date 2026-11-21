@@ -1,8 +1,8 @@
--- Dev-only: /amedev hud. A small box on screen saying what AME is doing right now, for watching it while the game
--- stutters: its time per frame (the game's addon profiler), the frame rate, the background job running and those
+-- /amedev hud (with /amedev on). A small box on screen saying what AME is doing right now, for watching it while the
+-- game stutters: its time per frame (the game's addon profiler), the frame rate, the background job running and those
 -- waiting, sync transfers, saved tables still unpacking, memory and when Lua's garbage collector last ran, and the
--- slowest frame AME took in the last 10 seconds (with what it was running). Drag it to move it; it remembers where
--- it was and stays on across /reload until /amedev hud again.
+-- slowest frame AME took in the last 10 seconds (with what it was running). Drag it to move it; it remembers where it
+-- was and stays on across /reload until /amedev hud again.
 local _, ns = ...
 
 local Dev = ns.Dev
@@ -145,6 +145,10 @@ function Hud.Lines(state)
       st.syncRejected or 0
     )
   end
+  -- testers' reports (/amedev receive)
+  local dev = AME_DB and AME_DB.dev
+  lines[#lines + 1] = dev and dev.receiving and "reports: |cff66dd77receiving|r (/amedev receive to stop)"
+    or "reports: not receiving"
   -- memory and the garbage collector
   lines[#lines + 1] = ("Lua memory %.1f MB (all addons)%s"):format(
     (collectgarbage("count") or 0) / 1024,
@@ -297,6 +301,11 @@ function Hud.Show(on)
   end
 end
 
+function Hud.Off()
+  db().on = nil
+  Hud.Show(false)
+end
+
 function Dev.HudCommand()
   local d = db()
   d.on = not d.on
@@ -310,7 +319,8 @@ end
 local boot = CreateFrame("Frame")
 boot:RegisterEvent("PLAYER_LOGIN")
 boot:SetScript("OnEvent", function()
-  if AME_DB and AME_DB.dev and AME_DB.dev.hud and AME_DB.dev.hud.on then
+  local dev = AME_DB and AME_DB.dev
+  if dev and dev.on and dev.hud and dev.hud.on then
     Hud.Show(true)
   end
 end)

@@ -1,11 +1,11 @@
--- Dev-only: /amedev send <name> and /amedev receive. A beta tester running a dev build sends what their profiler
+-- /amedev send [name] and /amedev receive. A tester who turned the profiler on (/amedev on) sends what their profiler
 -- recorded - the lag reports, the hud log (its hitches, and its seconds summed up per minute), the slowest jobs and
 -- events, AME's own frame spikes, sync counts - to a developer's AME, which keeps it in AME_DB.dev.received[sender]
 -- (read from the SavedVariables file).
 --
 -- It travels as addon whispers on its own prefix: packed (LibDeflate), cut into 240-character pieces, one a second
 -- (the game drops whispers beyond a short burst without saying so). The receiver only takes reports while
--- /amedev receive is on (30 minutes), and at most MAX_PIECES pieces from one sender.
+-- /amedev receive is on (until /amedev receive again), and at most MAX_PIECES pieces from one sender.
 local _, ns = ...
 
 local Dev = ns.Dev
@@ -16,10 +16,8 @@ Report.PREFIX = "AMEDEV"
 Report.PIECE = 240
 Report.EVERY = 1.05
 Report.MAX_PIECES = 600 -- ~140 KB packed: far more than a report
-Report.RECEIVE_FOR = 30 * 60
--- who /amedev send whispers when no name is given: filled in when a dev zip is built for a tester
--- (DEV_REPORT_TO=<Name-Realm> scripts/package.sh <version> dev), so no character name is kept in the repository
-Report.DEFAULT_TO = "@dev-report-to@"
+-- who /amedev send whispers when no name is given: AME's developer (the guide's footer names them too)
+Report.DEFAULT_TO = "Tyken Evanion"
 
 local function say(fmt, ...)
   print("|cff33ccffAME dev|r " .. fmt:format(...))
@@ -201,7 +199,7 @@ end
 local sending
 function Report.Send(target)
   if not target or target == "" then
-    target = not Report.DEFAULT_TO:find("^@") and Report.DEFAULT_TO or nil
+    target = Report.DEFAULT_TO
   end
   if not target then
     return say("usage: /amedev send <name> - whispers your profiler report to that player (they run /amedev receive)")
@@ -235,8 +233,7 @@ end
 local incoming = {}
 
 local function receiving()
-  local until_ = AME_DB and AME_DB.dev and AME_DB.dev.receiveUntil
-  return until_ and GetServerTime() < until_
+  return AME_DB and AME_DB.dev and AME_DB.dev.receiving
 end
 
 function Report.OnMessage(msg, sender)
@@ -278,9 +275,15 @@ end
 
 function Report.Receive()
   AME_DB.dev = AME_DB.dev or {}
-  AME_DB.dev.receiveUntil = GetServerTime() + Report.RECEIVE_FOR
-  register()
-  say("taking profiler reports (/amedev send <your name>) for the next %d minutes", Report.RECEIVE_FOR / 60)
+  local dev = AME_DB.dev
+  dev.receiveUntil = nil -- the old 30-minute window
+  dev.receiving = not dev.receiving or nil
+  if dev.receiving then
+    register()
+    say("taking profiler reports (/amedev send <your name>) until /amedev receive again")
+  else
+    say("no longer taking profiler reports")
+  end
 end
 
 if not CreateFrame then -- loaded outside the game (specs)

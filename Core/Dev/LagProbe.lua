@@ -1,8 +1,9 @@
--- Dev-only: /amedev lag. Which addon makes the game stutter in combat. Uses the game's addon profiler
+-- /amedev lag (with /amedev on). Which addon makes the game stutter in combat. Uses the game's addon profiler
 -- (C_AddOnProfiler: the time each addon took in the last frame), or, on clients without it, the old CPU counters
 -- (GetAddOnCPUUsage, which need /console scriptProfile 1 and a /reload, and slow everything down while on).
 --
---   /amedev lag        arm / disarm: every fight from then on is measured (kept armed across /reload)
+--   /amedev lag        arm / disarm: every fight from then on is measured (kept armed across /reload; /amedev on
+--                      arms it, /amedev off disarms it)
 --   /amedev lag now    measure the next 15 seconds, in or out of combat
 --   /amedev lag last   the last report again
 --
@@ -315,6 +316,21 @@ frame:SetScript("OnEvent", function(_, event)
   end
 end)
 
+local function disarm()
+  if current and current.label == "fight" then
+    current = nil
+    frame:SetScript("OnUpdate", nil)
+  end
+end
+
+-- arm / disarm quietly (/amedev on, /amedev off)
+function Lag.Arm(on)
+  store().armed = on or nil
+  if not on then
+    disarm()
+  end
+end
+
 function Dev.LagCommand(rest)
   local sub = (rest or ""):match("^%s*(%S*)"):lower()
   local db = store()
@@ -324,7 +340,7 @@ function Dev.LagCommand(rest)
   elseif sub == "last" then
     Lag.Print(db.reports and db.reports[1])
   else
-    db.armed = not db.armed
+    db.armed = not db.armed or nil
     local source, why = Lag.Source()
     if db.armed then
       say(
@@ -333,10 +349,7 @@ function Dev.LagCommand(rest)
       )
     else
       say("lag: stopped measuring fights")
-      if current and current.label == "fight" then
-        current = nil
-        frame:SetScript("OnUpdate", nil)
-      end
+      disarm()
     end
   end
 end
