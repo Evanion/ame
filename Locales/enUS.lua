@@ -813,6 +813,7 @@ L["Up to 7 days"] = true
 L["Updating market data..."] = true
 L["Updating market data…"] = true
 L["Updating the chart…"] = true
+L["Using an info bar addon (Titan Panel, ChocolateBar, Bazooka and others that read LibDataBroker)? Add its \"AME notifications\" entry: it shows how many you haven't seen, the newest on hover, and opens the list on a click."] = true
 L["Usually"] = true
 L["VENDOR"] = true
 L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."] = true
