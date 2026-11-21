@@ -384,5 +384,60 @@ describe("Sync v2 (engine)", function()
       assert.is_true(g.Bob.have[V2.ObjKey(SHARD, "s", 500)] == data)
       assert.truthy(count(g.log, "B", "Ann") < 80, count(g.log, "B", "Ann")) -- not sent twice over
     end)
+
+    -- Bob had half an hour from Ann when he disconnected; Ann reloaded meanwhile (that object is gone from her
+    -- side) and is busy serving the guild a long day. Bob must not wait on her forever: he gives up on the dead
+    -- transfer and asks for the hour again, and gets it.
+    it("a transfer its sender lost doesn't hold up that object while the sender keeps sending others", function()
+      local g = guild({ "Ann", "Bob" })
+      local hour = payload(40 * V2.BLOCK, 1)
+      g.Ann.have[V2.ObjKey(SHARD, "h", 999)] = hour
+      g.Ann.have[V2.ObjKey(SHARD, "d", 40)] = payload(1500 * V2.BLOCK, 2) -- ~26 minutes of blocks
+      g.Ann.engine:Push(SHARD, "h", 999)
+      g:run(20)
+      local saved = g.Bob.engine:Save()
+      assert.are.equal(1, #saved)
+      local function fresh(p, seed)
+        local old = p.engine
+        p.engine =
+          V2.New({ name = p.name, send = old.send, now = old.now, after = g.after, random = rng(seed), host = p.host })
+      end
+      fresh(g.Ann, 11)
+      fresh(g.Bob, 12)
+      g:run(5)
+      g.Bob.engine:Restore(saved)
+      g.Ann.engine:Push(SHARD, "d", 40) -- Ann busy for the next half hour
+      g.Ann.have[V2.ObjKey(SHARD, "d", 39)] = payload(1500 * V2.BLOCK, 3)
+      g.Ann.engine:Push(SHARD, "d", 39) -- and another after it
+      for _ = 1, 35 do -- Ann's manifest every minute (Sync now)
+        g.Ann.engine:Announce()
+        g:run(60)
+      end
+      -- the hour went right after the day under way, ahead of the next day; Bob didn't pester Ann meanwhile
+      assert.is_true(g.Bob.have[V2.ObjKey(SHARD, "h", 999)] == hour)
+      assert.truthy(count(g.log, "N", "Bob") <= 2 * V2.MAX_NACKS, count(g.log, "N", "Bob")) -- a handful in 35 min
+    end)
+
+    it("blocks resent for an object under way go ahead of a long one being sent", function()
+      local lost = false
+      local g = guild({ "Ann", "Bob" }, {
+        lose = function(msg, to)
+          if not lost and to == "Bob" and msg:match("^2|B|[^|]+|a|") then -- block 10, the first time
+            lost = true
+            return true
+          end
+          return false
+        end,
+      })
+      local hour = payload(20 * V2.BLOCK, 1)
+      g.Ann.have[V2.ObjKey(SHARD, "h", 999)] = hour
+      g.Ann.have[V2.ObjKey(SHARD, "d", 40)] = payload(1500 * V2.BLOCK, 2)
+      g.Ann.engine:Push(SHARD, "h", 999)
+      g:run(3)
+      g.Ann.engine:Push(SHARD, "d", 40) -- queued behind the hour
+      g:run(90)
+      assert.is_true(lost)
+      assert.is_true(g.Bob.have[V2.ObjKey(SHARD, "h", 999)] == hour)
+    end)
   end)
 end)

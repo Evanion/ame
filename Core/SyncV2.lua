@@ -37,7 +37,9 @@ V2.ANSWER_DELAY = 3 -- a holder answers a request after a random 0..3 s
 V2.NACK_DELAY = 2 -- a receiver asks for missing blocks after a random 0..2 s
 V2.STALL = 12 -- no block of an incoming object for this long: ask for the missing ones
 V2.CHECK_EVERY = 4
-V2.MAX_NACKS = 6 -- then give up on the object (it's asked for again on a later manifest)
+V2.STALL_BUSY = 60 -- an object under way whose blocks stopped while its sender sends others: ask after this long
+V2.WAIT_TURN = 1800 -- an offered object whose blocks never started (its turn behind a day is ~30 min): give up then
+V2.MAX_NACKS = 6 -- asked this often with nothing back: give up on the object (it's asked for again on a later manifest)
 V2.REQUEST_COOLDOWN = 300 -- an object asked for isn't asked for again this soon
 V2.MAX_REQUESTS = 3 -- objects asked for per manifest heard
 V2.REQUEST_DELAY = 2 -- a manifest's hearers ask after a random 0..2 s (the first ask silences the rest)
@@ -438,7 +440,7 @@ function V2:OnMessage(msg, sender)
     end
     local inc = self.incoming[id]
     if inc and m.i and m.i >= 1 and m.i <= inc.n and not inc.blocks[m.i] then
-      inc.blocks[m.i], inc.got, inc.lastAt = m.bytes, inc.got + 1, now
+      inc.blocks[m.i], inc.got, inc.lastAt, inc.nacks, inc.flowing = m.bytes, inc.got + 1, now, 0, true
       if inc.got == inc.n then
         self:complete(id, inc)
       end
@@ -560,6 +562,7 @@ function V2:OnMessage(msg, sender)
           self:queue(V2.EncodeOffer(o.shard, o))
           return
         end
+        local started = #o.pending < o.n
         local added = false
         for _, i in ipairs(m.blocks) do
           if o.blocks[i] and not o.pendingSet[i] then
@@ -568,11 +571,21 @@ function V2:OnMessage(msg, sender)
           end
         end
         if added then
+          -- a few blocks of an object its receivers already have under way go first, ahead of a day being sent
+          -- (they'd wait half an hour for them); one not started keeps its place in turn
           local listed = false
-          for _, x in ipairs(self.order) do
-            listed = listed or x == o
+          for i = #self.order, 1, -1 do
+            if self.order[i] == o then
+              if started then
+                table.remove(self.order, i)
+              else
+                listed = true
+              end
+            end
           end
-          if not listed then
+          if started then
+            table.insert(self.order, 1, o)
+          elseif not listed then
             self.order[#self.order + 1] = o
           end
           self:wake()
@@ -635,12 +648,23 @@ end
 function V2:check()
   local now = self.now()
   for id, inc in pairs(self.incoming) do
-    -- stalled: nothing of it lately, and the sender has gone quiet (not busy sending something else first)
-    if now - math.max(inc.lastAt, self.heard[inc.sender] or 0) >= V2.STALL and not inc.asking then
+    -- stalled: nothing of it lately, and the sender has gone quiet (not busy sending something else first) - or,
+    -- busy as they may be, nothing of it for too long: blocks of one under way stopped (resends of it go first, so
+    -- they're lost: say a disconnect, or the sender reloaded and no longer has it), or one offered never started
+    local quiet = now - inc.lastAt
+    local stalled = now - math.max(inc.lastAt, self.heard[inc.sender] or 0) >= V2.STALL
+      or quiet >= (inc.flowing and V2.STALL_BUSY or V2.WAIT_TURN)
+    if stalled and not inc.asking then
       local seen = self.nacked[id]
       if inc.nacks >= V2.MAX_NACKS then
-        self.incoming[id] = nil -- asked for again on a later manifest
+        -- given up: asked for again on a later manifest, and its offer forgotten (it no longer counts as on its way)
+        self.incoming[id] = nil
         self.requested[inc.k] = nil
+        self.offerOf[id], self.offerAsked[id] = nil, nil
+        local offer = self.offers[inc.k]
+        if offer and offer.sender == inc.sender and offer.oid == inc.oid then
+          self.offers[inc.k] = nil
+        end
       elseif seen and now - seen < V2.STALL then
         inc.lastAt = now -- someone else asked for the missing blocks: their resend reaches us too
       else
@@ -755,7 +779,7 @@ function V2:Restore(saved)
         got = got + (type(s.blocks[i]) == "string" and 1 or 0)
       end
       local id = s.sender .. "\n" .. s.oid
-      s.k, s.got, s.lastAt, s.nacks = objKey(s.shard, s.kind, s.ref), got, now - V2.STALL, 0
+      s.k, s.got, s.lastAt, s.nacks, s.flowing = objKey(s.shard, s.kind, s.ref), got, now - V2.STALL, 0, got > 0
       self.incoming[id] = s
       self.offerOf[id] = s.k
     end
