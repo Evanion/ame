@@ -243,11 +243,11 @@ Help.GUIDE = {
   },
   {
     L["Item tab"],
-    L["The price chart: market price, lowest listing, 7-day average and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. To chart an item, type its name in the search box above the chart (Enter opens the best match), Shift-click it anywhere (bags, chat, the AH) while the Item tab is showing, or pick a modifier click under Settings, Tooltips & charts that charts it from anywhere."],
+    L["The price chart: market price, lowest listing, two averages (MA 20 and the 7-day average) and supply. Switch to candles for a trading view. Mouse wheel zooms, drag pans, double-click resets. To chart an item, type its name in the search box above the chart (Enter opens the best match), Shift-click it anywhere (bags, chat, the AH) while the Item tab is showing, or pick a modifier click under Settings, Tooltips & charts that charts it from anywhere."],
   },
   {
     L["Watchlists and alerts"],
-    L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price in gold, or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."],
+    L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price (12 or 12g is gold; 9s 50c works too), or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound."],
   },
   {
     L["Reading the numbers"],
@@ -401,6 +401,7 @@ function Help.Articles()
             H(L["The chart"]),
             EX("legend"),
             L["Market price, the lowest listing, the 7-day average, supply, and your own buys and sales as dots. A dashed line marks what a vendor pays for one when that's near the prices - where selling to a vendor can beat the auction house; when it's far below, the legend just says it."],
+            H(L["The averages: MA 20 and the 7-day average"]),
             L["Two averages, as on a trading chart: MA 20 is the simple moving average of the last 20 candles' closes (on the line, of what those candles would be), so its span follows the range - about 40 hours on 2D, 5 days on 7D, 20 days on 30D. The 7-day average is a fixed reference, the one the verdict and signals compare against. Click any line in the legend to hide it or show it again; AME remembers."],
             L["Hover the item's name or icon at the top for the game's own tooltip, with its stats."],
             H(L["Reading candles"]),
@@ -834,6 +835,7 @@ Help.EXAMPLES = {
       { { 0.2, 0.8, 1 }, L["Market"], 12, 3 },
       { { 0.4, 0.87, 0.47 }, L["Lowest"], 12, 3 },
       { { 1, 0.67, 0.2 }, L["7-day average"], 12, 3 },
+      { { 0.78, 0.55, 1 }, L["MA %d (%s)"]:format(20, L["%d days"]:format(5)), 12, 3 },
       { { 0.53, 0.53, 0.67 }, L["Supply"], 8, 8 },
       { ns.UI and ns.UI.TRADE_COLORS and ns.UI.TRADE_COLORS.buy or { 0.35, 0.65, 1 }, L["You bought"], 8, 8 },
       { ns.UI and ns.UI.TRADE_COLORS and ns.UI.TRADE_COLORS.sale or { 1, 0.45, 0.85 }, L["You sold"], 8, 8 },

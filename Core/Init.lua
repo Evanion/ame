@@ -213,3 +213,68 @@ function ns.ShardKey(realm, house)
   assert(ns.HOUSES[house], "house must be Alliance, Horde or Neutral")
   return realm .. "|" .. house
 end
+
+---------------------------------------------------------------------------------------------------------------------
+-- money typed into a box: "12" or "1.5" (gold), "12g", "9s 50c", "1g20s", "150c", "1g 50" (a bare number after a
+-- unit is the next one down). The game's own coin letters count too (GOLD_AMOUNT_SYMBOL...: "k" for copper in
+-- German, 金/银/铜 in Chinese). Returns copper, or nil when empty or unreadable.
+
+local function coinUnits()
+  local units = { g = 10000, gold = 10000, s = 100, silver = 100, c = 1, copper = 1 }
+  for sym, value in pairs({
+    [GOLD_AMOUNT_SYMBOL or "g"] = 10000,
+    [SILVER_AMOUNT_SYMBOL or "s"] = 100,
+    [COPPER_AMOUNT_SYMBOL or "c"] = 1,
+  }) do
+    units[sym:lower()] = value
+  end
+  return units
+end
+
+function ns.ParseMoney(text)
+  text = tostring(text or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+  if text == "" then
+    return nil
+  end
+  local plain = tonumber((text:gsub(",", ".")))
+  if plain then
+    return plain >= 0 and math.floor(plain * 10000 + 0.5) or nil
+  end
+  local units = coinUnits()
+  local total, last, pos = 0, nil, 1
+  while pos <= #text do
+    local s, e, num, unit = text:find("^%s*(%d*[%.,]?%d+)%s*([^%d%s%.,]*)", pos)
+    if not s then
+      return nil
+    end
+    local value
+    if unit == "" then -- "1g 50": the unit after the last one
+      value = last == 10000 and 100 or last == 100 and 1 or nil
+    else
+      value = units[unit]
+    end
+    if not value or (last and value >= last) then
+      return nil -- unknown unit, or out of order ("5c 2g")
+    end
+    total = total + tonumber((num:gsub(",", "."))) * value
+    last, pos = value, e + 1
+  end
+  return math.floor(total + 0.5)
+end
+
+-- copper as it's typed: "12g", "9s 50c", "1g 20s 5c" (in the game's coin letters)
+function ns.MoneyInputText(copper)
+  copper = math.floor((copper or 0) + 0.5)
+  local g, s, c = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
+  local parts = {}
+  if g > 0 then
+    parts[#parts + 1] = g .. (GOLD_AMOUNT_SYMBOL or "g")
+  end
+  if s > 0 then
+    parts[#parts + 1] = s .. (SILVER_AMOUNT_SYMBOL or "s")
+  end
+  if c > 0 or #parts == 0 then
+    parts[#parts + 1] = c .. (COPPER_AMOUNT_SYMBOL or "c")
+  end
+  return table.concat(parts, " ")
+end

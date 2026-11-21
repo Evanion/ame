@@ -130,16 +130,21 @@ function UI:CreateArbitrageView(parent, contentArea)
   end, { neutral = true })
   W.Labeled(bar, L["Sell at"], v.sell):SetPoint("LEFT", v.swap, "RIGHT", 8, 0)
 
-  v.minProfit = W.GoldInput(bar, L["min profit g"], function(g)
-    UI.arb.minProfit = g and g * 10000 or 1
+  v.minProfit = W.MoneyInput(bar, L["min profit g"], function(copper)
+    UI.arb.minProfit = copper or 1
     UI:RefreshArbitrage(true)
   end)
   v.minProfit:SetPoint("LEFT", v.sell, "RIGHT", 12, 0)
   v.minProfit:SetWidth(84) -- room for the hint
-  v.minMargin = W.GoldInput(bar, L["min margin %"], function(p) -- whole percent, same box as gold
-    UI.arb.minMargin = (p or 10) / 100
-    UI:RefreshArbitrage(true)
-  end)
+  v.minMargin = W.Input(bar, {
+    width = 64,
+    numeric = true,
+    hint = L["min margin %"],
+    onChange = function(_, p) -- whole percent
+      UI.arb.minMargin = (p or 10) / 100
+      UI:RefreshArbitrage(true)
+    end,
+  })
   v.minMargin:SetPoint("LEFT", v.minProfit, "RIGHT", 6, 0)
   v.minMargin:SetWidth(90)
   v.age = W.Dropdown(bar, 104, AGES, function(value)

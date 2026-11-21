@@ -1153,16 +1153,33 @@ function W.InputHint(box, text)
   box.hint:SetShown((box:GetText() or "") == "")
 end
 
--- whole-gold input with a hint ("min g"); onChange(gold or nil, user)
-function W.GoldInput(parent, hint, onChange)
-  return W.Input(parent, {
+-- money input with a hint ("min g"): "12" or "1.5" is gold, "9s 50c", "1g 20s", "150c" (ns.ParseMoney);
+-- onChange(copper or nil, user). Text it can't read turns red (and counts as empty). box:SetCopper(c) fills it in.
+function W.MoneyInput(parent, hint, onChange)
+  local box
+  box = W.Input(parent, {
     width = 64,
-    numeric = true,
     hint = hint,
-    onChange = function(_, value, user)
-      onChange(value, user)
+    onChange = function(text, _, user)
+      local copper = ns.ParseMoney(text)
+      local bad = copper == nil and text:find("%S") ~= nil
+      box:SetTextColor(1, bad and 0.35 or 1, bad and 0.35 or 1)
+      onChange(copper, user)
     end,
   })
+  function box.SetCopper(self, copper)
+    self:SetText(copper and ns.MoneyInputText(copper) or "")
+  end
+  box:HookScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    GameTooltip:SetText(L["Gold, or silver and copper too"], 1, 1, 1)
+    GameTooltip:AddLine(L["12 or 12g is gold; 1.5 is 1g 50s; 9s 50c, 1g 20s and 150c work too."], nil, nil, nil, true)
+    GameTooltip:Show()
+  end)
+  box:HookScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+  return box
 end
 
 W.STAR = "Interface\\Common\\FavoritesIcon"

@@ -314,9 +314,9 @@ function UI:CreateItemView(parent)
   v.watch.star = v.watch.icon
   W.SetStar(v.watch.star, false)
   local function goldAlert(row, field, hint)
-    return W.GoldInput(row, hint, function(g, user)
+    return W.MoneyInput(row, hint, function(copper, user)
       if user and UI.itemID then
-        ns.AME.watch:SetAlert(UI.itemID, { [field] = g and g * 10000 or false })
+        ns.AME.watch:SetAlert(UI.itemID, { [field] = copper or false })
         UI:UpdateWatchControls(true)
       end
     end)

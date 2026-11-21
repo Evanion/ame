@@ -529,8 +529,8 @@ function UI:ApplyMarketView(view)
   self.mq = q
   v.search:SetText(q.text or "")
   q.text = view.q.text -- SetText's handler rewrote it
-  v.minBox:SetText(q.minPrice and tostring(math.floor(q.minPrice / 10000)) or "")
-  v.maxBox:SetText(q.maxPrice and tostring(math.floor(q.maxPrice / 10000)) or "")
+  v.minBox:SetCopper(q.minPrice)
+  v.maxBox:SetCopper(q.maxPrice)
   q.minPrice, q.maxPrice = view.q.minPrice, view.q.maxPrice
   self.offset = 0
   self:RenderCategories()
@@ -681,14 +681,14 @@ function UI:CreateMarketView(parent)
   quality:SetPoint("LEFT", search, "RIGHT", 8, 0)
   v.quality = quality
 
-  local minBox = W.GoldInput(bar, L["min g"], function(g)
-    UI.mq.minPrice = g and g * 10000 or nil
+  local minBox = W.MoneyInput(bar, L["min g"], function(copper)
+    UI.mq.minPrice = copper
     UI.offset = 0
     UI:RefreshMarket(true)
   end)
   minBox:SetPoint("LEFT", quality, "RIGHT", 8, 0)
-  local maxBox = W.GoldInput(bar, L["max g"], function(g)
-    UI.mq.maxPrice = g and g * 10000 or nil
+  local maxBox = W.MoneyInput(bar, L["max g"], function(copper)
+    UI.mq.maxPrice = copper
     UI.offset = 0
     UI:RefreshMarket(true)
   end)
@@ -941,9 +941,9 @@ function UI:MarketMoreMenu(anchor)
         .. (q[field] and "  " .. W.Money(q[field], true) or ""),
       func = function()
         W.Prompt("AME_PRICE_" .. field, prompt, function(text)
-          local g = tonumber(text)
-          box:SetText(g and tostring(g) or "")
-          q[field] = g and g * 10000 or nil
+          local copper = ns.ParseMoney(text)
+          box:SetCopper(copper)
+          q[field] = copper
           UI.offset = 0
           UI:RefreshMarket(true)
         end)
@@ -954,8 +954,8 @@ function UI:MarketMoreMenu(anchor)
     signal("wait"),
     signal("vendor"),
     signal("disenchant"),
-    price("minPrice", L["Minimum price in gold (empty: none):"], v.minBox),
-    price("maxPrice", L["Maximum price in gold (empty: none):"], v.maxBox),
+    price("minPrice", L["Minimum price, e.g. 12 or 9s 50c (empty: none):"], v.minBox),
+    price("maxPrice", L["Maximum price, e.g. 12 or 9s 50c (empty: none):"], v.maxBox),
     {
       text = L["Views..."],
       func = function()

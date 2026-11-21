@@ -82,3 +82,45 @@ describe("shared helpers", function()
     assert.are.same({ "Alliance", "Horde", "Neutral" }, ns.HOUSE_ORDER)
   end)
 end)
+
+describe("money typed into a box", function()
+  local ns
+  before_each(function()
+    ns = addon.load({ "Core/Init.lua" })
+  end)
+
+  it("reads gold, silver and copper the way players write them", function()
+    local P = ns.ParseMoney
+    assert.are.equal(120000, P("12"))
+    assert.are.equal(15000, P("1.5"))
+    assert.are.equal(15000, P("1,5"))
+    assert.are.equal(120000, P("12g"))
+    assert.are.equal(950, P("9s 50c"))
+    assert.are.equal(950, P(" 9S50C "))
+    assert.are.equal(12000, P("1g20s"))
+    assert.are.equal(15000, P("1g 50")) -- a bare number after gold is silver
+    assert.are.equal(950, P("9s 50"))
+    assert.are.equal(150, P("150c"))
+    assert.are.equal(25000, P("2.5g"))
+    assert.are.equal(10203, P("1 gold 2 silver 3 copper"))
+  end)
+
+  it("says nothing for an empty box, and nil for what it can't read", function()
+    local P = ns.ParseMoney
+    assert.is_nil(P(""))
+    assert.is_nil(P("  "))
+    assert.is_nil(P("abc"))
+    assert.is_nil(P("5c 2g")) -- out of order
+    assert.is_nil(P("5x"))
+    assert.is_nil(P("-3"))
+    assert.is_nil(P("5c 3")) -- nothing below copper
+  end)
+
+  it("writes copper back the way it's typed, and reads that back", function()
+    for _, c in ipairs({ 0, 5, 950, 10000, 12000, 10203, 1234567 }) do
+      assert.are.equal(c, ns.ParseMoney(ns.MoneyInputText(c)), c)
+    end
+    assert.are.equal("9s 50c", ns.MoneyInputText(950))
+    assert.are.equal("12g", ns.MoneyInputText(120000))
+  end)
+end)

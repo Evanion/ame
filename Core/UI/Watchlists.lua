@@ -270,8 +270,8 @@ function UI:UpdateWatchControls(keepInputs)
   W.SetStar(v.watch.star, inList)
   local a = watch:Alert(id) or {}
   if not keepInputs then
-    v.alertBelow:SetText(a.below and tostring(math.floor(a.below / 10000)) or "")
-    v.alertAbove:SetText(a.above and tostring(math.floor(a.above / 10000)) or "")
+    v.alertBelow:SetCopper(a.below)
+    v.alertAbove:SetCopper(a.above)
   end
   v.alertSignal:SetChecked(a.signal)
   self:UpdateHiddenControls()
