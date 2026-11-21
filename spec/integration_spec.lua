@@ -1231,8 +1231,29 @@ describe("addon in a stubbed client", function()
         drainJobs()
         assert.are.equal(arb.status.text, ns.UI.footerLeft.text) -- the tab's text, shown by the window
         assert.is_not_nil(arb.counts)
-        ns.UI:ShowTab("settings")
+        -- Settings is the cog by the bell, not a tab
+        assert.is_nil(ns.UI.tabBar.byKey.settings)
+        local cog = ns.UI.settingsButton
+        cog.scripts.OnClick(cog)
+        assert.are.equal("settings", ns.UI.current)
+        assert.is_true(cog.selected)
         assert.truthy(ns.UI.footerLeft.text:find("saved per account"))
+        -- its cards fill the width: columns when wide, one column under each other when not
+        local sv = ns.UI.settingsView
+        local items = sv.sections.general.stack.items
+        sv.w = 1000
+        sv:PlaceSection()
+        local first, second = items[1][1].points[1], items[2][1].points[1]
+        assert.are.same({ "TOPLEFT", sv.sections.general.frame, "TOPLEFT", 0, 0 }, first)
+        assert.are.equal("TOPLEFT", second[1])
+        assert.is_true(second[4] > 400) -- the second column
+        assert.are.equal(math.floor((1000 - 10) / 2), items[1][1].w)
+        sv.w = 600
+        sv:PlaceSection()
+        assert.are.equal(items[1][1], items[2][1].points[1][2]) -- under the first
+        ns.UI:ShowTab("market")
+        assert.is_false(cog.selected)
+        ns.UI:ShowTab("settings")
         -- sharing is a section of Settings: the old Sync tab opens it
         assert.is_nil(ns.UI.views.sync)
         ns.UI:ShowTab("sync")

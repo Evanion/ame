@@ -453,6 +453,7 @@ function Help.Articles()
           title = L["Settings tab"],
           label = L["Settings"],
           body = {
+            L["Open Settings with the cog at the top right of the window, left of the notification bell (or /ame config)."],
             L["Pick a section on the left: General (the window and notifications), Tooltips & charts, Selling, Sharing and Data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored)."],
             L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."],
           },

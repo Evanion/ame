@@ -189,7 +189,6 @@ function UI:CreateShell()
     { "portfolio", L["Portfolio"] },
     { "crafting", L["Crafting"] },
     { "item", L["Item"] },
-    { "settings", L["Settings"] },
     { "guide", L["Guide"] },
   }, {
     minWidth = 66,
@@ -197,10 +196,23 @@ function UI:CreateShell()
       UI:ShowTab(name)
     end,
   })
-  -- the notification center's bell, then the tabs right-aligned left of it (long labels push the row left)
+  -- the notification center's bell, Settings as a cog left of it, then the tabs right-aligned left of those (long
+  -- labels push the row left)
   local bell = self:CreateNotices(f)
   bell:SetPoint("TOPRIGHT", -34, -8)
-  self.tabBar:SetPoint("TOPRIGHT", bell, "TOPLEFT", -8, 0)
+  local gear = W.Button(f, "", 24, 20, function()
+    UI:ShowTab("settings")
+  end, { icon = 16 })
+  gear.icon:ClearAllPoints()
+  gear.icon:SetPoint("CENTER")
+  gear.icon:SetTexture("Interface\\Icons\\INV_Misc_Gear_01")
+  gear.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  gear:SetPoint("RIGHT", bell, "LEFT", -4, 0)
+  W.Tooltip(gear, function(tip)
+    tip:SetText(L["Settings"], 1, 1, 1)
+  end, "ANCHOR_BOTTOMLEFT")
+  self.settingsButton = gear
+  self.tabBar:SetPoint("TOPRIGHT", gear, "TOPLEFT", -8, 0)
   self:LayoutTabs()
 
   -- The footer, part of the window like the title bar: on the left, where the tab's numbers come from (each tab
@@ -597,6 +609,7 @@ function UI:ShowTab(name)
     v:SetShown(n == name)
   end
   self.tabBar:Select(name, true)
+  self.settingsButton:SetSelected(name == "settings")
   self.current = name
   self:UpdateFooter()
   if name == "market" then

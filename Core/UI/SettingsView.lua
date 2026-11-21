@@ -1,4 +1,5 @@
--- Settings tab: a sidebar of sections (like the Guide) and the chosen section's cards in one readable column.
+-- Settings tab: a sidebar of sections (like the Guide) and the chosen section's cards over the whole width, in
+-- columns on wide windows.
 -- Sections: General (window, notifications), Tooltips & charts, Selling, Sharing (guild and trusted players, built
 -- by SyncView), Data. Narrow windows pick the section from a dropdown instead of the sidebar.
 local _, ns = ...
@@ -27,7 +28,8 @@ end
 -- Settings
 
 UI.SETTINGS_GAP = 10 -- between cards
-UI.SETTINGS_WIDTH = 600 -- the section column's widest (lines stay readable on wide windows)
+UI.SETTINGS_COLUMN = 380 -- a column of cards is at least this wide: wider windows get two, then three
+UI.SETTINGS_COLUMNS = 3
 
 function UI.SettingsSections()
   return {
@@ -104,12 +106,13 @@ function UI:CreateSettingsView(parent, contentArea)
   -- the shown section's width and height (cards measure their wrapped text at this width)
   function v:PlaceSection()
     local sec = self.sections[self.current]
-    local w = math.max(200, math.min(UI.SETTINGS_WIDTH, self:GetWidth() or UI.SETTINGS_WIDTH))
+    local w = math.max(200, self:GetWidth() or 200)
     sec.frame:SetWidth(w)
     if self.current == "data" and self.FlowActions then
       self:FlowActions(w - 16)
     end
-    local h = sec.measure and sec.measure(w) or sec.stack:Height(w)
+    local h = sec.measure and sec.measure(w)
+      or sec.stack:Flow(w, UI.SETTINGS_COLUMN, UI.SETTINGS_GAP, UI.SETTINGS_COLUMNS)
     sec.frame:SetHeight(math.max(1, h))
   end
   function v:LayoutColumns()

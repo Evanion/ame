@@ -81,7 +81,7 @@ function UI:CreateSyncSection(v, host)
   local stack = UI.Stack(column, 0)
   -- the section's height: the freshness row and the cards (the settings tab places the section)
   function v:Measure(width)
-    local h = stack:Height(width)
+    local h = stack:Flow(width, UI.SETTINGS_COLUMN or 380, UI.SETTINGS_GAP or 10, UI.SETTINGS_COLUMNS or 3)
     column:SetHeight(math.max(1, h))
     return 56 + (UI.SETTINGS_GAP or 10) + h
   end

@@ -82,6 +82,55 @@ function UI.Stack(content, pad)
     end
     return h
   end
+  -- A stack of cards, laid out over the whole width: in columns at least minWidth wide (up to maxColumns), each card
+  -- in the shortest column so far, in order; one column when there's no room for two. Returns the height.
+  function st:Flow(width, minWidth, gap, maxColumns)
+    local inner = math.max(1, width - 2 * pad)
+    local n = math.min(maxColumns or 2, #self.items, math.floor((inner + gap) / (minWidth + gap)))
+    n = math.max(1, n)
+    if n == 1 then
+      if self.flowed then -- back to the plain stack's anchors
+        self.flowed = nil
+        local prev
+        for _, it in ipairs(self.items) do
+          local obj = it[1]
+          obj:ClearAllPoints()
+          if prev then
+            obj:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -it[2])
+          else
+            obj:SetPoint("TOPLEFT", content, "TOPLEFT", pad, -pad)
+          end
+          obj:SetPoint("RIGHT", content, "RIGHT", -pad, 0)
+          prev = obj
+        end
+      end
+      return self:Height(width)
+    end
+    self.flowed = true
+    local cw = math.floor((inner - (n - 1) * gap) / n)
+    local heights = {}
+    for c = 1, n do
+      heights[c] = 0
+    end
+    for _, it in ipairs(self.items) do
+      local obj = it[1]
+      local col = 1
+      for c = 2, n do
+        if heights[c] < heights[col] then
+          col = c
+        end
+      end
+      if obj.card then
+        obj:Fit(cw)
+      end
+      local y = heights[col] > 0 and heights[col] + gap or 0
+      obj:ClearAllPoints()
+      obj:SetPoint("TOPLEFT", content, "TOPLEFT", pad + (col - 1) * (cw + gap), -(pad + y))
+      obj:SetWidth(cw)
+      heights[col] = y + (obj:GetHeight() or 0)
+    end
+    return 2 * pad + math.max(unpack(heights))
+  end
   function st:Card(gap)
     local card = add(CreateFrame("Frame", nil, content, "BackdropTemplate"), gap or 8)
     W.Skin(card, W.COLORS.panel)

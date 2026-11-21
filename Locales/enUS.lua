@@ -530,6 +530,7 @@ L["One side is %d days old: scan both auction houses before you buy."] = true
 L["Only items listed at least 3 at a time on most days count for the indexes, risers and fallers, so one item reposted every day can't move them. Listed value caps each price at the outlier limit (Settings, Data) times its 30-day average. Totals come only from days with a full scan."] = true
 L["Open"] = true
 L["Open AME settings"] = true
+L["Open Settings with the cog at the top right of the window, left of the notification bell (or /ame config)."] = true
 L["Open chart"] = true
 L["Open charts with"] = true
 L["Open each of your professions once - on every character - so AME knows what they can craft. It records them as you do."] = true
