@@ -3236,6 +3236,37 @@ describe("addon in a stubbed client", function()
         assert.is_not_nil(ns.SyncService.v2)
       end)
 
+      it("in combat, blocks still arrive, but checking and storing them waits until it ends", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        local peer = v2Peer("Guild Mate")
+        local t = env.now - 5 * 3600
+        local pdata = peerHistory(t, { [2589] = 1100, [4306] = 900 })
+        local hour = math.floor(t / 3600)
+        local e = pdata.hours[hour]
+        peer.have[ns.SyncV2.ObjKey(SHARD, "h", hour)] = { ns.AME.compressor:Wire(e.s), e.t, e.src, e.key }
+        local fighting = true
+        _G.InCombatLockdown = function()
+          return fighting
+        end
+        finally(function()
+          _G.InCombatLockdown = nil
+        end)
+        peer.engine:Announce()
+        for _ = 1, 120 do
+          env:advance(0.5)
+          env:update(1)
+          peer:pump()
+        end
+        local data = AME_HistoryDB.shards[SHARD]
+        assert.are.equal(1, ns.SyncService.v2.stats.objectsReceived) -- all its blocks are here
+        assert.is_nil(data.hours[hour]) -- not checked or stored yet
+        assert.is_true(ns.AME.jobs:Busy())
+        fighting = false
+        run(peer, 10)
+        assert.are.equal(e.s, data.hours[hour].s)
+      end)
+
       it("Players heard from: v1 or v2 per player, a summary, and Show all for a big guild", function()
         bootSync(2)
         fullScan({ { 2589, 1000, 10 } })

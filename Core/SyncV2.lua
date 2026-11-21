@@ -603,19 +603,21 @@ end
 function V2:complete(id, inc)
   self.incoming[id] = nil
   local payload = concat(inc.blocks)
-  if #payload ~= inc.len or V2.Checksum(payload) ~= inc.sum then
+  if #payload ~= inc.len then
+    self.stats.bad = self.stats.bad + 1
+    return
+  end
+  local obj = { kind = inc.kind, ref = inc.ref, t = inc.t, src = inc.src, key = inc.key, payload = payload }
+  -- the checksum over a whole object (~170 KB for a full scan) is a few ms of work: a host that does it in its
+  -- background work (host.verifiesSum: in combat, that waits) gets the sum to check; otherwise it's checked here
+  if self.host.verifiesSum then
+    obj.sum = inc.sum
+  elseif V2.Checksum(payload) ~= inc.sum then
     self.stats.bad = self.stats.bad + 1
     return
   end
   self.stats.objectsReceived = self.stats.objectsReceived + 1
-  self.host:Accept(inc.shard, {
-    kind = inc.kind,
-    ref = inc.ref,
-    t = inc.t,
-    src = inc.src,
-    key = inc.key,
-    payload = payload,
-  }, inc.sender)
+  self.host:Accept(inc.shard, obj, inc.sender)
 end
 
 -- check incoming objects every CHECK_EVERY while there are any: a stalled one asks for its missing blocks

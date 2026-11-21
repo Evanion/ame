@@ -351,6 +351,7 @@ function Service:V2Host()
     end)
   end
 
+  host.verifiesSum = true -- AcceptV2 checks the checksum in a background job
   function host.Accept(_, shard, obj, sender)
     svc:AcceptV2(shard, obj, sender)
   end
@@ -365,6 +366,26 @@ function Service:AcceptV2(shard, obj, sender)
     return
   end
   local AME = self.AME
+  -- first the checksum, in the background (it waits out combat like the rest)
+  if obj.sum then
+    local sum = obj.sum
+    obj.sum = nil
+    AME.jobs:Add("sync2-verify", function(job)
+      return ns.SyncV2.Checksum(obj.payload, function()
+        job:Checkpoint()
+      end) == sum
+    end, function(ok, good)
+      if ok and good then
+        self:AcceptV2(shard, obj, sender)
+      else
+        self.stats.syncRejected = (self.stats.syncRejected or 0) + 1
+        if self.v2 then
+          self.v2.stats.bad = self.v2.stats.bad + 1
+        end
+      end
+    end)
+    return
+  end
   if obj.kind == "s" then
     return self:Merge({ shard = shard, t = obj.t, src = obj.src, kind = "full", wire = obj.payload }, sender)
   end
