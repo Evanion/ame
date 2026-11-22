@@ -201,16 +201,6 @@ function UI:CreateSettingsView(parent, contentArea)
     st,
     L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."]
   )
-  if ns.CraftingData:Installed() then -- without its data addon, Crafting isn't offered at all
-    _, st = card("general", L["Crafting"])
-    v.craftingCheck = check(st, L["Show the Crafting tab"], "crafting", function(on)
-      UI:CraftingChanged(on)
-    end)
-    paragraph(
-      st,
-      L["What your characters' professions earn at today's prices: top earners, selling materials raw or refined, and recipes on the auction house worth buying. Open each profession once so AME knows your recipes. Needs the AME Crafting Data addon."]
-    )
-  end
   _, st = card("general", L["Notifications"])
   check(st, L["Announce recorded full scans"], "announceScans")
   check(st, L["Sound when an alert fires"], "alertSound")

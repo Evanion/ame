@@ -1,8 +1,9 @@
--- Crafting tab (M16): what your characters' professions earn at today's prices. Shown only while Crafting is
--- switched on (Settings > General). Layout (UI.Slots): toolbar = Top earners | Sell or refine | Recipes to buy and a
--- character filter; the table of the mode; a right sidebar with the selected row's breakdown. The math is
--- Core/Crafting.lua; recipes come from what AME recorded in profession windows (Core/Professions.lua) and the crafting
--- data library (Core/CraftingData.lua, loaded on demand).
+-- Crafting tab: your professions, who can make what, the craft queue, and what your recipes earn. Always there (the
+-- crafting data library comes with AME; without it only Recipes to buy and Leveling say what they need). Layout
+-- (UI.Slots), the same on every page: a sidebar of the pages (Market-style lines; a dropdown when narrow), a toolbar
+-- (character, profession, search - kept as you switch pages - and the page's own controls), the page's table, and a
+-- card with the picked row's breakdown. The math is Core/Crafting.lua; recipes come from what AME recorded in
+-- profession windows (Core/Professions.lua) and the crafting data library (Core/CraftingData.lua, loaded on demand).
 local _, ns = ...
 local L = ns.L
 
@@ -11,12 +12,28 @@ local UI = ns.UI
 
 -- gathering professions craft nothing worth ranking
 local GATHERING = { [182] = true, [356] = true, [393] = true }
-local MODES = {
-  { "earners", L["Top earners"] },
-  { "refine", L["Sell or refine"] },
-  { "recipes", L["Recipes to buy"] },
-  { "leveling", L["Leveling"] },
+-- the pages, as the sidebar lists them (headings between groups)
+local PAGES = {
+  { heading = L["Crafting"] },
+  { key = "professions", label = L["Your professions"] },
+  { key = "crafters", label = L["Find a crafter"] },
+  { key = "queue", label = L["Craft queue"] },
+  { heading = L["Make money"] },
+  { key = "earners", label = L["Top earners"] },
+  { key = "refine", label = L["Sell or refine"] },
+  { key = "recipes", label = L["Recipes to buy"] },
+  { heading = L["Level up"] },
+  { key = "leveling", label = L["Leveling"] },
 }
+local MODES = {}
+for _, p in ipairs(PAGES) do
+  if p.key then
+    MODES[#MODES + 1] = { p.key, p.label }
+  end
+end
+UI.CRAFT_PAGES = PAGES
+-- pages that need the crafting data library's full recipe list
+local NEEDS_DATA = { recipes = true, leveling = true }
 local BREAKDOWN_ROWS = 14
 UI.CRAFT_FRESH_BOOK = 3600 -- an item's listings searched this recently price it instead of the day's average
 UI.RECIPE_LISTING_DAYS = 2 -- recipe items seen on the AH within this many days count as for sale
@@ -32,6 +49,12 @@ function UI.CraftRowKey(r)
     return nil
   elseif r.entry then
     return "step:" .. tostring(r.entry.recipe.id)
+  elseif r.skillLine then
+    return "prof:" .. tostring(r.key) .. ":" .. tostring(r.skillLine)
+  elseif r.crafter then
+    return "crafter:" .. tostring(r.recipe) .. ":" .. tostring(r.crafter)
+  elseif r.step then
+    return "queue:" .. tostring(r.s.recipe) .. ":" .. tostring(r.itemID)
   elseif r.recipe and r.crafters then
     return "recipe:" .. tostring(r.recipe.id)
   elseif r.spell then
@@ -207,9 +230,9 @@ function UI:CraftingModel()
   if not index then
     return nil, "loading"
   end
-  if not ns.CraftingData:Load() then
-    return nil, "nodata"
-  end
+  -- the data library: every recipe in the game (Recipes to buy, Leveling); the other pages work from what your
+  -- characters' profession windows recorded, so they don't need it
+  local hasData = ns.CraftingData:Load()
   local chars = ns.Professions:Characters()
   local only = self.craftChar -- nil: every character
 
@@ -273,6 +296,7 @@ function UI:CraftingModel()
 
   local craft = self:CraftingEnv(index, producers)
   return {
+    hasData = hasData,
     index = index,
     craft = craft,
     entries = entries,
@@ -283,10 +307,158 @@ function UI:CraftingModel()
   }
 end
 
--- rows for the current mode
+-- does a row match the toolbar's profession and search? (rows about an item: its name)
+function UI:CraftFilter(row, profession)
+  if self.craftProf and profession and profession ~= self.craftProf then
+    return false
+  end
+  local text = self.craftSearch
+  if text and text ~= "" and self.craftMode ~= "crafters" then
+    local id = row.itemID
+    local name = (id and ns.ItemCache.Name(id))
+      or row.name
+      or (type(row.recipe) == "table" and ns.Crafters.RecipeName(row.recipe.id))
+      or ""
+    return name:lower():find(text:lower(), 1, true) ~= nil
+  end
+  return true
+end
+
+-- Your professions: one row per character and profession, with its best earner
+function UI:ProfessionRows(m)
+  local best = {}
+  for _, e in ipairs(m.craft:TopEarners(m.entries, m.heldSet)) do
+    for _, key in ipairs(e.crafters) do
+      local k = key .. ":" .. tostring(e.profession)
+      if not best[k] and e.eval.perDay then
+        best[k] = e
+      end
+    end
+  end
+  local now, rows = GetServerTime(), {}
+  for key, c in pairs(m.chars) do
+    if not self.craftChar or key == self.craftChar then
+      for skillLine, p in pairs(c.professions or {}) do
+        local known = 0
+        for _ in pairs(p.learned or {}) do
+          known = known + 1
+        end
+        local ready, wait = false, nil
+        for _, t in pairs(p.cooldowns or {}) do
+          if t <= now then
+            ready = true
+          else
+            wait = math.min(wait or math.huge, t - now)
+          end
+        end
+        local b = best[key .. ":" .. tostring(skillLine)]
+        local row = {
+          key = key,
+          char = charName(key),
+          skillLine = skillLine,
+          profession = p.name or "?",
+          skill = p.skill,
+          max = p.max,
+          known = known,
+          ready = ready,
+          wait = wait,
+          best = b,
+          itemID = b and b.recipe.product,
+          perDay = b and b.eval.perDay,
+        }
+        if self:CraftFilter({ name = row.profession }, skillLine) then
+          rows[#rows + 1] = row
+        end
+      end
+    end
+  end
+  table.sort(rows, function(a, b)
+    if a.char ~= b.char then
+      return a.char < b.char
+    end
+    return a.profession < b.profession
+  end)
+  return rows
+end
+
+-- Find a crafter: everyone who knows a recipe matching the search (an item or an enchant), online first
+function UI:CrafterRows()
+  local crafters = ns.Crafters and ns.Crafters.Shared()
+  local text = self.craftSearch or ""
+  if not crafters or text == "" then
+    return {}
+  end
+  local rows = {}
+  for _, res in ipairs(crafters:Search(text)) do
+    local r = ns.ProfessionBar and ns.ProfessionBar.Recipe(res.recipe)
+    local d = not r and ns.CraftingData:Recipe(res.recipe)
+    local product = (r and r.product) or (d and d.product)
+    for _, c in ipairs(res.who) do
+      rows[#rows + 1] = {
+        recipe = res.recipe,
+        name = res.name,
+        itemID = product,
+        crafter = c.name,
+        mine = c.mine,
+        online = c.online,
+        skill = c.skill,
+        seen = c.t,
+        count = #res.who,
+      }
+    end
+  end
+  return rows
+end
+
+-- the craft queue's steps (the profession window's queue, planned the same way)
+function UI:QueueRows()
+  local PB = ns.ProfessionBar
+  if not (PB and PB.Plan) then
+    return {}
+  end
+  local plan = PB.Plan()
+  self.craftPlan = plan
+  local rows = {}
+  for k, s in ipairs(plan.steps) do
+    rows[#rows + 1] = {
+      step = k,
+      itemID = s.item,
+      made = s.made or s.count,
+      who = s.crafter and (s.mine and L["you"] or charName(s.crafter)) or nil,
+      part = s.part,
+      profit = s.profit,
+      s = s,
+    }
+  end
+  return rows
+end
+
+-- rows for the current mode, filtered by the toolbar's profession and search
 function UI:CraftingRows(m)
   local mode = self.craftMode
-  if mode == "earners" then
+  local rows = self:CraftingModeRows(m)
+  if mode == "professions" or mode == "crafters" then
+    return rows -- filtered as they're made
+  end
+  local out = {}
+  for _, r in ipairs(rows) do
+    local profession = r.profession or (r.recipe and r.recipe.profession)
+    if self:CraftFilter(r, type(profession) == "number" and profession or nil) then
+      out[#out + 1] = r
+    end
+  end
+  return out
+end
+
+function UI:CraftingModeRows(m)
+  local mode = self.craftMode
+  if mode == "professions" then
+    return self:ProfessionRows(m)
+  elseif mode == "crafters" then
+    return self:CrafterRows()
+  elseif mode == "queue" then
+    return self:QueueRows()
+  elseif mode == "earners" then
     local list = m.craft:TopEarners(m.entries, m.heldSet)
     for _, e in ipairs(list) do
       e.itemID = e.recipe.product
@@ -341,11 +513,24 @@ function UI:CraftingRows(m)
     chars = { [self.craftChar] = m.chars[self.craftChar] }
   end
   local rows = m.craft:RecipesToBuy(listings, teaches, recipe, chars)
+  -- who else already makes it: your guild and trusted players (Crafters); the toolbar's toggle keeps only the gaps
+  local shared = ns.Crafters and ns.Crafters.Shared()
+  local out = {}
   for _, r in ipairs(rows) do
     r.itemID = r.item
     r.perDay = r.eval.perDay
+    local others = 0
+    for _, c in ipairs(shared and r.spell and shared:WhoKnows(r.spell) or {}) do
+      if not c.mine then
+        others = others + 1
+      end
+    end
+    r.network = others
+    if not self.craftGaps or others == 0 then
+      out[#out + 1] = r
+    end
   end
-  return rows
+  return out
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -434,6 +619,114 @@ local COLUMNS = {
       end,
     },
   },
+  professions = {
+    { key = "char", label = L["Character"], width = 100, align = "LEFT" },
+    { key = "profession", label = L["Profession"], width = 110, align = "LEFT" },
+    {
+      key = "skill",
+      label = L["Skill"],
+      width = 64,
+      text = function(r)
+        return ("%d / %d"):format(r.skill or 0, r.max or 0)
+      end,
+    },
+    { key = "known", label = L["Recipes"], width = 56, format = "count" },
+    {
+      key = "wait",
+      drop = 1,
+      label = L["Cooldown"],
+      width = 80,
+      text = function(r)
+        if r.ready then
+          return W.Color("good", L["ready"])
+        elseif r.wait then
+          return SecondsToTime(r.wait, true)
+        end
+        return W.Dim("-")
+      end,
+    },
+    {
+      key = "name",
+      label = L["Best earner"],
+      width = 170,
+      item = true,
+      sortKey = false,
+      fallback = function()
+        return W.Dim("-")
+      end,
+    },
+    {
+      key = "perDay",
+      money = true,
+      label = L["Market/day"],
+      term = "marketDay",
+      width = 72,
+      text = function(r)
+        return r.perDay and W.Money(r.perDay, true) or W.Dim("-")
+      end,
+    },
+  },
+  crafters = {
+    {
+      key = "name",
+      label = L["Makes"],
+      width = 200,
+      item = true,
+      fallback = function(r)
+        return r.name
+      end,
+    },
+    {
+      key = "crafter",
+      label = L["Crafter"],
+      width = 130,
+      align = "LEFT",
+      text = function(r)
+        -- online: green; offline: dim
+        local name = r.online and W.Color("good", r.crafter) or W.Dim(r.crafter)
+        return r.mine and (name .. W.Dim("  " .. L["you"])) or name
+      end,
+    },
+    {
+      key = "skill",
+      label = L["Skill"],
+      width = 50,
+      text = function(r)
+        return r.skill and tostring(r.skill) or W.Dim("-")
+      end,
+    },
+  },
+  queue = {
+    { key = "step", label = "#", width = 28, format = "count" },
+    {
+      key = "name",
+      label = L["Craft"],
+      width = 200,
+      item = true,
+      sortKey = false,
+      suffix = function(r)
+        return W.Dim("  ×" .. tostring(r.made or 1)) .. (r.part and W.Dim("  " .. L["(part)"]) or "")
+      end,
+    },
+    {
+      key = "who",
+      label = L["Crafter"],
+      width = 110,
+      align = "LEFT",
+      text = function(r)
+        return r.who or W.Color("warn", L["nobody"])
+      end,
+    },
+    {
+      key = "profit",
+      money = true,
+      label = L["Profit"],
+      width = 72,
+      text = function(r)
+        return r.profit and W.SignedMoney(r.profit) or W.Dim("-")
+      end,
+    },
+  },
   recipes = {
     { key = "name", label = L["Recipe"], width = 200, item = true, sortKey = false },
     {
@@ -476,6 +769,16 @@ local COLUMNS = {
         return days(r.payback)
       end,
     },
+    {
+      -- your guild and trusted players who already know it (Crafters); "nobody": a gap your network can't fill
+      key = "network",
+      drop = 2,
+      label = L["Network"],
+      width = 80,
+      text = function(r)
+        return (r.network or 0) == 0 and W.Color("warn", L["nobody"]) or L["%d in network"]:format(r.network)
+      end,
+    },
   },
   leveling = UI.LEVELING_COLUMNS, -- Core/UI/LevelingView.lua
 }
@@ -483,27 +786,137 @@ local COLUMNS = {
 function UI:CreateCraftingView(parent, contentArea)
   local v = contentArea(parent)
   self.craftView = v
-  self.craftMode = "earners"
-  local slots = UI.Slots(
-    v,
-    { toolbar = 22, header = 42, headerBelow = true, right = UI.SIDE_PANEL_W, rightCards = true, status = true }
-  )
+  self.craftMode = "professions"
+  local slots = UI.Slots(v, {
+    toolbar = 22,
+    header = 42,
+    headerBelow = true,
+    left = UI.SIDEBAR_W,
+    right = UI.SIDE_PANEL_W,
+    rightCards = true,
+    status = true,
+  })
   v.slots = slots
   local bar = slots.toolbar
-  v.modes = W.Segmented(bar, MODES, {
-    minWidth = 80,
-    onSelect = function(mode)
-      UI.craftMode, UI.craftSelected = mode, nil
-      UI:RefreshCrafting()
+
+  -- the pages: Market-style lines under their group headings (narrow windows: a dropdown on the toolbar)
+  local list = slots.left.content
+  v.pageLinks = {}
+  local y = -6
+  for _, p in ipairs(PAGES) do
+    if p.heading then
+      local h = W.Text(list, "GameFontNormalSmall")
+      h:SetPoint("TOPLEFT", 10, y - (y < -6 and 6 or 2))
+      h:SetText(p.heading)
+      y = y - (y < -6 and 26 or 22)
+    else
+      local b = CreateFrame("Button", nil, list)
+      b:SetHeight(20)
+      b:SetPoint("TOPLEFT", 4, y)
+      b:SetPoint("RIGHT", list, "RIGHT", -4, 0)
+      b.sel = b:CreateTexture(nil, "BACKGROUND")
+      b.sel:SetAllPoints()
+      W.Fill(b.sel, W.COLORS.rowSelected)
+      b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+      b.hl:SetAllPoints()
+      W.Fill(b.hl, W.COLORS.rowHover)
+      b.text = W.Text(b, "GameFontHighlightSmall")
+      b.text:SetPoint("LEFT", 12, 0)
+      b.text:SetPoint("RIGHT", -4, 0)
+      b.text:SetWordWrap(false)
+      b.text:SetText(p.label)
+      b:SetScript("OnClick", function()
+        UI:ShowCraftingPage(p.key)
+      end)
+      v.pageLinks[p.key] = b
+      y = y - 22
+    end
+  end
+  list:SetHeight(6 - y)
+  v.page = W.Dropdown(bar, 130, MODES, function(key)
+    if key then
+      UI:ShowCraftingPage(key)
+    end
+  end, { neutral = true, default = "professions" })
+  -- kept for the leveling controls' anchor (Core/UI/LevelingView.lua): placed by LayoutToolbar
+  v.modes = CreateFrame("Frame", nil, bar)
+  v.modes:SetSize(1, 20)
+
+  -- the filters, kept as you switch pages: search, character, profession
+  v.search = W.Input(bar, {
+    width = UI.SIDEBAR_W,
+    hint = L["Search recipes or items..."],
+    onChange = function(text) -- every key: refreshed once typing pauses
+      UI.craftSearch = text
+      UI.craftSearchGen = (UI.craftSearchGen or 0) + 1
+      local gen = UI.craftSearchGen
+      C_Timer.After(0.25, function()
+        if gen == UI.craftSearchGen then
+          UI.craftSelected = nil
+          UI:RefreshCrafting()
+        end
+      end)
     end,
+    clearOnEscape = true,
   })
-  v.modes:SetPoint("LEFT", 0, 0)
-  v.modes:Select("earners", true)
   v.char = W.Dropdown(bar, 140, { { false, L["All characters"] } }, function(key)
     UI.craftChar = key or nil
     UI:RefreshCrafting()
   end, { neutral = true, default = false })
-  v.char:SetPoint("LEFT", v.modes, "RIGHT", 12, 0)
+  v.prof = W.Dropdown(bar, 130, { { false, L["All professions"] } }, function(key)
+    UI.craftProf = key or nil
+    UI:RefreshCrafting()
+  end, { neutral = true, default = false })
+  -- Recipes to buy: only the recipes nobody in your network knows yet (the gaps to close)
+  v.gaps = W.Check(bar, L["Only what nobody has"], function(on)
+    UI.craftGaps = on or nil
+    UI.craftSelected = nil
+    UI:RefreshCrafting()
+  end)
+
+  -- the toolbar for the page and the window's width
+  function v:LayoutToolbar()
+    local compact = slots.compact
+    local mode = UI.craftMode
+    local leveling, crafters = mode == "leveling", mode == "crafters"
+    local last
+    local function place(w, gap)
+      w:ClearAllPoints()
+      if last then
+        w:SetPoint("LEFT", last, "RIGHT", gap or 6, 0)
+      else
+        w:SetPoint("LEFT", 0, 0)
+      end
+      last = w
+    end
+    self.page:SetShown(compact)
+    if compact then
+      place(self.page)
+    end
+    self.search:SetShown(not leveling)
+    if not leveling then
+      place(self.search)
+      self.search:SetWidth(compact and 140 or UI.SIDEBAR_W) -- wide: lines up with the sidebar under it
+      self.search:SetHint(crafters and L["Who can make... (an item or enchant)"] or L["Search recipes or items..."])
+    end
+    -- the leveling controls go after this anchor
+    self.modes:ClearAllPoints()
+    if last then
+      self.modes:SetPoint("LEFT", last, "RIGHT", -1, 0)
+    else
+      self.modes:SetPoint("LEFT", compact and -13 or (UI.SIDEBAR_W + UI.SLOT_GAP - 13), 0)
+    end
+    self.char:SetShown(not (leveling or crafters))
+    self.prof:SetShown(not (leveling or crafters))
+    if not (leveling or crafters) then
+      place(self.char, compact and 6 or UI.SLOT_GAP)
+      place(self.prof)
+    end
+    self.gaps:SetShown(mode == "recipes")
+    if mode == "recipes" then
+      place(self.gaps, 10)
+    end
+  end
   v.details = W.Button(bar, L["Details"], 64, 20, function()
     slots:ToggleDetails()
     v.details:SetSelected(slots.details)
@@ -514,6 +927,16 @@ function UI:CreateCraftingView(parent, contentArea)
   for mode, columns in pairs(COLUMNS) do
     local t = ns.DataTable.New(slots.main, {
       columns = columns,
+      action = mode == "crafters" and {
+        label = L["Whisper"],
+        width = 64,
+        shown = function(d)
+          return not d.mine
+        end,
+        onClick = function(d)
+          ns.CraftersView.Whisper(d.crafter, d.recipe)
+        end,
+      } or nil,
       rows = 16,
       fill = true,
       top = 0,
@@ -568,8 +991,7 @@ function UI:CreateCraftingView(parent, contentArea)
   v.action.label:SetPoint("RIGHT", -6, 0)
   v.action.label:SetWordWrap(false)
   v.chart = W.Button(actions, L["Chart"], 64, 26, function()
-    local e = UI.craftSelected
-    local id = e and (e.recipe and e.recipe.product or e.itemID)
+    local id = UI.CraftRowItem(UI.craftMode, UI.craftSelected)
     if id then
       UI:ShowItem(id)
     end
@@ -588,6 +1010,7 @@ function UI:CreateCraftingView(parent, contentArea)
     slots:SetCompact(on)
     self.details:SetShown(on)
     self.details:SetSelected(false)
+    self:LayoutToolbar()
   end
   v:SetCompact(slots.compact)
   v:SetScript("OnShow", function()
@@ -601,14 +1024,26 @@ function UI:CreateCraftingView(parent, contentArea)
   return v
 end
 
+-- switch the Crafting tab to a page (the sidebar, its dropdown, a card's button)
+function UI:ShowCraftingPage(key)
+  self.craftMode, self.craftSelected = key, nil
+  self:RefreshCrafting()
+end
+
 function UI:RefreshCrafting()
   local v = self.craftView
   if not (v and v:IsShown()) then
     return
   end
-  v.modes:Select(self.craftMode, true)
-  local leveling = self.craftMode == "leveling"
+  local mode = self.craftMode
+  for key, b in pairs(v.pageLinks) do
+    b.sel:SetShown(key == mode)
+  end
+  v.page:SetValue(mode)
+  v.gaps:SetChecked(self.craftGaps or false)
+  local leveling = mode == "leveling"
   self:ShowLevelingControls(v, leveling)
+  v:LayoutToolbar()
   -- the character filter: characters with recorded professions
   local options = { { false, L["All characters"] } }
   local keys = {}
@@ -621,20 +1056,49 @@ function UI:RefreshCrafting()
   end
   v.char:SetOptions(options)
   v.char:SetValue(self.craftChar or false)
-
-  local m, why = self:CraftingModel()
-  for mode, t in pairs(v.tables) do
-    t.frame:SetShown(m ~= nil and mode == self.craftMode)
+  -- the profession filter: every profession a character has recorded
+  local profs, names = {}, {}
+  for _, c in pairs(ns.Professions:Characters()) do
+    for skillLine, p in pairs(c.professions or {}) do
+      if not names[skillLine] then
+        names[skillLine] = p.name or tostring(skillLine)
+        profs[#profs + 1] = skillLine
+      end
+    end
   end
-  v.message:SetShown(m == nil or #keys == 0)
-  if not m then
-    v.message:SetText(why == "nodata" and L["The recipe data couldn't be loaded."] or L["Building market index..."])
+  table.sort(profs, function(a, b)
+    return names[a] < names[b]
+  end)
+  local profOptions = { { false, L["All professions"] } }
+  for _, skillLine in ipairs(profs) do
+    profOptions[#profOptions + 1] = { skillLine, names[skillLine] }
+  end
+  v.prof:SetOptions(profOptions)
+  if self.craftProf and not names[self.craftProf] then
+    self.craftProf = nil
+  end
+  v.prof:SetValue(self.craftProf or false)
+
+  local m = self:CraftingModel()
+  -- Recipes to buy and Leveling need every recipe in the game: the data library
+  local blocked = m ~= nil and NEEDS_DATA[mode] and not m.hasData
+  local noChars = #keys == 0 and mode ~= "crafters" -- Find a crafter works from your network alone
+  for key, t in pairs(v.tables) do
+    t.frame:SetShown(m ~= nil and not blocked and key == mode)
+  end
+  v.message:SetShown(m == nil or blocked or noChars)
+  if not m or blocked then
+    v.message:SetText(
+      blocked
+          and L["This page needs the AME Crafting Data addon, which comes with AME: install or enable it (CurseForge installs it with AME), then /reload."]
+        or L["Building market index..."]
+    )
     v.slots.status:SetText("")
     self.craftRows = nil
     self:RenderCraftingDetail()
     return
   end
-  if #keys == 0 then
+  if noChars then
     v.message:SetText(
       L["Open each of your professions once - on every character - so AME knows what they can craft. It records them as you do."]
     )
@@ -659,23 +1123,36 @@ function UI:RefreshCrafting()
   local t = v.tables[self.craftMode]
   t:SetData(rows)
   t:Render()
-  t:SetMessage(
-    #keys > 0
-        and #rows == 0
-        and (self.craftMode == "recipes" and L["No recipe on the auction house that your characters could learn and don't know yet."] or self.craftMode == "refine" and L["Nothing your characters hold is a reagent of a recipe they know."] or L["No known recipes yet."])
-      or nil
-  )
+  local empty
+  if mode == "crafters" then
+    empty = (self.craftSearch or "") == ""
+        and L["Search for an item or an enchant to see who can make it: your characters, your guild and the players you trust."]
+      or L["Nobody you know of can make that. Players share what they craft when they run AME too."]
+  elseif mode == "queue" then
+    empty = L["The craft queue is empty: queue crafts from a profession window (the panel beside it)."]
+  elseif mode == "recipes" then
+    empty = self.craftGaps
+        and L["Every recipe on the auction house that your characters could learn is already known in your network."]
+      or L["No recipe on the auction house that your characters could learn and don't know yet."]
+  elseif mode == "refine" then
+    empty = L["Nothing your characters hold is a reagent of a recipe they know."]
+  elseif mode == "professions" then
+    empty = L["No professions match."]
+  else
+    empty = L["No known recipes yet."]
+  end
+  t:SetMessage(((#keys > 0 or mode == "crafters") and #rows == 0) and empty or nil)
   local recorded = {}
   for _, key in ipairs(keys) do
-    local names = {}
+    local crafts = {}
     for profession, p in pairs(m.chars[key].professions or {}) do
       if not GATHERING[profession] then
-        names[#names + 1] = p.name
+        crafts[#crafts + 1] = p.name
       end
     end
-    table.sort(names)
-    if #names > 0 then -- characters with only gathering, or only spellbook data, aren't listed
-      recorded[#recorded + 1] = ("%s (%s)"):format(charName(key), table.concat(names, ", "))
+    table.sort(crafts)
+    if #crafts > 0 then -- characters with only gathering, or only spellbook data, aren't listed
+      recorded[#recorded + 1] = ("%s (%s)"):format(charName(key), table.concat(crafts, ", "))
     end
   end
   v.slots.status:SetText(
@@ -783,7 +1260,7 @@ function UI:RenderCraftingDetailRows()
     self.craftSelected = nil
   end
   v.action:SetShown(e ~= nil and not e.note)
-  v.chart:SetShown(e ~= nil and not e.note)
+  v.chart:SetShown(UI.CraftRowItem(self.craftMode, e) ~= nil)
   v.colorBar:SetShown(false)
   if self.craftMode == "leveling" and (not e or e.note) then
     v.title:SetText(W.Dim(L["Select a step"]))
@@ -820,6 +1297,58 @@ function UI:RenderCraftingDetailRows()
         or ""
     )
     v.action:SetText(L["Add all reagents to a shopping list"])
+  elseif mode == "professions" then
+    v.title:SetText(("%s %s"):format(e.profession, W.Dim(e.char)))
+    v.subtitle:SetText(L["Skill %d of %d · %d recipes known"]:format(e.skill or 0, e.max or 0, e.known))
+    if e.best then
+      local product = e.best.recipe.product
+      lines[#lines + 1] = { L["Best earner"], product and itemName(product) or W.Dim(L["Enchant"]), product }
+      lines[#lines + 1] = { L["Profit per craft"], W.SignedMoney(e.best.eval.profit or 0) }
+      lines[#lines + 1] = { L["Market a day"], W.Money(e.perDay, true) }
+    end
+    v.note:SetText(
+      e.ready and L["Cooldown ready."] or e.wait and L["On cooldown for %s."]:format(SecondsToTime(e.wait)) or ""
+    )
+    v.action:SetText(L["Plan leveling"])
+    v.action:SetShown(not GATHERING[e.skillLine])
+  elseif mode == "crafters" then
+    v.title:SetText(e.itemID and itemName(e.itemID) or e.name)
+    v.subtitle:SetText(L["%d know it"]:format(e.count))
+    lines[#lines + 1] = { L["Crafter"], e.mine and (e.crafter .. W.Dim("  " .. L["you"])) or e.crafter }
+    lines[#lines + 1] = { L["Skill"], e.skill and tostring(e.skill) or W.Dim("-") }
+    lines[#lines + 1] = { L["Online"], e.online and W.Color("good", L["yes"]) or W.Dim(L["no"]) }
+    if e.seen and not e.mine then
+      lines[#lines + 1] = { L["Shared"], L["%s ago"]:format(SecondsToTime(math.max(60, GetServerTime() - e.seen))) }
+    end
+    v.note:SetText(e.mine and "" or L["Whisper opens a chat to them with the recipe linked: you send it."])
+    v.action:SetText(L["Whisper %s"]:format(e.crafter))
+    v.action:SetShown(not e.mine)
+  elseif mode == "queue" then
+    local s = e.s
+    v.title:SetText(("%s %s"):format(itemName(e.itemID), W.Dim("×" .. tostring(e.made or 1))))
+    v.subtitle:SetText(
+      (e.who and L["crafted by %s"]:format(e.who) or W.Color("warn", L["nobody recorded knowing it"]))
+        .. (e.part and (W.SEP .. L["a part for a later step"]) or "")
+    )
+    local PB = ns.ProfessionBar
+    local r = PB.Recipe(s.recipe)
+    local mats = {}
+    for _, mat in ipairs(self.craftPlan and self.craftPlan.materials or {}) do
+      mats[mat.item] = mat
+    end
+    for _, rg in ipairs(r and r.reagents or {}) do
+      local mat = mats[rg[1]]
+      lines[#lines + 1] = {
+        ("%d %s"):format(rg[2] * (s.count or 1), itemName(rg[1])),
+        mat and PB.SourcesText(mat) or W.Dim(L["made by a step"]),
+        rg[1],
+      }
+    end
+    if e.profit then
+      lines[#lines + 1] = { L["Profit"], W.SignedMoney(e.profit) }
+    end
+    v.note:SetText(L["The whole queue's missing materials go on the Craft queue shopping list."])
+    v.action:SetText(L["Missing to shopping list"])
   elseif mode == "earners" then
     local ev = e.eval
     v.title:SetText(e.recipe.product and itemName(e.recipe.product) or W.Dim(L["Enchant"]))
@@ -870,7 +1399,7 @@ function UI:RenderCraftingDetailRows()
       L["Materials you'd craft count at what they would sell for, not at their buy price: listing costs a cut, buying doesn't."]
     )
     v.action:SetText(L["Search the AH"])
-  else
+  elseif mode == "recipes" then
     v.title:SetText(itemName(e.item))
     v.subtitle:SetText(
       L["Teaches %s"]:format(e.recipe.product and itemName(e.recipe.product) or L["an enchant"])
@@ -897,7 +1426,15 @@ function UI:RenderCraftingDetailRows()
           or W.Dim(L["needs %d, has %d"]:format(e.rank or 0, l.skill)),
       }
     end
-    v.note:SetText("")
+    lines[#lines + 1] = {
+      L["Network"],
+      (e.network or 0) == 0 and W.Color("warn", L["nobody"]) or L["%d in network"]:format(e.network),
+    }
+    v.note:SetText(
+      (e.network or 0) == 0
+          and L["Nobody in your guild or trusted players knows it: learning it fills a gap. Players who don't run AME aren't counted."]
+        or ""
+    )
     v.action:SetText(L["Search the AH"])
   end
   setLines(v, lines)
@@ -913,7 +1450,16 @@ function UI:CraftingAction()
     self:LevelingShoppingList()
     return
   end
-  if self.craftMode == "earners" then
+  if self.craftMode == "professions" then
+    self.levelChoice = { key = e.key, profession = e.skillLine }
+    self:ShowCraftingPage("leveling")
+  elseif self.craftMode == "crafters" then
+    if not e.mine then
+      ns.CraftersView.Whisper(e.crafter, e.recipe)
+    end
+  elseif self.craftMode == "queue" then
+    ns.ProfessionBar:QueueToShopping()
+  elseif self.craftMode == "earners" then
     local shop = ns.AME.shopping
     local name = W.Plain(itemName(e.recipe.product or e.itemID or 0))
     local index
@@ -933,15 +1479,4 @@ function UI:CraftingAction()
   else
     ns.AME:SearchAuctionHouse(e.itemID)
   end
-end
-
--- Settings: Crafting switched on or off - the tab and its recording follow
-function UI:CraftingChanged(on)
-  if on then
-    ns.Professions:RecordSpellbook()
-    ns.Professions:Record() -- a profession window that's already open
-  elseif self.current == "crafting" then
-    self:ShowTab("market")
-  end
-  self:LayoutTabs()
 end

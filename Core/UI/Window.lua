@@ -575,8 +575,7 @@ function UI:ShowGuide(key)
   end
 end
 
--- Tabs that are switched off in Settings (Crafting, or Crafting without its data addon) leave the tab row; the rest
--- close up.
+-- Lay the tab row out: each tab after the previous one.
 function UI:LayoutTabs()
   local bar = self.tabBar
   if not bar then
@@ -584,22 +583,16 @@ function UI:LayoutTabs()
   end
   local x, gap = 0, 4
   for _, b in ipairs(bar.buttons) do
-    local shown = b.key ~= "crafting" or ns.CraftingData:Enabled()
-    b:SetShown(shown)
-    if shown then
-      b:ClearAllPoints()
-      b:SetPoint("LEFT", x, 0)
-      x = x + (b:GetWidth() or 60) + gap
-    end
+    b:Show()
+    b:ClearAllPoints()
+    b:SetPoint("LEFT", x, 0)
+    x = x + (b:GetWidth() or 60) + gap
   end
   bar:SetWidth(math.max(0, x - gap))
 end
 
 function UI:ShowTab(name)
   self:Create()
-  if name == "crafting" and not ns.CraftingData:Enabled() then
-    name = "market" -- switched off, or no data addon
-  end
   local section
   if name == "sync" then -- sharing is a section of Settings
     name, section = "settings", "sharing"

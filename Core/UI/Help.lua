@@ -387,13 +387,20 @@ function Help.Articles()
           title = L["Crafting"],
           label = L["Crafting"],
           body = {
-            L["The Crafting tab shows what your characters' professions earn at today's prices. It's off by default: switch it on under Settings, General. It needs the AME Crafting Data addon (recipe data, loaded only when you use the tab), and it learns your recipes from your profession windows: open each profession once on every character."],
+            L["The Crafting tab is everything about professions: your characters' professions, who can make what, the craft queue, what your recipes earn at today's prices, and how to level up. Pick a page in the sidebar; the character, profession and search filters on the toolbar stay as you switch pages. AME learns your recipes from your profession windows: open each profession once on every character. Recipe data comes with AME in the AME Crafting Data addon, loaded only when you use the tab; Recipes to buy and Leveling need it."],
+            H(L["Your professions"]),
+            L["Every profession your characters have recorded: skill, recipes known, cooldowns, and the recipe that earns the most at today's prices. Click a row and the button plans leveling that profession."],
+            H(L["Find a crafter"]),
+            L["Search an item or an enchant to see who can make it: your characters, your guild and the players you trust, online first. Whisper opens a chat to them with the recipe linked. Only players who run AME share what they craft."],
+            H(L["Craft queue"]),
+            L["What you've queued from a profession window, worked out into steps - parts first - with where each reagent comes from. The button puts everything still missing on the Craft queue shopping list."],
             H(L["Top earners"]),
             L["Every recipe your characters know, ranked by Market/day: profit per craft times how many the whole market takes a day - the size of the opportunity, not what you'd earn (that's your share of the sales, after the other sellers'). Reagents count at the cheapest way to get them - bought at market price, from a vendor, crafted from cheaper materials, or, for what you already hold, at what selling it would net (listing costs the AH cut, buying doesn't). Click a row for the breakdown; the button puts one craft's reagents on a shopping list."],
             H(L["Sell or refine"]),
             L["For the materials your characters hold: sell them as they are, or craft them into something worth more and sell that. Takes says how long the market needs to absorb what you'd list."],
             H(L["Recipes to buy"]),
             L["Recipes on the auction house that one of your characters could learn and none knows yet, ranked by payback: the recipe's price divided by its Market/day - at best, if you sold all the market takes; with other sellers it takes longer. Recipes that need more skill are listed after the ones you can learn now."],
+            L["Network says how many in your guild and trusted players already know it. Only what nobody has keeps the gaps: recipes nobody you know can craft yet. Players who don't run AME aren't counted."],
             H(L["Leveling"]),
             L["The cheapest way to raise a profession from where a character is to the skill you pick, recalculated from today's prices. For every skill point AME picks the recipe with the lowest expected cost per point: how many crafts a point takes (always one while a recipe is orange, more as it turns yellow and green) times what a craft costs, minus what its result gets back."],
             L["Pick a goal: Cheapest counts only what you spend; Best recovery subtracts what the results sell for (only as many as the market takes in about three days; the rest go to a vendor, or are disenchanted if one of your characters has Enchanting); Fewest crafts saves time; My materials uses what the character holds first. Results a later step needs are kept for it, and big reagent buys are priced along the listings when AME has recorded them."],
@@ -578,15 +585,6 @@ function Help.Articles()
       },
     },
   }
-  if not ns.CraftingData:Installed() then -- no data addon: the Crafting page goes too
-    for _, g in ipairs(groups) do
-      for i = #g[2], 1, -1 do
-        if g[2][i].key == "crafting" then
-          table.remove(g[2], i)
-        end
-      end
-    end
-  end
   local glossary = {}
   for _, key in ipairs(Help.GLOSSARY) do
     local term = Help.TERMS[key]

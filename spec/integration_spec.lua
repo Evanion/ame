@@ -996,14 +996,12 @@ describe("addon in a stubbed client", function()
         assert.is_false(v.summaryBar:IsShown())
       end)
 
-      it("the Crafting tab: hidden until switched on, earners and sell-or-refine from recorded professions", function()
+      it("the Crafting tab: its pages, from recorded professions", function()
         seeded()
         ns.UI:Toggle()
         local tab = ns.UI.tabBar.byKey.crafting
-        assert.is_false(tab:IsShown()) -- off by default
-        ns.UI:ShowTab("crafting")
-        assert.are.equal("market", ns.UI.current) -- a hidden tab can't be opened
-        -- switched on, with one character's First Aid recorded: Linen Bandage (1 Linen Cloth -> 1 bandage)
+        assert.is_true(tab:IsShown()) -- always there
+        -- one character's First Aid recorded: Linen Bandage (1 Linen Cloth -> 1 bandage)
         _G.AME_CraftingData = nil
         dofile("AzerothMercantileExchange_Crafting/Recipes.lua") -- the data addon, as LoadAddOn would run it
         ns.CraftingData.data = nil
@@ -1025,13 +1023,31 @@ describe("addon in a stubbed client", function()
           },
         }
         AME_DB.holdings[key] = { bags = { [2589] = 20 }, bank = {} }
-        ns.Settings:Set("crafting", true)
-        ns.UI:CraftingChanged(true)
-        assert.is_true(tab:IsShown())
         ns.UI:ShowTab("crafting")
         local v = ns.UI.craftView
         v.scripts.OnShow(v)
+        -- Your professions (the first page): First Aid, 40 of 75, one recipe
+        assert.are.equal("professions", ns.UI.craftMode)
         local rows = ns.UI.craftRows
+        assert.are.equal(1, #rows)
+        assert.are.equal("First Aid", rows[1].profession)
+        assert.are.equal(40, rows[1].skill)
+        assert.are.equal(1, rows[1].known)
+        -- the search narrows every page
+        ns.UI.craftSearch = "nothing like it"
+        ns.UI:RefreshCrafting()
+        assert.are.equal(0, #ns.UI.craftRows)
+        ns.UI.craftSearch = nil
+        -- its button plans leveling that profession
+        ns.UI:RefreshCrafting()
+        ns.UI.craftSelected = ns.UI.craftRows[1]
+        ns.UI:RenderCraftingDetail()
+        assert.are.equal("Plan leveling", v.action.label.text)
+        -- the sidebar's lines switch pages: Top earners
+        v.pageLinks.earners.scripts.OnClick(v.pageLinks.earners)
+        assert.are.equal("earners", ns.UI.craftMode)
+        assert.is_true(v.pageLinks.earners.sel:IsShown())
+        rows = ns.UI.craftRows
         assert.are.equal(1, #rows)
         assert.are.equal(1251, rows[1].itemID)
         assert.are.equal("unpriced", rows[1].eval.why) -- the bandage has no price in this market
@@ -1041,19 +1057,28 @@ describe("addon in a stubbed client", function()
         -- the sidebar's button says what it does (its label is AME's own font string)
         assert.are.equal("Add reagents to a shopping list", v.action.label.text)
         -- sell or refine: the linen sells raw (the bandage has no price)
-        v.modes:Select("refine")
+        ns.UI:ShowCraftingPage("refine")
         rows = ns.UI.craftRows
         assert.are.equal(1, #rows)
         assert.are.equal(2589, rows[1].itemID)
         assert.are.equal(20, rows[1].qty)
         assert.is_nil(rows[1].best)
         assert.truthy(rows[1].raw > 0)
-        -- recipes to buy: none listed in this market
-        v.modes:Select("recipes")
+        -- recipes to buy: none listed in this market; its gaps toggle is on its toolbar only
+        ns.UI:ShowCraftingPage("recipes")
+        assert.are.equal(0, #ns.UI.craftRows)
+        assert.is_true(v.gaps:IsShown())
+        -- find a crafter: nothing searched yet
+        ns.UI:ShowCraftingPage("crafters")
+        assert.is_false(v.gaps:IsShown())
+        assert.is_false(v.char:IsShown())
+        assert.are.equal(0, #ns.UI.craftRows)
+        -- the craft queue: empty
+        ns.UI:ShowCraftingPage("queue")
         assert.are.equal(0, #ns.UI.craftRows)
         -- leveling: First Aid from 40 to 75 on linen (the only reagent with a price here)
         ns.UI.levelTarget = 75
-        v.modes:Select("leveling")
+        ns.UI:ShowCraftingPage("leveling")
         assert.is_true(v.levelProf:IsShown())
         assert.is_false(v.char:IsShown())
         local lv = ns.UI.leveling
@@ -1108,39 +1133,33 @@ describe("addon in a stubbed client", function()
         local list = ns.AME.shopping:Lists()[#ns.AME.shopping:Lists()]
         assert.are.equal("First Aid to 75", list.name)
         assert.truthy(list.items[2589].need > 0)
-        -- switched off again: back to the Market tab, the tab gone
-        ns.Settings:Set("crafting", false)
-        ns.UI:CraftingChanged(false)
-        assert.are.equal("market", ns.UI.current)
-        assert.is_false(tab:IsShown())
         _G.AME_CraftingData = nil
       end)
 
-      it("Crafting without its data addon: no tab, no setting, no guide page - even switched on", function()
+      it("Crafting without its data addon: the tab is there, the pages that need the data say so", function()
         seeded()
         _G.AME_CraftingData = nil
         ns.CraftingData.data = nil
-        ns.Settings:Set("crafting", true)
         ns.UI:Toggle()
-        ns.UI:LayoutTabs()
-        local tab
-        for _, b in ipairs(ns.UI.tabBar.buttons) do
-          if b.key == "crafting" then
-            tab = b
-          end
-        end
         assert.is_false(ns.CraftingData:Installed())
-        assert.is_false(tab:IsShown())
+        assert.is_true(ns.UI.tabBar.byKey.crafting:IsShown())
         ns.UI:ShowTab("crafting")
-        assert.are.equal("market", ns.UI.current)
-        ns.UI:ShowTab("settings")
-        assert.is_nil(rawget(ns.UI.settingsView, "craftingCheck"))
+        assert.are.equal("crafting", ns.UI.current)
+        local v = ns.UI.craftView
+        v.scripts.OnShow(v)
+        ns.UI:ShowCraftingPage("recipes")
+        assert.is_true(v.message:IsShown())
+        assert.truthy(v.message.text:find("AME Crafting Data", 1, true), v.message.text)
+        ns.UI:ShowCraftingPage("professions") -- works from what profession windows recorded
+        assert.is_false(v.tables.recipes.frame:IsShown())
+        assert.is_true(v.tables.professions.frame:IsShown())
+        local found = false
         for _, g in ipairs(ns.Help.Articles()) do
           for _, article in ipairs(g[2]) do
-            assert.are_not.equal("crafting", article.key)
+            found = found or article.key == "crafting"
           end
         end
-        ns.Settings:Set("crafting", false)
+        assert.is_true(found)
       end)
 
       it("Crafting with its data addon installed but not loaded yet (load on demand): offered in Settings", function()
@@ -1153,10 +1172,7 @@ describe("addon in a stubbed client", function()
         _G.AME_CraftingData = nil
         ns.CraftingData.data = nil
         assert.is_true(ns.CraftingData:Installed())
-        ns.UI:Toggle()
-        ns.UI:ShowTab("settings")
-        assert.is_not_nil(rawget(ns.UI.settingsView, "craftingCheck"))
-        -- switched off in the addon list: not offered
+        -- switched off in the addon list: not installed
         env.addons.AzerothMercantileExchange_Crafting = "DISABLED"
         assert.is_false(ns.CraftingData:Installed())
         env.addons = nil
@@ -1921,9 +1937,6 @@ describe("addon in a stubbed client", function()
         ns.CraftingData:Use(nil)
       end)
       local rows = ns.Tooltip.RecipeLines(99001)
-      assert.is_nil(rows) -- Crafting off: nothing
-      ns.Settings:Set("crafting", true)
-      rows = ns.Tooltip.RecipeLines(99001)
       assert.truthy(rows[1][1]:find("Makes", 1, true), rows[1][1])
       assert.truthy(rows[1][2]:find("[sgc]"), rows[1][2]) -- a price
       assert.truthy(rows[2][1]:find("Per craft", 1, true))

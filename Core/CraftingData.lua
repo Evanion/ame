@@ -43,9 +43,9 @@ function CraftingData:Installed()
   return ok and name ~= nil and (loadable or reason == "DEMAND_LOADED") and true or false
 end
 
--- Crafting is on: switched on in Settings, with its data installed
+-- the data is there to use (it's a required dependency of AME; a manual install can still lack it)
 function CraftingData:Enabled()
-  return ns.Settings:Get("crafting") and self:Installed() or false
+  return self:Installed()
 end
 
 function CraftingData:Load()

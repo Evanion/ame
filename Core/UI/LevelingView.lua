@@ -345,7 +345,7 @@ function UI:CreateLevelingControls(v, slots)
       UI:RefreshCrafting()
     end
   end, { neutral = true })
-  v.levelProf:SetPoint("LEFT", v.modes, "RIGHT", 12, 0)
+  v.levelProf:SetPoint("LEFT", v.modes, "RIGHT", 12, 0) -- v.modes: an anchor CraftingView places
   local targets = {}
   for _, t in ipairs(TARGETS) do
     targets[#targets + 1] = { t, L["to %d"]:format(t) }
@@ -410,7 +410,6 @@ function UI:ShowLevelingControls(v, on)
   v.levelProf:SetShown(on)
   v.levelTarget:SetShown(on)
   v.levelGoal:SetShown(on)
-  v.char:SetShown(not on)
   v.slots:ShowBar(v.slots.header, on)
   v.colorBar:SetShown(false)
 end
