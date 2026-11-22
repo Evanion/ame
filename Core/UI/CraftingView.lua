@@ -531,7 +531,11 @@ function UI:CraftingModeRows(m)
       end
     end
     r.network = others
-    if not self.craftGaps or others == 0 then
+    local learnable = false
+    for _, l in ipairs(r.learners) do
+      learnable = learnable or (l.char == me and l.ready)
+    end
+    if (not self.craftGaps or others == 0) and (not self.craftLearnable or learnable) then
       out[#out + 1] = r
     end
   end
@@ -880,6 +884,12 @@ function UI:CreateCraftingView(parent, contentArea)
     UI.craftSelected = nil
     UI:RefreshCrafting()
   end)
+  -- Recipes to buy: only what the character you're on can learn right now (its profession, skill high enough)
+  v.learnable = W.Check(bar, L["Learnable now"], function(on)
+    UI.craftLearnable = on or nil
+    UI.craftSelected = nil
+    UI:RefreshCrafting()
+  end)
 
   -- the toolbar for the page and the window's width
   function v:LayoutToolbar()
@@ -920,8 +930,11 @@ function UI:CreateCraftingView(parent, contentArea)
       place(self.prof)
     end
     self.gaps:SetShown(mode == "recipes")
+    self.learnable:SetShown(mode == "recipes")
     if mode == "recipes" then
       place(self.gaps, 10)
+      self.learnable:ClearAllPoints()
+      self.learnable:SetPoint("LEFT", self.gaps.label, "RIGHT", 12, 0) -- after the first check's label
     end
   end
   v.details = W.Button(bar, L["Details"], 64, 20, function()
@@ -1050,6 +1063,7 @@ function UI:RefreshCrafting()
   end
   v.page:SetValue(mode)
   v.gaps:SetChecked(self.craftGaps or false)
+  v.learnable:SetChecked(self.craftLearnable or false)
   local leveling = mode == "leveling"
   self:ShowLevelingControls(v, leveling)
   v:LayoutToolbar()

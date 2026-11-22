@@ -1070,9 +1070,11 @@ describe("addon in a stubbed client", function()
         ns.UI:ShowCraftingPage("recipes")
         assert.are.equal(0, #ns.UI.craftRows)
         assert.is_true(v.gaps:IsShown())
+        assert.is_true(v.learnable:IsShown())
         -- find a crafter: nothing searched yet
         ns.UI:ShowCraftingPage("crafters")
         assert.is_false(v.gaps:IsShown())
+        assert.is_false(v.learnable:IsShown())
         assert.is_false(v.char:IsShown())
         assert.are.equal(0, #ns.UI.craftRows)
         -- the craft queue: empty
