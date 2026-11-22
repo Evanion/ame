@@ -475,7 +475,6 @@ L["Listed value"] = true
 L["Listing length"] = true
 L["Loading history..."] = true
 L["Loading market data..."] = true
-L["Loading recent scans..."] = true
 L["Long lower wicks, steady bodies: someone keeps listing far below the market, and those sell before the price moves. Cheap copies are worth watching for."] = true
 L["Looking for someone to craft something? /ame who (or Who can make it in an item's right-click menu) searches the recipes your guildmates, trusted players and your own characters know, by name - enchants too. Crafters online now come first; Whisper opens the chat box to them with the item linked, for you to send. Hold Shift on a craftable item's tooltip to see who can make it."] = true
 L["Low (cheapest)"] = true

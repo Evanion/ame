@@ -93,6 +93,21 @@ function AME:LoadHistory()
   return true
 end
 
+-- The item charts' recent scans, split by item bucket ahead of time (Store:WarmSplit), once per session for your
+-- faction's auction house: a low-priority background job, so opening an item doesn't wait for it.
+AME.WARM_BUDGET_MS = 3
+function AME:WarmCharts()
+  local shard = self:FactionShard()
+  self.warmed = self.warmed or {}
+  if not shard or self.warmed[shard] or not self:HistoryLoaded() or not self.history.shards[shard] then
+    return
+  end
+  self.warmed[shard] = true
+  self:WithStore("charts-warm", shard, function(store)
+    return store:WarmSplit(GetServerTime() - 7 * ns.DAY)
+  end, nil, AME.WARM_BUDGET_MS)
+end
+
 -- Shard keys used to carry the full realm name; on Forever they're now the ruleset ("PvP|Horde"). Rename old keys,
 -- leaving a shard alone if the new key already has data.
 function AME:MigrateShardKeys()
@@ -574,6 +589,7 @@ function handlers.PLAYER_LOGIN()
       AME.indexesRestored = true
       -- last session's market indexes right away; rebuilt in the background where the history changed since
       AME:RestoreIndexes()
+      AME:WarmCharts() -- queued after the indexes, at a low priority
     end
   end
   C_Timer.After(3, loadHistory)
@@ -668,6 +684,7 @@ function handlers.AUCTION_HOUSE_SHOW()
   end
   if AME:LoadHistory() then
     AME:Backfill(false)
+    AME:WarmCharts()
   end
   ns.Trading:QueryAuctions()
   -- AME's shopping tab on the game's window (once it's there), last: whatever goes wrong adding it is reported, and

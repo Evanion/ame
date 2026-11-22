@@ -612,3 +612,22 @@ describe("Store", function()
     end)
   end)
 end)
+
+describe("Store split parts (the item charts' recent scans)", function()
+  local ns, Store
+  before_each(function()
+    ns = addon.load({ "Core/Init.lua", "Core/Codec.lua", "Core/Store.lua" })
+    Store = ns.Store
+  end)
+
+  it("splits columns by item bucket, keeping the rows in order and the missing columns out", function()
+    local cols = { ids = { 1, 33, 34, 65 }, min = { 10, 20, 30, 40 }, market = { 11, 21, 31, 41 } }
+    local parts = Store.Split({ "ids", "min", "market", "median" }, cols)
+    assert.are.same({ "ids", "min", "market" }, parts.fields)
+    local one = ns.Codec.Decode(parts.fields, parts[1])
+    assert.are.same({ 1, 33, 65 }, one.ids)
+    assert.are.same({ 10, 20, 40 }, one.min)
+    assert.are.same({ 34 }, ns.Codec.Decode(parts.fields, parts[2]).ids)
+    assert.is_nil(parts[3])
+  end)
+end)

@@ -430,9 +430,8 @@ function UI:ShowingIntraday()
     or false
 end
 
--- a scan-by-scan range (2D, 7D) whose points aren't loaded yet: they wait while a scan is being stored, which can
--- take a while. The chart says so rather than drawing the daily points meanwhile - one candle a day, then six-hour
--- candles once they arrive, looked like the prices themselves had changed.
+-- a scan-by-scan range (2D, 7D) whose points aren't loaded yet (they wait while a scan is being stored): the chart
+-- shows the daily points meanwhile, over the same span, so it isn't empty and doesn't jump in scale
 function UI:IntradayPending()
   return self.intradayMode
       and not (self.intraday and self.intradayItem == self.itemID and (self.intradayDays or 0) >= (self.rangeDays or 0))
@@ -485,7 +484,8 @@ function UI:LoadIntraday()
       self.chart:SetMessage(nil)
       self.chart:SetXRange(now - days * DAY, now + 3600)
     elseif self:IntradayPending() then
-      self.chart:SetMessage(L["Loading recent scans..."])
+      self.chart:SetMessage(nil) -- the daily points meanwhile, over the range's span
+      self.chart:SetXRange(now - days * DAY, now + 3600)
     elseif days <= 2 then
       self.chart:SetMessage(L["No scans of this item in the last 2 days. Daily history is on the other ranges."])
     else -- the daily points
@@ -662,9 +662,6 @@ UI.VENDOR_COLOR = { 0.85, 0.85, 0.85, 0.85 }
 function UI:DrawItemChart()
   local intraday = self:ShowingIntraday()
   local series, v, chart = intraday and self:IntradayPoints() or self.series, self.itemView, self.chart
-  if self:IntradayPending() then
-    series = nil -- not the daily points meanwhile (UI.IntradayPending)
-  end
   if not series or #series == 0 then
     chart:ClearSeries()
     v.legend:SetText("")

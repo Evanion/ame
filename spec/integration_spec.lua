@@ -2997,7 +2997,7 @@ describe("addon in a stubbed client", function()
       seeded()
       ns.UI.rangePicked, ns.UI.rangeDays, ns.UI.rangeKey = true, 7, "7D" -- as if picked
       ns.UI:ShowItem(2589)
-      -- the history arrives first: no daily candles meanwhile (six-hour candles would replace them), it's loading
+      -- the history arrives first: its daily points show meanwhile, over the 7-day span
       for _ = 1, 5000 do
         if ns.UI.series ~= nil or not ns.AME.jobs:Busy() then
           break
@@ -3006,7 +3006,7 @@ describe("addon in a stubbed client", function()
       end
       assert.is_not_nil(ns.UI.series)
       assert.is_true(ns.UI:IntradayPending())
-      assert.is_nil(ns.UI.chart.series.market)
+      assert.is_not_nil(ns.UI.chart.series.market)
       drainJobs()
       assert.is_false(ns.UI:IntradayPending())
       assert.are.equal("7D", ns.UI.rangeKey)

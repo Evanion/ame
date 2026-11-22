@@ -50,6 +50,53 @@ local function round(x)
   return floor(x + 0.5)
 end
 
+-- Scans split by item bucket, kept for the session (not saved). An item's recent prices (Intraday: the 2D and 7D
+-- charts) need one row of every scan of the last days; unpacking each whole scan for that, item after item, cost a
+-- second or more of work per item opened. Each scan or hourly point is unpacked once instead, and split into its
+-- BUCKETS parts (encoded text, as stored but not compressed); an item then decodes only its bucket's part of each.
+-- Keyed weakly by the stored entry: a pruned scan's parts go with it.
+--   split[entry] = { fields = { present field names }, [bucket] = encoded text }
+local split = setmetatable({}, { __mode = "k" })
+Store.split = split
+
+-- cols (decoded columns of `fields`, some possibly missing) -> its parts by item bucket
+-- yield (optional): called every few hundred rows and between parts (a full scan is ~25k rows)
+function Store.Split(fields, cols, yield)
+  local names = {}
+  for _, name in ipairs(fields) do
+    if cols[name] then
+      names[#names + 1] = name
+    end
+  end
+  local parts, ids = {}, cols[names[1]]
+  for i, id in ipairs(ids) do
+    local b = id % Store.BUCKETS
+    local p = parts[b]
+    if not p then
+      p = {}
+      for _, name in ipairs(names) do
+        p[name] = {}
+      end
+      parts[b] = p
+    end
+    local n = #p[names[1]] + 1
+    for _, name in ipairs(names) do
+      p[name][n] = cols[name][i]
+    end
+    if yield and i % 500 == 0 then
+      yield()
+    end
+  end
+  local out = { fields = names }
+  for b, p in pairs(parts) do
+    out[b] = Codec.Encode(names, p)
+    if yield then
+      yield()
+    end
+  end
+  return out
+end
+
 function Store.New(data, opts)
   assert(opts and opts.compressor and opts.now, "Store.New(data, { compressor, now })")
   data.raw = data.raw or {}
@@ -315,6 +362,8 @@ function Store:AddScan(snap, t, src, kind, packed)
     self:pause()
   end
   local entry = { t = t, src = src, k = kind, s = packed }
+  split[entry] = Store.Split(Codec.SNAPSHOT_FIELDS, snap, self:pauser()) -- what the item charts read (Store:SplitRow)
+  self:pause()
   local pos = #raw + 1
   while pos > 1 and raw[pos - 1].t > t do
     pos = pos - 1
@@ -950,10 +999,53 @@ function Store:Latest(itemID)
   end
 end
 
+-- a stored scan's (or hourly point's) row for an item, through its split parts (unpacked and split on first use):
+-- the decoded columns of the item's bucket and its index in them, or nil when the item isn't in it
+function Store:splitParts(entry, fields)
+  local parts = split[entry]
+  if not parts then
+    local cols = Codec.Decode(fields, Codec.Unpack(entry.s, self.compressor, self:pauser()), true, self:pauser())
+    parts = Store.Split(fields, cols, self:pauser())
+    split[entry] = parts
+    self:pause()
+  end
+  return parts
+end
+
+-- Split the scans and hourly points since fromT ahead of time (a background job after the history loads), so the
+-- first item opened doesn't wait for it. Returns how many it split.
+function Store:WarmSplit(fromT)
+  local n = 0
+  for _, e in ipairs(self.data.raw) do
+    if e.t >= fromT and not split[e] then
+      self:splitParts(e, Codec.SNAPSHOT_FIELDS)
+      n = n + 1
+    end
+  end
+  for _, e in pairs(self.data.hours) do
+    if e.t >= fromT and not split[e] then
+      local ok = (ns.Try or pcall)(self.splitParts, self, e, Codec.HOUR_FIELDS)
+      n = n + (ok and 1 or 0)
+    end
+  end
+  return n
+end
+
+function Store:SplitRow(entry, fields, itemID)
+  local parts = self:splitParts(entry, fields)
+  local text = parts[itemID % Store.BUCKETS]
+  if not text then
+    return nil
+  end
+  local cols = Codec.Decode(parts.fields, text)
+  local i = find(cols[parts.fields[1]], itemID)
+  return i and cols or nil, i
+end
+
 -- Every recent scan (full and partial, kept in full for RAW_KEEP) that saw the item, oldest first:
 -- { { t, min, market, median, qty, auctions, kind, src }, ... }; before that, the hourly points (kind "hour", no
--- median; plain items only). Decodes one snapshot per scan (uncached, yields between scans), so it's meant for a
--- background job.
+-- median; plain items only). Reads the item's bucket of each (Store:SplitRow: a scan is unpacked only the first time
+-- any item needs it this session); meant for a background job.
 function Store:Intraday(itemID, fromT)
   local out = {}
   -- hourly points whose scan isn't among the raw ones any more (pruned, or a point that came by sync)
@@ -971,9 +1063,8 @@ function Store:Intraday(itemID, fromT)
     return a.t < b.t
   end)
   for _, e in ipairs(hours) do
-    local ok, p = pcall(self.HourPoint, self, e)
-    local i = ok and find(p.ids, itemID)
-    if i then
+    local ok, p, i = (ns.Try or pcall)(self.SplitRow, self, e, Codec.HOUR_FIELDS, itemID)
+    if ok and i then
       out[#out + 1] = {
         t = e.t,
         min = p.min[i],
@@ -988,10 +1079,8 @@ function Store:Intraday(itemID, fromT)
   end
   for _, e in ipairs(self.data.raw) do
     if not fromT or e.t >= fromT then
-      -- not through the segment cache: a full scan decodes to ~40k numbers, dozens of them would pin lots of memory
-      local snap =
-        Codec.Decode(Codec.SNAPSHOT_FIELDS, Codec.Unpack(e.s, self.compressor, self:pauser()), nil, self:pauser())
-      local i = find(snap.ids, itemID)
+      -- its bucket's part only (Store:SplitRow), not the whole scan decoded
+      local snap, i = self:SplitRow(e, Codec.SNAPSHOT_FIELDS, itemID)
       if i then
         out[#out + 1] = {
           t = e.t,
