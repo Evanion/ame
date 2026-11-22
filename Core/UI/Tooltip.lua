@@ -10,14 +10,15 @@
 --   You have 43 · bags 20 · bank 18 · guild bank 5
 --   +8% vs 7-day avg · 3.4k listed · ~140 sold/day
 --   (!) Sells 16% better at the goblin AH, after its cut          (when it does)
---   (icon) BUY  supply falling                          Shift: more
+--   (icon) BUY  supply falling, price steady            Shift: more   (the signal's reason: Tooltip.Reason)
 --   RECIPE / SOURCE                                      (a recipe item: what it makes, where it's sold or drops)
 -- A row is { left, right, middle, ... }: the middle columns (each; a grid's further columns at r[4], r[5]) are font
 -- strings of their own, lined up across the rows (a game tooltip line has only a left and a right text).
 -- Shift (or the "always" setting) adds sections: what it disenchants into, yours per character (bags / bank / AH)
--- and guild bank with your average cost, every auction house you have prices for (market / you get), the price and
--- the data it rests on. When the UI has little room (a large UI scale on a small screen) the block is compact: no
--- freshness, holdings or context lines.
+-- and guild bank with your average cost, every auction house you have prices for (market / you get; "alt there" on
+-- the other faction's when one of your characters is of it) with the goblin AH's sales a day and data age, the price
+-- with what to post at (Normal), its sell chance and, for gear, the deposit, and the data it rests on. When the UI
+-- has little room (a large UI scale on a small screen) the block is compact: no freshness, holdings or context lines.
 local _, ns = ...
 local L = ns.L
 
@@ -181,13 +182,43 @@ local function places(p)
   return table.concat(out, " · ")
 end
 
+-- a sales rate as the tooltip writes it: "140", "2.5", "0.4"
+local function rate(r)
+  return r >= 10 and W.Count(r) or (("%.1f"):format(r):gsub("%.0$", ""))
+end
+
+-- The signal's reason, in a few words: for DE and VENDOR how much they beat listing by (the index's numbers, which
+-- the signal itself came from), else the market phase as what price and supply do. nil: nothing to say.
+local PHASE_REASON = {
+  shortage = L["supply falling, price rising"],
+  demand = L["price rising, supply steady"],
+  piling = L["price rising, sellers piling in"],
+  tightening = L["supply falling, price steady"],
+  balanced = L["price and supply steady"],
+  pressure = L["supply building, price steady"],
+  withdrawing = L["supply and price falling"],
+  weak = L["price falling, supply steady"],
+  dumping = L["supply rising, price falling"],
+}
+function Tooltip.Reason(s)
+  if s.signal == "disenchant" and s.deValue and s.vendorNet then
+    return L["disenchanting beats listing by %s"]:format(money(s.deValue - s.vendorNet))
+  elseif s.signal == "vendor" and s.vendorPrice and s.vendorNet then
+    return L["a vendor beats listing by %s"]:format(money(s.vendorPrice - s.vendorNet))
+  end
+  return s.phase and PHASE_REASON[s.phase] or nil
+end
+
 -- Pure: the tooltip's rows for an item summary.
 --   s     the item's summary at your faction's auction house (index item)
 --   opts  avgDays (3/7/14/30), detail (Shift), compact, today (day number),
 --         house (its label, "Horde AH"), age ("2 h ago": its newest scan),
 --         held (Trading.Held), vendor (sell price each), basis ({ units, unit }: your average cost),
 --         de = { value, outcomes = { { name, chance, min, max, price } } } (gear),
---         houses = { { label, market, net, cut, mine } } (every AH with a price; mine = yours),
+--         houses = { { house, label, market, net, cut, mine, sold, age, alt } } (every AH with a price; mine =
+--           yours; sold: units a day; age: "6 h ago"; alt: one of your characters is of that faction),
+--         noGoblin (the goblin AH has no price for it),
+--         post = { label, price, chance, hours, deposit } (what to post at: Posting:Suggest's Normal; deposit: gear),
 --         better (the goblin AH pays this fraction more, after its cut),
 --         sections = { sec, ... } (Tooltip.SectionRows; after the signal, sec.detail = true ones only with Shift)
 -- returns { { left, right }, ... } (a row with only left is a plain line)
@@ -241,9 +272,7 @@ function Tooltip.Lines(s, opts)
     end
     parts[#parts + 1] = Dim(W.Count(s.qty or 0) .. " " .. L["listed"])
     if s.soldPerDay then
-      local r = s.soldPerDay
-      local count = r >= 10 and W.Count(r) or (("%.1f"):format(r):gsub("%.0$", ""))
-      parts[#parts + 1] = Dim(L["~%s sold/day"]:format(count))
+      parts[#parts + 1] = Dim(L["~%s sold/day"]:format(rate(s.soldPerDay)))
     end
     if s.sellThrough and s.stEnded then
       -- real auction outcomes (yours and your guildmates'): how much of what was listed sold
@@ -265,20 +294,17 @@ function Tooltip.Lines(s, opts)
     end
   end
 
-  -- the signal, and the Shift hint
+  -- the signal and its reason (compact: the goblin AH in its place, when it pays better), and the Shift hint
   local hint = not opts.detail and Dim(L["Shift: more"]) or nil
-  local phase = s.phase and ns.Analytics and ns.Analytics.PHASE_LABEL[s.phase]
   local goblin = ""
   if opts.compact and opts.better then
     goblin = W.Color("warn", "  ·  " .. L["goblin AH +%d%%"]:format(pct(opts.better)))
   end
   if s.signal and s.signal ~= "none" then
     local icon = W.SignalIcon and W.SignalIcon(s.signal, 12) or ""
+    local reason = goblin == "" and Tooltip.Reason(s)
     rows[#rows + 1] = {
-      (icon ~= "" and icon .. " " or "")
-        .. W.Signal(s.signal)
-        .. (phase and Dim("  " .. phase:lower()) or "")
-        .. goblin,
+      (icon ~= "" and icon .. " " or "") .. W.Signal(s.signal) .. (reason and Dim("  " .. reason) or "") .. goblin,
       hint,
     }
   elseif not opts.detail then
@@ -350,8 +376,10 @@ function Tooltip.Lines(s, opts)
     more[#more + 1] = { heading = L["Yours"], note = note, columns = columns, rows = list }
   end
 
-  -- every auction house with a price: its market and what you'd get there after its cut
+  -- every auction house with a price: its market and what you'd get there after its cut (the other faction's: "alt
+  -- there" instead, when one of your characters is of it), then how much the goblin AH sells and how fresh it is
   local houses = opts.houses or {}
+  local goblinNoData = { label = L["Goblin AH"], cells = { { text = L["no data"], dim = true } } }
   if #houses > 1 then
     local mine
     for _, h in ipairs(houses) do
@@ -359,35 +387,68 @@ function Tooltip.Lines(s, opts)
         mine = h.net
       end
     end
-    local list = {}
+    local list, lines = {}, {}
     for _, h in ipairs(houses) do
       -- how much more it pays than yours, after the label and its cut: only when it does
       local vs = ""
-      if mine and mine > 0 and not h.mine and h.net > mine then
+      if mine and mine > 0 and not h.mine and h.net and h.net > mine then
         vs = " " .. W.Color("good", ("+%d%%"):format(pct(h.net / mine - 1)))
       end
-      list[#list + 1] = { h.label .. Dim((" (%d%%)"):format(pct(h.cut))) .. vs, money(h.net), money(h.market) }
+      local note = h.alt and L["(alt there)"] or ("(%d%%)"):format(pct(h.cut or 0))
+      list[#list + 1] = { h.label .. " " .. Dim(note) .. vs, money(h.net), money(h.market) }
+      if h.house == "Neutral" and not h.mine then
+        local sells = h.sold and L["Goblin AH sells %s/day"]:format(rate(h.sold))
+        local seen = h.age and L["scanned %s"]:format(h.age)
+        local line = sells and seen and (sells .. ", " .. seen) or sells or (seen and L["Goblin AH"] .. " " .. seen)
+        if line then
+          lines[#lines + 1] = Dim(line)
+        end
+      end
+    end
+    if opts.noGoblin then
+      list[#list + 1] = goblinNoData
     end
     more[#more + 1] = {
       heading = L["Auction houses"],
       note = L["after each one's cut"],
       columns = { L["market"], L["you get"] },
       rows = list,
+      lines = lines,
     }
   end
 
-  -- the price: its average, the lowest listing, the week's change
+  -- the price: the lowest listing, its average, the week's change, and what to post at (the sell window's Normal
+  -- price), how soon that sells and how surely - and for gear, the deposit it risks. With your own auction house the
+  -- only one priced, this is its section, and it says the goblin AH has no data.
   local days = opts.avgDays or 7
   local avg = s["avg" .. days] or s.avg30
+  local single = #houses <= 1
   local price = {}
+  price[#price + 1] = {
+    label = L["Lowest listing"],
+    note = single and opts.house and ("(" .. opts.house .. ")") or nil,
+    cells = { money(s.min) },
+  }
   if avg then
     price[#price + 1] = { L["%d-day average"]:format(days), money(avg) }
   end
-  price[#price + 1] = { L["Lowest listing"], money(s.min) }
   if s.change7 then
     price[#price + 1] = { L["7d change"], W.Percent(s.change7) }
   end
-  more[#more + 1] = { heading = L["Price"], rows = price }
+  if single and opts.noGoblin then
+    price[#price + 1] = goblinNoData
+  end
+  local post = opts.post
+  if post and post.price then
+    price[#price + 1] = { label = L["Post at"], note = "(" .. post.label .. ")", cells = { post.price } }
+    local when = L["sells in %s"]:format(W.Hours(post.hours))
+    if post.chance then
+      when = when .. " · " .. L["%d%% chance"]:format(pct(post.chance))
+    end
+    local deposit = (post.deposit or 0) > 0 and { { text = L["deposit"], dim = true }, { copper = post.deposit } }
+    price[#price + 1] = { label = { text = when, dim = true }, cells = { deposit or "" } }
+  end
+  more[#more + 1] = { heading = single and L["Auction houses"] or L["Price"], rows = price }
 
   -- the data it rests on: confidence and scans, the supply trend, volatility and the score
   local data = {}
@@ -437,11 +498,29 @@ function Tooltip.Compact()
   return type(h) == "number" and h > 0 and h < Tooltip.COMPACT_HEIGHT
 end
 
--- every auction house of this market with a price for the item: { house, label, market, net, cut, mine, day } -
--- net: what listing one there nets after its cut and deposit (Quote:ListingNet)
-local function houses(itemID, own)
+-- how fresh the price is: the newest scan that had the item, else the day the index last saw it
+local function age(shard, itemID, s, today)
+  local fresh = ns.Posting and ns.Posting.fresh and ns.Posting.fresh[shard]
+  local t = fresh and fresh[itemID] and fresh[itemID].t
+  if t then
+    return W.Ago(t, GetServerTime())
+  end
+  return W.DaysAgo(s.day, today)
+end
+
+-- the factions your characters on this market are (Holdings.Factions)
+local function factions()
+  local db = AME_DB or {}
+  return ns.Holdings and ns.Holdings.Factions(db.holdings, ns.Holdings.Keep("market")) or {}
+end
+
+-- every auction house of this market with a price for the item: { house, label, market, net, cut, mine, day, sold,
+-- age, alt } - net: what listing one there nets after its cut and deposit (Quote:ListingNet); sold: units a day;
+-- alt: the other faction's house, and one of your characters is of that faction
+local function houses(itemID, own, today)
   local AME = ns.AME
   local realm = AME:MarketRealmName()
+  local have = factions()
   local out = {}
   for _, house in ipairs({ own, "Neutral", own == "Horde" and "Alliance" or "Horde" }) do
     local shard = ns.ShardKey(realm, house)
@@ -457,10 +536,43 @@ local function houses(itemID, own)
         cut = q.cut,
         mine = house == own,
         day = s.day,
+        sold = q:SoldPerDay(itemID),
+        age = age(shard, itemID, s, today),
+        alt = house ~= own and house ~= "Neutral" and have[house] or nil,
       }
     end
   end
   return out
+end
+
+-- what to post one at (your usual listing time) at your faction's auction house: the sell window's Normal price,
+-- its chance to sell within the listing time and the hours it should take; gear: the deposit it risks
+-- -> { label, price, chance, hours, deposit } or nil (too little data)
+local function postAt(shard, itemID)
+  local Posting = ns.Posting
+  if not (Posting and Posting.Suggest) then
+    return nil
+  end
+  local ok, advice = pcall(Posting.Suggest, Posting, shard, itemID, 1, ns.Settings:Get("listingHours"))
+  if not ok then
+    if ns.AME and ns.AME.ReportError then
+      ns.AME:ReportError("tooltip posting price", advice)
+    end
+    return nil
+  end
+  if not (advice and advice.normal) then
+    return nil
+  end
+  local info = ns.ItemCache.Get(itemID)
+  local gear = info.classID == 2 or info.classID == 4
+  local n = advice.normal
+  return {
+    label = L["Normal"],
+    price = n.price,
+    chance = n.chance,
+    hours = n.hours,
+    deposit = gear and advice.deposit or nil,
+  }
 end
 
 -- your average cost per item, from the ledger (worked out again only when it changes)
@@ -475,16 +587,6 @@ local function basisFor(itemID)
     basisCache.n, basisCache.basis = #entries, ledger:CostBasis()
   end
   return basisCache.basis[itemID]
-end
-
--- how fresh the price is: the newest scan that had the item, else the day the index last saw it
-local function age(shard, itemID, s, today)
-  local fresh = ns.Posting and ns.Posting.fresh and ns.Posting.fresh[shard]
-  local t = fresh and fresh[itemID] and fresh[itemID].t
-  if t then
-    return W.Ago(t, GetServerTime())
-  end
-  return W.DaysAgo(s.day, today)
 end
 
 -- everything the tooltip shows for an item: its summary and Tooltip.Lines' opts (nil when AME has no price for it)
@@ -508,10 +610,12 @@ function Tooltip.Gather(itemID, detail)
     -- what one disenchant gives, its materials at what selling them nets (Quote:Disenchant, as the DE signal)
     de = ns.Quote.For(shard, factionIndex(), { fresh = false }):Disenchant(itemID),
   }
-  local all = houses(itemID, own)
+  local all = houses(itemID, own, today)
   local mine = all[1] and all[1].mine and all[1].net
+  local goblin = false
   for _, h in ipairs(all) do
-    if h.house == "Neutral" and not h.mine and mine and mine > 0 then
+    goblin = goblin or h.house == "Neutral"
+    if h.house == "Neutral" and not h.mine and mine and mine > 0 and h.net then
       local recent = h.day and today - h.day <= Tooltip.BETTER_DAYS
       if recent and h.net / mine - 1 >= Tooltip.BETTER then
         opts.better = h.net / mine - 1
@@ -520,7 +624,9 @@ function Tooltip.Gather(itemID, detail)
   end
   if detail then
     opts.houses = all
+    opts.noGoblin = not goblin and own ~= "Neutral"
     opts.basis = basisFor(itemID)
+    opts.post = postAt(shard, itemID)
   end
   return s, opts
 end
