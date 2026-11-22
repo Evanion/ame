@@ -9,7 +9,18 @@
 --         (suffix = function(d) return "  x5" end: text after the name)
 --       { key = "market", label = "Market", width = 86, format = "money" },
 --       { key = "x", label = function() return "dynamic" end, width = 60, text = function(d) return ... end },
+--       { key = "made", label = "Makes", width = 150, item = function(d) return d.product end },
+--         (a second item in the row: its own icon, hover and modified click; a plain click is the row's)
+--       { key = "net", label = "Net", width = 70, format = "signedMoney" },   -- "+1g 20s" / "-35s"
+--       { key = "share", label = "Share", width = 110, format = "share", max = 0.4 }, -- bar (full at max) and %
+--       { key = "buy", label = "", width = 50, button = { label = "Buy" or function(d) end,
+--           variant = function(d) return "primary" end, onClick = function(d) end, shown = fn, enabled = fn } },
 --     },
+--     bare = true,                                  -- no header row (small lists in panels)
+--     note = "Faded rows...",                       -- a dim wrapped line under the rows (t:SetNote to change it)
+--     shiftClick = true,                            -- the owner's onClick uses Shift itself (search the AH) while
+--                                                   -- no chat box is open; otherwise a modified click on an item
+--                                                   -- row links the item, as a link in chat does
 --     rows = 17, top = -28,                         -- header y inside parent
 --     itemID = function(d) return d.itemID end,     -- rows are items (icon, tooltip, click opens the chart)
 --     star = true, confidence = function(d) return "high" end,
@@ -41,6 +52,12 @@ local FORMATS = {
   money = function(v)
     return W.Money(v, true)
   end,
+  signedMoney = function(v)
+    return W.SignedMoney(v)
+  end,
+  share = function(v) -- the percent beside the bar
+    return v and ("%d%%"):format(math.floor(v * 100 + 0.5)) or W.NONE
+  end,
   pct = function(v)
     return W.Percent(v)
   end,
@@ -62,22 +79,49 @@ local function label(col)
   return type(col.label) == "function" and col.label() or col.label or ""
 end
 
--- the data key a column sorts by (false: not sortable); item columns sort by item name ("__name")
+-- The row's own item (opts.itemID: star, confidence, the row's tooltip) is the column with item = true; a column
+-- with item = function(d) shows another item in the row, with its own icon and hover.
+local function mainItem(col)
+  return col.item == true
+end
+local function linkItem(col)
+  return type(col.item) == "function"
+end
+
+-- the data key a column sorts by (false: not sortable); item columns sort by item name ("__name", "__name:<key>")
 local function sortKey(col)
-  if col.sortKey == false then
+  if col.sortKey == false or col.button then
     return nil
   end
   if type(col.sortKey) == "function" then
     return col.sortKey()
   end
-  return col.sortKey or (col.item and "__name") or col.key
+  return col.sortKey or (mainItem(col) and "__name") or (linkItem(col) and "__name:" .. col.key) or col.key
 end
+
+local SHARE_W = 64 -- a share cell's bar track
+
+-- a modified click on an item: the game's handling of a link (chat, try on). Shift-click is the owner's while it
+-- has a Shift-click of its own (shiftClick) and no chat box is open to take the link.
+local function linksItem(opts)
+  if not (IsModifiedClick and (IsModifiedClick("CHATLINK") or IsModifiedClick("DRESSUP"))) then
+    return false
+  end
+  if opts.shiftClick and IsModifiedClick("CHATLINK") then
+    local chat = _G.ChatEdit_GetActiveWindow and _G.ChatEdit_GetActiveWindow()
+    return chat and true or false
+  end
+  return true
+end
+DataTable.LinksItem = linksItem
 
 function DataTable.New(parent, opts)
   local t = setmetatable({ opts = opts, data = {}, headers = {}, rows = {}, pending = {}, ownOffset = 0 }, DataTable)
   t.sort = opts.sort or {}
   local rowsN, rowH, top = opts.rows or 17, opts.rowHeight or 22, opts.top or 0
   t.rowH = rowH
+  t.headH = opts.bare and 0 or 20 -- a bare table has no header row
+  t.rowsN = rowsN
   local frame = CreateFrame("Frame", nil, parent)
   frame:SetPoint("TOPLEFT", 0, top)
   frame:SetPoint("RIGHT", 0, 0)
@@ -85,7 +129,7 @@ function DataTable.New(parent, opts)
     -- fills the parent down to its bottom (minus a status line): as many rows as fit, more as the window grows
     frame:SetPoint("BOTTOM", 0, opts.bottom or (opts.status and 20 or 0))
   else
-    frame:SetHeight(20 + rowsN * rowH)
+    frame:SetHeight(t.headH + rowsN * rowH)
   end
   t.frame = frame
 
@@ -94,7 +138,8 @@ function DataTable.New(parent, opts)
   for _, col in ipairs(opts.columns) do
     local h = CreateFrame("Button", nil, frame)
     h:SetHeight(18) -- width and position: t:Layout()
-    local left = col.item or col.align == "LEFT"
+    h:SetShown(not opts.bare)
+    local left = col.item or col.align == "LEFT" or col.format == "share"
     h.text = W.Text(h, "GameFontNormalSmall", left and "LEFT" or "RIGHT")
     h.text:SetAllPoints()
     if col.term and ns.Help then
@@ -127,7 +172,7 @@ function DataTable.New(parent, opts)
   function t:MakeRow(r)
     local row = CreateFrame("Button", nil, frame)
     row:SetHeight(rowH)
-    row:SetPoint("TOPLEFT", 0, -20 - (r - 1) * rowH)
+    row:SetPoint("TOPLEFT", 0, -t.headH - (r - 1) * rowH)
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     row.bg = row:CreateTexture(nil, "BACKGROUND")
     row.bg:SetAllPoints()
@@ -143,12 +188,56 @@ function DataTable.New(parent, opts)
     end
     row.cells = {}
     row.star, row.icon, row.conf, row.action = false, false, false, false -- optional parts, set below
+    row.links, row.shares, row.buttons = {}, {}, {} -- by column: other items, share bars, buttons
     for c, col in ipairs(opts.columns) do
-      local left = col.item or col.align == "LEFT"
+      local left = col.item or col.align == "LEFT" or col.format == "share"
       local fs = W.Text(row, "GameFontHighlightSmall", left and "LEFT" or "RIGHT")
       fs:SetWordWrap(false)
       fs:SetHeight(rowH) -- width and position (and of the star, icon, confidence bars): t:Layout()
-      if col.item then
+      if linkItem(col) then
+        -- another item in the row: its icon, and a region over icon and name for its tooltip and modified click
+        local link = CreateFrame("Button", nil, row)
+        link:SetHeight(rowH)
+        link:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+        link.icon = row:CreateTexture(nil, "ARTWORK")
+        link.icon:SetSize(ICON_W, ICON_W)
+        link.key = false
+        link:SetScript("OnClick", function(self, button)
+          if self.key and linksItem({}) then
+            W.ItemLinkClicked(self.key)
+            return
+          end
+          local click = row:GetScript("OnClick")
+          if click then
+            click(row, button) -- a plain click is the row's (select it)
+          end
+        end)
+        W.Tooltip(link, function(tip, self)
+          if not self.key then
+            return false
+          end
+          W.SetItemTip(tip, self.key)
+        end)
+        row.links[c] = link
+      elseif col.format == "share" then
+        local track = row:CreateTexture(nil, "ARTWORK")
+        track:SetSize(SHARE_W, 6)
+        W.Fill(track, W.COLORS.panelHover)
+        local bar = row:CreateTexture(nil, "ARTWORK", nil, 1)
+        bar:SetHeight(6)
+        bar:SetPoint("LEFT", track, "LEFT", 0, 0)
+        row.shares[c] = { track = track, bar = bar }
+      elseif col.button then
+        local def = col.button
+        local b = W.Button(row, "", col.width, rowH - 4, function()
+          if row.data and def.onClick then
+            def.onClick(row.data, row)
+          end
+        end)
+        b:Hide()
+        row.buttons[c] = b
+      end
+      if mainItem(col) then
         if opts.star then
           row.star = CreateFrame("Button", nil, row)
           row.star:SetSize(STAR_W, STAR_W)
@@ -198,6 +287,11 @@ function DataTable.New(parent, opts)
         ns.UI:ItemMenu(self, self.itemID, opts.itemMenu)
         return
       end
+      -- a modified click on an item row links the item (chat, try on), as a link in chat would
+      if self.itemID and button ~= "RightButton" and linksItem(opts) then
+        W.ItemLinkClicked(self.itemID)
+        return
+      end
       if opts.onClick then
         opts.onClick(self.data, button)
       elseif self.itemID then
@@ -226,7 +320,7 @@ function DataTable.New(parent, opts)
   -- scrollbar (only shown when there's more than fits)
   local bar = CreateFrame("Slider", nil, frame, "BackdropTemplate")
   bar:SetOrientation("VERTICAL")
-  bar:SetPoint("TOPRIGHT", 0, -20) -- inside the table's right edge, never past the window
+  bar:SetPoint("TOPRIGHT", 0, -t.headH) -- inside the table's right edge, never past the window
   bar:SetSize(8, rowsN * rowH)
   W.Skin(bar, W.COLORS.panel)
   bar.thumb = bar:CreateTexture(nil, "OVERLAY")
@@ -261,6 +355,9 @@ function DataTable.New(parent, opts)
     t:Layout(width)
   end)
   t:Layout(frame:GetWidth())
+  if opts.note then
+    t:SetNote(opts.note)
+  end
   if opts.status then
     t.status = W.StatusLine(parent)
   end
@@ -273,7 +370,7 @@ function DataTable:Fit(height)
     return
   end
   self.fitHeight = height
-  local n = math.max(1, math.floor((height - 20) / self.rowH))
+  local n = math.max(1, math.floor((height - self.headH - self:NoteSpace()) / self.rowH))
   for r = #self.rows + 1, n do
     self:MakeRow(r)
   end
@@ -294,8 +391,8 @@ end
 function DataTable:SetMessage(text)
   if not self.message then
     self.message = W.Text(self.frame, "GameFontDisableSmall", "CENTER")
-    self.message:SetPoint("LEFT", 20, -10) -- below the header
-    self.message:SetPoint("RIGHT", -20, -10)
+    self.message:SetPoint("LEFT", 20, -self.headH / 2) -- below the header
+    self.message:SetPoint("RIGHT", -20, -self.headH / 2)
   end
   self.message:SetText(text or "")
   self.message:SetShown(text ~= nil)
@@ -337,7 +434,7 @@ function DataTable:Layout(width)
   local hidden, order = {}, {}
   local userHidden = self.userHidden or {}
   for c, col in ipairs(opts.columns) do
-    if userHidden[col.key] and not col.item then -- switched off in the column chooser
+    if userHidden[col.key] and not mainItem(col) then -- switched off in the column chooser
       hidden[c] = true
       total = total - col.width - GAP
     elseif col.drop then
@@ -368,7 +465,7 @@ function DataTable:Layout(width)
     end
   end
   for c, h in ipairs(self.headers) do
-    h:SetShown(not hidden[c])
+    h:SetShown(not hidden[c] and not opts.bare)
     h:SetWidth(math.max(1, widths[c]))
     h:ClearAllPoints()
     h:SetPoint("TOPLEFT", xs[c], 0)
@@ -379,7 +476,7 @@ function DataTable:Layout(width)
       local fs, cx = row.cells[c], xs[c]
       fs:ClearAllPoints()
       fs:SetShown(not hidden[c])
-      if col.item then
+      if mainItem(col) then
         local nameX = opts.star and NAME_X or (ICON_W + 4)
         local trailing = opts.confidence and 22 or 0
         fs:SetSize(widths[c] - nameX - trailing, rowH)
@@ -394,11 +491,73 @@ function DataTable:Layout(width)
           row.conf:ClearAllPoints()
           row.conf:SetPoint("LEFT", cx + widths[c] - 20, 0)
         end
+      elseif row.links[c] then
+        local link = row.links[c]
+        fs:SetSize(math.max(1, widths[c] - ICON_W - 4), rowH)
+        fs:SetPoint("LEFT", cx + ICON_W + 4, 0)
+        link.icon:ClearAllPoints()
+        link.icon:SetPoint("LEFT", cx, 0)
+        link:ClearAllPoints()
+        link:SetPoint("LEFT", cx, 0) -- its width follows the name: Render
+      elseif row.shares[c] then
+        local s = row.shares[c]
+        s.track:ClearAllPoints()
+        s.track:SetPoint("LEFT", cx, 0)
+        fs:SetSize(math.max(1, widths[c] - SHARE_W - 6), rowH)
+        fs:SetPoint("LEFT", cx + SHARE_W + 6, 0)
+      elseif row.buttons[c] then
+        local b = row.buttons[c]
+        b:SetWidth(math.max(1, widths[c]))
+        b:ClearAllPoints()
+        b:SetPoint("LEFT", cx, 0)
+        fs:SetSize(1, rowH)
+        fs:SetPoint("LEFT", cx, 0)
       else
         fs:SetSize(widths[c], rowH)
         fs:SetPoint("LEFT", cx, 0)
       end
     end
+  end
+  -- a wrapped note takes more lines when the table gets narrower: make room for it again
+  local space = self:NoteSpace()
+  if space ~= (self.noteSpace or 0) then
+    self.noteSpace = space
+    self:Resize()
+  end
+end
+
+-- A dim note under the rows, wrapped to the table's width, inside its frame; nil removes it. A filling table gives
+-- it the room of the rows it needs; a fixed one grows by it.
+function DataTable:SetNote(text)
+  if not self.note then
+    self.note = W.Text(self.frame, "GameFontDisableSmall", "LEFT")
+    self.note:SetWordWrap(true)
+    self.note:SetPoint("BOTTOMLEFT", 8, 4)
+    self.note:SetPoint("BOTTOMRIGHT", -8 - DataTable.BAR_SPACE, 4)
+  end
+  self.note:SetText(text or "")
+  self.note:SetShown(text ~= nil and text ~= "")
+  self.noteSpace = self:NoteSpace()
+  self:Resize()
+end
+
+-- the height the note takes under the rows (0 without one)
+function DataTable:NoteSpace()
+  if not (self.note and self.note:IsShown()) then
+    return 0
+  end
+  return math.ceil(self.note:GetStringHeight() or 12) + 8
+end
+
+-- after the note changed: a fixed table's height, or a filling table's row count (on its next draw)
+function DataTable:Resize()
+  if self.opts.fill then
+    self.fitHeight = nil
+    if self.source then
+      self:Render()
+    end
+  else
+    self.frame:SetHeight(self.headH + self.rowsN * self.rowH + self:NoteSpace())
   end
 end
 
@@ -434,6 +593,14 @@ function DataTable:SortValue(d, key)
   if key == "__name" then
     local id = self.opts.itemID and self.opts.itemID(d)
     v = id and W.ItemInfo(id) or d.name
+  elseif key:find("^__name:") then -- another item column, by its item's name
+    local colKey = key:sub(8)
+    for _, col in ipairs(self.opts.columns) do
+      if col.key == colKey and linkItem(col) then
+        local id = col.item(d)
+        v = id and (W.ItemInfo(id) or W.ItemLabel(id)) or nil
+      end
+    end
   else
     v = d[key]
   end
@@ -508,15 +675,39 @@ function DataTable:RenderWhenLoaded(itemID)
   end)
 end
 
-local function itemCell(t, row, col, d, itemID)
+local function itemCell(t, iconTex, col, d, itemID)
   local name, _, quality, icon = W.ItemInfo(itemID or 0)
   if itemID and not name then
     t:RenderWhenLoaded(itemID)
   end
-  row.icon:SetTexture(icon or 134400)
-  row.icon:SetShown(itemID ~= nil)
+  iconTex:SetTexture(icon or 134400)
+  iconTex:SetShown(itemID ~= nil)
   local fallback = col.fallback and col.fallback(d) or (itemID and ("item:" .. itemID)) or ""
   return W.QualityText(quality, name or fallback) .. (col.suffix and col.suffix(d) or "")
+end
+
+-- a share cell: the bar over its track (full at col.max, 40% by default), in the accent
+local function shareCell(s, col, v, shown)
+  s.track:SetShown(shown)
+  local f = v and math.max(0, math.min(1, v / (col.max or 0.4))) or 0
+  s.bar:SetWidth(math.max(1, f * SHARE_W))
+  W.Fill(s.bar, W.COLORS.accent)
+  s.bar:SetShown(shown and f > 0)
+  s.width = f * SHARE_W
+end
+
+-- a button cell: its label and look for this row (variant "primary", "selected" or normal)
+local function buttonCell(b, def, d, shown)
+  shown = shown and (not def.shown or def.shown(d)) and true or false
+  b:SetShown(shown)
+  if not shown then
+    return
+  end
+  b:SetText(type(def.label) == "function" and def.label(d) or def.label or "")
+  local variant = def.variant and def.variant(d)
+  W.Primary(b, variant == "primary")
+  b:SetSelected(variant == "selected")
+  b:SetEnabled(not def.enabled or def.enabled(d) and true or false)
 end
 
 function DataTable:Render()
@@ -579,10 +770,22 @@ function DataTable:Render()
       if row.conf then
         row.conf:SetText(W.Confidence(opts.confidence(d)))
       end
+      local hidden = self.hiddenColumns or {}
       for c, col in ipairs(opts.columns) do
         local val
-        if col.item then
-          val = itemCell(self, row, col, d, row.itemID or nil)
+        if mainItem(col) then
+          val = itemCell(self, row.icon, col, d, row.itemID or nil)
+        elseif linkItem(col) then
+          local link, key = row.links[c], col.item(d)
+          link.key = key or false
+          val = itemCell(self, link.icon, col, d, key)
+          link.icon:SetShown(key ~= nil and not hidden[c])
+        elseif row.shares[c] then
+          shareCell(row.shares[c], col, d[col.key], not hidden[c])
+          val = FORMATS.share(d[col.key])
+        elseif row.buttons[c] then
+          buttonCell(row.buttons[c], col.button, d, not hidden[c])
+          val = ""
         elseif col.text then
           val = col.text(d, self)
         elseif col.format then
@@ -592,7 +795,14 @@ function DataTable:Render()
           val = v ~= nil and tostring(v) or W.NONE
         end
         row.cells[c]:SetText(val or "")
-        if col.item and row.conf then -- the confidence bars right after the (possibly cut) name
+        local link = row.links[c]
+        if link then -- the hover region over the icon and the (possibly cut) name
+          local fs = row.cells[c]
+          local w = math.min(fs:GetStringWidth() or 0, fs:GetWidth() or 0)
+          link:SetWidth(ICON_W + 4 + math.max(1, w))
+          link:SetShown(link.key and not hidden[c] and true or false)
+        end
+        if mainItem(col) and row.conf then -- the confidence bars right after the (possibly cut) name
           local fs = row.cells[c]
           local w = math.min(fs:GetStringWidth() or 0, fs:GetWidth() or 0)
           row.conf:ClearAllPoints()
@@ -641,6 +851,10 @@ end
 -- raw values for the formats that would otherwise export as display text
 local EXPORT = {
   money = gold,
+  signedMoney = gold,
+  share = function(v)
+    return v and ("%.1f%%"):format(v * 100) or ""
+  end,
   count = function(v)
     return v and tostring(math.floor(v + 0.5)) or ""
   end,
@@ -672,7 +886,7 @@ function DataTable:ExportText(format)
   -- only columns you switched off are left out; ones dropped for lack of room are exported
   local hidden = {}
   for c, col in ipairs(opts.columns) do
-    hidden[c] = (self.userHidden or {})[col.key] and not col.item or nil
+    hidden[c] = (col.button or (self.userHidden or {})[col.key] and not mainItem(col)) and true or nil
   end
   local sep = format == "csv" and "," or "\t"
   local function cell(s)
@@ -685,7 +899,7 @@ function DataTable:ExportText(format)
   local header, lines = {}, {}
   for c, col in ipairs(opts.columns) do
     if not hidden[c] then
-      local money = col.money or col.format == "money"
+      local money = col.money or col.format == "money" or col.format == "signedMoney"
       header[#header + 1] = cell(label(col) .. (money and " (g)" or ""))
     end
   end
@@ -696,7 +910,12 @@ function DataTable:ExportText(format)
       if not hidden[c] then
         local val
         if col.item then
-          local id = opts.itemID and opts.itemID(d)
+          local id
+          if linkItem(col) then
+            id = col.item(d)
+          else
+            id = opts.itemID and opts.itemID(d)
+          end
           val = (id and ns.ItemCache.Name(id)) or (col.fallback and col.fallback(d)) or (id and ("item:" .. id))
         elseif col.export or col.money then
           local raw

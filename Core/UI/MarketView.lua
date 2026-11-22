@@ -811,6 +811,7 @@ function UI:CreateMarketView(parent)
         UI.offset = n
       end,
     },
+    shiftClick = true, -- Shift-click searches the AH while no chat box is open to take the link
     onClick = function(s)
       if IsShiftKeyDown() and ns.AME.ahOpen then
         ns.AME:SearchAuctionHouse(s.itemID)

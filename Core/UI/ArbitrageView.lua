@@ -195,6 +195,7 @@ function UI:CreateArbitrageView(parent, contentArea)
     selected = function(e)
       return UI.arbSelected == e.itemID
     end,
+    shiftClick = true, -- Shift-click searches the buy house while no chat box is open to take the link
     onClick = function(e)
       if IsShiftKeyDown() and UI:AtBuyHouse() then
         ns.AME:SearchAuctionHouse(e.itemID)
