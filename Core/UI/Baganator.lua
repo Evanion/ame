@@ -3,7 +3,8 @@
 --   is worth: Quote:BestSale x count, as the Selling tab values it). Players pick corners in Baganator's settings
 --   (Icons); AME places none by itself.
 --   a junk plugin - "AME: vendor is better": grey items, and items whose listing nets less than a vendor pays (the
---   VENDOR signal; the Selling tab's "vendor" tip). Baganator greys junk out and can sort it last.
+--   VENDOR signal) and no recipe of yours makes worth more: the Selling tab's "vendor" tip, never its "Arbitrate".
+--   Baganator greys junk out and can sort it last.
 -- Built on AME's public API (Core/API.lua), so it shows the same numbers as AME's tooltip and tabs.
 local _, ns = ...
 local L = ns.L
@@ -36,12 +37,39 @@ function Bag.SlotMoney(copper)
   return "|cff" .. W.COIN_HEX[unit] .. text .. unit .. "|r"
 end
 
--- junk: grey items, and items AME prices whose listing nets less than a vendor pays
-function Bag.IsJunk(api, quality, item)
+-- junk: grey items, and items AME prices whose listing nets less than a vendor pays - unless a recipe your
+-- characters know makes them worth more (the Selling tab tips those "Arbitrate", not vendor). instead(key) -> truthy
+-- for those (CraftModel.Instead).
+function Bag.IsJunk(api, quality, item, instead)
   if quality == 0 then
     return true
   end
-  return api.GetSignal(item) == "vendor"
+  if api.GetSignal(item) ~= "vendor" then
+    return false
+  end
+  local key = ns.API and ns.API.KeyOf(item) or item
+  return not (instead and key and instead(key))
+end
+
+-- CraftModel.Instead, kept while the market data and your recipes stay the same (Baganator asks for every slot on
+-- every redraw)
+local insteadCache, insteadStamp = {}, nil
+function Bag.Instead(key)
+  local CM = ns.CraftModel
+  if not (CM and CM.Instead) then
+    return nil
+  end
+  local index = ns.AME and ns.AME.FactionIndex and ns.AME:FactionIndex()
+  local stamp = tostring(index) .. ":" .. tostring(ns.Recipes and ns.Recipes.Stamp and ns.Recipes.Stamp())
+  if stamp ~= insteadStamp then
+    insteadCache, insteadStamp = {}, stamp
+  end
+  local hit = insteadCache[key]
+  if hit == nil then
+    hit = CM.Instead(key) or false
+    insteadCache[key] = hit
+  end
+  return hit or nil
 end
 
 function Bag:Install()
@@ -96,7 +124,7 @@ function Bag:Install()
       end
       local key = ns.API.KeyOf(itemLink)
       local quality = key and ns.ItemCache.Get(key).quality
-      return Bag.IsJunk(api, quality, itemLink)
+      return Bag.IsJunk(api, quality, itemLink, Bag.Instead)
     end)
   end
 

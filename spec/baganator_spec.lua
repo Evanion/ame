@@ -35,5 +35,12 @@ describe("Baganator plugins", function()
     assert.is_true(Bag.IsJunk(api, 1, 1))
     assert.is_false(Bag.IsJunk(api, 1, 2))
     assert.is_false(Bag.IsJunk(api, 2, 3)) -- AME knows nothing about it: not junk
+    -- a VENDOR item a recipe of yours makes worth more: arbitrate it, it isn't junk
+    local instead = function(key)
+      return key == 1 and { product = 99 } or nil
+    end
+    assert.is_false(Bag.IsJunk(api, 1, 1, instead))
+    signals[4] = "vendor"
+    assert.is_true(Bag.IsJunk(api, 1, 4, instead))
   end)
 end)
