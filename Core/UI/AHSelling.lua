@@ -49,6 +49,7 @@ end
 
 -- the Tip column's order: auction first, then make first, disenchant, vendor, then the rest; worth the most first
 -- in each (one number, so the table sorts by it)
+S.MARKET_GAP = 10 -- the Market pick, set off from AME's three prices (px)
 S.TIP_RANK = { auction = 1, craft = 2, disenchant = 3, vendor = 4 }
 function S.TipOrder(e)
   return (S.TIP_RANK[S.Tip(e) or ""] or 9) * 1e12 - (e.worth or 0)
@@ -561,19 +562,23 @@ function S:RenderForm()
   p.itemRate:SetPoint("LEFT", signal and p.signal or p.itemInfo, "RIGHT", 6, 0)
   p.itemRate:SetText(s and s.soldPerDay and L["~%s sold/day"]:format(W.Count(s.soldPerDay)) or "")
   local labels = { quick = L["Quick"], normal = L["Normal"], patient = L["Patient"], market = L["Market"] }
-  -- Quick no cheaper than Normal: one option, so the buttons close up
+  -- Quick no cheaper than Normal: one option, so the buttons close up. Market stands apart (S.MARKET_GAP): it isn't
+  -- a step on the Quick / Normal / Patient ladder
   local y = 0
   for _, b in ipairs(p.picks) do
     local same = b.key == "quick" and a and a.quickSame
     b:SetShown(not same)
     if not same then
+      if b.key == "market" then
+        y = y + S.MARKET_GAP
+      end
       b:ClearAllPoints()
-      b:SetPoint("TOPLEFT", 0, -60 - y * 28)
-      y = y + 1
+      b:SetPoint("TOPLEFT", 0, -60 - y)
+      y = y + 28
     end
   end
   p.inputs:ClearAllPoints()
-  p.inputs:SetPoint("TOPLEFT", 0, -60 - y * 28 - 6)
+  p.inputs:SetPoint("TOPLEFT", 0, -60 - y - 6)
   for _, b in ipairs(p.picks) do
     local c = a and a[b.key]
     if c then
