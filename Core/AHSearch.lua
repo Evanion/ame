@@ -3,7 +3,7 @@
 -- per item at the pace the game allows (it says when it's ready for the next), and keeps each item's listings.
 --
 --   AHSearch:Start(keys, onChange)   search them in turn; onChange() after each answer
---   AHSearch.results[key]            { rows = { { price (each), qty, auctionID? } } cheapest first, commodity, at }
+--   AHSearch.results[key]  { rows = { { price (each), qty, auctionID?, mine? } } cheapest first, commodity, at }
 --   AHSearch:Buy(key, qty, row)      commodities: ask the game for the price of qty (then Confirm); gear: row's auction
 --   AHSearch:Confirm()               buy what Buy priced (the game wants a click for each purchase)
 -- Book is pure (the client API is passed in), so it's tested with a fake C_AuctionHouse.
@@ -24,7 +24,7 @@ function S.Book(api, key)
     for i = 1, n do
       local info = api.GetCommoditySearchResultInfo(id, i)
       if info and info.unitPrice and info.quantity then
-        rows[#rows + 1] = { price = info.unitPrice, qty = info.quantity }
+        rows[#rows + 1] = { price = info.unitPrice, qty = info.quantity, mine = (info.numOwnerItems or 0) > 0 }
       end
     end
     table.sort(rows, function(a, b)
@@ -38,8 +38,13 @@ function S.Book(api, key)
     local info = api.GetItemSearchResultInfo(itemKey, i)
     local q = info and (info.quantity or 1)
     if info and info.buyoutAmount and q > 0 then
-      rows[#rows + 1] =
-        { price = math.floor(info.buyoutAmount / q), qty = q, total = info.buyoutAmount, auctionID = info.auctionID }
+      rows[#rows + 1] = {
+        price = math.floor(info.buyoutAmount / q),
+        qty = q,
+        total = info.buyoutAmount,
+        auctionID = info.auctionID,
+        mine = info.containsOwnerItem or nil,
+      }
     end
   end
   table.sort(rows, function(a, b)

@@ -2096,8 +2096,9 @@ describe("addon in a stubbed client", function()
         env:fire("AUCTION_HOUSE_SHOW")
         local T = ns.AHShopping
         assert.is_not_nil(T.tab) -- no Auctionator: AME's tab is on the window
-        assert.are.equal(2, #ahFrame.Tabs) -- once, however often the auction house opens
-        assert.are.equal(2, ahFrame.tabsForDisplayMode[T.mode])
+        assert.are.equal(3, #ahFrame.Tabs) -- Shopping and Selling, once, however often the auction house opens
+        assert.are.equal(2, ahFrame.tabsForDisplayMode[T.displayMode])
+        assert.are.equal(3, ahFrame.tabsForDisplayMode[ns.AHSelling.displayMode])
         local i = ns.AME.shopping:AddList("Raid")
         ns.AME.shopping:SetItem(i, 2589, 30)
         T:Open()
@@ -2122,6 +2123,72 @@ describe("addon in a stubbed client", function()
         env:fire("COMMODITY_PURCHASE_SUCCEEDED")
         assert.is_true(ns.AHSearch.last.ok)
         assert.are.equal(2589, sent[2]) -- searched again: what's left of it now
+
+        -- search by name and filters: the game's browse query, rows with AME's view, filtered by price here
+        local queries = {}
+        ah.SendBrowseQuery = function(q)
+          queries[#queries + 1] = q
+        end
+        ah.browse = { { 2589, 95, 300 }, { 2592, 500, 10 } }
+        T.panel.search:SetText("cloth")
+        T.filters = { maxPrice = 100, minLevel = 10 }
+        T:Search()
+        env:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+        assert.are.equal("cloth", queries[1].searchString)
+        assert.are.equal(10, queries[1].minLevel)
+        local found = T:TableRows()
+        assert.are.equal(1, #found) -- the 5s one is over the price filter
+        assert.are.equal(2589, found[1].itemID)
+        assert.are.equal("cloth", AME_DB.recentSearches[1].text)
+        T:Search() -- the same search again: still one recent entry
+        assert.are.equal(1, #AME_DB.recentSearches)
+
+        -- the Selling tab: what in your bags can be listed, worth first; post with the game's own posting
+        rawset(_G, "ItemLocation", {
+          CreateFromBagAndSlot = function(_, bag, slot)
+            return { bag = bag, slot = slot }
+          end,
+        })
+        _G.C_Container = {
+          GetContainerNumSlots = function(bag)
+            return bag == 0 and 3 or 0
+          end,
+          GetContainerItemInfo = function(bag, slot)
+            if bag == 0 and slot <= 2 then
+              return { itemID = 2589, stackCount = 20 }
+            elseif bag == 0 and slot == 3 then
+              return { itemID = 6948, stackCount = 1 } -- can't be sold
+            end
+          end,
+        }
+        ah.IsSellItemValid = function(loc)
+          return loc.slot <= 2
+        end
+        ah.GetItemCommodityStatus = function()
+          return 2
+        end
+        rawset(Enum, "ItemCommodityStatus", { Item = 1, Commodity = 2 })
+        local posts = {}
+        ah.PostCommodity = function(loc, duration, qty, price)
+          posts[#posts + 1] = { loc.slot, duration, qty, price }
+        end
+        finally(function() -- one finally per test (busted keeps the last): everything this test changed
+          rawset(_G, "ItemLocation", nil)
+          _G.C_Container = nil
+          _G.CreateFrame = create
+          rawset(_G, "AuctionHouseFrame", nil)
+          rawset(_G, "AuctionHouseFrameDisplayMode", nil)
+        end)
+        local Sel = ns.AHSelling
+        Sel:Refresh()
+        assert.are.equal(1, #Sel.items)
+        assert.are.equal(40, Sel.items[1].qty)
+        Sel:Select(Sel.items[1])
+        assert.are.equal(40, Sel.qty) -- a stackable: all of it
+        Sel:Undercut({ price = 90 })
+        assert.are.equal(89, Sel.price)
+        assert.is_true(Sel:Post())
+        assert.are.same({ 1, Sel.duration, 40, 89 }, posts[1])
       end
     )
 

@@ -57,6 +57,7 @@ Core\CraftingData.lua
 Core\Crafting.lua
 Core\CraftQueue.lua
 Core\AHSearch.lua
+Core\AHBrowse.lua
 Core\Crafters.lua
 Core\RecipeSources.lua
 Core\Disenchant.lua
@@ -84,6 +85,7 @@ Core\UI\PortfolioView.lua
 Core\UI\LevelingView.lua
 Core\UI\CraftingView.lua
 Core\UI\ProfessionBar.lua
+Core\UI\AHSelling.lua
 Core\UI\AHShopping.lua
 Core\UI\CraftersView.lua
 Core\UI\Tooltip.lua

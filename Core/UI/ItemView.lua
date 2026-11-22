@@ -977,6 +977,10 @@ function UI:Selling()
   if ns.SellAssist and ns.SellAssist:Active() then
     return true
   end
+  local own = ns.AHSelling and ns.AHSelling.panel -- AME's Selling tab
+  if own and own:IsVisible() then
+    return true
+  end
   for _, name in ipairs(UI.SELL_FRAMES) do
     local f = _G[name]
     if type(f) == "table" and f.IsVisible and f:IsVisible() then
