@@ -1008,7 +1008,7 @@ describe("addon in a stubbed client", function()
         local v = ns.UI.craftView
         v.scripts.OnShow(v)
         local queue = ns.UI.CRAFT_TOOLBAR.queue
-        local clicked = 0
+        local clicked, actions = 0, queue.actions
         queue.actions = {
           {
             "Buy all",
@@ -1019,7 +1019,7 @@ describe("addon in a stubbed client", function()
           },
         }
         finally(function()
-          queue.actions = nil
+          queue.actions = actions
         end)
         -- Recipes to buy: search, then who and which profession, then its two checks
         ns.UI:ShowCraftingPage("recipes")
@@ -1111,7 +1111,8 @@ describe("addon in a stubbed client", function()
         assert.are.equal(2589, v.detail.tables.reagents.rows[1].itemID)
         assert.are.equal("Selling it", v.detail.cards[2].parts.title.text)
         -- the sidebar's button says what it does (its label is AME's own font string)
-        assert.are.equal("Add reagents to a shopping list", v.action.label.text)
+        assert.are.equal("Queue", v.action.label.text)
+        assert.are.equal("Reagents to a list", v.second.label.text)
         -- sell or refine: the linen sells raw (the bandage has no price)
         ns.UI:ShowCraftingPage("refine")
         rows = ns.UI.craftRows
@@ -1163,7 +1164,7 @@ describe("addon in a stubbed client", function()
         ns.UI:RenderCraftingDetail()
         assert.is_true(v.colorBar:IsShown())
         assert.is_true(v.action:IsShown())
-        assert.are.equal("Add all reagents to a shopping list", v.action.label.text)
+        assert.are.equal("Queue the steps", v.action.label.text)
         -- a craft re-records the profession and rebuilds the rows: the same step stays selected
         ns.UI:RefreshCrafting()
         assert.is_not_nil(ns.UI.craftSelected)
@@ -1199,8 +1200,8 @@ describe("addon in a stubbed client", function()
         ns.UI:RenderCraftingDetail()
         assert.are.equal(noteRow.text(), v.detail.cards[1].parts.subtitle.text)
         assert.is_false(v.detail.cards[1].parts.item.key) -- a note is about no item
-        -- the whole path's reagents on one shopping list
-        ns.UI:CraftingAction()
+        -- the whole path's reagents on one shopping list (the second button)
+        ns.UI:CraftingSecondAction()
         local list = ns.AME.shopping:Lists()[#ns.AME.shopping:Lists()]
         assert.are.equal("First Aid to 75", list.name)
         assert.truthy(list.items[2589].need > 0)

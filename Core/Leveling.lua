@@ -284,3 +284,23 @@ function Leveling.Plan(opts)
   out.complete = not stuck and s >= opts.to
   return out
 end
+
+-- A plan's crafts as craft queue items, in the plan's order: { { recipe = id, count = crafts }, ... }. A recipe two
+-- steps use is queued once, with both steps' crafts (the queue merges by recipe).
+function Leveling.QueueList(plan)
+  local out, byRecipe = {}, {}
+  for _, st in ipairs(plan and plan.steps or {}) do
+    local id = st.entry and st.entry.recipe and st.entry.recipe.id
+    if id and (st.crafts or 0) > 0 then
+      local q = byRecipe[id]
+      if q then
+        q.count = q.count + st.crafts
+      else
+        q = { recipe = id, count = st.crafts }
+        byRecipe[id] = q
+        out[#out + 1] = q
+      end
+    end
+  end
+  return out
+end

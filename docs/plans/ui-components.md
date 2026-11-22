@@ -581,22 +581,12 @@ above follow the recommendation until told otherwise.
 
 ## Artboard features not built yet
 
-These appear in the artboards but are new behaviour or new data, so they are separate commits after (or between) the
-steps above, each only when the user asks for it:
+All built (2026-11-22): the tooltip's Post at, signal reasons, goblin AH line and "(alt there)"; the Crafting pages'
+Signal column and Queue, unrecorded professions, Find a crafter's recipe rows, the Craft queue page's To do, Buy / ✕
+and totals, Refine's and Leveling's queue buttons and Leveling's search; the profession bar's Sells/day, signal and
+"no price"; Who can make it's recipe item row and header; Arbitrage's Columns button; AH Shopping's Time left;
+Market Overview's "18,400 ×" with "capped from"; Sync's next announce.
 
-- **Tooltip**:
-  - "Post at (Normal)" with sell chance, and the deposit on gear.
-  - Reason sentences for the signal ("disenchanting beats listing by 34s").
-  - The goblin AH's sales per day and data age.
-  - "(alt there)".
-- **Crafting pages**:
-  - Top earners' Signal column and Queue action.
-  - Your professions' unrecorded-character rows.
-  - Find a crafter's one-row-per-recipe table with the recipe item row.
-  - The Craft queue page's To-do table, per-step Buy / ✕ and totals heading.
-  - Refine's "Queue the smelt".
-  - Leveling's "Queue the steps" and its search.
-- **Arbitrage**: a Columns button (hide columns, as the screener does).
-- **AH Shopping**: the Time left column, if the listing data needs more than drawing.
-- **Market Overview**: largest items as "18,400 ×" with "capped from X".
-- **Sync**: "next announce in 8 min" in the status.
+Left out on purpose (artboard notes rather than features, or no data for them): the gear tooltip's "Post at
+(Patient)" (no per-item choice is recorded: it shows Normal), the Your professions footer naming who still has to
+open what, and the compact Arbitrage layout's Columns entry (no More menu there).

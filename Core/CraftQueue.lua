@@ -5,7 +5,8 @@
 -- CraftQueue.Plan(queue, env) turns it into:
 --   steps      what to craft, parts first (bars before the gauntlets made from them): { recipe, count, item,
 --              made (units), crafter (charKey or nil: nobody recorded knowing it), mine (this character knows it),
---              part (true: made for another step), profit (top-level items, all crafts), choice, saves }
+--              part (true: made for another step), profit (top-level items, all crafts), choice, saves (a part:
+--              per unit, making vs buying), saved (a part: saves for all it makes) }
 --   materials  every reagent with what's needed and its sources, in a fixed order: { item, need, sources = { { kind,
 --              qty, char, cost } } } - kind: "carried" (this character's bags) | "bank" (its bank) | "alt" (another
 --              character's bags, bank and mailbox) | "guild" (a guild bank) | "vendor" | "made" (by a step) | "ah"
@@ -225,6 +226,10 @@ function CraftQueue.Plan(queue, env)
         end
       end
       s.mine = s.mine or false
+    end
+    -- a part made rather than bought: what making all of it saves
+    if s.part and s.saves and s.saves > 0 then
+      s.saved = s.saves * (s.made or s.count)
     end
   end
   table.sort(plan.steps, function(a, b)
