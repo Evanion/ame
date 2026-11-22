@@ -155,6 +155,9 @@ function UI:SetHidden(key, on)
   if self.UpdateHiddenControls then
     self:UpdateHiddenControls()
   end
+  if ns.AHSelling and ns.AHSelling.HiddenChanged then
+    ns.AHSelling:HiddenChanged() -- the auction house's Selling tab lists your bags without hidden items
+  end
 end
 
 -- the Market tab, on its Hidden list

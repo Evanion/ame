@@ -2203,6 +2203,13 @@ describe("addon in a stubbed client", function()
         local Sel = ns.AHSelling
         Sel:Refresh()
         assert.are.equal(1, #Sel.items)
+        -- hidden (the item menu's Hide): out of the list; shown again: back
+        ns.AME.watch:SetHidden(2589, true)
+        Sel:Refresh()
+        assert.are.equal(0, #Sel.items)
+        ns.AME.watch:SetHidden(2589, false)
+        Sel:Refresh()
+        assert.are.equal(1, #Sel.items)
         assert.are.equal(40, Sel.items[1].qty)
         Sel:Select(Sel.items[1])
         assert.are.equal(40, Sel.qty) -- a stackable: all of it

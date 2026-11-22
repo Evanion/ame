@@ -111,7 +111,15 @@ end
 function S:Refresh()
   local index = ns.AME:FactionIndex()
   local items = index and index.items or {}
-  self.items = S.Rank(S.ScanBags(), function(k)
+  -- items you've hidden (the item menu's Hide, as everywhere in AME) stay out of the list
+  local watch = ns.AME.watch
+  local shown = {}
+  for _, e in ipairs(S.ScanBags()) do
+    if not (watch and watch:IsHidden(e.key)) then
+      shown[#shown + 1] = e
+    end
+  end
+  self.items = S.Rank(shown, function(k)
     return items[k]
   end, function(k)
     return ns.ItemCache.Get(k).sellPrice
@@ -192,6 +200,7 @@ function S:Create(ah)
     rows = 12,
     rowHeight = 20,
     sort = { key = "worth", ascending = false },
+    itemMenu = { hide = true }, -- right-click: the item menu as in the AME window, Hide included
     itemID = function(e)
       return e.key
     end,
@@ -438,6 +447,19 @@ function S:Post()
     p.result:SetText(W.Color("bad", L["The game didn't take the post: %s"]:format(tostring(err))))
   end
   return ok
+end
+
+-- an item hidden or shown again (the item menu): the list without it, and nothing selected that's gone
+function S:HiddenChanged()
+  local p = self.panel
+  if not (p and p:IsShown()) then
+    return
+  end
+  self:Refresh()
+  if self.entry and ns.AME.watch and ns.AME.watch:IsHidden(self.entry.key) then
+    self.entry, self.advice, self.price = nil, nil, nil
+  end
+  self:Render()
 end
 
 -- after a post (or any bag change): the bags again, the same item kept selected while it's still there
