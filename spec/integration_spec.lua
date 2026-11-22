@@ -316,8 +316,8 @@ describe("addon in a stubbed client", function()
   end)
 
   describe("UI", function()
-    local function seeded()
-      boot()
+    local function seeded(pre)
+      boot({ pre = pre })
       env.npcFaction = "Horde"
       env:fire("AUCTION_HOUSE_SHOW")
       for d = 0, 9 do
@@ -327,6 +327,76 @@ describe("addon in a stubbed client", function()
       env:advance(4) -- login timer: load history + build index
       drainJobs()
     end
+
+    it("answers other addons through the public API, and plugs into Baganator", function()
+      local corners, junk, refreshed = {}, {}, 0
+      _G.Baganator = {
+        API = {
+          RegisterCornerWidget = function(label, id, onUpdate, onInit)
+            corners[id] = { label = label, onUpdate = onUpdate, onInit = onInit }
+          end,
+          RegisterJunkPlugin = function(label, id, callback)
+            junk[id] = { label = label, callback = callback }
+          end,
+          RequestItemButtonsRefresh = function()
+            refreshed = refreshed + 1
+          end,
+        },
+      }
+      seeded(function()
+        env.sellPrices[4306] = 100000 -- a vendor pays more than a listing nets: VENDOR
+      end)
+      local api = AzerothMercantileExchange.API.v1
+      assert.are.equal(1, (api.GetVersion()))
+      assert.is_true(api.IsReady())
+      local index = ns.AME:FactionIndex()
+      local q = ns.Quote.For(ns.AME:FactionShard(), index, { fresh = false })
+      -- the same numbers AME shows: an item ID, a link and an item string are the same item
+      assert.are.equal(index.items[2589].market, api.GetMarketPrice(2589))
+      assert.are.equal(index.items[2589].market, api.GetMarketPrice("|cffffffff|Hitem:2589::::::::|h[Linen Cloth]|h|r"))
+      assert.are.equal(index.items[2589].market, api.GetMarketPrice("item:2589"))
+      local net, where = api.GetWorth(2589)
+      assert.are.equal(q:Worth(2589), net)
+      assert.are.equal("ah", where)
+      assert.are.same({ 100000, "vendor" }, { api.GetWorth(4306) })
+      assert.are.equal("vendor", api.GetSignal(4306))
+      local info = api.GetItemInfo(2589)
+      assert.are.equal(index.items[2589].market, info.market)
+      assert.are.equal(q:SoldPerDay(2589), info.soldPerDay)
+      assert.are.equal("ah", info.worthWhere)
+      assert.is_nil(api.GetItemInfo(999999)) -- never seen
+      assert.is_nil(api.GetMarketPrice(999999))
+      assert.is_nil(api.GetWorth(999999))
+      local post = api.GetPostingPrice(2589, 1)
+      assert.truthy(post and post.normal and post.normal.price > 0)
+      local updates = 0
+      api.RegisterForUpdates("spec", function()
+        updates = updates + 1
+      end)
+
+      -- Baganator: two corner widgets and a junk plugin, registered at login
+      assert.truthy(corners.ame_signal and corners.ame_value and junk.ame_vendor)
+      local button = CreateFrame("Button")
+      local text = corners.ame_value.onInit(button)
+      assert.is_true(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
+      assert.are.equal(ns.Baganator.SlotMoney(q:Worth(2589) * 20), text:GetText())
+      assert.is_false(corners.ame_value.onUpdate(text, { itemLink = "item:999999", itemCount = 1 }))
+      local icon = corners.ame_signal.onInit(button)
+      assert.is_true(corners.ame_signal.onUpdate(icon, { itemLink = "item:4306" }))
+      assert.is_true(junk.ame_vendor.callback(0, 1, 4306, "item:4306"))
+      assert.is_false(junk.ame_vendor.callback(0, 1, 2589, "item:2589"))
+
+      -- new prices: API listeners and Baganator's slots hear of it
+      local before = refreshed
+      env.now = env.now + 86400
+      fullScan({ { 2589, 1200, 10 }, { 4306, 4000, 5 } })
+      env:advance(4)
+      drainJobs()
+      assert.truthy(updates > 0)
+      assert.truthy(refreshed > before)
+      api.UnregisterForUpdates("spec")
+      _G.Baganator = nil
+    end)
 
     it("builds the window in idle steps after login, so the first open doesn't stutter", function()
       seeded()

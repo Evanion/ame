@@ -66,6 +66,44 @@ function Launcher:HasMinimapLibrary()
   return LibStub("LibDBIcon-1.0", true) ~= nil
 end
 
+-- left-click: the window; right-click: settings (the minimap button, info bars, the addon compartment)
+function Launcher.Click(button)
+  if button == "RightButton" then
+    ns.Settings:Open()
+  else
+    ns.UI:Toggle()
+  end
+end
+
+-- the launcher's tooltip: the title, where you are, the last scan, and the top buy signals as item names in their
+-- quality colours
+function Launcher.FillTooltip(tt)
+  local rows = { { TITLE }, { W.Dim(ns.ShardLabel(ns.AME:CurrentShard())) } }
+  local last = AME_DB.stats.lastFull
+  if last then
+    rows[#rows + 1] = { L["Last full scan"], date("%b %d %H:%M", last.at) }
+  end
+  local index = ns.AME.index
+  if index then
+    rows[#rows + 1] = { L["Items tracked"], W.Count(index.count or 0) }
+    local hidden = ns.AME.watch and ns.AME.watch:Hidden() or {}
+    local top = ns.MarketIndex.Rank(index, "score", function(s)
+      return s.signal == "buy" and not hidden[s.itemID]
+    end)
+    if #top > 0 then
+      rows[#rows + 1] = { " " }
+      rows[#rows + 1] = { W.Color("gold", L["Top buy signals"]) }
+      for i = 1, math.min(3, #top) do
+        local s = top[i]
+        rows[#rows + 1] = { ns.Tooltip.Bits({ item = s.itemID }), W.Money(s.market) .. "  " .. W.Percent(s.change7) }
+      end
+    end
+  end
+  rows[#rows + 1] = { " " }
+  rows[#rows + 1] = { W.Dim(L["Left-click: window   Right-click: settings"]) }
+  ns.Tooltip.AddRows(tt, rows)
+end
+
 -- LibDataBroker launcher (+ LibDBIcon minimap button when that library is available)
 function Launcher:CreateLauncher()
   local LDB = LibStub("LibDataBroker-1.1", true)
@@ -77,40 +115,9 @@ function Launcher:CreateLauncher()
     label = "AME",
     icon = ns.ICON,
     OnClick = function(_, button)
-      if button == "RightButton" then
-        ns.Settings:Open()
-      else
-        ns.UI:Toggle()
-      end
+      Launcher.Click(button)
     end,
-    OnTooltipShow = function(tt)
-      -- the title, where you are, the last scan, and the top buy signals as item names in their quality colours
-      local rows = { { TITLE }, { W.Dim(ns.ShardLabel(ns.AME:CurrentShard())) } }
-      local last = AME_DB.stats.lastFull
-      if last then
-        rows[#rows + 1] = { L["Last full scan"], date("%b %d %H:%M", last.at) }
-      end
-      local index = ns.AME.index
-      if index then
-        rows[#rows + 1] = { L["Items tracked"], W.Count(index.count or 0) }
-        local hidden = ns.AME.watch and ns.AME.watch:Hidden() or {}
-        local top = ns.MarketIndex.Rank(index, "score", function(s)
-          return s.signal == "buy" and not hidden[s.itemID]
-        end)
-        if #top > 0 then
-          rows[#rows + 1] = { " " }
-          rows[#rows + 1] = { W.Color("gold", L["Top buy signals"]) }
-          for i = 1, math.min(3, #top) do
-            local s = top[i]
-            rows[#rows + 1] =
-              { ns.Tooltip.Bits({ item = s.itemID }), W.Money(s.market) .. "  " .. W.Percent(s.change7) }
-          end
-        end
-      end
-      rows[#rows + 1] = { " " }
-      rows[#rows + 1] = { W.Dim(L["Left-click: window   Right-click: settings"]) }
-      ns.Tooltip.AddRows(tt, rows)
-    end,
+    OnTooltipShow = Launcher.FillTooltip,
   })
   local icon = LibStub("LibDBIcon-1.0", true)
   if icon and launcher then
@@ -173,4 +180,19 @@ function Launcher:CreateNoticeFeed()
   end
   notices:OnChange(update)
   update()
+end
+
+-- The game's addon compartment (retail's addon menu by the minimap), from the TOC's AddonCompartmentFunc lines
+function AzerothMercantileExchange_OnAddonCompartmentClick(_, button)
+  Launcher.Click(button)
+end
+
+function AzerothMercantileExchange_OnAddonCompartmentEnter(_, frame)
+  GameTooltip:SetOwner(frame, "ANCHOR_LEFT")
+  Launcher.FillTooltip(GameTooltip)
+  GameTooltip:Show()
+end
+
+function AzerothMercantileExchange_OnAddonCompartmentLeave()
+  GameTooltip:Hide()
 end

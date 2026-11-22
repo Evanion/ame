@@ -589,6 +589,18 @@ function Help.Articles()
           },
         },
         {
+          key = "otherAddons",
+          title = L["Other addons"],
+          body = {
+            H(L["Baganator"]),
+            L["With Baganator, AME adds two icon corners and a junk rule. In Baganator's settings, under Icons, place AME: signal (the item's market signal, as its icon) and AME: value (what the stack is worth: listing it after the cut and deposit, or what a vendor pays, whichever is more) in a corner. AME: vendor is better, Baganator's junk option, marks grey items and items a vendor pays more for than a listing nets - the same items the Selling tab tips to vendor."],
+            H(L["Launchers"]),
+            L["AME's launcher works with the minimap button, info bar addons that read LibDataBroker, and the game's addon menu by the minimap: left-click opens the window, right-click the settings."],
+            H(L["For addon authors"]),
+            L["AzerothMercantileExchange.API.v1 gives other addons and WeakAuras AME's numbers for an item at your faction's auction house: GetMarketPrice, GetWorth, GetSignal, GetItemInfo and GetPostingPrice (item ID or link; copper), and RegisterForUpdates to hear when new prices are in. Core/API.lua describes each."],
+          },
+        },
+        {
           key = "commands",
           title = Help.GUIDE[8][1],
           body = {

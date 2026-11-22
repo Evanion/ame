@@ -583,6 +583,9 @@ function handlers.PLAYER_LOGIN()
   if ns.Tooltip then
     ns.Tooltip:Install()
   end
+  if ns.Baganator then
+    ns.Baganator:Install() -- Baganator's icon corners and junk plugin, when it's installed
+  end
   -- load history shortly after login (not during it, nor in combat) so tooltips have market data; anything that
   -- needs it sooner loads it then (LoadHistory)
   local function loadHistory()

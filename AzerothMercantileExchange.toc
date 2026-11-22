@@ -4,7 +4,10 @@
 ## Author: Evanion
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\AzerothMercantileExchange\media\Icon
-## OptionalDeps: Auctionator, Ace3, LibDeflate, LibDataBroker-1.1, LibDBIcon-1.0
+## OptionalDeps: Auctionator, Baganator, Ace3, LibDeflate, LibDataBroker-1.1, LibDBIcon-1.0
+## AddonCompartmentFunc: AzerothMercantileExchange_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: AzerothMercantileExchange_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: AzerothMercantileExchange_OnAddonCompartmentLeave
 ## SavedVariables: AME_DB
 ## X-License: LGPL-3.0-or-later
 
@@ -72,6 +75,7 @@ Core\Main.lua
 Core\Index.lua
 Core\Commands.lua
 Core\SelfTest.lua
+Core\API.lua
 Core\UI\Widgets.lua
 Core\UI\Help.lua
 Core\UI\DataTable.lua
@@ -98,6 +102,7 @@ Core\UI\Tooltip.lua
 Core\UI\SellAssist.lua
 Core\UI\ScanButton.lua
 Core\UI\Launcher.lua
+Core\UI\Baganator.lua
 Core\Dev\Profiler.lua
 Core\Dev\LagProbe.lua
 Core\Dev\Hud.lua

@@ -60,13 +60,16 @@ read_globals = {
   "GetCraftInfo", "GetTradeSkillSelectionIndex", "GetTradeSkillNumReagents", "GetTradeSkillReagentItemLink",
   "GetTradeSkillReagentInfo", "GetTradeSkillInfo", "StaticPopup_FindVisible", "GetTradeSkillItemLink", "GetCraftItemLink",
   -- optional integrations
-  "Auctionator", "LibStub",
+  "Auctionator", "LibStub", "Baganator",
 }
 
 globals = {
   "SlashCmdList", "StaticPopupDialogs",
   "AME_DB",
   "AME_HistoryDB",
+  "AzerothMercantileExchange", -- the public API (Core/API.lua)
+  "AzerothMercantileExchange_OnAddonCompartmentClick", "AzerothMercantileExchange_OnAddonCompartmentEnter",
+  "AzerothMercantileExchange_OnAddonCompartmentLeave",
   "SLASH_AZEROTHMERCANTILEEXCHANGE1",
   "SLASH_AZEROTHMERCANTILEEXCHANGE2",
 }

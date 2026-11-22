@@ -970,6 +970,12 @@ function W.Signal(signal)
   return s and W.Color(s[1], s[2]) or W.NONE
 end
 
+-- a signal's text role ("good" for BUY, ...): its colour in ns.HEX
+function W.SignalRole(signal)
+  local s = SIGNALS[signal]
+  return s and s[1]
+end
+
 -- Signals are never colour alone: an icon in front of the word (media/Signals, drawn by
 -- scripts/make-signal-icons.lua): up triangle BUY, down triangle SELL, dot HOLD, pause WAIT, coin VENDOR, shard DE.
 -- The white
