@@ -110,8 +110,9 @@ function AME.DisenchantSignals(index, shard, house, cut, hours, checkpoint)
         ns.Analytics.DisenchantCheck(s, de.value, cut, vendor and ns.Arbitrage.Deposit(vendor, house, hours) or 0)
       end
     end
+    -- (every 500 items made 20-40 ms frames on a big house: gear's disenchant prices are a few tables each)
     n = n + 1
-    if checkpoint and n % 500 == 0 then
+    if checkpoint and n % 8 == 0 then
       checkpoint()
     end
   end

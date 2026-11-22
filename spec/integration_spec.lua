@@ -3880,7 +3880,7 @@ describe("addon in a stubbed client", function()
       v.syncNow.scripts.OnClick(v.syncNow)
       assert.truthy(kinds(before):find("query:GUILD", 1, true))
       assert.truthy(kinds(before):find("announce:GUILD", 1, true))
-      assert.truthy(v.act.message:find("latest scans"))
+      assert.truthy(v.act.message:find("latest data"))
       -- again right away: not yet
       local ok, why = ns.SyncService:SyncNow()
       assert.is_nil(ok)
@@ -4236,6 +4236,7 @@ describe("addon in a stubbed client", function()
           it.scripts.OnClick(it)
         end
         assert.are.equal(1, v.protocol.index) -- v2
+        assert.is_true(v.recipes.checked) -- sharing recipes is on by default, and the box shows it
         assert.truthy(v.activity.text:find("Hours of the last week here: 1 of 168", 1, true), v.activity.text)
         -- a catch-up: a dozen objects queued from one guildmate read as one progress row, with the time left
         local incoming = ns.SyncService.v2.incoming
@@ -4279,13 +4280,13 @@ describe("addon in a stubbed client", function()
           end
         end
         assert.truthy(guildMate().left:find("stalled", 1, true), guildMate().left)
-        assert.truthy(guildMate().why:find("nothing from Guild Mate lately", 1, true), guildMate().why)
+        assert.truthy(guildMate().why:find("Nothing from Guild Mate", 1, true), guildMate().why)
         v:Measure(800) -- lays the card out
         local row = v.act.moving[1].from == "Guild Mate" and v.act.moving[1] or v.act.moving[2]
         assert.is_true(row.retry:IsShown())
         row.cancel.scripts.OnClick(row.cancel)
         assert.is_nil(next(incoming))
-        assert.truthy(v.act.message:find("Stopped 12 from Guild Mate", 1, true), v.act.message)
+        assert.truthy(v.act.message:find("Cancelled 12 from Guild Mate", 1, true), v.act.message)
         choose(2) -- v1
         assert.are.equal(1, ns.Settings:Get("syncProtocol"))
         assert.is_nil(ns.SyncService.v2)

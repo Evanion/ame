@@ -18,12 +18,27 @@ ns.RecipeSources = RS
 RS.MAX_PER_ITEM = 4
 RS.MAX_SHARE = 300 -- sources in one message
 
+-- The game hands out some text as secret values (a unit's name in combat, say): addons may pass them on but not read
+-- them, so they can't be kept, compared or sent. plain(s): s when it's a readable string, else nil.
+local function plain(s)
+  local secret = _G.issecretvalue
+  if s == nil or (secret and secret(s)) or type(s) ~= "string" or s == "" then
+    return nil
+  end
+  return s
+end
+RS.Plain = plain
+
 local function clean(s)
-  return (tostring(s or ""):gsub("[|;:~]", ""):sub(1, 48))
+  return ((plain(s) or ""):gsub("[|;:~]", ""):sub(1, 48))
 end
 
 -- add a source (the same NPC and zone once: a newer sighting updates its price and time)
 function RS.Add(db, itemID, src)
+  src.npc, src.zone = plain(src.npc), plain(src.zone)
+  if not src.npc then
+    return false -- who sells or drops it is the point
+  end
   local list = db[itemID] or {}
   db[itemID] = list
   for _, e in ipairs(list) do
@@ -72,7 +87,7 @@ function RS.Encode(db, since)
   local parts = {}
   for itemID, list in pairs(db) do
     for _, e in ipairs(list) do
-      if not since or (e.t or 0) >= since then
+      if plain(e.npc) and (not since or (e.t or 0) >= since) then
         parts[#parts + 1] = table.concat({
           Codec.ToBase36(itemID),
           e.kind == "vendor" and "v" or "d",
@@ -113,8 +128,25 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- in game
 
+local cleaned = false
 local function db()
   AME_DB.recipeSources = AME_DB.recipeSources or {}
+  if not cleaned then
+    -- sources an older version recorded from secret text: dropped (they can't be read, shown or shared)
+    cleaned = true
+    for itemID, list in pairs(AME_DB.recipeSources) do
+      for i = #list, 1, -1 do
+        if not plain(list[i].npc) then
+          table.remove(list, i)
+        elseif list[i].zone ~= nil and not plain(list[i].zone) then
+          list[i].zone = nil
+        end
+      end
+      if #list == 0 then
+        AME_DB.recipeSources[itemID] = nil
+      end
+    end
+  end
   return AME_DB.recipeSources
 end
 RS.DB = db

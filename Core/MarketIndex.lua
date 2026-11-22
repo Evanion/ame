@@ -42,7 +42,9 @@ function MarketIndex.Build(store, today, days, checkpoint, outlierFactor, cached
         stats:Add(id, points, clean, s)
       end
       n = n + 1
-      if checkpoint and n % 64 == 0 then -- a bucket of 30 days took 30-70 ms at once
+      -- (Checkpoint only yields once the frame's budget is spent, so it's cheap to call often: every 64 items made
+      -- 10-20 ms frames on a 46,000-item house, over a low-priority job's 3 ms)
+      if checkpoint and n % 4 == 0 then
         checkpoint()
       end
     end

@@ -81,7 +81,7 @@ function UI.SyncMoving(status)
       for _, q in ipairs(status.queue) do
         kinds[q.kind] = (kinds[q.kind] or 0) + 1
       end
-      what = what .. W.SEP .. L["next: %s guildmates asked for"]:format(UI.SyncKinds(kinds))
+      what = what .. W.SEP .. L["next: %s"]:format(UI.SyncKinds(kinds))
     end
     out[#out + 1] = {
       who = L["Sending"],
@@ -102,16 +102,12 @@ function UI.SyncMoving(status)
     if e.state == "turn" then
       -- offered, but the sender is sending other data first: it waits its turn there
       left = W.Color("warn", L["waiting %s"]:format(UI.Duration(e.since)))
-      why = L["%s is sending other data first; this starts when its turn comes"]:format(e.from)
+      why = L["%s is sending other data first"]:format(e.from)
     elseif e.state == "stalled" then
       left = W.Color("bad", L["stalled %s"]:format(UI.Duration(e.since)))
       why = (e.asked or 0) > 0
-          and L["nothing from %s lately; asked for the missing blocks %d times (gives up after %d)"]:format(
-            e.from,
-            e.asked,
-            ns.SyncV2.MAX_NACKS
-          )
-        or L["nothing from %s lately (offline, or reloaded?); it asks for the missing blocks on its own"]:format(e.from)
+          and L["Nothing from %s · asked again %d of %d"]:format(e.from, e.asked, ns.SyncV2.MAX_NACKS)
+        or L["Nothing from %s lately"]:format(e.from)
     end
     out[#out + 1] = {
       who = L["From %s"]:format(e.from),
@@ -128,9 +124,9 @@ end
 
 UI.SYNC_STATES = {
   receiving = { "good", L["receiving"] },
-  offered = { "good", L["offered · its turn is coming"] },
-  asked = { "dim", L["asked · waiting for an answer"] },
-  waiting = { "dim", L["asks on their next announcement"] },
+  offered = { "good", L["offered"] },
+  asked = { "dim", L["asked"] },
+  waiting = { "dim", L["not asked yet"] },
 }
 
 -- a Missing here row's cells, in COLUMNS order (text with colour codes)
@@ -171,7 +167,7 @@ function UI.SyncMissingTotal(total)
   end
   local text = table.concat(parts, W.SEP)
   if total.senders > 1 then
-    text = text .. " " .. L["(players send at the same time, about a block a second each)"]
+    text = text .. " " .. L["(players send at once)"]
   end
   return text
 end
@@ -193,9 +189,7 @@ function UI:CreateSyncActivity(v, holder)
   a.title:SetText(L["Sync activity"])
   a.syncNow = W.Button(body, L["Sync now"], 90, 20, function()
     local ok, why = svc:SyncNow()
-    a.message = ok
-        and L["Asked your guild and trusted players for their latest scans: they arrive over the next minutes."]
-      or W.Color("bad", why or "")
+    a.message = ok and L["Asked everyone for their latest data."] or W.Color("bad", why or "")
     UI:RefreshSync()
   end)
   a.syncNow:SetWidth(math.ceil(a.syncNow.label:GetStringWidth() or 60) + 16)
@@ -237,7 +231,7 @@ function UI:CreateSyncActivity(v, holder)
     r.cancel = W.Button(r, L["Cancel"], 56, 18, function()
       if r.from then
         local n = ns.SyncService:V2Cancel(r.from)
-        a.message = L["Stopped %d from %s: they're asked for again later, from whoever has them."]:format(n, r.from)
+        a.message = L["Cancelled %d from %s; asked for again later."]:format(n, r.from)
         UI:RefreshSync()
       end
     end)
@@ -245,7 +239,7 @@ function UI:CreateSyncActivity(v, holder)
     r.retry = W.Button(r, L["Retry"], 50, 18, function()
       if r.from then
         local n = ns.SyncService:V2Retry(r.from)
-        a.message = L["Asked %s again for what's missing of %d."]:format(r.from, n)
+        a.message = L["Asked %s again (%d)."]:format(r.from, n)
         UI:RefreshSync()
       end
     end)
@@ -254,7 +248,7 @@ function UI:CreateSyncActivity(v, holder)
     r.left:SetWidth(110)
     -- why it isn't moving, under the row
     r.why = W.Text(r, "GameFontDisableSmall")
-    r.why:SetPoint("TOPLEFT", r.who, "BOTTOMLEFT", 0, -3)
+    r.why:SetPoint("TOPLEFT", r.what, "BOTTOMLEFT", 0, -3) -- under what it is (the design)
     r.why:SetPoint("RIGHT", r.retry, "LEFT", -8, 0)
     r.why:SetWordWrap(false)
     W.Truncated(r.why)
@@ -274,7 +268,7 @@ function UI:CreateSyncActivity(v, holder)
   a.missHead = W.Text(body, "GameFontNormalSmall")
   a.missHead:SetText(L["Missing here"])
   a.missNote = W.Text(body, "GameFontDisableSmall")
-  a.missNote:SetText(L["what guild members and trusted players announced that you don't have yet"])
+  a.missNote:SetText(L["what others have that you don't"])
   a.missNote:SetWordWrap(false)
   a.empty = W.Text(body, "GameFontDisableSmall")
   -- the table: a header line, then a row per player and auction house (the DataTable's look: gold headers, a line
@@ -470,11 +464,11 @@ function UI:SyncActivityData()
   d.more = rows and math.max(0, #rows - MAX_MISSING) or 0
   d.total = rows and #rows > 0 and UI.SyncMissingTotal(total) or nil
   if not svc.v2 then
-    d.emptyText = L["Shown with the v2 sync protocol (Guild sharing, Sync protocol)."]
+    d.emptyText = L["Needs the v2 sync protocol (Guild sharing)."]
   elseif not rows then
     d.emptyText = L["Loading your price history..."]
   else
-    d.emptyText = L["Nothing: you have everything the players you share with announced."]
+    d.emptyText = L["Nothing: you're up to date."]
   end
   d.receivingFrom, d.catchUp = #(status and status.senders or {}), total and total.seconds or 0
   return d

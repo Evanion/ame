@@ -312,6 +312,7 @@ function UI:RefreshSync()
   end
   v.statusLine:SetText(status)
   v.guild:SetChecked(ns.Settings:Get("syncGuild"))
+  v.recipes:SetChecked(ns.Settings:Get("shareRecipes"))
   v.protocol:SetValue(svc:Protocol())
   v.trusted:SetChecked(ns.Settings:Get("syncTrusted"))
 

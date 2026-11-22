@@ -44,4 +44,24 @@ describe("RecipeSources", function()
     }, back[1])
     assert.are.same({ item = 7979, src = { kind = "drop", npc = "Ogre", t = 9, by = "Guild Mate" } }, back[2])
   end)
+
+  it("keeps secret text out: a name the game won't let addons read is never stored or sent", function()
+    local SECRET = "<secret>"
+    _G.issecretvalue = function(v)
+      return v == SECRET
+    end
+    finally(function()
+      _G.issecretvalue = nil
+    end)
+    local db = {}
+    assert.is_false(RS.Add(db, 7978, { kind = "drop", npc = SECRET, zone = "Stonetalon", t = 1 }))
+    assert.is_nil(db[7978] and db[7978][1])
+    assert.is_true(RS.Add(db, 7978, { kind = "vendor", npc = "Kulwia", zone = SECRET, price = 120, t = 2 }))
+    assert.is_nil(db[7978][1].zone) -- the zone was secret: left out, the source kept
+    -- one stored before (an older version): not sent
+    db[7979] = { { kind = "drop", npc = SECRET, t = 3 } }
+    local body = RS.Encode(db)
+    assert.is_nil(body:find(SECRET, 1, true))
+    assert.are.equal(1, #RS.Decode(body, 4, "x"))
+  end)
 end)
