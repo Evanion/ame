@@ -140,7 +140,14 @@ function MarketStats:Add(id, raw, clean, s)
       bump(day.cls, cls, value)
       local top = day.top
       if value > 0 and (#top < MarketStats.TOP or top[#top].value < value) then -- a table only for what makes it
-        keepTop(top, { id = id, qty = qty, price = price, raw = capped and p.market or nil, value = value })
+        keepTop(top, {
+          id = id,
+          qty = qty,
+          price = price,
+          raw = capped and p.market or nil,
+          rawValue = capped and p.market * qty or nil, -- what the listings come to uncapped
+          value = value,
+        })
       end
     end
   end
@@ -198,7 +205,8 @@ end
 -- -> stats = {
 --   from, to, steadyMin (days an item needs to count as steady), basket (steady items),
 --   days = { { day, items, value, auctions, units, capped, cls = { [classID] = value } }, ... } full-scan days, oldest
---     first; the newest also has top = { { id, qty, price, raw (uncapped price, when capped), value }, ... }
+--     first; the newest also has top = { { id, qty, price, raw (uncapped price, when capped), rawValue (raw x qty),
+--     value }, ... }
 --   index = { { day, level }, ... } oldest first (level 100 on the first full-scan day)
 --   cpi = { { day, level }, ... } the same for the CPI; cpiBasket (its steady items),
 --   cpiWeights ("turnover" | "listed")

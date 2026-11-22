@@ -162,4 +162,44 @@ describe("artboard features", function()
     assert.are.equal("", T.TimeLeftText(nil, nil))
   end)
 
+  it("Overview: the largest items as '18,400 ×' with 'capped from' when the price was capped", function()
+    boot()
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    for d = 0, 9 do
+      env.now = env.now + 86400
+      fullScan({ { 2589, 1000 + d * 10, 10 }, { 4306, 5000 - d * 100, 5 } })
+    end
+    env:advance(4)
+    drainJobs()
+    ns.Settings:Set("marketOverview", true)
+    ns.UI:MarketOverviewChanged(true)
+    ns.UI:Toggle()
+    ns.UI:ShowTab("market")
+    drainJobs()
+    ns.UI:SetMarketMode("overview")
+    drainJobs()
+    local ov = ns.UI.overviewView
+    local cols = ov.largestTable.opts.columns
+    local byKey = {}
+    for _, col in ipairs(cols) do
+      byKey[col.key] = col
+    end
+    -- the count before the item's link, the price each it's counted at, what that comes to
+    local plain = { id = 2589, qty = 18400, price = 620000, value = 18400 * 620000 }
+    assert.truthy(byKey.name.prefix(plain):find("18,400 ×", 1, true))
+    assert.are.equal("money", byKey.price.format)
+    assert.are.equal(ns.Widgets.BigMoney(plain.value, 10000), byKey.value.text(plain))
+    -- capped: what the listings came to before the cap (MarketStats keeps it as rawValue)
+    local capped = { id = 4306, qty = 1, price = 250000000, raw = 25000000000, rawValue = 25000000000, value = 1 }
+    local text = byKey.value.text(capped)
+    assert.truthy(text:find("capped from", 1, true), text)
+    assert.truthy(text:find(ns.Widgets.BigMoney(25000000000, 10000), 1, true), text)
+    -- the rows drawn: the count, then the item (a DataTable item column: icon, hover, Shift-click links it)
+    local row = ov.largestRows[1]
+    assert.is_true(row:IsShown())
+    assert.truthy(row.cells[1].text:find(ns.Widgets.Thousands(row.data.qty) .. " × ", 1, true), row.cells[1].text)
+    assert.truthy(row.cells[1].text:find("Item " .. row.data.id, 1, true), row.cells[1].text)
+  end)
+
 end)
