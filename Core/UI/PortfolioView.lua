@@ -445,15 +445,28 @@ function UI:RefreshPortfolio()
   local index = AME:FactionIndex()
   ns.Trading:ResolveLedger() -- entries recorded before their item was known: icons and average cost need the ID
   local basis = AME.ledger and AME.ledger:CostBasis() or {}
-  -- scope: every character, or this one (holdings by "<market>:<name>", ledger entries by name)
-  local holdings, char = ns.Trading:Holdings(), nil
+  -- scope: your characters on this market (and its guild banks), or this one (holdings by "<market>:<name>",
+  -- ledger entries by name)
+  local scope, char = "market", nil
   if self.pfScope == "char" then
-    local key = ns.Trading.CharKey()
-    holdings = { [key] = holdings[key] }
-    char = UnitName("player")
+    scope, char = ns.Trading.CharKey(), UnitName("player")
   end
-  self.pfRows, self.pfTotals =
-    ns.Portfolio.Build(holdings, basis, index and index.items or {}, AME.watch and AME.watch:Hidden())
+  local holdings, keep = {}, ns.Holdings.Keep(scope)
+  for key, h in pairs(ns.Trading:Holdings() or {}) do
+    if not keep or keep(key) then
+      holdings[key] = h
+    end
+  end
+  self.pfChars = 0
+  for _ in pairs(holdings) do
+    self.pfChars = self.pfChars + 1
+  end
+  self.pfRows, self.pfTotals = ns.Portfolio.Build(
+    ns.Holdings.Of("owned", scope),
+    basis,
+    index and index.items or {},
+    AME.watch and AME.watch:Hidden()
+  )
   self.pfListed = ns.Portfolio.Listed(holdings, function(house)
     return ns.Settings:AuctionCut(house)
   end, index and index.items or {})
@@ -535,10 +548,7 @@ function UI:RenderPortfolio()
   tbl:SetData(list)
   tbl:Render()
 
-  local chars = 0
-  for _ in pairs(self.pfScope == "char" and { 1 } or ns.Trading:Holdings()) do
-    chars = chars + 1
-  end
+  local chars = self.pfChars or 0
   local status, message
   if customersMode or suppliersMode then
     if not self.pfNamesSeen and #self.pfLedger > 0 then

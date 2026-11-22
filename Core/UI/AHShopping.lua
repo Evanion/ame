@@ -37,8 +37,8 @@ end
 -- at or under its top price (from AHSearch's results)
 -- vendorPrice(itemID) (optional): what a vendor charges, for items a vendor sells - those are bought there (the
 -- vendor panel), so they're marked, not searched, and left out of what's left to buy here
-function T.Rows(items, holdings, market, results, vendorPrice)
-  local rows, totals = ns.Shopping.Progress(items, holdings, market)
+function T.Rows(items, held, market, results, vendorPrice)
+  local rows, totals = ns.Shopping.Progress(items, held, market)
   local left = 0
   for _, r in ipairs(rows) do
     r.vendor = vendorPrice and vendorPrice(r.itemID) or nil
@@ -97,26 +97,21 @@ function T.PriceJump(total, expected, warnPct)
   return up * 100 > warnPct and up or nil
 end
 
--- Bought from the Shopping tab: the list on screen needs that many fewer (gone at none). What you buy goes to your
--- mailbox, and the lists count bags and bank, so without this the list still asked for all of it - and offered to
--- buy it again.
+-- Bought from the Shopping tab: what you buy goes to your mailbox, and the lists count the mailbox, so it's counted
+-- there at once (Trading:OnBought; the game's "you won" message for it then isn't counted twice) and the list counts
+-- down by itself.
 function T:Bought(key, qty)
   if not (key and qty and qty > 0) or self.mode ~= "list" then
     return
   end
-  local items, i = self:Items(), (not self.temp) and (self.list or 1) or nil
+  ns.Trading:OnBought(key, qty)
+  local items = self:Items()
   local e = items[key]
   if not e then
     return
   end
-  local left = (e.need or 0) - qty
-  if i then
-    shopping():SetItem(i, key, left)
-  elseif left > 0 then
-    e.need = left
-  else
-    items[key] = nil
-  end
+  local h = ns.Holdings.Of("usable")[key]
+  local left = (e.need or 0) - (h and h.qty or 0)
   if left <= 0 and self.selected == key then
     self:Select(nil) -- nothing left to buy of it: no Buy button to click again
   else
@@ -739,7 +734,7 @@ function T:TableRows()
   local items, title = self:Items()
   local rows, totals = T.Rows(
     items,
-    AME_DB.holdings,
+    ns.Holdings.Of("usable"),
     index and index.items,
     ns.AHSearch.results,
     ns.VendorPanel and ns.VendorPanel.PriceOf

@@ -2189,6 +2189,13 @@ describe("addon in a stubbed client", function()
         end
       end
       assert.are.equal(6, list.items[3860].need) -- the whole need: the list counts down from what you hold
+      -- ... from the same places the queue drew from, so it asks for what the queue buys and no more
+      local progress = ns.Shopping.Progress(list.items, ns.Holdings.Of("usable"), nil)
+      for _, r in ipairs(progress) do
+        if r.itemID == 3860 then
+          assert.are.equal(2, r.missing)
+        end
+      end
       assert.are.equal(2, list.items[2880].need) -- a vendor's reagent too: the vendor panel buys it
       -- the Crafting tab's queue page: the side menu counts the step; the step's card, then the materials
       ns.UI:Toggle()
@@ -2272,13 +2279,14 @@ describe("addon in a stubbed client", function()
         assert.are.same({ 2589 }, sent)
         ah.commodities[2589] = { { 90, 10 }, { 100, 50 } }
         env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
-        local rows, totals = T.Rows(ns.AME.shopping:Lists()[i].items, AME_DB.holdings, nil, ns.AHSearch.results)
+        local rows, totals =
+          T.Rows(ns.AME.shopping:Lists()[i].items, ns.Holdings.Of("usable"), nil, ns.AHSearch.results)
         assert.are.equal(90, rows[1].cheapest)
         assert.are.equal(10 * 90 + 20 * 100, totals.left) -- the 30 climb the listings
         -- an item a vendor sells is marked, left out of what's left to buy and of Search all
         local vrows, vtotals = T.Rows(
           ns.AME.shopping:Lists()[i].items,
-          AME_DB.holdings,
+          ns.Holdings.Of("usable"),
           nil,
           ns.AHSearch.results,
           function(id)
@@ -2300,9 +2308,13 @@ describe("addon in a stubbed client", function()
         env:fire("COMMODITY_PURCHASE_SUCCEEDED")
         assert.is_true(ns.AHSearch.last.ok)
         assert.are.equal(2589, sent[2]) -- searched again: what's left of it now
-        -- bought (it goes to the mailbox): the list counts it off - all 30, so the row is gone and nothing to rebuy
-        assert.is_nil(ns.AME.shopping:Lists()[i].items[2589])
+        -- bought (it goes to the mailbox): counted there at once, and the list counts the mailbox (data core step 10),
+        -- so it's covered - nothing to rebuy - and a "you won" message for it isn't counted twice
+        assert.are.equal(30, AME_DB.holdings[ns.Trading.CharKey()].mail[2589])
+        assert.are.equal(0, T.Rows(ns.AME.shopping:Lists()[i].items, ns.Holdings.Of("usable"), nil, {})[1].missing)
         assert.is_nil(T.selected)
+        ns.Trading:OnSystemMessage("You won an auction for Item 2589 (x30)")
+        assert.are.equal(30, AME_DB.holdings[ns.Trading.CharKey()].mail[2589])
 
         -- search by name and filters: the game's browse query, rows with AME's view, filtered by price here
         local queries = {}

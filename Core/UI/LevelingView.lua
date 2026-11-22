@@ -111,9 +111,10 @@ function UI:LevelingPlans(m)
     return total
   end
   -- what this character holds, for "my materials"
-  local held = ns.Holdings.Totals(ns.Trading:Holdings(), "stored", function(key)
-    return key == choice.key
-  end)
+  local held = {}
+  for id, e in pairs(ns.Holdings.Of("usable", choice.key)) do
+    held[id] = e.qty
+  end
   local list = candidates(m, choice)
   local plans = {}
   for _, g in ipairs(GOALS) do

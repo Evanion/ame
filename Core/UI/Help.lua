@@ -137,7 +137,7 @@ Help.TERMS = {
   },
   pfValue = {
     L["Holdings value"],
-    L["Everything your characters hold - bags, bank and active auctions - at your faction auction house's market price, except soulbound items (they can't be sold) and items you hid. Items with a sell-through count at what they're really worth: the market price as often as they sell, the vendor's price otherwise. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
+    L["Everything your characters on this realm own - bags, bank, mailbox, guild banks and active auctions - at your faction auction house's market price, except soulbound items (they can't be sold) and items you hid. Items with a sell-through count at what they're really worth: the market price as often as they sell, the vendor's price otherwise. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
   },
   pfCost = {
     L["Average cost"],
@@ -556,7 +556,7 @@ function Help.Articles()
           body = {
             L["A shopping list is for buying toward something - the reagents for a robe you're about to craft - while a watchlist is for items you keep an eye on for good. Make one with \"+ New shopping list\" in the Market sidebar, from any item's right-click menu (Add to shopping list...), or from a recipe: open your profession window, pick the recipe, click Add reagents and say how many you'll craft."],
             H(L["What's left to buy"]),
-            L["Pick a list in the Market sidebar to see each item: how many you need, how many your characters hold in their bags and bank (hover a row for who holds what), how many are still to buy, the market price and what the rest costs. It counts down by itself as you buy or gather; the sidebar shows how many items are still short, and done once everything is covered."],
+            L["Pick a list in the Market sidebar to see each item: how many you need, how many your characters on this realm have to use - bags, bank, mailbox and guild banks, as the craft queue counts them (hover a row for who holds what), how many are still to buy, the market price and what the rest costs. It counts down by itself as you buy or gather; the sidebar shows how many items are still short, and done once everything is covered."],
             H(L["Top prices and searching"]),
             L["Right-click an item on the list to change the quantity, set the most you'd pay for one (a star marks items at or under it right now) or remove it. Search the AH searches the open auction house for everything still needed - all at once with Auctionator."],
             H(L["The Shopping tab"]),

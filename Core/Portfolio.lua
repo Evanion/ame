@@ -1,6 +1,7 @@
 -- Portfolio (pure): what you hold, what it's worth, and how it's doing.
 --
 --   holdings = { [charKey] = { bags = { [itemID] = qty }, bank = {...}, auctions = {...}, t = time } }
+--   held     = Holdings.Map of them (Holdings.Of("owned"))
 --   basis    = Ledger:CostBasis()  { [itemID] = { units, unit } }
 --   items    = market index items  { [itemID] = { market, signal, sellRate, ... } }
 -- Positions without a market price are left out (not tradeable or never seen on the AH).
@@ -9,9 +10,10 @@ local _, ns = ...
 local Portfolio = {}
 ns.Portfolio = Portfolio
 
--- total held per item across characters and places: { [itemID] = { qty, chars = { [charKey] = qty } } }
-function Portfolio.Merge(holdings)
-  return ns.Holdings.Map(holdings, "listed")
+-- total owned per item across characters and places (Holdings.PLACES.owned: on sale or not):
+-- { [itemID] = { qty, chars = { [charKey] = qty }, guilds } }
+function Portfolio.Merge(holdings, guildBanks)
+  return ns.Holdings.Map(holdings, "owned", nil, guildBanks)
 end
 
 -- What's listed on the auction house right now, across characters:
@@ -43,11 +45,12 @@ local function worth(s)
 end
 
 -- positions sorted by value, plus totals { value, cost (of the part with a known cost), unrealized, positions,
--- hidden, hiddenValue }. hide (optional): items left out (hidden from lists), counted in hidden / hiddenValue.
-function Portfolio.Build(holdings, basis, items, hide)
+-- hidden, hiddenValue }. held: what you own, as Holdings.Map counts it (Holdings.Of("owned")). hide (optional):
+-- items left out (hidden from lists), counted in hidden / hiddenValue.
+function Portfolio.Build(held, basis, items, hide)
   local rows = {}
   local totals = { value = 0, cost = 0, unrealized = 0, positions = 0, hidden = 0, hiddenValue = 0 }
-  for itemID, h in pairs(Portfolio.Merge(holdings)) do
+  for itemID, h in pairs(held or {}) do
     local s = items and items[itemID]
     if s and s.market and h.qty > 0 and hide and hide[itemID] then
       totals.hidden, totals.hiddenValue = totals.hidden + 1, totals.hiddenValue + worth(s) * h.qty

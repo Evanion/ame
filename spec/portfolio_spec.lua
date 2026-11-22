@@ -142,10 +142,11 @@ describe("Portfolio", function()
     -- 30 has no market price: left out
   }
 
-  it("adds up holdings across characters, bags, bank and auctions", function()
-    local m = P.Merge(holdings)
-    assert.are.equal(20, m[10].qty)
+  it("adds up what you own across characters: bags, bank, mailbox, guild banks and auctions", function()
+    local m = P.Merge(holdings, { ["PvP:Guild"] = { tabs = { [1] = { [10] = 3 } } } })
+    assert.are.equal(23, m[10].qty)
     assert.are.equal(15, m[10].chars["PvP:Tyken"])
+    assert.are.equal(3, m[10].guilds["PvP:Guild"])
     assert.are.equal(2, m[30].qty)
   end)
 
@@ -166,7 +167,7 @@ describe("Portfolio", function()
   end)
 
   it("values positions at market, with cost basis and unrealized profit where known", function()
-    local rows, totals = P.Build(holdings, { [10] = { units = 8, unit = 100 } }, items)
+    local rows, totals = P.Build(P.Merge(holdings), { [10] = { units = 8, unit = 100 } }, items)
     assert.are.equal(2, #rows)
     assert.are.equal(20, rows[1].itemID) -- 5000 beats 20 * 120 = 2400
     local silk = rows[2]
@@ -181,7 +182,7 @@ describe("Portfolio", function()
   end)
 
   it("leaves hidden items out of the positions and totals, and counts them", function()
-    local rows, totals = P.Build(holdings, { [10] = { units = 8, unit = 100 } }, items, { [10] = true })
+    local rows, totals = P.Build(P.Merge(holdings), { [10] = { units = 8, unit = 100 } }, items, { [10] = true })
     assert.are.equal(1, #rows)
     assert.are.equal(20, rows[1].itemID)
     assert.are.equal(5000, totals.value)

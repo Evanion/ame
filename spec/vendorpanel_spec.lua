@@ -1,10 +1,10 @@
 local addon = require("spec.helpers.addon")
 
 describe("VendorPanel", function()
-  local V
+  local V, H
   before_each(function()
-    V =
-      addon.load({ "Core/Init.lua", "Core/Shopping.lua", "Core/UI/Widgets.lua", "Core/UI/VendorPanel.lua" }).VendorPanel
+    local ns = addon.load({ "Core/Init.lua", "Core/Shopping.lua", "Core/UI/Widgets.lua", "Core/UI/VendorPanel.lua" })
+    V, H = ns.VendorPanel, ns.Holdings
   end)
 
   it("sums what your lists still need, after what your characters hold", function()
@@ -12,9 +12,9 @@ describe("VendorPanel", function()
       { items = { [3371] = { need = 20 }, [2320] = { need = 10 } } },
       { items = { [3371] = { need = 5 } } },
     }
-    local holdings = { ["R:Me"] = { bags = { [3371] = 2, [2320] = 10 } } }
-    local needs = V.Needs(lists, holdings)
-    assert.are.equal(25 - 2, needs[3371]) -- both lists together, less the 2 you hold (once)
+    local holdings = { ["R:Me"] = { bags = { [3371] = 2, [2320] = 10 }, mail = { [3371] = 1 } } }
+    local needs = V.Needs(lists, H.Map(holdings, "usable"))
+    assert.are.equal(25 - 3, needs[3371]) -- both lists together, less the 3 you have (once): mail counts too
     assert.is_nil(needs[2320]) -- enough
   end)
 

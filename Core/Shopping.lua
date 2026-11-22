@@ -6,7 +6,8 @@
 --     guild = { ["owner/name"] = { owner, name, items = { [itemKey] = { need, max? } }, t } },  -- shared with you
 --   }
 --
--- What you still need counts down by itself: from what your characters hold in their bags and bank.
+-- What you still need counts down by itself: from what your characters on this market have to use - bags, bank,
+-- mailbox and guild banks (Holdings.PLACES.usable), as the craft queue counts it.
 local _, ns = ...
 local L = ns.L
 
@@ -120,12 +121,12 @@ function Shopping:Count(i)
   return n
 end
 
--- What a list still needs. holdings: Trading's { [charKey] = { bags = {...}, bank = {...} } } (what's listed on
--- the AH doesn't count: it's for sale); items: market summaries by key (index.items). Returns rows (missing first,
+-- What a list still needs. held: what you have, as Holdings.Map counts it (Holdings.Of("usable"): what's listed on
+-- the AH doesn't count, it's for sale); items: market summaries by key (index.items). Returns rows (missing first,
 -- then by cost) and totals { missing = items still short, cost = buying the rest at market, unpriced = items short
 -- with no market price, done = nothing missing }.
-function Shopping.Progress(items, holdings, market)
-  local held = ns.Holdings.Map(holdings, "stored")
+function Shopping.Progress(items, held, market)
+  held = held or {}
   local rows, totals = {}, { missing = 0, cost = 0, unpriced = 0, done = true, items = 0 }
   for key, want in pairs(items or {}) do
     local h = held[key]
@@ -140,6 +141,7 @@ function Shopping.Progress(items, holdings, market)
       held = have,
       missing = missing,
       chars = h and h.chars or {},
+      guilds = h and h.guilds or {},
       market = price,
       max = want.max,
       -- at or under your top price right now (on the latest data)

@@ -65,6 +65,25 @@ local function heldTotal(itemID)
   return h.bags + h.bank + (h.mail or 0) + h.guildBank -- what's on the auction house is for sale, not at hand
 end
 
+-- what you have that the queue doesn't already use: the bar's batch is crafted after the queue, so its "to buy"
+-- draws from the same stock (Holdings.Reserve) -> fn(itemID) -> units
+local CLAIMED = { carried = true, bank = true, mail = true, alt = true, guild = true }
+function PB.Unclaimed()
+  local stock = ns.Holdings.Reserve(heldTotal)
+  if #queue().db.items > 0 then
+    for _, m in ipairs(PB.Plan().materials) do
+      for _, src in ipairs(m.sources) do
+        if CLAIMED[src.kind] then
+          stock:Take(m.item, src.qty)
+        end
+      end
+    end
+  end
+  return function(id)
+    return stock:Left(id)
+  end
+end
+
 function PB.Plan()
   return ns.CraftQueue.Plan(queue().db, {
     recipe = PB.Recipe,
@@ -363,7 +382,7 @@ function PB:RenderBar()
     return
   end
   local count = self.count or 1
-  local s = PB.Summary(recipe, craft, count, heldTotal)
+  local s = PB.Summary(recipe, craft, count, PB.Unclaimed())
   bar.line:SetText(
     brand
       .. W.Dim(L["Cost to craft"] .. " ")

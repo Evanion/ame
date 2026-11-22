@@ -33,25 +33,33 @@ describe("Shopping lists", function()
     assert.are.equal(0, S:Count(1))
   end)
 
-  it("counts down from what your characters hold in bags and bank, and prices the rest", function()
+  it("counts down from what your characters have to use, and prices the rest", function()
     local items = { [4339] = { need = 10, max = 20000 }, [4337] = { need = 4 }, [8170] = { need = 2 } }
     local holdings = {
       ["PvP:Tyken"] = { bags = { [4339] = 3 }, bank = { [4337] = 4 }, auctions = { [4339] = 50 } },
-      ["PvP:Alt"] = { bags = { [4339] = 1 } },
+      ["PvP:Alt"] = { bags = { [4339] = 1 }, mail = { [4339] = 2 } },
+      ["Other:Alt"] = { bags = { [4339] = 9 } }, -- another market's: not yours to use here
     }
+    local guildBanks = { ["PvP:Guild"] = { tabs = { [1] = { [4339] = 1 } } } }
+    local held = ns.Holdings.Map(holdings, "usable", function(key)
+      return key:sub(1, 4) == "PvP:"
+    end, guildBanks)
     local market = { [4339] = { market = 15000 }, [4337] = { market = 900 } } -- 8170 has no price yet
-    local rows, totals = ns.Shopping.Progress(items, holdings, market)
+    local rows, totals = ns.Shopping.Progress(items, held, market)
     assert.are.equal(4339, rows[1].itemID) -- still to buy, most expensive first
-    assert.are.equal(4, rows[1].held) -- 3 + 1: what's listed on the AH doesn't count
-    assert.are.equal(6, rows[1].missing)
-    assert.are.equal(90000, rows[1].cost)
+    -- 3 + 1 in bags, 2 in the mailbox, 1 in the guild bank: what's listed on the AH doesn't count (data core step 10:
+    -- the mailbox and guild banks count, as they do for the craft queue)
+    assert.are.equal(7, rows[1].held)
+    assert.are.equal(1, rows[1].guilds["PvP:Guild"])
+    assert.are.equal(3, rows[1].missing)
+    assert.are.equal(45000, rows[1].cost)
     assert.is_true(rows[1].cheap) -- 1g 50s is under the 2g top price
-    assert.are.equal(1, rows[1].chars["PvP:Alt"])
+    assert.are.equal(3, rows[1].chars["PvP:Alt"])
     local silk = rows[#rows]
     assert.are.equal(4337, silk.itemID) -- covered: last
     assert.are.equal(0, silk.missing)
-    assert.are.same({ missing = 2, cost = 90000, unpriced = 1, done = false, items = 3 }, totals)
-    local _, all = ns.Shopping.Progress({ [4337] = { need = 4 } }, holdings, market)
+    assert.are.same({ missing = 2, cost = 45000, unpriced = 1, done = false, items = 3 }, totals)
+    local _, all = ns.Shopping.Progress({ [4337] = { need = 4 } }, held, market)
     assert.is_true(all.done)
   end)
 

@@ -8,7 +8,8 @@
 --              part (true: made for another step), profit (top-level items, all crafts), choice, saves }
 --   materials  every reagent with what's needed and its sources, in a fixed order: { item, need, sources = { { kind,
 --              qty, char, cost } } } - kind: "carried" (this character's bags) | "bank" (its bank) | "alt" (another
---              character's bags and bank) | "guild" (a guild bank) | "vendor" | "made" (by a step) | "ah" (to buy)
+--              character's bags, bank and mailbox) | "guild" (a guild bank) | "vendor" | "made" (by a step) | "ah"
+--              (to buy)
 --   toBuy      what the "ah" sources cost at market;  profit: the queued items' profit, all crafts
 --   todo       the plan in words, as { kind, ... } lines for the UI ("buy", "craft", "alt", "bank", "guild")
 --
@@ -31,8 +32,9 @@ local function heldBy(held, me)
   for _, c in ipairs(held and held.chars or {}) do
     if c.me or c.key == me then
       out.carried, out.bank, out.mail = c.bags or 0, c.bank or 0, c.mail or 0
-    elseif (c.bags or 0) + (c.bank or 0) > 0 then
-      out.alts[#out.alts + 1] = { char = c.name, qty = (c.bags or 0) + (c.bank or 0) }
+    elseif (c.bags or 0) + (c.bank or 0) + (c.mail or 0) > 0 then
+      -- what you can use of an alt's: its bags, bank and mailbox (Holdings.PLACES.usable)
+      out.alts[#out.alts + 1] = { char = c.name, qty = (c.bags or 0) + (c.bank or 0) + (c.mail or 0) }
     end
   end
   for _, g in ipairs(held and held.guilds or {}) do

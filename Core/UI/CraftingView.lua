@@ -669,7 +669,7 @@ UI.CRAFT_TOOLBAR = {
     subtitle = L["materials your characters hold, and the best thing to do with each"],
     note = L["Takes: how long the market needs to absorb what you'd list, at today's sales a day."],
     status = function()
-      return L["Holdings: bags and bank as each character last saw them"]
+      return L["Holdings: bags, bank, mailbox and guild banks as last seen"]
         .. W.SEP
         .. L["prices: your faction's auction house"]
     end,

@@ -218,7 +218,7 @@ function UI:CategoryEntries()
   if shop then
     heading(L["Shopping lists"])
     local index = ns.AME:FactionIndex()
-    local holdings = ns.Trading:Holdings()
+    local holdings = ns.Holdings.Of("usable")
     for i, l in ipairs(shop:Lists()) do
       local _, totals = ns.Shopping.Progress(l.items, holdings, index and index.items or {})
       entries[#entries + 1] = {

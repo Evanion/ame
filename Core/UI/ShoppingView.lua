@@ -125,7 +125,7 @@ function UI:CreateShoppingPanel(v)
       return r.itemID
     end,
     sort = { key = "missing", ascending = false },
-    note = L["Hover a row for which characters hold it. Right-click an item to change the quantity, set a top price or remove it."],
+    note = L["Hover a row for which characters and guild banks hold it. Right-click an item to change the quantity, set a top price or remove it."],
     itemMenu = {
       extra = function(key)
         return UI:ShoppingItemEntries(key)
@@ -137,13 +137,21 @@ function UI:CreateShoppingPanel(v)
       for char in pairs(r.chars or {}) do
         chars[#chars + 1] = char
       end
-      if #chars == 0 then
+      local guilds = {}
+      for g in pairs(r.guilds or {}) do
+        guilds[#guilds + 1] = g
+      end
+      if #chars + #guilds == 0 then
         return
       end
       table.sort(chars)
+      table.sort(guilds)
       local rows = {}
       for i, char in ipairs(chars) do
         rows[i] = { label = (char:gsub("^[^:]*:", "")), cells = { W.Thousands(r.chars[char]) } }
+      end
+      for _, g in ipairs(guilds) do
+        rows[#rows + 1] = { label = "<" .. g:gsub("^[^:]*:", "") .. ">", cells = { W.Thousands(r.guilds[g]) } }
       end
       tip:AddLine(" ")
       ns.Tooltip.AddRows(tip, { { section = { heading = L["Held by"], rows = rows } } })
@@ -199,7 +207,7 @@ function UI:RenderShopping()
   self:ScreenerControls(false)
   p:Show()
   local index = ns.AME:FactionIndex()
-  local rows, totals = ns.Shopping.Progress(sel.list.items, ns.Trading:Holdings(), index and index.items or {})
+  local rows, totals = ns.Shopping.Progress(sel.list.items, ns.Holdings.Of("usable"), index and index.items or {})
   self.shopRows, self.shopTotals = rows, totals
   p.heading:Set(
     sel.list.name .. (sel.guild and W.Dim("  (" .. tostring(sel.list.owner) .. ")") or ""),
@@ -228,7 +236,7 @@ function UI:RenderShopping()
     if totals.unpriced > 0 then
       status = status .. W.SEP .. L["%d without a price yet"]:format(totals.unpriced)
     end
-    status = status .. W.SEP .. L["counts what your characters hold in bags and bank"]
+    status = status .. W.SEP .. L["counts bags, bank, mailbox and guild banks"]
   end
   v.status:SetText(status)
   return true

@@ -250,9 +250,25 @@ function Trading.WonFrom(msg, fmt)
   return name or what, tonumber(n) or 1
 end
 
+-- Bought on the Shopping tab: in your mailbox now. The game's "you won" message for it, if it sends one, is then
+-- already counted (one purchase, counted once).
+Trading.BOUGHT_WINDOW = 60
+function Trading:OnBought(id, n)
+  local h = mine()
+  h.mail = h.mail or {}
+  h.mail[id] = (h.mail[id] or 0) + n
+  self.bought = self.bought or {}
+  self.bought[id] = { n = (self.bought[id] and self.bought[id].n or 0) + n, t = GetServerTime() }
+end
+
 function Trading:OnWon(name, n)
   local id = Trading.NameResolver()(name)
   if not id then
+    return
+  end
+  local b = self.bought and self.bought[id]
+  if b and b.n >= n and GetServerTime() - b.t <= Trading.BOUGHT_WINDOW then
+    b.n = b.n - n
     return
   end
   local h = mine()

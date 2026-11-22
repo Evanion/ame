@@ -25,8 +25,9 @@ function V.PriceOf(itemID)
   return p or (AME_DB and AME_DB.vendorItems and AME_DB.vendorItems[itemID]) or nil
 end
 
--- Pure: what your lists still need, per item: { [key] = units } (lists: { { items = { [key] = { need } } } })
-function V.Needs(lists, holdings)
+-- Pure: what your lists still need, per item: { [key] = units } (lists: { { items = { [key] = { need } } } }; held:
+-- Holdings.Map's count of what you have)
+function V.Needs(lists, held)
   -- every list's need added up first, what you hold taken off once (two lists wanting thread share your stock)
   local combined = {}
   for _, l in ipairs(lists or {}) do
@@ -35,7 +36,7 @@ function V.Needs(lists, holdings)
     end
   end
   local out = {}
-  for _, r in ipairs(ns.Shopping.Progress(combined, holdings, nil)) do
+  for _, r in ipairs(ns.Shopping.Progress(combined, held, nil)) do
     if r.missing > 0 then
       out[r.itemID] = r.missing
     end
@@ -126,7 +127,7 @@ end
 
 function V:Work()
   local shop = ns.AME and ns.AME.shopping
-  local needs = V.Needs(shop and shop:Lists() or {}, AME_DB and AME_DB.holdings or {})
+  local needs = V.Needs(shop and shop:Lists() or {}, ns.Holdings.Of("usable"))
   return V.Rows(needs, V.Offers())
 end
 

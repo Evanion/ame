@@ -156,13 +156,11 @@ function M.Build(only)
     end
   end
 
-  -- what you hold (bags and bank), per item across the characters in view
-  local held = ns.Holdings.Totals(ns.Trading:Holdings(), "stored", only and function(key)
-    return key == only
-  end)
-  local heldSet = {}
-  for id, n in pairs(held) do
-    heldSet[id] = n > 0 or nil
+  -- what you have to use (Holdings.PLACES.usable), per item: your characters on this market, or the one in view
+  local held, heldSet = {}, {}
+  for id, e in pairs(ns.Holdings.Of("usable", only or "market")) do
+    held[id] = e.qty
+    heldSet[id] = e.qty > 0 or nil
   end
 
   local craft = env(index)
