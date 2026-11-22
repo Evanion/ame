@@ -80,9 +80,9 @@ L["%s items · %s units"] = true
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] = true
 L["%s needs %d (has %d)"] = true
 L["%s of %s"] = true
-L["%s of %s sold"] = true
 L["%s old"] = true
 L["%s on %d characters"] = true
+L["%s sold/day"] = true
 L["%s steadily listed items · 30 days ago = 100"] = true
 L["%s to %d"] = true
 L["%s to %s"] = true

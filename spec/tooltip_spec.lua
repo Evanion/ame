@@ -74,14 +74,14 @@ describe("Tooltip.Lines", function()
     assert.truthy(t:find("  = each | your 43", 1, true), t) -- then the columns' heads
     assert.truthy(t:find("Market = 55g 98s | 2,407g", 1, true), t) -- each in the middle, all of yours on the right
     assert.truthy(t:find("Vendor = · | 86s", 1, true), t)
-    assert.truthy(t:find("You have 43 = bags 20 · bank 18 · guild bank 5", 1, true), t)
+    assert.truthy(t:find("You have 43 · bags 20 · bank 18 · guild bank 5", 1, true), t) -- one line, as drawn
   end)
 
   it("counts what's up for sale apart (its own AH row), and says what your bags and bank are worth", function()
     local listed = { total = 48, bags = 20, bank = 18, guildBank = 5, auctions = 5 }
     local t = text(T.Lines(s, { held = listed, house = "Horde AH", stash = 1234500 }))
-    assert.truthy(t:find("You have 43 = bags 20 · bank 18 · guild bank 5", 1, true), t) -- not the 5 on the AH
-    assert.truthy(t:find("AH = 5", 1, true), t)
+    assert.truthy(t:find("You have 43 · bags 20 · bank 18 · guild bank 5", 1, true), t) -- not the 5 on the AH
+    assert.truthy(t:find("guild bank 5 = \nAH 5 = ", 1, true), t) -- a line of its own, under it
     assert.truthy(t:find("your 43", 1, true), t) -- the totals are for what you have too
     assert.truthy(t:find("Bags + bank = 123g 45s", 1, true), t)
   end)
@@ -95,9 +95,10 @@ describe("Tooltip.Lines", function()
     local buy = setmetatable({ signal = "buy", soldPerDay = 12 }, { __index = s })
     local t = text(T.Lines(buy, { better = 0.16 }))
     assert.truthy(t:find("BUY = Shift: more", 1, true), t)
-    assert.truthy(t:find("~12 sold/day", 1, true), t)
+    assert.truthy(t:find("12 sold/day", 1, true), t)
+    assert.is_nil(t:find("listed", 1, true)) -- the sales rate says it: no listed count
     buy.soldPerDay = 2.5
-    assert.truthy(text(T.Lines(buy, {})):find("~2.5 sold/day", 1, true))
+    assert.truthy(text(T.Lines(buy, {})):find("2.5 sold/day", 1, true))
     assert.truthy(t:find("Sells 16% better at the goblin AH, after its cut", 1, true), t)
     local rows = T.Lines(buy, { better = 0.16, house = "Horde AH" })
     assert.are.equal(W.Color("gold", "Horde AH"), rows[1][1]) -- the house in gold

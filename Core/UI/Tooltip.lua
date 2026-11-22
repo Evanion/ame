@@ -258,36 +258,36 @@ function Tooltip.Lines(s, opts)
   end
 
   if not opts.compact then
+    -- what you have, and where, on one line ("You have 43 · bags 20 · bank 18"); what's up for sale on the line
+    -- under it; then what this character's bags and bank are worth
     if n > 0 then
-      rows[#rows + 1] = { L["You have %s"]:format(W.Count(n)), Dim(places(held)) }
+      local where_ = places(held)
+      rows[#rows + 1] = { L["You have %s"]:format(W.Count(n)) .. (where_ ~= "" and Dim(" · " .. where_) or "") }
     end
     if onAH > 0 then
-      rows[#rows + 1] = { L["AH"], Dim(W.Count(onAH)) }
+      rows[#rows + 1] = { L["AH"] .. " " .. Dim(W.Count(onAH)) }
     end
     if opts.stash and opts.stash > 0 then
       rows[#rows + 1] = { L["Bags + bank"], money(opts.stash) }
     end
-    -- how it trades: against its average, how many sell, how much of what's listed sells
+    -- how it trades, one dim line: the change against its average (in its colour), how many sell a day (else how
+    -- many are listed), how much of what's listed sells
     local days = opts.avgDays or 7
     local avg = s["avg" .. days] or s.avg30
     local parts = {}
     if s.market and avg and avg > 0 and s.days ~= 1 then
       parts[#parts + 1] = W.Percent(s.market / avg - 1, 0) .. Dim(" " .. L["vs %d-day avg"]:format(days))
     end
-    parts[#parts + 1] = Dim(W.Count(s.qty or 0) .. " " .. L["listed"])
     if s.soldPerDay then
-      parts[#parts + 1] = Dim(L["~%s sold/day"]:format(rate(s.soldPerDay)))
+      parts[#parts + 1] = Dim(L["%s sold/day"]:format(rate(s.soldPerDay)))
+    else
+      parts[#parts + 1] = Dim(W.Count(s.qty or 0) .. " " .. L["listed"])
     end
     if s.sellThrough and s.stEnded then
       -- real auction outcomes (yours and your guildmates'): how much of what was listed sold
-      parts[#parts + 1] = Dim(
-        L["%d%% sell-through"]:format(pct(s.sellThrough))
-          .. " ("
-          .. L["%s of %s sold"]:format(W.Count(s.stSold or 0), W.Count(s.stEnded))
-          .. ")"
-      )
+      parts[#parts + 1] = Dim(L["%d%% sell-through"]:format(pct(s.sellThrough)))
     end
-    rows[#rows + 1] = { table.concat(parts, Dim("  ·  ")) }
+    rows[#rows + 1] = { table.concat(parts, Dim(" · ")) }
     if opts.better then
       -- the notice: the warning icon and the line in amber
       rows[#rows + 1] = {

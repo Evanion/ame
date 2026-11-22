@@ -2879,7 +2879,7 @@ describe("addon in a stubbed client", function()
           found = row[1]
         end
       end
-      assert.truthy(found and found:find("0%% sell%-through") and found:find("0 of 40 sold"), found)
+      assert.truthy(found and found:find("0%% sell%-through"), found)
       -- saved with the index and read back
       local back = ns.MarketIndex.Decode(ns.MarketIndex.Encode(ns.AME.index)).items[2589]
       assert.are.equal(0, back.sellThrough)
