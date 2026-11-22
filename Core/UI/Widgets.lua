@@ -2479,13 +2479,13 @@ function W.PostAdvice(advice)
       parts[#parts + 1] = W.Dim(L["more is listed than sells in one listing time: only the lowest price sells soon"])
     end
   else
-    parts = {
-      head,
-      L["Quick %s"]:format(W.PostChoice(advice.quick)),
-      L["Normal %s"]:format(W.PostChoice(advice.normal)),
-      L["Patient %s"]:format(W.PostChoice(advice.patient)),
-      L["%d ahead"]:format(advice.normal.ahead),
-    }
+    parts = { head }
+    if not advice.quickSame then
+      parts[#parts + 1] = L["Quick %s"]:format(W.PostChoice(advice.quick))
+    end
+    parts[#parts + 1] = L["Normal %s"]:format(W.PostChoice(advice.normal))
+    parts[#parts + 1] = L["Patient %s"]:format(W.PostChoice(advice.patient))
+    parts[#parts + 1] = L["%d ahead"]:format(advice.normal.ahead)
   end
   local text = table.concat(parts, "   ")
   if advice.hold then

@@ -558,6 +558,17 @@ function S:RenderForm()
   p.itemRate:SetPoint("LEFT", signal and p.signal or p.itemInfo, "RIGHT", 6, 0)
   p.itemRate:SetText(s and s.soldPerDay and L["~%s sold/day"]:format(W.Count(s.soldPerDay)) or "")
   local labels = { quick = L["Quick"], normal = L["Normal"], patient = L["Patient"] }
+  -- Quick no cheaper than Normal: one option, so the buttons close up
+  local y = 0
+  for _, b in ipairs(p.picks) do
+    local same = b.key == "quick" and a and a.quickSame
+    b:SetShown(not same)
+    if not same then
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", 0, -60 - y * 28)
+      y = y + 1
+    end
+  end
   for _, b in ipairs(p.picks) do
     local c = a and a[b.key]
     if c then

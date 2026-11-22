@@ -414,6 +414,7 @@ function Sell:Draw()
       b.label:SetText(it[3]:format(W.Money(advice[key].price)))
       b:SetSelected(key == lit)
     end
+    bar.quick:SetShown(not advice.quickSame) -- no cheaper than Normal: one option
     -- Market: the item's market price, the fourth choice
     bar.fill:SetShown(advice.market ~= nil)
     if advice.market then

@@ -3008,7 +3008,10 @@ describe("addon in a stubbed client", function()
       local post = ns.UI.itemView.post.rows
       assert.truthy(post[2].label.text:find("sells in", 1, true), post[2].label.text)
       assert.are.equal("big", post[2].kind)
-      assert.truthy(post[4].label.text:find("Quick", 1, true))
+      -- Quick when it's a real option (cheaper than Normal), else just Normal and Patient
+      local shown = ns.Posting:Suggest(ns.UI:ViewShard(), 2589, 1, ns.Settings:Get("listingHours"))
+      local next = shown.quickSame and "Patient" or "Quick"
+      assert.truthy(post[4].label.text:find(next, 1, true), post[4].label.text)
       assert.is_nil(post[4].value.text:find("·", 1, true))
 
       -- the auction house's sell window: a bar under it fills in the price you pick (you still click Post)
@@ -3058,8 +3061,9 @@ describe("addon in a stubbed client", function()
       assert.truthy(bar.info.text:find("% cut", 1, true))
       assert.truthy(bar.info.text:find("^Just under") or bar.info.text:find("listing"), bar.info.text)
       assert.truthy(bar.conf.text:find("WHITE8x8", 1, true)) -- just the confidence bars
-      -- Quick, Normal and Patient are always there; the one in the price box is highlighted
-      assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown())
+      -- Normal and Patient are always there, Quick when it's cheaper than Normal; the one in the price box is lit
+      assert.is_true(bar.reset:IsShown() and bar.patient:IsShown())
+      assert.are.equal(not advice.quickSame, bar.quick:IsShown())
       assert.truthy(bar.fill.label.text:find("^Market")) -- the fourth choice: the item's market price
       bar.reset.scripts.OnClick(bar.reset)
       assert.are.equal(advice.normal.price, filled)
@@ -3074,10 +3078,14 @@ describe("addon in a stubbed client", function()
       assert.is_false(bar.reset.selected)
       bar.quick.scripts.OnClick(bar.quick)
       assert.are.equal(advice.quick.price, filled)
-      assert.is_true(bar.quick:IsShown() and bar.reset:IsShown() and bar.patient:IsShown()) -- nothing disappears
-      bar.reset.scripts.OnClick(bar.reset)
+      -- nothing disappears (Quick stays as it was: there when it's a real option)
+      assert.is_true(bar.reset:IsShown() and bar.patient:IsShown())
+      assert.are.equal(not advice.quickSame, bar.quick:IsShown())
       -- clicking a listing in the sell window puts its price in the box: the bar re-targets just under it
-      local listing = advice.book.prices[#advice.book.prices]
+      local listing -- a listing whose price isn't what's in the box now (else the box doesn't change)
+      for _, price in ipairs(advice.book.prices) do
+        listing = listing or (price ~= ns.SellAssist.filled and price) or nil
+      end
       filled = listing
       env:update(40)
       assert.truthy(bar.title.text:find("Under that listing"), bar.title.text)

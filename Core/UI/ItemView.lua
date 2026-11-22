@@ -1455,21 +1455,23 @@ function UI:UpdatePostAdvice()
     local function when(label, hrs)
       return label .. W.Dim("  ·  " .. W.Hours(hrs))
     end
-    v.post:SetContent({
-      rows = {
-        head,
-        {
-          label = L["Normal"] .. W.Dim("  ·  " .. L["sells in %s"]:format(W.Hours(n.hours))),
-          copper = n.price,
-          big = true,
-          term = "posting",
-        },
-        { label = L["You net, after the %d%% cut"]:format(W.CutPct(cut)), copper = net },
-        { label = when(L["Quick"], advice.quick.hours), copper = advice.quick.price, term = "posting" },
-        { label = when(L["Patient"], advice.patient.hours), copper = advice.patient.price, term = "posting" },
+    local rows = {
+      head,
+      {
+        label = L["Normal"] .. W.Dim("  ·  " .. L["sells in %s"]:format(W.Hours(n.hours))),
+        copper = n.price,
+        big = true,
+        term = "posting",
       },
-      note = #notes > 0 and table.concat(notes, "\n") or nil,
-    })
+      { label = L["You net, after the %d%% cut"]:format(W.CutPct(cut)), copper = net },
+    }
+    -- Quick no cheaper than Normal: one option, shown once
+    if not advice.quickSame then
+      rows[#rows + 1] = { label = when(L["Quick"], advice.quick.hours), copper = advice.quick.price, term = "posting" }
+    end
+    rows[#rows + 1] =
+      { label = when(L["Patient"], advice.patient.hours), copper = advice.patient.price, term = "posting" }
+    v.post:SetContent({ rows = rows, note = #notes > 0 and table.concat(notes, "\n") or nil })
   end
   self:UpdateItemSummary()
   v:FitCards()

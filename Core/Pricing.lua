@@ -38,6 +38,14 @@ Pricing.SPEED_LIMIT = 2 -- speed factor kept within e^-2 .. e^2 (about 7x slower
 Pricing.QUICK_HOURS, Pricing.QUICK_CHANCE = 4, 0.85 -- "Quick": sells within this many hours this surely
 Pricing.PATIENT_CHANCE = 0.5 -- "Patient": the highest price that still sells within the listing time half the time
 Pricing.HOLD_CHANCE = 0.25 -- below this at the best price: advise holding
+-- The swing: how far an item's cheapest listing moves in a day (the standard deviation of its log change), learned
+-- from consecutive scans at least SWING_MIN_GAP hours apart (closer ones are mostly one listing bought), fading
+-- over SWING_HALF_LIFE; until SWING_SAMPLES of them, the index's 30-day volatility stands in. Quick and Patient are
+-- anchored to it: over t hours the cheapest listing typically dips (and peaks) by SWING_REACH x swing x sqrt(t / 24)
+-- (the expected running extreme of a random walk is ~0.8 sigma sqrt(t)).
+Pricing.SWING_MIN_GAP, Pricing.SWING_HALF_LIFE, Pricing.SWING_SAMPLES = 1, 48, 3
+Pricing.SWING_REACH = 0.8
+Pricing.SAME = 0.01 -- Quick within this of Normal: the same option (shown once)
 
 Pricing.DEFAULT_PRIOR = { comp = 0.5, cut = 0.03, calib = 0, hd = {}, wd = {}, n = 0 }
 
@@ -64,6 +72,8 @@ function Pricing.NewProfile()
     no = 0,
     speed = 0, -- log factor on the sales rate, learned from how fast your listings sold
     sn = 0, -- listing outcomes behind it
+    swing = 0, -- the cheapest listing's daily variance of log change (Pricing.SWING_*)
+    swn = 0, -- scan pairs behind it
     hn = 0,
     wn = 0,
     hd = {},
@@ -163,6 +173,18 @@ function Pricing.Observe(p, obs)
     sold = max(0, (last.qty or 0) - (obs.qty or 0) + newBelow)
   end
   local d, u, c = sold / dt, newBelow / dt, (undercut and 1 or 0) / dt
+
+  -- the swing: the cheapest listing's move, as a daily variance
+  if dt >= Pricing.SWING_MIN_GAP and last.min > 0 and obs.min > 0 then
+    local r = clamp(log(obs.min / last.min), -1, 1)
+    local v = r * r * 24 / dt
+    if (p.swn or 0) == 0 then
+      p.swing = v
+    else
+      p.swing = p.swing + (1 - 0.5 ^ (dt / Pricing.SWING_HALF_LIFE)) * (v - p.swing)
+    end
+    p.swn = (p.swn or 0) + 1
+  end
 
   -- when (hour, weekday) it sells, relative to the item's usual rate
   local mid = (last.t + obs.t) / 2
@@ -327,7 +349,16 @@ function Pricing.Params(p, prior, summary)
   if p.n > 0 and p.demand > 0 then
     comp = w * min(p.inflow / p.demand, 3) + (1 - w) * prior.comp
   end
+  -- the swing (daily): your scans' when there are enough of them, else the index's 30-day volatility
+  local swing, swingFrom
+  if (p.swn or 0) >= Pricing.SWING_SAMPLES then
+    swing, swingFrom = math.sqrt(p.swing or 0), "scans"
+  elseif summary and summary.vol30 then
+    swing, swingFrom = summary.vol30, "daily"
+  end
   local params = {
+    swing = swing,
+    swingFrom = swingFrom,
     demand = demand,
     inflow = comp * demand,
     cut = p.cut > 0 and (w * p.cut + (1 - w) * prior.cut) or prior.cut,
@@ -427,6 +458,16 @@ function Pricing.Suggest(book, params, opts)
   local lo = max(1, (opts.vendor or 0) + 1)
   local ref = opts.reference
   local hi = opts.ceiling or (ref and ref * 1.5) or math.huge
+  -- the swing bounds what's realistic: above where the cheapest listing typically peaks within the listing time, a
+  -- price waits behind everyone who lists at the going rate meanwhile (the queue only counts undercutters below the
+  -- cheapest), so it isn't offered
+  local swing = params.swing
+  local wall = book.prices[1] or ref
+  local peak
+  if swing and swing > 0 and wall then
+    peak = floor(wall * (1 + Pricing.SWING_REACH * swing * math.sqrt(hours / 24)))
+    hi = min(hi, max(peak, wall))
+  end
 
   local seen, cands = {}, {}
   local function add(p)
@@ -458,19 +499,37 @@ function Pricing.Suggest(book, params, opts)
   end
   table.sort(cands)
 
-  local rows = {}
-  for i, p in ipairs(cands) do
+  -- under the cheapest listing, more buyers: dip buyers and resellers step in as the price drops below where it
+  -- usually swings to - one swing under it, about e (2.7) times the buyers (at most e^2)
+  local below = {}
+  local function paramsAt(p)
+    if not (swing and swing > 0 and wall and p < wall) then
+      return params
+    end
+    local m = math.exp(min(2, log(wall / p) / swing))
+    if not below[m] then
+      local q = setmetatable({ demand = params.demand * m }, { __index = params })
+      below[m] = q
+    end
+    return below[m]
+  end
+  local function row(p)
     local ahead = Pricing.Ahead(book, p)
     local need = ahead + qty
-    local chance = Pricing.Chance(params, need, hours, now)
-    rows[i] = {
+    local at = paramsAt(p)
+    local chance = Pricing.Chance(at, need, hours, now)
+    return {
       price = p,
       ahead = ahead,
       chance = chance,
-      quickChance = Pricing.Chance(params, need, min(hours, Pricing.QUICK_HOURS), now),
-      hours = Pricing.Hours(params, need, now),
+      quickChance = Pricing.Chance(at, need, min(hours, Pricing.QUICK_HOURS), now),
+      hours = Pricing.Hours(at, need, now),
       ev = chance * p * qty * (1 - cut) - (1 - chance) * deposit,
     }
+  end
+  local rows = {}
+  for i, p in ipairs(cands) do
+    rows[i] = row(p)
   end
 
   local normal = rows[1]
@@ -500,10 +559,34 @@ function Pricing.Suggest(book, params, opts)
       patient = r
     end
   end
+  -- the swing makes three real options: Quick goes under where the cheapest listing typically dips within
+  -- QUICK_HOURS (it sells then, even if the price slides), Patient up to where it typically peaks within the
+  -- listing time (it sells when the market swings back up; "sells in" is how long that usually takes)
+  if peak then
+    local dip = floor(wall * (1 - Pricing.SWING_REACH * swing * math.sqrt(min(hours, Pricing.QUICK_HOURS) / 24)))
+    dip = max(lo, dip)
+    if dip < quick.price then
+      quick = row(dip)
+      quick.swing = true
+    end
+    peak = floor(min(hi, peak))
+    if peak > patient.price then
+      local r = row(peak)
+      local rise = log(peak / wall) / (Pricing.SWING_REACH * swing)
+      r.hours = 24 * rise * rise -- how long the swing usually takes to get there
+      r.chance = max(r.chance, Pricing.PATIENT_CHANCE)
+      r.swing = true
+      patient = r
+    end
+  end
   return {
     quick = quick,
     normal = normal,
     patient = patient,
+    -- Quick is no cheaper than Normal to speak of: one option (shown as Normal)
+    quickSame = quick.price >= normal.price * (1 - Pricing.SAME),
+    swing = swing,
+    swingFrom = params.swingFrom,
     hold = normal.chance < Pricing.HOLD_CHANCE,
     cheap = ref ~= nil and normal.price < ref * 0.7,
     confidence = params.confidence,
@@ -546,6 +629,8 @@ function Pricing.Encode(p)
       num(p.no),
       num(p.speed),
       num(p.sn),
+      num(p.swing),
+      num(p.swn),
     }, ","),
     table.concat({ num(l.t), num(l.min), num(l.qty) }, ","),
     l.ladder and list(l.ladder, #Pricing.BANDS, 0) or "",
@@ -583,6 +668,7 @@ function Pricing.Decode(s)
   p.n, p.demand, p.inflow, p.cut, p.cuts, p.calib, p.no =
     a[1] or 0, a[2] or 0, a[3] or 0, a[4] or 0, a[5] or 0, a[6] or 0, a[7] or 0
   p.speed, p.sn = a[8] or 0, a[9] or 0
+  p.swing, p.swn = a[10] or 0, a[11] or 0
   if l[1] and l[1] > 0 then
     p.last = { t = l[1], min = l[2], qty = l[3], ladder = #ladder > 0 and ladder or nil }
   end

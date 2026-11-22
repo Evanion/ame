@@ -165,7 +165,7 @@ Help.TERMS = {
   },
   posting = {
     L["Posting price"],
-    L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. Quick sells within a few hours almost surely, Normal is the best price for the chance, Patient is the highest price that still sells about half the time. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."],
+    L["What to post at so it sells within the listing time - instead of undercutting the cheapest listing by 1c. Buyers take the cheapest listings first, so AME counts the units ahead of you at each price, how fast the item sells, and how often new listings undercut you, and weighs the chance of selling against the deposit you lose if it doesn't. How far the item's price swings in a day - from your scans of it, else its 30-day volatility - sets the choices apart: Quick goes under where the cheapest listing usually dips within a few hours, Normal is the best price for the chance, Patient waits for the usual peak within the listing time (nothing above it is suggested). Quick only shows when it's cheaper than Normal. It learns every item's pattern from your scans (busy hours, weekdays, how hard sellers compete) and from your own posts: if items keep expiring at its prices it gets more careful for that item. With little data it borrows from similar items; the bars show how much it knows."],
   },
 }
 
@@ -520,7 +520,7 @@ function Help.Articles()
           body = {
             H(L["The bar under the sell window"]),
             EX("sellBar"),
-            L["Quick sells within a few hours almost surely. Normal weighs the price against the chance it sells. Patient is the highest price that still sells about half the time. Market is the item's market price. Click one to put it in the price box; you still click Post."],
+            L["Quick goes under where the price usually dips within a few hours, so it sells soon even if the price slides. Normal weighs the price against the chance it sells. Patient waits for the price to swing back up to where it usually peaks within the listing time. Quick only shows when it's cheaper than Normal. Market is the item's market price. Click one to put it in the price box; you still click Post."],
             H(L["How the price is worked out"]),
             Help.TERMS.posting[2],
             H(L["It learns from your sales"]),
