@@ -192,6 +192,7 @@ function UI:CreateShell()
     { "guide", L["Guide"] },
   }, {
     minWidth = 66,
+    look = "primary", -- the open tab is filled with the accent, as the title bar's design has it
     onSelect = function(name)
       UI:ShowTab(name)
     end,
@@ -216,12 +217,12 @@ function UI:CreateShell()
   self:LayoutTabs()
 
   -- The footer, part of the window like the title bar: on the left, where the tab's numbers come from (each tab
-  -- sets it through its slots.status); on the right, what AME is busy with and the version. Tabs end above it.
+  -- sets it through its slots.status); on the right, what AME is busy with (in the warning tone) and the version.
+  -- Tabs end above it.
   local footer = W.Text(f, "GameFontDisableSmall", "RIGHT")
   footer:SetPoint("BOTTOMRIGHT", -22, 10) -- left of the resize grip
-  footer:SetText("v" .. ns.VERSION)
-  footer:SetAlpha(0.7)
   self.footer = footer
+  footer:SetText(self:FooterRight())
   local footerLeft = W.Text(f, "GameFontDisableSmall", "LEFT")
   footerLeft:SetPoint("BOTTOMLEFT", 12, 10)
   footerLeft:SetPoint("RIGHT", footer, "LEFT", -16, 0)
@@ -261,17 +262,19 @@ function UI:BusyNow()
   return UI.BusyText(ns.AME.jobs and ns.AME.jobs.queue, ns.AME:IndexBusy())
 end
 
--- the status row's left side: what AME is busy with, then the tab's own status (where its prices come from) - side
--- by side, since the one says how current the other is
+-- the status row's left side: the tab's own status (where its prices come from)
 function UI:FooterText()
   local view = self.views and self.views[self.current]
   local status = view and view.slots and view.slots.status
-  local text = status and status.text or ""
+  return status and status.text or ""
+end
+
+-- the status row's right side: what AME is busy with, then the version. There a long status never cuts it short,
+-- and it sits by the version, where the eye goes to see whether AME is done.
+function UI:FooterRight()
+  local version = "v" .. ns.VERSION
   local busy = self:BusyNow()
-  if busy then -- first: a long status is cut short at the right, and this is the part that changes
-    text = W.Color("hold", busy) .. (text ~= "" and (W.SEP .. text) or "")
-  end
-  return text
+  return busy and (W.Color("warn", busy) .. "    " .. version) or version
 end
 
 -- What the background work is doing, for the status row: the most telling job queued (storing a search before
@@ -606,7 +609,7 @@ function UI:ShowTab(name)
     v:SetShown(n == name)
   end
   self.tabBar:Select(name, true)
-  self.settingsButton:SetSelected(name == "settings")
+  W.Primary(self.settingsButton, name == "settings") -- the cog is the Settings tab: open, it looks like an open tab
   self.current = name
   self:UpdateFooter()
   if name == "market" then
@@ -638,10 +641,11 @@ function contentArea(parent)
 end
 UI.ContentArea = contentArea
 
--- the footer: the tab's status and what AME is busy with on the left, the version on the right
+-- the footer: the tab's status on the left, what AME is busy with and the version on the right
 function UI:UpdateFooter()
   if not self.footerLeft then
     return
   end
   self.footerLeft:SetText(self:FooterText())
+  self.footer:SetText(self:FooterRight())
 end

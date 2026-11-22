@@ -328,6 +328,8 @@ end
 --     width = 60,                 -- fixed button width; or
 --     minWidth = 44,              -- at least this, wider for long labels (translations)
 --     onSelect = function(key, button) end,
+--     look = "primary",           -- the picked one filled with the accent (W.Primary), not the selected tint: the
+--                                 -- window's tabs, where the open one is a place, not a choice among options
 --   })
 -- Returns a frame sized to the row (anchor it as one piece) with :Select(key, silent), :Selected(), .buttons (in
 -- order) and .byKey; each button has .key. Clicking selects and calls onSelect.
@@ -358,7 +360,11 @@ function W.Segmented(parent, items, opts)
   function seg:Select(key, silent)
     self.selected = key
     for _, b in ipairs(self.buttons) do
-      b:SetSelected(b.key == key)
+      if opts.look == "primary" then
+        W.Primary(b, b.key == key)
+      else
+        b:SetSelected(b.key == key)
+      end
     end
     if not silent and opts.onSelect then
       opts.onSelect(key, self.byKey[key])

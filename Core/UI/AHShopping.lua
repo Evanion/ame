@@ -15,7 +15,7 @@ ns.AHShopping = T
 
 T.LISTINGS = 5
 T.RECENT = 6 -- recent searches kept
-T.SIDE_W = 200
+T.SIDE_W = UI.SIDEBAR_W -- the same width as every sidebar in the main window
 
 local function shopping()
   return ns.AME.shopping

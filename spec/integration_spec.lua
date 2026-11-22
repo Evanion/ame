@@ -1351,13 +1351,15 @@ describe("addon in a stubbed client", function()
         arb.scripts.OnShow(arb)
         drainJobs()
         assert.are.equal(arb.status.text, ns.UI.footerLeft.text) -- the tab's text, shown by the window
+        assert.is_true(ns.UI.tabBar.byKey.arbitrage.primary) -- the open tab is filled with the accent
+        assert.is_false(ns.UI.tabBar.byKey.market.primary)
         assert.is_not_nil(arb.counts)
         -- Settings is the cog by the bell, not a tab
         assert.is_nil(ns.UI.tabBar.byKey.settings)
         local cog = ns.UI.settingsButton
         cog.scripts.OnClick(cog)
         assert.are.equal("settings", ns.UI.current)
-        assert.is_true(cog.selected)
+        assert.is_true(cog.primary) -- drawn as the open tab
         assert.truthy(ns.UI.footerLeft.text:find("saved per account"))
         -- its cards fill the width: columns when wide, one column under each other when not
         local sv = ns.UI.settingsView
@@ -1373,7 +1375,7 @@ describe("addon in a stubbed client", function()
         sv:PlaceSection()
         assert.are.equal(items[1][1], items[2][1].points[1][2]) -- under the first
         ns.UI:ShowTab("market")
-        assert.is_false(cog.selected)
+        assert.is_false(cog.primary)
         ns.UI:ShowTab("settings")
         -- sharing is a section of Settings: the old Sync tab opens it
         assert.is_nil(ns.UI.views.sync)
@@ -1719,9 +1721,9 @@ describe("addon in a stubbed client", function()
       ns.UI:Toggle()
       -- a full scan being read shows its real progress in the status row
       ns.AME.ingest.reading, ns.AME.ingest.progress = true, { done = 12345, total = 60000 }
-      assert.truthy(ns.UI:FooterText():find("12,345 / 60,000", 1, true))
+      assert.truthy(ns.UI:FooterRight():find("12,345 / 60,000", 1, true))
       ns.AME.ingest.reading = false
-      assert.is_nil(ns.UI:FooterText():find("Reading scan", 1, true))
+      assert.is_nil(ns.UI:FooterRight():find("Reading scan", 1, true))
       assert.truthy(ns.UI.footer.text:find("^v"))
       -- empty states say what to do next
       ns.UI:ShowTab("market")
@@ -3324,12 +3326,12 @@ describe("addon in a stubbed client", function()
       env.ah.commodities[2589] = { { 117, 20 } }
       env:fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
       env:update(1)
-      assert.truthy(ns.UI:FooterText():find("Storing scan", 1, true) or ns.UI:FooterText():find("Updating", 1, true))
+      assert.truthy(ns.UI:FooterRight():find("Storing scan", 1, true) or ns.UI:FooterRight():find("Updating", 1, true))
       env:advance(2)
       drainJobs()
       assert.are.equal(last + 1, froms[#froms]) -- not the whole two days again
       assert.are.equal(before + 1, #ns.UI.intraday) -- the search's point added
-      assert.is_nil(ns.UI:FooterText():find("…", 1, true))
+      assert.is_nil(ns.UI:FooterRight():find("…", 1, true))
     end)
 
     it("switches the item chart to candles and back", function()
