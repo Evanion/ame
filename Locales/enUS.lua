@@ -1215,7 +1215,6 @@ L["window created, market tab rendered"] = true
 L["yellow %d · green %d · grey %d"] = true
 L["yesterday"] = true
 L["you"] = true
-L["you have"] = true
 L["you have every reagent"] = true
 L["you hold it"] = true
 L["you net %s after the %d%% cut"] = true

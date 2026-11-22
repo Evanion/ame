@@ -222,7 +222,7 @@ function V:Refresh()
   end
   f.totalLabel:SetText(L["All of it"])
   local money = _G.GetMoney and _G.GetMoney()
-  f.total:SetText(W.Money(total) .. (money and W.Dim("  ·  " .. L["you have"] .. " ") .. W.Money(money) or ""))
+  f.total:SetText(W.Money(total))
   f.buyAll:SetEnabled(not money or total <= money or rows[1].cost <= money)
   f.table:SetData(rows)
   f.table:Render()
