@@ -884,8 +884,9 @@ function UI:CreateCraftingView(parent, contentArea)
     UI.craftSelected = nil
     UI:RefreshCrafting()
   end)
-  -- Recipes to buy: only what the character you're on can learn right now (its profession, skill high enough)
-  v.learnable = W.Check(bar, L["Learnable now"], function(on)
+  -- Recipes to buy: only what the character you're on can learn right now (its profession, skill high enough, not
+  -- known yet) - the game's own term for it
+  v.learnable = W.Check(bar, L["Usable only"], function(on)
     UI.craftLearnable = on or nil
     UI.craftSelected = nil
     UI:RefreshCrafting()
