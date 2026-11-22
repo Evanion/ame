@@ -32,6 +32,13 @@ W.COLORS = {
     legendBg = { 0.06, 0.07, 0.09, 0.85 },
     legendBorder = { 1, 1, 1, 0.08 },
   },
+  -- a recipe's skill-up colours (Leveling's bar), muted from the game's own so they sit on the panel
+  skill = {
+    orange = { 0.79, 0.46, 0.17, 1 },
+    yellow = { 0.79, 0.69, 0.17, 1 },
+    green = { 0.25, 0.61, 0.29, 1 },
+    grey = { 0.33, 0.35, 0.37, 1 },
+  },
 }
 
 -- Text colours by role ("RRGGBB"), and helpers for |c escapes (defined in Init.lua so chat lines can use them too)

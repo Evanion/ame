@@ -23,8 +23,9 @@ local function charName(key)
   return (key or ""):gsub("^[^:]*:", "")
 end
 
-local function itemName(id)
-  return W.ItemNameOrLoad(id, function()
+-- an item's name as a link in a card's text (the right column's cards switch links on)
+local function link(id)
+  return W.LinkText(id, nil, function()
     UI.RedrawCrafting()
   end)
 end
@@ -204,9 +205,10 @@ function UI:LevelingRows(m)
           rows[#rows + 1] = {
             note = true,
             skill = st.from,
-            itemID = c.recipeItem,
+            itemID = c.recipeItem, -- the table shows the recipe item as a link, with what it costs after it
+            learn = L["learn · AH %s · needs %d"]:format(price, c.learnAt or 0),
             text = function()
-              return L["Learn %s · AH %s · needs %d"]:format(itemName(c.recipe.product or 0), price, c.learnAt or 0)
+              return L["Learn %s · AH %s · needs %d"]:format(link(c.recipe.product or 0), price, c.learnAt or 0)
             end,
           }
         elseif c.estimated then
@@ -214,7 +216,7 @@ function UI:LevelingRows(m)
             note = true,
             skill = st.from,
             text = function()
-              return L["Train %s · trainer, about %d"]:format(itemName(c.recipe.product or 0), c.learnAt)
+              return L["Train %s · trainer, about %d"]:format(link(c.recipe.product or 0), c.learnAt)
             end,
           }
         end
@@ -262,22 +264,27 @@ UI.LEVELING_COLUMNS = {
     align = "LEFT",
     text = function(st)
       if st.note then
-        return W.Color("brand", tostring(st.skill))
+        return W.Color("link", tostring(st.skill))
       end
       return ("%d-%d"):format(st.from, st.to)
     end,
   },
+  -- what to craft, as an item link; a learn row: the recipe item, then where to get it, in the learn tone; a train
+  -- or "stuck" row: its words
   {
     key = "craft",
     label = L["Craft"],
     width = 260,
     sortKey = false,
-    align = "LEFT",
-    text = function(st)
+    item = true,
+    fallback = function(st)
       if st.note then
-        return W.Color("brand", type(st.text) == "function" and st.text() or st.text)
+        return W.Color("link", type(st.text) == "function" and st.text() or st.text)
       end
-      return itemName(st.entry.recipe.product)
+      return ""
+    end,
+    suffix = function(st)
+      return st.learn and ("  " .. W.Color("link", st.learn)) or ""
     end,
   },
   {
@@ -340,6 +347,7 @@ function UI:CreateLevelingControls(v, slots)
   -- the pickers come after the toolbar's own controls (UI.CraftingToolbar places them)
   v.toolbar:SetExtra("leveling", function(place)
     place(v.levelProf, 12)
+    place(v.levelTarget)
   end)
   local targets = {}
   for _, t in ipairs(TARGETS) do
@@ -349,7 +357,6 @@ function UI:CreateLevelingControls(v, slots)
     UI.levelTarget = t
     UI:RefreshCrafting()
   end, { neutral = true, default = TARGETS[#TARGETS] })
-  v.levelTarget:SetPoint("LEFT", v.levelProf, "RIGHT", 6, 0)
   v.levelGoal = W.Segmented(bar, GOALS, {
     minWidth = 56,
     onSelect = function(goal)
@@ -391,7 +398,8 @@ function UI:CreateLevelingControls(v, slots)
   holder:SetAllPoints(v.colorRow)
   v.colorBar = holder
   v.colorParts = {}
-  local colors = { { 0.79, 0.46, 0.17, 1 }, { 0.79, 0.69, 0.17, 1 }, { 0.25, 0.61, 0.29, 1 }, { 0.33, 0.35, 0.37, 1 } }
+  local sk = W.COLORS.skill
+  local colors = { sk.orange, sk.yellow, sk.green, sk.grey }
   for i = 1, 4 do
     local t = holder:CreateTexture(nil, "ARTWORK")
     W.Fill(t, colors[i])
@@ -431,16 +439,29 @@ function UI:RenderLevelingHeader(v)
   local cards = v.levelCards.cards
   if not lv then
     for _, c in ipairs(cards) do
-      c.value:SetText(W.Dim("-"))
+      c:Set({ value = W.Dim("-") })
     end
     return
   end
   local goal = self.levelGoal or "recovery"
   local plan = lv.plans[goal]
-  cards[1].value:SetText(cost(plan.cost))
-  cards[2].value:SetText(gain(plan.back))
-  cards[3].value:SetText(signed(plan.net) .. (plan.complete and "" or W.Dim("  " .. L["(incomplete)"])))
-  cards[4].value:SetText("~" .. plan.crafts)
+  -- signed amounts: what the path spends in red, what it gets back in green; nothing: a dim dash
+  local function money(c, amount)
+    if amount and amount ~= 0 then
+      c:Set({ copper = amount, signed = true })
+    else
+      c:Set({ value = W.Dim("-") })
+    end
+  end
+  money(cards[1], plan.cost and -plan.cost)
+  money(cards[2], plan.back)
+  cards[3]:Set({
+    copper = plan.net or 0,
+    signed = true,
+    delta = not plan.complete and L["(incomplete)"] or nil,
+    deltaKind = "mute",
+  })
+  cards[4]:Set({ value = "~" .. plan.crafts })
   -- the best of the other goals on the card; all of them on hover
   local best
   for _, g in ipairs(GOALS) do
@@ -449,10 +470,11 @@ function UI:RenderLevelingHeader(v)
       best = g
     end
   end
-  cards[5].value:SetText(best and (best[2] .. " " .. signed(lv.plans[best[1]].net)) or W.Dim("-"))
+  cards[5]:Set({ value = best and (best[2] .. " " .. signed(lv.plans[best[1]].net)) or W.Dim("-") })
 end
 
--- the selected step in the right column: its title card, the skill colours, then its rows (UI.CraftBlocksOf)
+-- the selected step in the right column: its title card, the skill colours, its reagents, then a card ending on the
+-- step's net
 function UI:LevelingDetail(v, st)
   local lines = {}
   local c = st.entry
@@ -479,18 +501,16 @@ function UI:LevelingDetail(v, st)
   v.colorMark:SetPoint("TOPLEFT", v.colorBar, "TOPLEFT", (st.from - lo) * scale, 0)
   v.colorMark:SetSize(math.max(2, (st.to - st.from) * scale), 14)
   v.colorBar:SetShown(true)
-  local function line(label, text)
-    lines[#lines + 1] = { label = label, text = text }
+  local function line(label, text, extra)
+    local row = extra or {}
+    row.label, row.text = label, text
+    lines[#lines + 1] = row
   end
   line(W.Dim(L["yellow %d · green %d · grey %d"]:format(c.yellow, green, c.grey)), "")
   line(
     L["Skill-up chance"],
     ("%d%% -> %d%%"):format(math.floor(st.chance[1] * 100 + 0.5), math.floor(st.chance[2] * 100 + 0.5))
   )
-  line(L["Crafts (expected)"], "~" .. st.crafts)
-  for _, r in ipairs(c.recipe.reagents) do
-    lines[#lines + 1] = { item = r[1], count = r[2] * st.crafts, text = "" }
-  end
   line(L["Cost"], cost(st.cost))
   local res = st.results
   if res.sell > 0 then
@@ -506,12 +526,37 @@ function UI:LevelingDetail(v, st)
     line(L["Keep %d for a later step"]:format(res.keep), "")
   end
   line(L["Gets back"], gain(st.back))
-  line(L["Net for this step"], signed(st.net))
+  line(L["Net for this step"], signed(st.net), { total = true })
+  -- the reagents for the step's crafts, as item links
+  local reagents = {}
+  for _, r in ipairs(c.recipe.reagents) do
+    reagents[#reagents + 1] = { itemID = r[1], countText = W.Thousands(r[2] * st.crafts) }
+  end
+  UI.CRAFT_DETAIL_TABLES.levelReagents = UI.CRAFT_DETAIL_TABLES.levelReagents
+    or {
+      rows = 6,
+      itemID = function(d)
+        return d.itemID
+      end,
+      itemMenu = {},
+      columns = {
+        { key = "name", label = L["Item"], width = 150, item = true, sortKey = false },
+        { key = "countText", label = L["Need"], width = 50, sortKey = false },
+      },
+    }
   return {
-    item = c.recipe.product,
-    subtitle = L["Skill %d to %d · %s"]:format(st.from, st.to, known),
-    colors = true,
-    rows = lines,
+    blocks = {
+      {
+        card = {
+          item = c.recipe.product,
+          subtitle = L["Skill %d to %d · %s · ~%d crafts"]:format(st.from, st.to, known, st.crafts),
+        },
+      },
+      { colors = true },
+      { heading = L["Reagents for ~%d"]:format(st.crafts) },
+      { table = "levelReagents", rows = reagents },
+      { card = { rows = lines } },
+    },
   }
 end
 
