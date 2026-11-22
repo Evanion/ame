@@ -43,6 +43,11 @@ local function mine()
     h = {}
     AME_DB.holdings[key] = h
   end
+  -- the character's faction: which auction houses your characters reach (Holdings.Factions)
+  local faction = UnitFactionGroup and UnitFactionGroup("player")
+  if faction == "Horde" or faction == "Alliance" then
+    h.faction = faction
+  end
   return h
 end
 
@@ -94,8 +99,8 @@ end
 function Trading:ScanBags()
   local reagent = (Enum and Enum.BagIndex and Enum.BagIndex.ReagentBag) or 5
   local bags = countBags(0, math.max(NUM_BAG_SLOTS or 4, reagent))
+  local h = mine() -- (and the character's faction, noted at login)
   if bags then
-    local h = mine()
     h.bags, h.t = bags, GetServerTime()
   end
 end

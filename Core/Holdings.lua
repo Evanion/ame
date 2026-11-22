@@ -17,6 +17,8 @@
 --   Holdings.Count(holdings, guildBanks, key, keep, me) -> one item, every place: { total, bags, bank, auctions,
 --     mail, guildBank, chars = { { name, bags, bank, auctions, mail, me } } (yours first, then most held),
 --     guilds = { { name, qty } } } - name: the key without its "<market>:"; me: this character's key
+--   Holdings.Factions(holdings, keep) -> { Horde = true, ... }   the factions your characters are (h.faction, saved
+--     as each one logs in): which faction auction houses you can sell at
 --   Holdings.Reserve(have) -> r   a stock to draw from (have: { [key] = n } or fn(key) -> n):
 --                                 r:Take(key, n) -> taken, r:Left(key) -> what's still there
 local _, ns = ...
@@ -141,6 +143,16 @@ function Holdings.Count(holdings, guildBanks, key, keep, me)
     return x.qty > y.qty
   end)
   out.total = out.bags + out.bank + out.auctions + out.mail + out.guildBank
+  return out
+end
+
+function Holdings.Factions(holdings, keep)
+  local out = {}
+  for char, h in pairs(holdings or {}) do
+    if h.faction and (not keep or keep(char)) then
+      out[h.faction] = true
+    end
+  end
   return out
 end
 
