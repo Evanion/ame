@@ -1041,7 +1041,7 @@ describe("addon in a stubbed client", function()
         assert.is_false(v.char:IsShown()) -- Find a crafter searches your network: no scope
         -- the footer's text comes from the page
         assert.truthy(
-          v.toolbar:StatusText("queue", { recorded = { "Tyken (First Aid)" } }):find("Recorded: Tyken", 1, true)
+          v.toolbar:StatusText("earners", { recorded = { "Tyken (First Aid)" } }):find("Recorded: Tyken", 1, true)
         )
       end)
 
@@ -1159,18 +1159,26 @@ describe("addon in a stubbed client", function()
         assert.is_not_nil(ns.UI.craftSelected)
         assert.are_not.equal(step, ns.UI.craftSelected) -- a new row...
         assert.are.equal(ns.UI.CraftRowKey(step), ns.UI.CraftRowKey(ns.UI.craftSelected)) -- ...for the same step
-        local texts = {}
-        for _, line in ipairs(v.lines) do
-          texts[#texts + 1] = line.label.text or ""
+        -- the right column's cards and tables: what their rows say and which items they link
+        local texts, linked = {}, {}
+        for _, card in ipairs(v.detail.cards) do
+          if card:IsShown() then
+            for _, r in ipairs(card.contentData.rows or {}) do
+              texts[#texts + 1] = r.label or ""
+              linked[r.item or 0] = true
+            end
+          end
+        end
+        for _, t in pairs(v.detail.tables) do
+          if t.holder:IsShown() then
+            for _, d in ipairs(t.data) do
+              linked[d.itemID or 0] = true
+            end
+          end
         end
         assert.truthy(table.concat(texts, "|"):find("Skill%-up chance"))
-        -- the reagent line is the item: clicking it searches the AH (or opens its chart)
-        local linenLine
-        for _, line in ipairs(v.lines) do
-          linenLine = linenLine or (line.itemID == 2589 and line)
-        end
-        assert.is_not_nil(linenLine)
-        assert.are.equal(step.entry.recipe.product, v.titleHit.itemID) -- the title is the product
+        assert.is_true(linked[2589]) -- the reagent is an item link
+        assert.are.equal(step.entry.recipe.product, v.detail.cards[1].parts.item.key) -- the title is the product
         -- a learn / train note selected: its text in the sidebar (built when shown)
         local noteRow
         for _, r in ipairs(ns.UI.craftRows) do
@@ -1179,8 +1187,8 @@ describe("addon in a stubbed client", function()
         assert.is_not_nil(noteRow)
         ns.UI.craftSelected = noteRow
         ns.UI:RenderCraftingDetail()
-        assert.are.equal(noteRow.text(), v.subtitle.text)
-        assert.is_nil(rawget(v.titleHit, "itemID")) -- a note is about no item
+        assert.are.equal(noteRow.text(), v.detail.cards[1].parts.subtitle.text)
+        assert.is_false(v.detail.cards[1].parts.item.key) -- a note is about no item
         -- the whole path's reagents on one shopping list
         ns.UI:CraftingAction()
         local list = ns.AME.shopping:Lists()[#ns.AME.shopping:Lists()]

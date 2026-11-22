@@ -452,16 +452,14 @@ function UI:RenderLevelingHeader(v)
   cards[5].value:SetText(best and (best[2] .. " " .. signed(lv.plans[best[1]].net)) or W.Dim("-"))
 end
 
--- the selected step in the sidebar; returns the lines for the breakdown
+-- the selected step in the right column: its title card, the skill colours, then its rows (UI.CraftBlocksOf)
 function UI:LevelingDetail(v, st)
   local lines = {}
   local c = st.entry
-  v.title:SetText(itemName(c.recipe.product))
   local known = c.known and L["known"]
     or c.itemPrice and L["recipe on the AH"]
     or c.estimated and L["trainer (level estimated)"]
     or ""
-  v.subtitle:SetText(L["Skill %d to %d · %s"]:format(st.from, st.to, known))
   -- the color bar: orange from the learn level to yellow, yellow to green, green to grey, then grey
   local lo = math.min(st.from, c.learnAt or st.from, c.yellow)
   local green = math.floor((c.yellow + c.grey) / 2)
@@ -481,35 +479,40 @@ function UI:LevelingDetail(v, st)
   v.colorMark:SetPoint("TOPLEFT", v.colorBar, "TOPLEFT", (st.from - lo) * scale, 0)
   v.colorMark:SetSize(math.max(2, (st.to - st.from) * scale), 14)
   v.colorBar:SetShown(true)
-  lines[#lines + 1] = {
-    W.Dim(L["yellow %d · green %d · grey %d"]:format(c.yellow, green, c.grey)),
-    "",
-  }
-  lines[#lines + 1] = {
-    L["Skill-up chance"],
-    ("%d%% -> %d%%"):format(math.floor(st.chance[1] * 100 + 0.5), math.floor(st.chance[2] * 100 + 0.5)),
-  }
-  lines[#lines + 1] = { L["Crafts (expected)"], "~" .. st.crafts }
-  for _, r in ipairs(c.recipe.reagents) do
-    lines[#lines + 1] = { ("%d %s"):format(r[2] * st.crafts, itemName(r[1])), "", r[1] }
+  local function line(label, text)
+    lines[#lines + 1] = { label = label, text = text }
   end
-  lines[#lines + 1] = { L["Cost"], cost(st.cost) }
+  line(W.Dim(L["yellow %d · green %d · grey %d"]:format(c.yellow, green, c.grey)), "")
+  line(
+    L["Skill-up chance"],
+    ("%d%% -> %d%%"):format(math.floor(st.chance[1] * 100 + 0.5), math.floor(st.chance[2] * 100 + 0.5))
+  )
+  line(L["Crafts (expected)"], "~" .. st.crafts)
+  for _, r in ipairs(c.recipe.reagents) do
+    lines[#lines + 1] = { item = r[1], count = r[2] * st.crafts, text = "" }
+  end
+  line(L["Cost"], cost(st.cost))
   local res = st.results
   if res.sell > 0 then
-    lines[#lines + 1] = { L["Sell %d (as many as the market takes)"]:format(res.sell), "" }
+    line(L["Sell %d (as many as the market takes)"]:format(res.sell), "")
   end
   if res.vendor > 0 then
-    lines[#lines + 1] = { L["Vendor %d"]:format(res.vendor), "" }
+    line(L["Vendor %d"]:format(res.vendor), "")
   end
   if res.de > 0 then
-    lines[#lines + 1] = { L["Disenchant %d"]:format(res.de), "" }
+    line(L["Disenchant %d"]:format(res.de), "")
   end
   if res.keep > 0 then
-    lines[#lines + 1] = { L["Keep %d for a later step"]:format(res.keep), "" }
+    line(L["Keep %d for a later step"]:format(res.keep), "")
   end
-  lines[#lines + 1] = { L["Gets back"], gain(st.back) }
-  lines[#lines + 1] = { L["Net for this step"], signed(st.net) }
-  return lines
+  line(L["Gets back"], gain(st.back))
+  line(L["Net for this step"], signed(st.net))
+  return {
+    item = c.recipe.product,
+    subtitle = L["Skill %d to %d · %s"]:format(st.from, st.to, known),
+    colors = true,
+    rows = lines,
+  }
 end
 
 -- every reagent the path buys, on one shopping list ("<profession> to <target>")
