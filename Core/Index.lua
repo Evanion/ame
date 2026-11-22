@@ -202,9 +202,7 @@ function AME:SetIndex(shard, index)
     self.index, self.indexShard = index, shard
     self:CheckAlerts(index)
   end
-  if ns.UI and ns.UI.OnIndexReady then
-    ns.UI:OnIndexReady(shard)
-  end
+  ns.Events.Fire("IndexReady", shard)
 end
 
 -- cb(index or nil): right away when there is one (a stale one is refreshed in the background), else once built

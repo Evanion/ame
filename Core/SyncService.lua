@@ -245,9 +245,7 @@ function Service:RetryGuildBlocklist()
 end
 
 function Service:Changed()
-  if self.onChange then
-    self.onChange()
-  end
+  ns.Events.Fire("SyncChanged", self)
 end
 
 -- a sender's character name: senders come as "Name", "Name-Realm", or (WoW Forever) "Name Suffix"

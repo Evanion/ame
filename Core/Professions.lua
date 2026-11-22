@@ -188,9 +188,7 @@ function Professions:Record()
   if ns.RecipeSources then
     ns.RecipeSources.CatalogChanged()
   end
-  if self.onChange then
-    self.onChange(snap.skillLine)
-  end
+  ns.Events.Fire("RecipesChanged", snap.skillLine)
 end
 
 function Professions:RecordSpellbook()
@@ -228,9 +226,7 @@ function Professions:Learned(recipeID)
   p.learned = p.learned or {}
   p.learned[recipeID] = true
   self.changed = true
-  if self.onChange then
-    self.onChange(skillLine)
-  end
+  ns.Events.Fire("RecipesChanged", skillLine)
 end
 
 -- Listen for profession windows (and skill changes). Reading waits for the burst of events to settle.

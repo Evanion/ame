@@ -110,13 +110,14 @@ describe("Shopping lists", function()
 end)
 
 describe("Shopping lists tell the screen they changed", function()
-  it("calls onChange when a list is added, renamed, changed or removed", function()
+  it("fires ShoppingChanged when a list is added, renamed, changed or removed", function()
     local ns = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Shopping.lua" })
     local s = ns.Shopping.New({})
     local n = 0
-    s.onChange = function()
+    ns.Events.On("ShoppingChanged", function(which)
+      assert.are.equal(s, which)
       n = n + 1
-    end
+    end)
     local i = s:AddList("Craft queue")
     s:SetItem(i, 2589, 10)
     s:RenameList(i, "Queue")

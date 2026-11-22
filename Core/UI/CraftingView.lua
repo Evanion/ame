@@ -1039,11 +1039,11 @@ function UI:CreateCraftingView(parent, contentArea)
   v:SetScript("OnShow", function()
     UI:RefreshCrafting()
   end)
-  ns.Professions.onChange = function()
+  ns.Events.On("RecipesChanged", function()
     if v:IsShown() then
       UI:RefreshCrafting()
     end
-  end
+  end)
   return v
 end
 

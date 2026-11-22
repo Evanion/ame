@@ -445,7 +445,11 @@ function UI:OnResize(w)
   end
 end
 
--- A market index was built or restored: refresh the open tab (the data on it may have been stale meanwhile).
+-- A market index was built or restored (Events "IndexReady"): refresh the open tab (the data on it may have been
+-- stale meanwhile).
+ns.Events.On("IndexReady", function(shard)
+  UI:OnIndexReady(shard)
+end)
 function UI:OnIndexReady(shard)
   if not self.frame then
     return

@@ -22,11 +22,9 @@ function Shopping.New(db)
   return setmetatable({ db = db }, Shopping)
 end
 
--- tell whoever shows the lists (shopping.onChange: the AH's Shopping tab) that they changed
+-- tell whoever shows the lists that they changed (Events "ShoppingChanged"; the AH's Shopping tab listens)
 local function changed(self)
-  if self.onChange then
-    self.onChange()
-  end
+  ns.Events.Fire("ShoppingChanged", self)
 end
 
 local function trim(name)

@@ -551,8 +551,8 @@ function T:Create(ah)
     T:Bought(key, qty)
   end
   -- a list added or changed anywhere (the craft queue, the AME window): shown at once, once per frame
-  shopping().onChange = function()
-    if T.renderPending or not C_Timer then
+  ns.Events.On("ShoppingChanged", function(which)
+    if which ~= shopping() or T.renderPending or not C_Timer then
       return
     end
     T.renderPending = true
@@ -560,7 +560,7 @@ function T:Create(ah)
       T.renderPending = false
       T:Render()
     end)
-  end
+  end)
   self:Layout()
   return p
 end

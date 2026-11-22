@@ -251,9 +251,9 @@ function UI:CreateSyncSection(v, host)
   v:SetScript("OnShow", function()
     UI:RefreshSync()
   end)
-  svc.onChange = function()
+  ns.Events.On("SyncChanged", function()
     UI:RefreshSync()
-  end
+  end)
   return v
 end
 
