@@ -19,25 +19,14 @@ local POSITION_COLS = {
   { key = "market", drop = 2, label = L["Market"], width = 84, format = "money" },
   { key = "value", label = L["Value"], width = 92, format = "money" },
   { key = "unitCost", drop = 1, label = L["Avg cost"], width = 84, format = "money", term = "pfCost" },
-  {
-    key = "unrealized",
-    money = true,
-    label = L["Unrealized"],
-    width = 92,
-    term = "pfUnrealized",
-    text = function(e)
-      return W.SignedMoney(e.unrealized)
-    end,
-  },
+  { key = "unrealized", label = L["Unrealized"], width = 92, format = "signedMoney", term = "pfUnrealized" },
+  -- a badge (the tinted pill), as the screener has it
   {
     key = "signal",
     label = L["Signal"],
     width = 64,
-    align = "LEFT",
+    format = "signal",
     term = "signal",
-    text = function(e)
-      return W.SignalGlyph(e.signal)
-    end,
     sortKey = "signalRank",
     ascendingFirst = true,
   },
@@ -109,14 +98,17 @@ local function counterpartyCols(amountLabel, tradesLabel)
     { key = "amount", label = amountLabel, width = 110, format = "money" },
     { key = "trades", label = tradesLabel, width = 70 },
     { key = "units", label = L["Items"], width = 60 },
+    -- what they trade most with you, as an item link (the name as the mail had it while no item is found for it)
     {
       key = "favourite",
       drop = 2,
       label = L["Mostly"],
       width = 230,
-      align = "LEFT",
       ascendingFirst = true,
-      text = function(c)
+      item = function(c)
+        return c.favouriteKey
+      end,
+      fallback = function(c)
         return c.favourite or ""
       end,
     },
@@ -259,10 +251,9 @@ function UI:CreatePortfolioView(parent, contentArea)
   v.cardRow:SetPoint("TOPLEFT", 0, 0)
   v.cardRow:SetPoint("RIGHT", 0, 0)
   v.cards = v.cardRow.cards
-  -- the listed card: the count as a small line beside the value
-  v.cards[2].sub = W.Text(v.cards[2], "GameFontDisableSmall")
-  v.cards[2].sub:SetPoint("LEFT", v.cards[2].value, "RIGHT", 6, 0)
-  -- listed: per-character breakdown on hover
+  -- the listed card's auction count is its dim change line ("3 auctions"); .sub is the name it had before
+  v.cards[2].sub = v.cards[2].delta
+  -- listed: the totals, then each character's auctions, as tooltip sections
   W.Tooltip(v.cards[2], function(tip)
     local l = UI.pfListed
     W.TipText(
@@ -271,18 +262,32 @@ function UI:CreatePortfolioView(parent, contentArea)
       L["Your active auctions on all characters, as of the last time each opened the auction house."]
     )
     if l and l.count > 0 then
-      tip:AddLine(" ")
-      W.TipPair(tip, L["Asking prices"], W.Money(l.value))
-      W.TipPair(tip, L["You'd receive (after the cut)"], W.Money(l.net))
-      W.TipPair(tip, L["At market price"], W.Money(l.market))
-      tip:AddLine(" ")
-      for char, c in pairs(l.chars) do
-        W.TipPair(
-          tip,
-          ("%s (%s)"):format(char:gsub("^[^:]*:", ""), ns.HOUSE_LABEL[c.house] or c.house or "?"),
-          ("%d  ·  %s"):format(c.count, W.Money(c.value, true))
-        )
+      local chars, rows = {}, {}
+      for char in pairs(l.chars) do
+        chars[#chars + 1] = char
       end
+      table.sort(chars)
+      for i, char in ipairs(chars) do
+        local c = l.chars[char]
+        rows[i] = {
+          label = ("%s (%s)"):format(char:gsub("^[^:]*:", ""), ns.HOUSE_LABEL[c.house] or c.house or "?"),
+          cells = { tostring(c.count), W.Money(c.value, true) },
+        }
+      end
+      tip:AddLine(" ")
+      ns.Tooltip.AddRows(tip, {
+        {
+          section = {
+            heading = L["Listed"],
+            rows = {
+              { label = L["Asking prices"], cells = { W.Money(l.value) } },
+              { label = L["You'd receive (after the cut)"], cells = { W.Money(l.net) } },
+              { label = L["At market price"], cells = { W.Money(l.market) } },
+            },
+          },
+        },
+        { section = { heading = L["By character"], rows = rows } },
+      })
     end
   end, "ANCHOR_BOTTOM")
 
@@ -360,13 +365,22 @@ function UI:CreatePortfolioView(parent, contentArea)
     itemMenu = { hide = true }, -- hidden positions leave the list and its totals (counted in the status line)
     sort = { key = "value", ascending = false },
     offset = offset,
+    -- which characters hold it, as a section of the item's tooltip (as the shopping list has it)
     tooltip = function(tip, e)
-      if e.chars then
-        tip:AddLine(" ")
-        for char, qty in pairs(e.chars) do
-          W.TipPair(tip, (char:gsub("^[^:]*:", "")), qty)
-        end
+      local chars = {}
+      for char in pairs(e.chars or {}) do
+        chars[#chars + 1] = char
       end
+      if #chars == 0 then
+        return
+      end
+      table.sort(chars)
+      local rows = {}
+      for i, char in ipairs(chars) do
+        rows[i] = { label = (char:gsub("^[^:]*:", "")), cells = { W.Thousands(e.chars[char]) } }
+      end
+      tip:AddLine(" ")
+      ns.Tooltip.AddRows(tip, { { section = { heading = L["Held by"], rows = rows } } })
     end,
   })
   v.auctions = ns.DataTable.New(main, {
@@ -383,6 +397,7 @@ function UI:CreatePortfolioView(parent, contentArea)
     rows = ROWS,
     fill = true,
     top = 0,
+    flex = "name", -- the player's name takes the room, not the item column
     sort = { key = "amount", ascending = false },
   })
   v.suppliers = ns.DataTable.New(main, {
@@ -390,6 +405,7 @@ function UI:CreatePortfolioView(parent, contentArea)
     rows = ROWS,
     fill = true,
     top = 0,
+    flex = "name",
     sort = { key = "amount", ascending = false },
   })
   v.ledger = ns.DataTable.New(main, {
@@ -449,6 +465,13 @@ function UI:RefreshPortfolio()
   self.pfAuctions = ns.Trading:ActiveAuctions(holdings)
   self.pfCustomers = ledger and ledger:Counterparties("sale", since, char) or {}
   self.pfSuppliers = ledger and ledger:Counterparties("buy", since, char) or {}
+  -- the mail names the item: find the item for its link (as the ledger's own rows are resolved)
+  local resolve = ns.Trading.NameResolver()
+  for _, list in ipairs({ self.pfCustomers, self.pfSuppliers }) do
+    for _, c in ipairs(list) do
+      c.favouriteKey = c.favourite and resolve(c.favourite) or nil
+    end
+  end
   -- does this client's auction mail name the other player at all?
   self.pfNamesSeen = false
   for _, e in ipairs(ledger and ledger.db.entries or {}) do
@@ -478,14 +501,18 @@ function UI:RenderPortfolio()
   v.scope:SetValue(self.pfScope)
   v.periodSeg:Select(self.pfPeriod, true)
   v.scopeSeg:Select(self.pfScope, true)
-  v.cards[1].value:SetText(W.Money(t.value, true))
-  v.cards[2].value:SetText(l.count > 0 and W.Money(l.value, true) or W.Color("none", L["none"]))
-  v.cards[2].sub:SetText(l.count > 0 and L["%d auctions"]:format(l.count) or "")
-  v.cards[3].value:SetText(W.SignedMoney(t.unrealized))
-  v.cards[4].label:SetText(L["Realized profit  ·  %s"]:format(periodLabel or ""))
-  v.cards[4].value:SetText(W.SignedMoney(sum.profit))
-  v.cards[5].label:SetText(L["Sold / bought  ·  %s"]:format(periodLabel or ""))
-  v.cards[5].value:SetText(W.Money(sum.income or 0, true) .. " / " .. W.Money(sum.spent or 0, true))
+  local c = v.cards
+  c[1]:Set({ copper = t.value })
+  if l.count > 0 then
+    c[2]:Set({ copper = l.value, delta = L["%d auctions"]:format(l.count), deltaKind = "mute" })
+  else
+    c[2]:Set({ value = W.Color("none", L["none"]) })
+  end
+  c[3]:Set({ copper = t.unrealized, signed = true })
+  c[4].label:SetText(L["Realized profit  ·  %s"]:format(periodLabel or ""))
+  c[4]:Set({ copper = sum.profit, signed = true })
+  c[5].label:SetText(L["Sold / bought  ·  %s"]:format(periodLabel or ""))
+  c[5]:Set({ copper = sum.income or 0, copper2 = sum.spent or 0 })
   local mode = self.pfMode
   local ledgerMode, auctionsMode = mode == "ledger", mode == "auctions"
   local customersMode, suppliersMode = mode == "customers", mode == "suppliers"

@@ -3063,6 +3063,8 @@ describe("addon in a stubbed client", function()
       assert.are.equal(2, ns.UI.pfListed.count)
       assert.are.equal(5 * 200 + 300, ns.UI.pfListed.value)
       assert.truthy(v.cards[2].sub.text:find("2 auctions"))
+      assert.are.equal(v.cards[2].delta, v.cards[2].sub) -- the count is the KPI card's dim change line
+      assert.is_not_nil(v.positions.rows[1].badges[7]) -- the signal column draws a badge
       assert.are.equal(46, row.qty) -- 40 in bags + 6 listed
       -- active auctions view
       v.auctionsButton.scripts.OnClick(v.auctionsButton)

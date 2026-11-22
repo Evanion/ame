@@ -238,6 +238,7 @@ L["Buy-side data"] = true
 L["Buying"] = true
 L["Buying in bulk on the Shopping tab: when the game's price for the order is this much over what the listings showed, AME says so and the button reads Confirm anyway."] = true
 L["Buys"] = true
+L["By character"] = true
 L["By your guild officers: %s"] = true
 L["CPI"] = true
 L["CPI: %d items, weighted by listed value"] = true
