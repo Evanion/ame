@@ -498,7 +498,7 @@ function Help.Articles()
           body = {
             L["Sharing is a section of the Settings tab."],
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
-            L["Sharing happens on its own every 10 minutes. Sync now (in the Guild sharing card) does it right away: it sends what you have and asks your guild and trusted players to send theirs, so scans you're missing arrive within a minute or two."],
+            L["Sharing happens on its own every 10 minutes; the status line at the bottom says when the next announce is due. Sync now (in the Guild sharing card) does it right away: it sends what you have and asks your guild and trusted players to send theirs, so scans you're missing arrive within a minute or two."],
             H(L["Sync protocol"]),
             L["With v2 (the default), every scan goes to the whole guild at once, and hours you missed in the last week are filled in from whoever has them - a point per hour for the 7D chart, and whole days for days you have nothing of. It's paced at about one message a second, so a full scan takes several minutes to arrive, in the background. If sync seems to slow your game, pick v1 (lighter) under Guild sharing: you still get scans, the original way. The status under Guild sharing shows how many of the week's hours you have and what's on its way."],
             H(L["Sell-through"]),

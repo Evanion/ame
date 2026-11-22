@@ -202,4 +202,34 @@ describe("artboard features", function()
     assert.truthy(row.cells[1].text:find("Item " .. row.data.id, 1, true), row.cells[1].text)
   end)
 
+  it("Sharing: the status says when the next announce is due", function()
+    boot()
+    env.inGuild = true
+    ns.Settings:Set("syncGuild", true)
+    local svc = ns.SyncService
+    assert.is_true(svc.enabled and true or false)
+    -- the first one goes out 30 s after login, then every 10 minutes
+    assert.are.equal(30, svc:NextAnnounceIn())
+    env:advance(31)
+    assert.are.equal(600, svc:NextAnnounceIn())
+    env:advance(120)
+    assert.are.equal(480, svc:NextAnnounceIn())
+    ns.UI:Toggle()
+    ns.UI:ShowTab("sync")
+    local v = ns.UI.syncView
+    v.scripts.OnShow(v)
+    assert.truthy(v.statusLine.text:find("Sync is on", 1, true), v.statusLine.text)
+    assert.truthy(v.statusLine.text:find("next announce in 8 min", 1, true), v.statusLine.text)
+    -- it counts down while it's on screen
+    assert.is_true(v:IsShown())
+    env:advance(30)
+    env:advance(30)
+    assert.truthy(v.statusLine.text:find("next announce in 7 min", 1, true), v.statusLine.text)
+    -- sharing off: nothing is due
+    ns.Settings:Set("syncGuild", false)
+    ns.Settings:Set("syncTrusted", false)
+    assert.is_nil(svc:NextAnnounceIn())
+    ns.UI:RefreshSync()
+    assert.is_nil(v.statusLine.text:find("next announce", 1, true))
+  end)
 end)
