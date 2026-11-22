@@ -984,7 +984,13 @@ function T:Attach()
         )
       end
     end
+    -- the template draws a new tab as the selected one, and the game set its tabs before ours existed (and doesn't
+    -- again when it opens on the same tab): have it draw every tab's state, ours unselected unless they're on
+    if _G.PanelTemplates_UpdateTabs and rawget(ah, "selectedTab") then
+      pcall(_G.PanelTemplates_UpdateTabs, ah)
+    end
   end
+  resize()
   if C_Timer then
     C_Timer.After(0, resize)
   end
