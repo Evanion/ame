@@ -27,32 +27,10 @@ PB.Producers = function(itemID)
   return ns.Recipes.Producers(itemID)
 end
 
--- prices at your faction's auction house (what Crafting values with), or nil before there's a market index
+-- prices at your faction's auction house, as every view crafts with (CraftModel.Craft), or nil before there's a
+-- market index
 function PB.Craft()
-  local index = ns.AME and ns.AME:FactionIndex()
-  if not index then
-    return nil
-  end
-  local shard = ns.AME:FactionShard()
-  local _, house = ns.SplitShard(shard)
-  local data = ns.CraftingData
-  return ns.Crafting.New({
-    market = function(id)
-      return index.items[id]
-    end,
-    vendorBuy = function(id)
-      return data and data.VendorPrice and data:VendorPrice(id)
-    end,
-    vendorSell = function(id)
-      return ns.ItemCache.Get(id).sellPrice
-    end,
-    cut = ns.Settings:AuctionCut(house),
-    deposit = function(id)
-      local sell = ns.ItemCache.Get(id).sellPrice
-      return sell and ns.Arbitrage.Deposit(sell, house, ns.Settings:Get("listingHours")) or 0
-    end,
-    factor = ns.Settings:Get("outlierFactor"),
-  })
+  return ns.CraftModel.Craft()
 end
 
 -- one recipe's numbers for count crafts: { cost (each craft, reagents at market), sells (what a craft's items sell

@@ -2063,6 +2063,16 @@ describe("addon in a stubbed client", function()
       assert.truthy(rows[1][2]:find("[sgc]"), rows[1][2]) -- a price
       assert.truthy(rows[2][1]:find("Per craft", 1, true))
       assert.is_nil(ns.Tooltip.RecipeLines(2589)) -- not a recipe
+      -- the Crafting tab's prices: a recipe you know makes the linen for less than it costs, so the craft earns more
+      local before = ns.CraftModel.Craft():Evaluate(ns.CraftingData:Recipe(7001)).profit
+      ns.CraftingData.data.vendor = { [2320] = 1 } -- a vendor's thread, a copper each
+      AME_DB.crafting = {
+        catalog = { [197] = { at = 1, recipes = { [7002] = { out = 2589, min = 1, max = 1, r = { { 2320, 1 } } } } } },
+        chars = { [ns.Trading.CharKey()] = { professions = { [197] = { at = 1, learned = { [7002] = true } } } } },
+      }
+      local after = ns.CraftModel.Craft():Evaluate(ns.CraftingData:Recipe(7001)).profit
+      assert.is_true(after > before, after .. " vs " .. before)
+      assert.are.equal(ns.Tooltip.RecipeLines(99001)[2][2], ns.Widgets.SignedMoney(after, { full = true }))
     end)
 
     it("tooltips use your faction's auction house even right after visiting the goblin AH", function()

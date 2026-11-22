@@ -559,29 +559,10 @@ function Tooltip.RecipeLines(itemID)
     return nil
   end
   local teaches = data:Teaches(itemID)
-  local index = factionIndex()
-  if not (teaches and index) then
+  if not (teaches and factionIndex()) then
     return nil
   end
-  local house = UnitFactionGroup and UnitFactionGroup("player")
-  local cut = (house == "Neutral" and ns.Settings:Get("cutNeutral") or ns.Settings:Get("cutFaction")) / 100
-  local craft = ns.Crafting.New({
-    market = function(id)
-      return index.items[id]
-    end,
-    vendorBuy = function(id)
-      return data:VendorPrice(id)
-    end,
-    vendorSell = function(id)
-      return ns.ItemCache.Get(id).sellPrice
-    end,
-    cut = cut,
-    deposit = function(id)
-      local sell = ns.ItemCache.Get(id).sellPrice
-      return sell and ns.Arbitrage.Deposit(sell, house, ns.Settings:Get("listingHours")) or 0
-    end,
-    factor = ns.Settings:Get("outlierFactor"),
-  })
+  local craft = ns.CraftModel.Craft() -- the Crafting tab's prices: parts crafted when cheaper, fresh searches
   local rows = {}
   for i, spell in ipairs(teaches.spells) do
     if i > Tooltip.RECIPE_MAX then

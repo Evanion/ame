@@ -9,6 +9,7 @@
 --                                bar and craft queue): { id, product, made, reagents }
 --   Recipes.Producers(itemID)    { { recipe = id, crafters = { charKey, ... } }, ... }: catalog recipes that make it
 --   Recipes.Teaches(itemID)      what a recipe item teaches (CraftingData:Teaches)
+--   Recipes.Stamp()              changes whenever what's recorded does (a memo key for what's built from it)
 local _, ns = ...
 
 local Recipes = {}
@@ -84,9 +85,13 @@ function Recipes.Recorded(id)
   return nil
 end
 
--- item -> { { recipe, crafters = { charKey, ... } } }: what your characters' windows recorded (built once per change)
-local producers, producersKey
-local function producerMap()
+-- a recipe learned with no window open (Professions:Learned) changes no recording time: it counts too
+local generation = 0
+ns.Events.On("RecipesChanged", function()
+  generation = generation + 1
+end)
+
+function Recipes.Stamp()
   local db = AME_DB and AME_DB.crafting or {}
   local key = 0
   for _, c in pairs(db.catalog or {}) do
@@ -97,6 +102,14 @@ local function producerMap()
       key = key + (p.at or 0)
     end
   end
+  return tostring(db) .. ":" .. key .. ":" .. generation
+end
+
+-- item -> { { recipe, crafters = { charKey, ... } } }: what your characters' windows recorded (built once per change)
+local producers, producersKey
+local function producerMap()
+  local db = AME_DB and AME_DB.crafting or {}
+  local key = Recipes.Stamp()
   if producers and producersKey == key then
     return producers
   end

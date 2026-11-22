@@ -320,7 +320,7 @@ function Help.Articles()
             L["Hold Shift for more: what gear disenchants into (each result with its chance and value), yours per character and guild bank with your average cost, every auction house you have prices for and what you'd get there after its cut, then the average, the lowest listing, the supply trend, volatility, the score and how much data it rests on. Always show details keeps it open."],
             L["Guild banks count as AME last saw them: open the guild bank once (each tab) to count it. On a small screen with a large UI scale, tooltips leave out the freshness, holdings and context lines on their own. Turn tooltips off, or change the average they compare with, under Settings, Tooltips & charts."],
             H(L["Recipes"]),
-            L["With Crafting on, a recipe's tooltip (pattern, plans, formula...) also shows what it makes at today's market price, and what one craft earns after buying the reagents at market and the auction house's cut - red when it loses money. It prices every reagent at market; the Crafting tab also counts the reagents you hold and those cheaper to craft yourself, so its number can differ."],
+            L["With Crafting on, a recipe's tooltip (pattern, plans, formula...) also shows what it makes at today's market price, and what one craft earns after the reagents and the auction house's cut and deposit - red when it loses money. It prices as the Crafting tab and the profession window do: each reagent bought at market, from a vendor or crafted by a recipe you know, whichever is cheapest, and an item searched in the last hour at its cheapest listing. Only the Crafting tab also counts the reagents you hold."],
           },
         },
         {
@@ -574,7 +574,7 @@ function Help.Articles()
           key = "professions",
           title = L["Profession window"],
           body = {
-            L["Open a profession and AME adds what each recipe earns: on every recipe in the list, its profit after the auction house's cut, with the reagents at market price. Under the window, a bar shows the picked recipe's cost to craft, what it sells for and the profit. Type how many to make for the batch's profit and what you'd actually spend - only the reagents you don't have."],
+            L["Open a profession and AME adds what each recipe earns: on every recipe in the list, its profit after the auction house's cut, priced as the Crafting tab does: each reagent at market, from a vendor or crafted by a recipe you know, whichever is cheapest, and a bind-on-pickup product as one you can't sell. Under the window, a bar shows the picked recipe's cost to craft, what it sells for and the profit. Type how many to make for the batch's profit and what you'd actually spend - only the reagents you don't have."],
             L["Queue adds the batch to the craft queue, Add to shopping list puts its reagents on a list (pick one or make a new one), and at the auction house Search AH looks up the item and every reagent."],
             H(L["The craft queue"]),
             L["The queue opens beside the profession window (Show queue under the window opens and closes it). Parts come first: queue gauntlets and the bars they need are smelted ahead of them - when making the bars is cheaper than buying them (Buy or Make on the line switches it). Each material shows its source in a fixed order: your bags, your bank, your other characters, a guild bank, a vendor, a step of the queue, and the auction house for the rest."],

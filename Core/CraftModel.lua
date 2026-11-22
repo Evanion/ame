@@ -6,6 +6,10 @@
 --     only: one character's key (nil: every character). entries: the recipes your characters know, one per recipe
 --     with every character who knows it; craft: a Crafting instance on the faction auction house's quote.
 --   CraftModel.Instead(itemID) -> { product, where, each, raw, crafter } or nil
+--   CraftModel.Producers() -> { [product] = { recipe, ... } }: the recipes your characters know that make each item
+--   CraftModel.Craft() -> the one Crafting env every view prices crafts with (the Crafting tab, the profession bar
+--     and craft queue, recipe tooltips): your faction's auction house quote (fresh searches, bind-on-pickup products
+--     unsellable) and parts crafted when that's cheaper. nil before there's a market index.
 local _, ns = ...
 
 local M = {}
@@ -15,9 +19,42 @@ ns.CraftModel = M
 M.GATHERING = { [182] = true, [356] = true, [393] = true }
 local GATHERING = M.GATHERING
 
+-- product -> the known recipes that make it, worked out again only when what your characters know changes
+local producers, producersKey
+function M.Producers()
+  local key = ns.Recipes.Stamp()
+  if producers and producersKey == key then
+    return producers
+  end
+  producers, producersKey = {}, key
+  local seen = {}
+  for _, c in pairs(ns.Professions:Characters()) do
+    for profession, p in pairs(c.professions or {}) do
+      if not GATHERING[profession] then
+        for id in pairs(p.learned or {}) do
+          if not seen[id] then
+            seen[id] = true
+            local r = ns.Recipes.Get(id, profession)
+            if r and r.product then
+              producers[r.product] = producers[r.product] or {}
+              table.insert(producers[r.product], r)
+            end
+          end
+        end
+      end
+    end
+  end
+  return producers
+end
+
 -- Crafting on your faction's auction house (index): its quote, and the recipes that make each product (chains)
-local function env(index, producers)
-  return ns.Quote.For(ns.AME:FactionShard(), index):CraftEnv(producers)
+local function env(index)
+  return ns.Quote.For(ns.AME:FactionShard(), index):CraftEnv(M.Producers())
+end
+
+function M.Craft()
+  local index = ns.AME and ns.AME:FactionIndex()
+  return index and env(index) or nil
 end
 
 -- Make something of an item instead of vendoring it? Recipes your characters know that use it, valued as the
@@ -81,8 +118,8 @@ function M.Build(only)
   local hasData = ns.CraftingData:Load()
   local chars = ns.Professions:Characters()
 
-  -- known recipes, one entry per recipe with every character who knows it; product -> recipes (chains)
-  local byRecipe, producers, uses, entries = {}, {}, {}, {}
+  -- known recipes, one entry per recipe with every character who knows it
+  local byRecipe, uses, entries = {}, {}, {}
   for key, c in pairs(chars) do
     for profession, p in pairs(c.professions or {}) do
       if not GATHERING[profession] then
@@ -93,10 +130,6 @@ function M.Build(only)
             if not e then
               e = { recipe = r, crafters = {}, profession = profession, cooldown = nil }
               byRecipe[id] = e
-              if r.product then
-                producers[r.product] = producers[r.product] or {}
-                table.insert(producers[r.product], r)
-              end
               for _, reagent in ipairs(r.reagents) do
                 uses[reagent[1]] = uses[reagent[1]] or {}
                 table.insert(uses[reagent[1]], r)
@@ -132,7 +165,7 @@ function M.Build(only)
     heldSet[id] = n > 0 or nil
   end
 
-  local craft = env(index, producers)
+  local craft = env(index)
   return {
     hasData = hasData,
     index = index,
