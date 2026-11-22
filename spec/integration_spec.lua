@@ -2232,7 +2232,7 @@ describe("addon in a stubbed client", function()
             if i == 1 then
               return "Empty Vial", 134400, 18, 5, -1, true, nil, false
             end
-            return "Coarse Thread", 134400, 9, 1, -1, true, nil, false
+            return "Coarse Thread", 134400, 9, 1, 3, true, nil, false -- only 3 in stock
           end,
           GetMerchantItemMaxStack = function()
             return 100
@@ -2265,6 +2265,9 @@ describe("addon in a stubbed client", function()
         assert.are.same({ { 1, 25 } }, bought) -- 5 stacks of 5, in one purchase
         env:fire("MERCHANT_CLOSED")
         assert.is_false(V.frame:IsShown())
+        -- remembered as vendor items: the vials (no end of them), not the thread (3 in stock: the AH covers the rest)
+        assert.are.equal(4, V.PriceOf(3371)) -- 18c for 5, rounded
+        assert.is_nil(V.PriceOf(2320))
       end
     )
 

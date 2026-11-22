@@ -101,9 +101,13 @@ function V.Offers()
       price, stack, available, extended = p, q, a, e
     end
     if id and price and price > 0 and not extended then
-      if AME_DB then -- remembered: a list's vendor items are marked as such on the auction house's Shopping tab
+      -- remembered, when the vendor has no end of it: a list's vendor items are marked as such on the auction
+      -- house's Shopping tab. A limited stock (some vendors sell a few of what's usually bought on the AH) isn't:
+      -- what the vendor can't cover still comes from the AH.
+      if AME_DB then
         AME_DB.vendorItems = AME_DB.vendorItems or {}
-        AME_DB.vendorItems[id] = math.floor(price / math.max(1, stack or 1) + 0.5)
+        local unlimited = not available or available < 0
+        AME_DB.vendorItems[id] = unlimited and math.floor(price / math.max(1, stack or 1) + 0.5) or nil
       end
       out[#out + 1] = {
         index = i,
