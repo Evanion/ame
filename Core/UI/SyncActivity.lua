@@ -31,7 +31,8 @@ function UI.SyncBytes(bytes)
   return ("%d KB"):format(math.max(1, math.floor(bytes / 1024 + 0.5)))
 end
 
--- what objects are, in words: { s = 1, h = 3 } -> "full scan, 3 hours"
+-- what objects are, in words: { s = 1, h = 3 } -> "full scan, 3 hours of prices" (an hour: one hourly price point
+-- per item, for the 7D chart; a day: one day's prices)
 function UI.SyncKinds(kinds)
   local parts = {}
   local s, h, d = kinds.s or 0, kinds.h or 0, kinds.d or 0
@@ -39,10 +40,10 @@ function UI.SyncKinds(kinds)
     parts[#parts + 1] = s == 1 and L["full scan"] or L["%d full scans"]:format(s)
   end
   if h > 0 then
-    parts[#parts + 1] = h == 1 and L["1 hour"] or L["%d hours"]:format(h)
+    parts[#parts + 1] = h == 1 and L["1 hour of prices"] or L["%d hours of prices"]:format(h)
   end
   if d > 0 then
-    parts[#parts + 1] = d == 1 and L["1 day"] or L["%d days"]:format(d)
+    parts[#parts + 1] = d == 1 and L["1 day of prices"] or L["%d days of prices"]:format(d)
   end
   return table.concat(parts, ", ")
 end
@@ -74,13 +75,13 @@ function UI.SyncMoving(status)
   local pace = ns.SyncV2.PACE
   if status.sending then
     local s = status.sending
-    local what = UI.SyncObject(s)
+    local what = UI.SyncObject(s) .. " " .. L["to the guild"]
     if #(status.queue or {}) > 0 then
       local kinds = {}
       for _, q in ipairs(status.queue) do
         kinds[q.kind] = (kinds[q.kind] or 0) + 1
       end
-      what = what .. W.SEP .. L["then %s"]:format(UI.SyncKinds(kinds))
+      what = what .. W.SEP .. L["next: %s guildmates asked for"]:format(UI.SyncKinds(kinds))
     end
     out[#out + 1] = {
       who = L["Sending"],
@@ -96,11 +97,30 @@ function UI.SyncMoving(status)
       houses[#houses + 1] = houseOf(shard)
     end
     table.sort(houses)
+    local what = table.concat(houses, ", ") .. ": " .. UI.SyncKinds(e.kinds or {})
+    local left, why = L["~%s left"]:format(UI.Duration(e.secondsLeft)), nil
+    if e.state == "turn" then
+      -- offered, but the sender is sending other data first: it waits its turn there
+      left = W.Color("warn", L["waiting %s"]:format(UI.Duration(e.since)))
+      why = L["%s is sending other data first; this starts when its turn comes"]:format(e.from)
+    elseif e.state == "stalled" then
+      left = W.Color("bad", L["stalled %s"]:format(UI.Duration(e.since)))
+      why = (e.asked or 0) > 0
+          and L["nothing from %s lately; asked for the missing blocks %d times (gives up after %d)"]:format(
+            e.from,
+            e.asked,
+            ns.SyncV2.MAX_NACKS
+          )
+        or L["nothing from %s lately (offline, or reloaded?); it asks for the missing blocks on its own"]:format(e.from)
+    end
     out[#out + 1] = {
       who = L["From %s"]:format(e.from),
-      what = table.concat(houses, ", ") .. ": " .. UI.SyncKinds(e.kinds or {}),
+      what = what,
+      why = why,
       frac = e.got / math.max(1, e.n),
-      left = L["~%s left"]:format(UI.Duration(e.secondsLeft)),
+      left = left,
+      from = e.from,
+      state = e.state,
     }
   end
   return out
@@ -210,12 +230,34 @@ function UI:CreateSyncActivity(v, holder)
     local r = CreateFrame("Frame", nil, body)
     r:SetHeight(ROW_H)
     r.who = W.Text(r, "GameFontHighlightSmall")
-    r.who:SetPoint("LEFT", 0, 0)
+    r.who:SetPoint("TOPLEFT", 0, -3)
     r.who:SetWidth(150)
     r.who:SetWordWrap(false)
+    -- Retry and Cancel on a transfer from someone (not on what you send)
+    r.cancel = W.Button(r, L["Cancel"], 56, 18, function()
+      if r.from then
+        local n = ns.SyncService:V2Cancel(r.from)
+        a.message = L["Stopped %d from %s: they're asked for again later, from whoever has them."]:format(n, r.from)
+        UI:RefreshSync()
+      end
+    end)
+    r.cancel:SetPoint("TOPRIGHT", 0, 0)
+    r.retry = W.Button(r, L["Retry"], 50, 18, function()
+      if r.from then
+        local n = ns.SyncService:V2Retry(r.from)
+        a.message = L["Asked %s again for what's missing of %d."]:format(r.from, n)
+        UI:RefreshSync()
+      end
+    end)
+    r.retry:SetPoint("RIGHT", r.cancel, "LEFT", -4, 0)
     r.left = W.Text(r, "GameFontDisableSmall", "RIGHT")
-    r.left:SetPoint("RIGHT", 0, 0)
     r.left:SetWidth(110)
+    -- why it isn't moving, under the row
+    r.why = W.Text(r, "GameFontDisableSmall")
+    r.why:SetPoint("TOPLEFT", r.who, "BOTTOMLEFT", 0, -3)
+    r.why:SetPoint("RIGHT", r.retry, "LEFT", -8, 0)
+    r.why:SetWordWrap(false)
+    W.Truncated(r.why)
     r.pct = W.Text(r, "GameFontHighlightSmall", "RIGHT")
     r.pct:SetPoint("RIGHT", r.left, "LEFT", -8, 0)
     r.pct:SetWidth(36)
@@ -309,7 +351,20 @@ function UI:CreateSyncActivity(v, holder)
         r.pct:SetText(math.floor(100 * m.frac + 0.5) .. "%")
         r.left:SetText(m.left)
         r.bar.fill:SetWidth(math.max(1, 140 * math.min(1, m.frac)))
-        y = y + ROW_H
+        r.from = m.from
+        r.left:ClearAllPoints()
+        if m.from then
+          r.left:SetPoint("RIGHT", r.retry, "LEFT", -8, 0)
+        else
+          r.left:SetPoint("TOPRIGHT", 0, -3)
+        end
+        r.retry:SetShown(m.from ~= nil)
+        r.cancel:SetShown(m.from ~= nil)
+        r.why:SetText(m.why or "")
+        r.why:SetShown(m.why ~= nil)
+        local h = m.why and (ROW_H + 14) or ROW_H
+        r:SetHeight(h)
+        y = y + h
       end
     end
     y = y + LINE_GAP
@@ -323,6 +378,9 @@ function UI:CreateSyncActivity(v, holder)
     a.empty:SetShown(#rows == 0)
     a.head:SetShown(#rows > 0)
     if #rows == 0 then
+      for _, r in ipairs(a.rows) do -- (rows drawn while there were some)
+        r:Hide()
+      end
       a.empty:SetText(d.emptyText or "")
       a.empty:ClearAllPoints()
       a.empty:SetPoint("TOPLEFT", 0, -y)

@@ -444,6 +444,7 @@ function V2:OnMessage(msg, sender)
     local inc = self.incoming[id]
     if inc and m.i and m.i >= 1 and m.i <= inc.n and not inc.blocks[m.i] then
       inc.blocks[m.i], inc.got, inc.lastAt, inc.nacks, inc.flowing = m.bytes, inc.got + 1, now, 0, true
+      inc.blockAt = now -- (lastAt also moves when it's asked for again: this is the last block itself)
       if inc.got == inc.n then
         self:complete(id, inc)
       end
@@ -557,6 +558,7 @@ function V2:OnMessage(msg, sender)
         got = carried and carried.got or 0,
         lastAt = now,
         nacks = 0,
+        at = carried and carried.at or now, -- when it was offered (how long it has waited)
       }
       self:watch()
     end
@@ -659,7 +661,8 @@ function V2:check()
     -- they're lost: say a disconnect, or the sender reloaded and no longer has it), or one offered never started
     local quiet = now - inc.lastAt
     local stalled = now - math.max(inc.lastAt, self.heard[inc.sender] or 0) >= V2.STALL
-      or quiet >= (inc.flowing and V2.STALL_BUSY or V2.WAIT_TURN)
+      -- (one never started that was asked for once already: its turn should have come; ask again sooner)
+      or quiet >= ((inc.flowing or inc.nacks > 0) and V2.STALL_BUSY or V2.WAIT_TURN)
     if stalled and not inc.asking then
       local seen = self.nacked[id]
       if inc.nacks >= V2.MAX_NACKS then
@@ -710,7 +713,11 @@ function V2:check()
 end
 
 -- what's going on, for the Sharing status: sending = { shard, kind, ref, sent, n } or nil, queued = objects
--- waiting (queue = { { shard, kind, ref }, ... }), receiving = { { shard, kind, ref, got, n, from }, ... }
+-- waiting (queue = { { shard, kind, ref }, ... }), receiving = { { shard, kind, ref, got, n, from }, ... };
+-- senders = per sender: objects, got, n, kinds, shards, secondsLeft, and why it isn't moving when it isn't -
+-- state "receiving" (blocks came lately), "turn" (offered, none started yet, and the sender is busy sending other
+-- data: it waits its turn), "stalled" (nothing for a while, the sender quiet too), with since (seconds in that
+-- state) and asked (times the missing blocks were asked for again)
 function V2:Status()
   local s = { queued = 0, receiving = {}, queue = {} }
   for _, o in ipairs(self.order) do
@@ -723,9 +730,19 @@ function V2:Status()
       end
     end
   end
+  local now = self.now()
   for _, inc in pairs(self.incoming) do
-    s.receiving[#s.receiving + 1] =
-      { shard = inc.shard, kind = inc.kind, ref = inc.ref, got = inc.got, n = inc.n, from = inc.sender }
+    s.receiving[#s.receiving + 1] = {
+      shard = inc.shard,
+      kind = inc.kind,
+      ref = inc.ref,
+      got = inc.got,
+      n = inc.n,
+      from = inc.sender,
+      at = inc.at or now,
+      blockAt = inc.blockAt,
+      nacks = inc.nacks or 0,
+    }
   end
   -- the same, per sender (a player catching up gets a dozen objects queued from one guildmate): objects, blocks
   -- in and in all, sorted by name; a sender sends one block every PACE seconds, so blocks left x PACE is the wait
@@ -734,16 +751,29 @@ function V2:Status()
   for _, r in ipairs(s.receiving) do
     local e = by[r.from]
     if not e then
-      e = { from = r.from, objects = 0, got = 0, n = 0, kinds = {}, shards = {} }
+      e = { from = r.from, objects = 0, got = 0, n = 0, kinds = {}, shards = {}, asked = 0, first = now, last = 0 }
       by[r.from] = e
       s.senders[#s.senders + 1] = e
     end
+    e.first = math.min(e.first, r.at) -- the longest-waiting object's offer
+    if r.blockAt then
+      e.last = math.max(e.last, r.blockAt) -- the newest block of any of them
+    end
+    e.asked = math.max(e.asked, r.nacks)
     e.objects, e.got, e.n = e.objects + 1, e.got + (r.got or 0), e.n + (r.n or 0)
     e.kinds[r.kind] = (e.kinds[r.kind] or 0) + 1 -- how many full scans ("s"), hours ("h") and days ("d")
     e.shards[r.shard or "?"] = true
   end
   for _, e in ipairs(s.senders) do
     e.secondsLeft = math.ceil((e.n - e.got) * V2.PACE)
+    local busy = now - (self.heard[e.from] or -math.huge) < V2.STALL -- the sender is sending (something)
+    if e.last > 0 and now - e.last < V2.STALL then
+      e.state, e.since = "receiving", 0
+    elseif busy and e.last == 0 then
+      e.state, e.since = "turn", now - e.first
+    else
+      e.state, e.since = "stalled", now - (e.last > 0 and e.last or e.first)
+    end
   end
   table.sort(s.senders, function(a, b)
     return tostring(a.from) < tostring(b.from)
@@ -756,6 +786,50 @@ function V2:Status()
     end
   end
   return s
+end
+
+-- Cancel what a sender is sending me: forget it, and ignore its blocks still on the way. It's asked for again on a
+-- later manifest, once REQUEST_COOLDOWN has passed. Returns how many objects were dropped.
+function V2:Drop(sender)
+  local now, n = self.now(), 0
+  for id, inc in pairs(self.incoming) do
+    if inc.sender == sender then
+      self.incoming[id] = nil
+      self.offerOf[id] = nil
+      self.offerAsked[id] = true -- its blocks still coming: don't ask for its offer again
+      local offer = self.offers[inc.k]
+      if offer and offer.sender == sender and offer.oid == inc.oid then
+        self.offers[inc.k] = nil
+      end
+      self.requested[inc.k] = now
+      n = n + 1
+    end
+  end
+  return n
+end
+
+-- Retry what a sender is sending me: ask them now for every block still missing (they resend what they still have;
+-- an object they no longer have is given up on after the usual tries, and asked for again from anyone), and start
+-- counting its stall again. Objects still waiting their turn keep their place in it. Returns how many objects.
+function V2:Retry(sender)
+  local now, n = self.now(), 0
+  for id, inc in pairs(self.incoming) do
+    if inc.sender == sender then
+      local missing = {}
+      for i = 1, inc.n do
+        if not inc.blocks[i] then
+          missing[#missing + 1] = i
+        end
+      end
+      if #missing > 0 then
+        self:queue(V2.EncodeMissing(inc.sender, inc.oid, missing))
+        self.nacked[id] = now
+      end
+      inc.nacks, inc.lastAt = 0, now
+      n = n + 1
+    end
+  end
+  return n
 end
 
 -- how big an object of a kind at an auction house usually is: a running average of the ones offered (bytes)
@@ -826,6 +900,7 @@ function V2:Restore(saved)
       end
       local id = s.sender .. "\n" .. s.oid
       s.k, s.got, s.lastAt, s.nacks, s.flowing = objKey(s.shard, s.kind, s.ref), got, now - V2.STALL, 0, got > 0
+      s.at = now
       self.incoming[id] = s
       self.offerOf[id] = s.k
     end

@@ -4240,8 +4240,19 @@ describe("addon in a stubbed client", function()
         -- a catch-up: a dozen objects queued from one guildmate read as one progress row, with the time left
         local incoming = ns.SyncService.v2.incoming
         for i = 1, 12 do
-          incoming["Guild Mate#" .. i] =
-            { shard = SHARD, kind = "h", ref = i, got = i == 1 and 50 or 0, n = 100, sender = "Guild Mate" }
+          incoming["Guild Mate#" .. i] = {
+            shard = SHARD,
+            kind = "h",
+            ref = i,
+            got = i == 1 and 50 or 0,
+            n = 100,
+            sender = "Guild Mate",
+            blockAt = i == 1 and GetTime() or nil, -- the first one's blocks are coming in
+            k = ns.SyncV2.ObjKey(SHARD, "h", i),
+            oid = "o" .. i,
+            lastAt = GetTime(),
+            at = GetTime(),
+          }
         end
         ns.UI:RefreshSync()
         local moving = {}
@@ -4256,9 +4267,25 @@ describe("addon in a stubbed client", function()
         assert.are.equal("~21 min left", moving[1].left)
         assert.truthy(math.abs(moving[1].frac - 50 / 1200) < 1e-9)
         assert.truthy(v.statusLine:GetText():find("receiving from 1 player", 1, true), v.statusLine:GetText())
-        for k in pairs(incoming) do
-          incoming[k] = nil
+        assert.is_nil(moving[1].why)
+        -- nothing for a while, and the guildmate quiet: stalled, with why, and Retry / Cancel on the row
+        env:advance(ns.SyncV2.STALL + 1)
+        ns.UI:RefreshSync()
+        local function guildMate()
+          for _, m in ipairs(v.act.data.moving) do
+            if m.from == "Guild Mate" then
+              return m
+            end
+          end
         end
+        assert.truthy(guildMate().left:find("stalled", 1, true), guildMate().left)
+        assert.truthy(guildMate().why:find("nothing from Guild Mate lately", 1, true), guildMate().why)
+        v:Measure(800) -- lays the card out
+        local row = v.act.moving[1].from == "Guild Mate" and v.act.moving[1] or v.act.moving[2]
+        assert.is_true(row.retry:IsShown())
+        row.cancel.scripts.OnClick(row.cancel)
+        assert.is_nil(next(incoming))
+        assert.truthy(v.act.message:find("Stopped 12 from Guild Mate", 1, true), v.act.message)
         choose(2) -- v1
         assert.are.equal(1, ns.Settings:Get("syncProtocol"))
         assert.is_nil(ns.SyncService.v2)

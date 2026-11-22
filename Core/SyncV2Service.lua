@@ -568,11 +568,54 @@ function Service:V2Missing()
       total.bytes, total.unknown = total.bytes + row.bytes, total.unknown + row.unknown
     end
   end
+  -- what's on its way without a manifest heard lately (resumed after a /reload, or announced over 45 min ago)
+  local extra = {}
+  for _, inc in pairs(v2.incoming) do
+    local k = V2.ObjKey(inc.shard, inc.kind, inc.ref)
+    if not seen[k] and not self.trust:IsBlocked(inc.sender) then
+      seen[k] = true
+      local key = inc.sender .. "\n" .. inc.shard
+      local row = extra[key]
+      if not row then
+        local _, house = ns.SplitShard(inc.shard)
+        row = { from = inc.sender, shard = inc.shard, house = house, hours = 0, days = 0, bytes = 0, unknown = 0 }
+        row.state, row.seconds, row.mine = "receiving", 0, newestFull(AME.history.shards[inc.shard])
+        extra[key] = row
+        rows[#rows + 1] = row
+      end
+      if inc.kind == "s" then
+        row.scan = inc.ref
+        total.scans = total.scans + 1
+      elseif inc.kind == "h" then
+        row.hours, total.hours = row.hours + 1, total.hours + 1
+      else
+        row.days, total.days = row.days + 1, total.days + 1
+      end
+      row.bytes, total.bytes = row.bytes + (inc.len or 0), total.bytes + (inc.len or 0)
+      local secs = math.ceil(math.max(0, inc.n - (inc.got or 0)) * V2.PACE)
+      row.seconds = row.seconds + secs
+      perSender[inc.sender] = (perSender[inc.sender] or 0) + secs
+    end
+  end
   for _, seconds in pairs(perSender) do
     total.seconds = math.max(total.seconds, seconds)
     total.senders = total.senders + 1
   end
   return rows, total
+end
+
+-- Sync activity's buttons on a transfer: Retry asks the sender now for what's still missing; Cancel stops it (it's
+-- asked for again later, from whoever has it)
+function Service:V2Retry(sender)
+  local n = self.v2 and self.v2:Retry(sender) or 0
+  self:Changed()
+  return n
+end
+
+function Service:V2Cancel(sender)
+  local n = self.v2 and self.v2:Drop(sender) or 0
+  self:Changed()
+  return n
 end
 
 -- for the Sharing status: hours of the last 7 days I hold for the auction house I'm at, and transfers going on

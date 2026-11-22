@@ -501,4 +501,120 @@ describe("Sync v2 (engine)", function()
       assert.is_nil(e:Track(SHARD, "d", 2))
     end)
   end)
+
+  describe("a transfer that doesn't move", function()
+    local e, t, timers, out
+    -- a clock with timers, and what I send
+    local function run(seconds)
+      local stop = t + seconds
+      while true do
+        table.sort(timers, function(a, b)
+          return a.at < b.at
+        end)
+        local nxt = timers[1]
+        if not nxt or nxt.at > stop then
+          break
+        end
+        table.remove(timers, 1)
+        t = math.max(t, nxt.at)
+        nxt.fn()
+      end
+      t = stop
+    end
+    local function sent(kind)
+      local n = 0
+      for _, msg in ipairs(out) do
+        local m = V2.Decode(msg)
+        if m and m.type == kind and m.oid == "x1" then -- (asks about Bob's other objects aside)
+          n = n + 1
+        end
+      end
+      return n
+    end
+    before_each(function()
+      t, timers, out = 0, {}, {}
+      e = V2.New({
+        name = "Me",
+        send = function(msg)
+          out[#out + 1] = msg
+        end,
+        now = function()
+          return t
+        end,
+        after = function(sec, fn)
+          timers[#timers + 1] = { at = t + sec, fn = fn }
+        end,
+        random = function()
+          return 0
+        end,
+        host = {
+          Allowed = function()
+            return true
+          end,
+          Wants = function()
+            return {}
+          end,
+          Wanted = function()
+            return true
+          end,
+        },
+      })
+      -- Bob offers me an hour (3 blocks), then keeps sending other objects' blocks
+      e:OnMessage(
+        V2.EncodeOffer(SHARD, { oid = "x1", kind = "h", ref = 99, t = 0, n = 3, len = 600, sum = 1, src = "Bob" }),
+        "Bob"
+      )
+    end)
+
+    local function busyBob(seconds)
+      for _ = 1, seconds / 5 do
+        e:OnMessage(V2.EncodeBlock("other", 1, "zz"), "Bob")
+        run(5)
+      end
+    end
+
+    it("says it waits its turn while the sender sends other data, and for how long", function()
+      busyBob(600)
+      local bob = e:Status().senders[1]
+      assert.are.equal("turn", bob.state)
+      assert.are.equal(600, bob.since)
+    end)
+
+    it("says it stalled when the sender goes quiet, and how often it asked again", function()
+      e:OnMessage(V2.EncodeBlock("x1", 1, string.rep("a", 200)), "Bob")
+      run(V2.STALL + V2.CHECK_EVERY + V2.NACK_DELAY)
+      local bob = e:Status().senders[1]
+      assert.are.equal("stalled", bob.state)
+      assert.truthy(bob.since >= V2.STALL)
+      assert.are.equal(1, bob.asked)
+    end)
+
+    it("asks again sooner once its turn should have come, and gives up within the hour", function()
+      busyBob(V2.WAIT_TURN - 10)
+      assert.are.equal(0, sent("missing")) -- it waits its turn
+      busyBob(20)
+      assert.are.equal(1, sent("missing")) -- then asks
+      busyBob((V2.MAX_NACKS + 1) * (V2.STALL_BUSY + V2.CHECK_EVERY + V2.NACK_DELAY))
+      assert.is_nil(next(e.incoming)) -- given up: it's asked for again on a later manifest
+      assert.truthy(t < 3600)
+    end)
+
+    it("Retry asks the sender for the missing blocks now; Cancel drops it and ignores its blocks", function()
+      e:OnMessage(V2.EncodeBlock("x1", 1, string.rep("a", 200)), "Bob")
+      assert.are.equal(1, e:Retry("Bob"))
+      run(2)
+      local m
+      for _, msg in ipairs(out) do
+        m = V2.Decode(msg)
+      end
+      assert.are.equal("missing", m.type)
+      assert.are.same({ 2, 3 }, m.blocks)
+      assert.are.equal(1, e:Drop("Bob"))
+      assert.is_nil(next(e.incoming))
+      e:OnMessage(V2.EncodeBlock("x1", 2, string.rep("a", 200)), "Bob")
+      assert.is_nil(next(e.incoming))
+      assert.are.equal("asked", e:Track(SHARD, "h", 99).state) -- not asked for again right away
+      assert.are.equal(0, e:Drop("Bob"))
+    end)
+  end)
 end)
