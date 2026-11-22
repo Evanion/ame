@@ -22,7 +22,6 @@ local AGES = {
   { false, L["Data of any age"] },
 }
 UI.ARB_SIDEBAR = UI.SIDE_PANEL_W
-UI.ARB_POST_UNITS = 20 -- deposit basis when the route's depth isn't known: one post of up to this many
 
 local function ageText(days)
   if not days or days <= 0 then
@@ -72,18 +71,6 @@ local COLUMNS = {
     end,
   },
 }
-
--- deposit per unit at the sell house: one post of the route's profitable units (or up to UI.ARB_POST_UNITS)
-function UI:ArbDeposit(e)
-  local info = ns.ItemCache.Get(e.itemID)
-  if not info.sellPrice then
-    return nil
-  end
-  local n = e.units or math.min(e.buyQty or 1, UI.ARB_POST_UNITS)
-  n = math.max(1, n)
-  local dep = ns.Arbitrage.Deposit(info.sellPrice * n, self.arb.sell, ns.Settings:Get("listingHours"))
-  return dep / n
-end
 
 function UI:CreateArbitrageView(parent, contentArea)
   local v = contentArea(parent)
@@ -402,35 +389,26 @@ function UI:RefreshArbitrage(keepOffset)
         return
       end
       self.arbMissing = (not buyIndex and ns.HOUSE_LABEL[a.buy]) or (not sellIndex and ns.HOUSE_LABEL[a.sell]) or nil
-      local cut = ns.Settings:AuctionCut(a.sell)
-      self.arbCut = cut
+      -- the sell house's quote: its cut, the outlier cap and the deposit (the route's net is worked out in core)
+      local q = ns.Quote.For(sellShard, sellIndex, { house = a.sell, fresh = false })
+      self.arbCut = q.cut
       local rows, transfers = ns.Arbitrage.Find(buyIndex, sellIndex, {
-        cut = cut,
+        cut = q.cut,
+        factor = q.factor,
         minProfit = a.minProfit,
         minMargin = a.minMargin,
         maxAge = a.maxAge or nil,
         today = ns.Today(GetServerTime()),
-        sortKey = a.sortKey == "net" and "profit" or a.sortKey,
+        sortKey = a.sortKey,
         ascending = a.ascending,
         hide = ns.AME.watch and ns.AME.watch:Hidden(),
+        units = function(e)
+          return self:DepthUnits(e)
+        end,
+        deposit = function(id, n)
+          return ns.ItemCache.Get(id).sellPrice and q:Deposit(id, n) or nil
+        end,
       })
-      -- what's left after the deposit too
-      for _, e in ipairs(rows) do
-        e.units = self:DepthUnits(e)
-        e.deposit = self:ArbDeposit(e)
-        e.net = e.profit - (e.deposit or 0)
-      end
-      if a.sortKey == "net" then
-        table.sort(rows, function(x, y)
-          if x.net == y.net then
-            return x.itemID < y.itemID
-          end
-          if a.ascending then
-            return x.net < y.net
-          end
-          return x.net > y.net
-        end)
-      end
       self.arbRows, self.arbTransfers = rows, transfers
       self:RenderArbitrage()
     end)
@@ -446,7 +424,7 @@ function UI:DepthRoute(e)
   if not book then
     return nil
   end
-  return ns.Depth.Route(book, e.sell * (1 - (self.arbCut or 0)))
+  return ns.Depth.Route(book, e.sell - e.fee) -- what one nets there after the cut
 end
 
 function UI:DepthUnits(e)
@@ -492,7 +470,7 @@ function UI:RenderArbitrage()
       .. W.SEP
       .. L["buy at the %s (%d%% cut), sell at the %s (%d%% cut)"]:format(
         ns.HOUSE_LABEL[a.buy],
-        W.CutPct(ns.Settings:AuctionCut(a.buy)),
+        W.CutPct(ns.Quote.Cut(a.buy)),
         ns.HOUSE_LABEL[a.sell],
         W.CutPct(self.arbCut)
       )

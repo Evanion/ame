@@ -84,7 +84,7 @@ Help.TERMS = {
   },
   arbSell = {
     L["Sells for"],
-    L["The market price at the auction house you sell at: what the item typically sells for there."],
+    L["The market price at the auction house you sell at: what the item typically sells for there - never more than a few times its 30-day average, so one fantasy listing doesn't make a route."],
   },
   arbNet = {
     L["Net"],
@@ -100,8 +100,8 @@ Help.TERMS = {
     L["What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and lose it if it doesn't - so a high deposit on a slow seller is real risk."],
   },
   arbSellRate = {
-    L["Market sales per day at the sell house"],
-    L["Estimated units sold per day where you'd sell. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."],
+    L["Sells per day at the sell house"],
+    L["Estimated units sold per day where you'd sell, never more than are listed there. Compare it with how many you plan to buy: if it sells 5 a day, 100 will take weeks."],
   },
   arbDepth = {
     L["Depth"],

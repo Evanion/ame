@@ -73,6 +73,30 @@ describe("Arbitrage", function()
     assert.are.equal(2, #rows)
   end)
 
+  it("sells at the capped price, and nets the route after one post's deposit, sorting by it", function()
+    local buy = { items = { [1] = { min = 100, qty = 10 }, [2] = { min = 100, qty = 50 } } }
+    -- item 1: a fantasy listing at the sell house, capped at 4 x its 30-day average
+    local sell = { items = { [1] = { market = 5000, avg30 = 200 }, [2] = { market = 300, avg30 = 300 } } }
+    local posts = {}
+    local rows = A.Find(buy, sell, {
+      cut = 0.05,
+      factor = 4,
+      sortKey = "net",
+      units = function(r)
+        return r.itemID == 1 and 6 or nil -- the depth is known for item 1 only
+      end,
+      deposit = function(id, n)
+        posts[id] = n
+        return id == 1 and 700 or 10
+      end,
+    })
+    assert.are.equal(800, rows[2].sell) -- capped: 4 x 200
+    assert.are.equal(800 * 0.95 - 100 - 700, rows[2].net)
+    assert.are.equal(2, rows[1].itemID) -- 300 x 0.95 - 100 - 10 nets more than item 1 after its deposit
+    assert.are.equal(6, posts[1]) -- one post of the units the route pays for
+    assert.are.equal(20, posts[2]) -- unknown depth: a post of up to 20
+  end)
+
   it("copes with missing indexes", function()
     assert.are.equal(0, #A.Find(nil, goblin, {}))
     assert.are.equal(0, #A.Find(horde, nil, {}))

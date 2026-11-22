@@ -17,7 +17,8 @@
 --   Quote.For(shard, index, opts) -> q   (index: that shard's market index; opts.house: whose cut and deposit,
 --                                  default HouseFor(); opts.fresh = false: no fresh-search overlay)
 --   q:Summary(id)                  the index summary, or a copy priced at a fresh search's cheapest listing
---   q:Price(id), q:SoldPerDay(id), q:Deposit(id)
+--   q:Price(id), q:SoldPerDay(id)
+--   q:Deposit(id, units)           the deposit per unit for listing that many (default 1) here, your usual length
 --   q:ListingNet(id)               Quote.Net for one unit at this house
 --   q:BestSale(id) -> net, where   the better of the auction house ("ah": ListingNet) and a vendor ("vendor");
 --                                  nil, "unsellable" for a bind-on-pickup item; nil without either
@@ -136,10 +137,12 @@ function Quote:SoldPerDay(id)
   return Quote.UnitsPerDay(self:Summary(id))
 end
 
--- what listing one costs here (lost if it doesn't sell), from what a vendor pays for it
-function Quote:Deposit(id)
+-- what listing one costs here (lost if it doesn't sell), from what a vendor pays for it; a post of several pays
+-- one deposit for them all (rounded once)
+function Quote:Deposit(id, units)
   local sell = ns.ItemCache.Get(id).sellPrice
-  return sell and ns.Arbitrage.Deposit(sell, self.house, self.hours) or 0
+  units = math.max(1, units or 1)
+  return sell and ns.Arbitrage.Deposit(sell * units, self.house, self.hours) / units or 0
 end
 
 function Quote:ListingNet(id)

@@ -2,8 +2,9 @@
 -- factions through the goblin AH), after the selling house's cut.
 --
 -- Buy price  = the cheapest listing at the buy house (what you'd actually pay for the first units).
--- Sell price = the market price at the sell house (what it typically sells for), minus the house's cut.
--- Deposits are not included: they're refunded when the item sells.
+-- Sell price = the market price at the sell house (what it typically sells for), capped at the outlier factor x its
+--              30-day average (Quote.CapPrice: a fantasy listing isn't a price), minus the house's cut.
+-- Profit is before the listing deposit (refunded when the item sells); net is after it, lost if it doesn't.
 local _, ns = ...
 
 local Arbitrage = {}
@@ -16,12 +17,16 @@ Arbitrage.MAX_MARGIN = 20 -- real routes pay a few hundred % at most; transfer l
 -- seller's cut per house (classic rules: 5% at faction auction houses, 15% at the goblin ones)
 Arbitrage.DEFAULT_CUT = { Alliance = 0.05, Horde = 0.05, Neutral = 0.15 }
 
+Arbitrage.POST_UNITS = 20 -- deposit basis when the route's depth isn't known: one post of up to this many
+
 -- buy, sell: market indexes ({ items = { [itemID] = summary } }, summaries have min, market, qty, day)
 -- opts: cut (fraction), minProfit (copper), minMargin (fraction), maxAge (days), today (day number),
---       maxMargin (fraction, default Arbitrage.MAX_MARGIN; false: no limit), sortKey ("profit" default), ascending
--- returns rows { itemID, buy, sell, fee, profit, margin, buyQty, sellQty, soldPerDay, age }, and how many routes
--- were left out
--- as likely gold transfers
+--       maxMargin (fraction, default Arbitrage.MAX_MARGIN; false: no limit), sortKey ("profit" default; "net" too),
+--       ascending, factor (the outlier cap), units(row) -> the units the route pays for at the buy house (its
+--       depth, or nil), deposit(itemID, units) -> the sell house's deposit per unit for one post of that many
+--       (Quote:Deposit), postUnits (the post's size when the depth isn't known: up to this many, default 20)
+-- returns rows { itemID, buy, sell, fee, profit, margin, buyQty, sellQty, soldPerDay, age, units, deposit, net },
+-- and how many routes were left out as likely gold transfers
 function Arbitrage.Find(buy, sell, opts)
   opts = opts or {}
   local cut = opts.cut or 0
@@ -32,9 +37,10 @@ function Arbitrage.Find(buy, sell, opts)
     if opts.hide and opts.hide[id] then
       s = nil -- hidden from lists
     end
-    if s and s.market and cost and cost > 0 then
-      local fee = s.market * cut
-      local profit = s.market - fee - cost
+    local price = s and ns.Quote.CapPrice(s, opts.factor)
+    if price and cost and cost > 0 then
+      local fee = price * cut
+      local profit = price - fee - cost
       local margin = profit / cost
       local age, buyAge, sellAge = 0, nil, nil
       if opts.today then
@@ -52,7 +58,7 @@ function Arbitrage.Find(buy, sell, opts)
         rows[#rows + 1] = {
           itemID = id,
           buy = cost,
-          sell = s.market,
+          sell = price,
           fee = fee,
           profit = profit,
           margin = margin,
@@ -65,6 +71,15 @@ function Arbitrage.Find(buy, sell, opts)
         }
       end
     end
+  end
+  -- what's left after the deposit too: one post of the units the route pays for
+  for _, r in ipairs(rows) do
+    r.units = opts.units and opts.units(r) or nil
+    if opts.deposit then
+      local n = math.max(1, r.units or math.min(r.buyQty or 1, opts.postUnits or Arbitrage.POST_UNITS))
+      r.deposit = opts.deposit(r.itemID, n)
+    end
+    r.net = r.profit - (r.deposit or 0)
   end
   local key, asc = opts.sortKey or "profit", opts.ascending
   table.sort(rows, function(x, y)
