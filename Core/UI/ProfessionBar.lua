@@ -327,7 +327,7 @@ end
 
 function PB:CreateBar(host)
   local bar = CreateFrame("Frame", nil, host, "BackdropTemplate")
-  W.Skin(bar, W.COLORS.bg, W.COLORS.accent)
+  W.Skin(bar, W.COLORS.bg)
   bar:SetHeight(84)
   bar:SetPoint("TOPLEFT", host, "BOTTOMLEFT", 0, 2)
   bar:SetPoint("TOPRIGHT", host, "BOTTOMRIGHT", 0, 2)
@@ -385,7 +385,7 @@ function PB:RenderBar()
   end
   local recipe = self:SelectedRecipe()
   local craft = PB.Craft()
-  local brand = W.Color("brand", "AME") .. "   "
+  local brand = ""
   bar.search:SetShown(ns.AME.ahOpen and true or false)
   local n = #queue().db.items
   bar.showQueue:SetText(n > 0 and L["Queue (%d)"]:format(n) or L["Queue"])
@@ -488,13 +488,13 @@ end
 
 function PB:CreateQueue(host)
   local p = CreateFrame("Frame", nil, host, "BackdropTemplate")
-  W.Skin(p, W.COLORS.bg, W.COLORS.accent)
+  W.Skin(p, W.COLORS.bg)
   p:SetWidth(PB.QUEUE_W)
   p:SetPoint("TOPLEFT", host, "TOPRIGHT", 4, 0)
   p:SetPoint("BOTTOMLEFT", host, "BOTTOMRIGHT", 4, 0)
   p.title = W.Text(p, "GameFontNormal")
   p.title:SetPoint("TOPLEFT", 10, -10)
-  p.title:SetText(W.Color("brand", "AME") .. "  " .. L["Craft queue"])
+  p.title:SetText(L["Craft queue"])
   p.close = W.CloseButton(p)
   p.close:SetPoint("TOPRIGHT", -4, -4)
   p.close:SetScript("OnClick", function()

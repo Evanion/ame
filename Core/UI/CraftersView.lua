@@ -68,7 +68,7 @@ end
 
 function V:Create()
   local f = CreateFrame("Frame", "AMECraftersFrame", UIParent, "BackdropTemplate")
-  W.Skin(f, W.COLORS.bg, W.COLORS.accent)
+  W.Skin(f, W.COLORS.bg)
   f:SetSize(380, 72 + V.ROWS * 18)
   f:SetPoint("CENTER", 0, 60)
   f:SetFrameStrata("DIALOG")
@@ -82,7 +82,7 @@ function V:Create()
   end
   local title = W.Text(f, "GameFontNormal")
   title:SetPoint("TOPLEFT", 10, -10)
-  title:SetText(W.Color("brand", "AME") .. "  " .. L["Who can make it"])
+  title:SetText(L["Who can make it"])
   W.CloseButton(f, function()
     f:Hide()
   end):SetPoint("TOPRIGHT", -4, -4)

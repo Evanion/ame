@@ -46,7 +46,7 @@ describe("Tooltip.Lines", function()
   it("by default: a header with the auction house and freshness, the market price, context and a Shift hint", function()
     local rows = T.Lines(s, { avgDays = 14, house = "Horde AH", age = "2 hr ago" })
     local t = text(rows)
-    assert.truthy(t:find("AME = Horde AH · 2 hr ago", 1, true), t)
+    assert.truthy(t:find("Horde AH = 2 hr ago", 1, true), t) -- the auction house heads the block, no addon name
     assert.truthy(t:find("Market = 55g 98s", 1, true), t)
     assert.truthy(t:find("-14%", 1, true), t) -- 55g 98s vs 65g
     assert.is_nil(t:find("each")) -- one column: no heads
@@ -60,7 +60,9 @@ describe("Tooltip.Lines", function()
 
   it("with more than one owned: each and a total for all of yours, the vendor total, and where they are", function()
     local t = text(T.Lines(s, { held = held, vendor = 200, house = "Horde AH" }))
-    assert.truthy(t:find("AME = Horde AH", 1, true), t) -- the header on a line of its own
+    assert.truthy(t:find("Horde AH = each | your 43", 1, true), t) -- no age: the columns' heads on the header
+    t = text(T.Lines(s, { held = held, vendor = 200, house = "Horde AH", age = "now" }))
+    assert.truthy(t:find("Horde AH = now", 1, true), t) -- the header on a line of its own
     assert.truthy(t:find("  = each | your 43", 1, true), t) -- then the columns' heads
     assert.truthy(t:find("Market = 55g 98s | 2,407g", 1, true), t) -- each in the middle, all of yours on the right
     assert.truthy(t:find("Vendor = · | 86s", 1, true), t)
@@ -86,12 +88,12 @@ describe("Tooltip.Lines", function()
     local buy = setmetatable({ signal = "buy" }, { __index = s })
     local rows = T.Lines(buy, { compact = true, held = held, house = "Horde AH", age = "now", better = 0.16 })
     local t = text(rows)
-    assert.is_nil(t:find("Horde AH"))
+    assert.is_nil(t:find("now", 1, true)) -- no freshness
     assert.is_nil(t:find("You have"))
     assert.is_nil(t:find("listed"))
     assert.truthy(t:find("BUY  ·  goblin AH +16% = Shift: more", 1, true), t)
     assert.are.equal(3, #rows) -- header (with the columns' heads), market, signal
-    assert.truthy(t:find("AME = each | your 43", 1, true), t)
+    assert.truthy(t:find("Horde AH = each | your 43", 1, true), t)
   end)
 
   it("goes compact on a small screen or a UI scaled far up, not at the default scale", function()

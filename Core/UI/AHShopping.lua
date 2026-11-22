@@ -83,7 +83,7 @@ end
 
 function T:Create(ah)
   local p = CreateFrame("Frame", nil, ah, "BackdropTemplate")
-  W.Skin(p, W.COLORS.bg, W.COLORS.accent)
+  W.Skin(p, W.COLORS.bg) -- the main window's discreet border
   p:SetPoint("TOPLEFT", ah, "TOPLEFT", 8, -60)
   p:SetPoint("BOTTOMRIGHT", ah, "BOTTOMRIGHT", -8, 28)
   p:Hide()
@@ -391,7 +391,7 @@ function T:Attach()
   end
   self.tab = tab
   tab.displayMode = self.mode
-  tab:SetText(L["AME Shopping"])
+  tab:SetText(L["Shopping"])
   tab:SetPoint("LEFT", last, "RIGHT", -15, 0)
   -- the game's tab template puts itself in the frame's Tabs already (a second entry anchors the tab to itself)
   local index
@@ -415,7 +415,7 @@ function T:Attach()
   if ah.SetDisplayMode and hooksecurefunc then
     hooksecurefunc(ah, "SetDisplayMode", function(frame, mode)
       if mode == T.mode and frame.SetTitle then
-        frame:SetTitle(L["AME Shopping"])
+        frame:SetTitle(L["Shopping"])
       end
     end)
   end

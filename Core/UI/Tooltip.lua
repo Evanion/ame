@@ -88,13 +88,14 @@ function Tooltip.Lines(s, opts)
     end
   end
 
-  -- header: AME, and where the prices come from and how fresh; then the columns' heads (compact: on one line)
-  local brand = W.Color("brand", "AME")
+  -- header: where the prices come from (no addon name: the block speaks for itself) and how fresh; then the
+  -- columns' heads (compact: on the header line)
+  local label = W.Color("brand", opts.house or L["Auction house"])
   local heads = many and { Dim(L["your %s"]:format(W.Count(n))), Dim(L["each"]) } or nil
-  if opts.compact or not opts.house then
-    rows[#rows + 1] = { brand, heads and heads[1], heads and heads[2] }
+  if opts.compact or not opts.age then
+    rows[#rows + 1] = { label, heads and heads[1], heads and heads[2] }
   else
-    rows[#rows + 1] = { brand, Dim(opts.house .. (opts.age and (" · " .. opts.age) or "")) }
+    rows[#rows + 1] = { label, Dim(opts.age) }
     if heads then
       rows[#rows + 1] = { " ", heads[1], heads[2] }
     end
@@ -456,7 +457,7 @@ local function addLines(tooltip, itemID)
   end
   -- a recipe item: where it's sold or drops (learned as you and your guild play), else the game's own words
   for i, line in ipairs(ns.RecipeSources and ns.RecipeSources.TooltipLines(itemID) or {}) do
-    local label = i == 1 and (W.Color("brand", "AME") .. " " .. W.Dim(L["Source:"]) .. " ") or "      "
+    local label = i == 1 and (W.Dim(L["Source:"]) .. " ") or "      "
     tooltip:AddLine(label .. line, 1, 1, 1, true)
   end
   local detail = ns.Settings:Get("tooltipDetail") or (IsShiftKeyDown and IsShiftKeyDown())
