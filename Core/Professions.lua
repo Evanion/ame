@@ -171,6 +171,41 @@ function Professions:Characters()
   return AME_DB.crafting and AME_DB.crafting.chars or {}
 end
 
+-- Pure: what the recorded professions leave out. The spellbook's professions whose window hasn't been opened on that
+-- character (noWindow ones - Herbalism, Skinning, Fishing - have no window: their skill is all there is to know),
+-- and characters known only from elsewhere (others: their bags were seen) with nothing recorded at all.
+--   chars: Professions:Characters(); others: { charKey, ... }; noWindow: { [skillLine] = true }
+--   -> { { key, skillLine, name, skill, max, noWindow } | { key, none = true } }, by key, then name
+function Professions.Unrecorded(chars, others, noWindow)
+  local out = {}
+  for key, c in pairs(chars or {}) do
+    for _, s in ipairs(c.spellbook or {}) do
+      if s.skillLine and not (c.professions and c.professions[s.skillLine]) then
+        out[#out + 1] = {
+          key = key,
+          skillLine = s.skillLine,
+          name = s.name,
+          skill = s.skill,
+          max = s.max,
+          noWindow = noWindow and noWindow[s.skillLine] or false,
+        }
+      end
+    end
+  end
+  for _, key in ipairs(others or {}) do
+    if not (chars and chars[key]) then
+      out[#out + 1] = { key = key, none = true }
+    end
+  end
+  table.sort(out, function(a, b)
+    if a.key ~= b.key then
+      return a.key < b.key
+    end
+    return (a.name or "") < (b.name or "")
+  end)
+  return out
+end
+
 -- a profession's recipes (recorded by any character): { [recipeID] = recipe } or nil
 function Professions:Catalog(skillLine)
   local c = AME_DB.crafting and AME_DB.crafting.catalog and AME_DB.crafting.catalog[skillLine]
