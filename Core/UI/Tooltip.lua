@@ -437,49 +437,24 @@ function Tooltip.Compact()
   return type(h) == "number" and h > 0 and h < Tooltip.COMPACT_HEIGHT
 end
 
--- what one disenchant of the item gives, at market prices (gear of uncommon quality and up), or nil
-function Tooltip.Disenchant(itemID, items)
-  local info = ns.ItemCache.Get(itemID)
-  if not (info and (info.classID == 2 or info.classID == 4)) then
-    return nil
-  end
-  local quality = info.quality
-  local outcomes = quality and quality >= 2 and ns.Disenchant.Outcomes(info.level, quality, info.classID)
-  if not outcomes then
-    return nil
-  end
-  local out, value = { outcomes = {} }, 0
-  for i, o in ipairs(outcomes) do
-    local m = items[o[1]]
-    local price = m and m.market
-    out.outcomes[i] =
-      { item = o[1], name = ns.ItemCache.Name(o[1]), chance = o[2], min = o[3], max = o[4], price = price }
-    value = value and price and value + price * o[2] * (o[3] + o[4]) / 2 or nil
-  end
-  table.sort(out.outcomes, function(a, b)
-    return a.chance > b.chance
-  end)
-  out.value = value
-  out.level, out.classID = info.level, info.classID
-  return out
-end
-
--- every auction house of this market with a price for the item: { house, label, market, net, cut, mine, day }
+-- every auction house of this market with a price for the item: { house, label, market, net, cut, mine, day } -
+-- net: what listing one there nets after its cut and deposit (Quote:ListingNet)
 local function houses(itemID, own)
   local AME = ns.AME
   local realm = AME:MarketRealmName()
   local out = {}
   for _, house in ipairs({ own, "Neutral", own == "Horde" and "Alliance" or "Horde" }) do
-    local index = AME:CachedIndex(ns.ShardKey(realm, house))
+    local shard = ns.ShardKey(realm, house)
+    local index = AME:CachedIndex(shard)
     local s = index and index.items[itemID]
     if s and s.market then
-      local cut = ns.Settings:AuctionCut(house)
+      local q = ns.Quote.For(shard, index, { house = house, fresh = false })
       out[#out + 1] = {
         house = house,
         label = ns.HOUSE_LABEL[house] or house,
         market = s.market,
-        net = s.market * (1 - cut),
-        cut = cut,
+        net = q:ListingNet(itemID),
+        cut = q.cut,
         mine = house == own,
         day = s.day,
       }
@@ -530,7 +505,8 @@ function Tooltip.Gather(itemID, detail)
     age = age(shard, itemID, s, today),
     held = ns.Trading and AME_DB and ns.Trading.Held(itemID) or nil,
     vendor = ns.ItemCache.Get(itemID).sellPrice,
-    de = Tooltip.Disenchant(itemID, factionIndex().items),
+    -- what one disenchant gives, its materials at what selling them nets (Quote:Disenchant, as the DE signal)
+    de = ns.Quote.For(shard, factionIndex(), { fresh = false }):Disenchant(itemID),
   }
   local all = houses(itemID, own)
   local mine = all[1] and all[1].mine and all[1].net

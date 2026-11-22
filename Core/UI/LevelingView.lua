@@ -83,15 +83,11 @@ function UI:LevelingPlans(m)
     enchanter = enchanter or (c.professions and c.professions[333]) ~= nil
   end
   local craft = m.craft
+  -- what disenchanting a result is worth: its materials at what selling them nets (Quote:Disenchant)
   local deValue = enchanter
       and function(id)
-        local info = ns.ItemCache.Get(id)
-        if not info.name then
-          return nil
-        end
-        return ns.Disenchant.Value(info.level, info.quality, info.classID, function(mat)
-          return craft:NetSale(mat)
-        end)
+        local de = ns.ItemCache.Get(id).name and m.quote:Disenchant(id)
+        return de and de.value
       end
     or nil
   local shard = ns.AME:FactionShard()

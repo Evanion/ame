@@ -472,9 +472,7 @@ function UI:RefreshPortfolio()
       return q:Worth(id)
     end
   )
-  self.pfListed = ns.Portfolio.Listed(holdings, function(house)
-    return ns.Settings:AuctionCut(house)
-  end, index and index.items or {})
+  self.pfListed = ns.Portfolio.Listed(holdings, ns.Quote.Cut, index and index.items or {})
   local now = GetServerTime()
   local since = self:PortfolioSince(now)
   local ledger = AME.ledger

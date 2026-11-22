@@ -1421,9 +1421,8 @@ function UI:UpdatePostAdvice()
   else
     local n = advice.normal
     head.text = W.Dim(L["%d ahead"]:format(n.ahead))
-    local _, house = ns.SplitShard(shard)
-    local cut = ns.Settings:AuctionCut(house or ns.AME:CurrentHouse())
-    local net = n.price * (1 - (cut or 0)) - (advice.deposit or 0) / (advice.qty or 1)
+    local cut = ns.Quote.Cut(ns.Quote.ShardHouse(shard))
+    local net = ns.Quote.PostNet(shard, n.price, advice.deposit, advice.qty)
     -- under the prices: a warning, or why Quick and Patient are the same
     local notes = {}
     local info = ns.ItemCache.Get(self.itemID)

@@ -85,3 +85,22 @@ describe("Quote nets", function()
     assert.is_nil(quote(items):Disenchant(1)) -- not gear
   end)
 end)
+
+describe("Quote.PostNet", function()
+  it("nets a post at its house's cut, less the deposit spread over the units", function()
+    local ns = addon.load({ "Core/Init.lua" })
+    ns.Settings = {
+      AuctionCut = function(_, house)
+        return house == "Neutral" and 0.15 or 0.05
+      end,
+    }
+    ns.AME = {
+      CurrentHouse = function()
+        return "Horde"
+      end,
+    }
+    assert.are.equal(1000 * 0.95 - 60 / 20, ns.Quote.PostNet("PvP|Horde", 1000, 60, 20))
+    assert.are.equal(1000 * 0.85 - 60, ns.Quote.PostNet("PvP|Neutral", 1000, 60, nil))
+    assert.are.equal(0.05, ns.Quote.Cut(nil)) -- the house you're at
+  end)
+end)

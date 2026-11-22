@@ -10,6 +10,10 @@
 --                                  as often as listings fail (SellThrough.Net); nil: no price (saved as s.net)
 --   Quote.HouseFor()               the house whose cut and deposit apply to your sales: the one you're at, your
 --                                  faction's when you're at the goblin auction house
+--   Quote.Cut(house)               a house's cut (0.05): the one you're at with nil
+--   Quote.ShardHouse(shard)        a shard's house ("realm|Horde" -> "Horde"), else the one you're at
+--   Quote.PostNet(shard, price, deposit, qty)  your money per unit posting qty at price there: after its cut, less
+--                                  the deposit you pay to list them
 --   Quote.For(shard, index, opts) -> q   (index: that shard's market index; opts.house: whose cut and deposit,
 --                                  default HouseFor(); opts.fresh = false: no fresh-search overlay)
 --   q:Summary(id)                  the index summary, or a copy priced at a fresh search's cheapest listing
@@ -59,6 +63,19 @@ function Quote.Net(s, cut, deposit, factor)
     return ns.SellThrough.Net(capped, cut, deposit)
   end
   return p * (1 - (cut or 0)) - (deposit or 0)
+end
+
+function Quote.Cut(house)
+  return ns.Settings:AuctionCut(house or ns.AME:CurrentHouse()) or 0
+end
+
+function Quote.ShardHouse(shard)
+  local _, house = ns.SplitShard(shard or "")
+  return house or ns.AME:CurrentHouse()
+end
+
+function Quote.PostNet(shard, price, deposit, qty)
+  return price * (1 - Quote.Cut(Quote.ShardHouse(shard))) - (deposit or 0) / math.max(1, qty or 1)
 end
 
 function Quote.HouseFor()

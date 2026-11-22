@@ -192,11 +192,9 @@ function Sell.Reason(advice, price)
   return #book.prices > 0 and L["Above every listing"] or L["No listings right now"]
 end
 
--- your money per unit after the cut and the deposit
+-- your money per unit after the cut and the deposit, at the auction house you're at (Quote.PostNet)
 function Sell.Net(advice, price)
-  local _, house = ns.SplitShard(ns.AME:CurrentShard())
-  local cut = ns.Settings:AuctionCut(house or ns.AME:CurrentHouse()) or 0
-  return price * (1 - cut) - (advice.deposit or 0) / (advice.qty or 1)
+  return ns.Quote.PostNet(ns.AME:CurrentShard(), price, advice.deposit, advice.qty)
 end
 
 function Sell:Build(parent)
@@ -353,8 +351,7 @@ function Sell:Draw()
   local info = ns.ItemCache.Get(self.itemID or 0)
   local vendor = info and info.sellPrice
   self.chance = choice.chance and math.floor(choice.chance * 100 + 0.5)
-  local _, house = ns.SplitShard(ns.AME:CurrentShard())
-  local cutPct = W.CutPct(ns.Settings:AuctionCut(house or ns.AME:CurrentHouse()))
+  local cutPct = W.CutPct(ns.Quote.Cut(ns.Quote.ShardHouse(ns.AME:CurrentShard())))
   bar.fill:Show()
   if vendor and vendor > 0 and net < vendor then
     -- the auction house nets less than a vendor: say so; posting anyway is the only (secondary) button

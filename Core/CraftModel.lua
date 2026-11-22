@@ -2,7 +2,7 @@
 -- instead" on the item page and the Selling tab) gets the same one. (Data core, step 7: moved from
 -- Core/UI/CraftingView.lua unchanged; docs/plans/data-core.md.)
 --
---   CraftModel.Build(only) -> { hasData, index, craft, entries, held, heldSet, uses, chars } or nil, "loading"
+--   CraftModel.Build(only) -> { hasData, index, quote, craft, entries, held, heldSet, uses, chars } or nil, "loading"
 --     only: one character's key (nil: every character). entries: the recipes your characters know, one per recipe
 --     with every character who knows it; craft: a Crafting instance on the faction auction house's quote.
 --   CraftModel.Instead(itemID) -> { product, where, each, raw, crafter } or nil
@@ -48,8 +48,10 @@ function M.Producers()
 end
 
 -- Crafting on your faction's auction house (index): its quote, and the recipes that make each product (chains)
+-- -> craft, quote
 local function env(index)
-  return ns.Quote.For(ns.AME:FactionShard(), index):CraftEnv(M.Producers())
+  local q = ns.Quote.For(ns.AME:FactionShard(), index)
+  return q:CraftEnv(M.Producers()), q
 end
 
 function M.Craft()
@@ -163,10 +165,11 @@ function M.Build(only)
     heldSet[id] = e.qty > 0 or nil
   end
 
-  local craft = env(index)
+  local craft, quote = env(index)
   return {
     hasData = hasData,
     index = index,
+    quote = quote,
     craft = craft,
     entries = entries,
     held = held,

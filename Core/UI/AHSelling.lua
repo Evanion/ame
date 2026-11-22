@@ -35,22 +35,15 @@ function S.Group(slots)
   return out
 end
 
--- Pure: what one unit nets, where: on the AH after the cut (s: the item's index summary), or at a vendor when that
--- pays more. -> each (copper), "ah" | "vendor", or nil
-function S.Worth(s, vendor, cut)
-  local ah = s and s.market and s.market > 0 and s.market * (1 - (cut or 0)) or nil
-  if vendor and vendor > 0 and (not ah or vendor > ah) then
-    return vendor, "vendor"
-  end
-  return ah, ah and "ah" or nil
-end
-
 -- Pure: entries (S.Group) valued and sorted by what all of each is worth, most first
---   summary(key) -> index summary; vendor(key) -> sell price; cut
-function S.Rank(entries, summary, vendor, cut)
+--   summary(key) -> index summary; worth(key) -> what one unit nets and where ("ah" | "vendor"; Quote:BestSale)
+function S.Rank(entries, summary, worth)
   for _, e in ipairs(entries) do
     local s = summary(e.key)
-    e.each, e.where = S.Worth(s, vendor(e.key), cut)
+    e.each, e.where = worth(e.key)
+    if e.where ~= "ah" and e.where ~= "vendor" then
+      e.each, e.where = nil, nil
+    end
     e.worth = (e.each or 0) * e.qty
     e.signal = s and s.signal
     e.summary = s
@@ -67,9 +60,9 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- in game: the bags
 
+-- the cut where you post: the auction house you're at
 local function cut()
-  local house = ns.AME:CurrentHouse()
-  return ns.Settings:AuctionCut(house == "Neutral" and "Neutral" or house)
+  return ns.Quote.Cut(ns.AME:CurrentHouse())
 end
 
 -- what in your bags can be listed here
@@ -117,11 +110,13 @@ function S:Refresh()
       shown[#shown + 1] = e
     end
   end
+  -- what a unit nets where you post (Quote:BestSale: listed after the cut and deposit, or at a vendor)
+  local q = ns.Quote.For(ns.AME:FactionShard(), index, { house = ns.AME:CurrentHouse(), fresh = false })
   self.items = S.Rank(shown, function(k)
     return items[k]
   end, function(k)
-    return ns.ItemCache.Get(k).sellPrice
-  end, cut())
+    return q:BestSale(k)
+  end)
   -- a VENDOR item: a recipe you know may make it worth more (UI:CraftInstead)
   for _, e in ipairs(self.items) do
     if e.signal == "vendor" and ns.UI.CraftInstead then

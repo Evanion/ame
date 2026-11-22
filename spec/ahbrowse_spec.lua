@@ -95,14 +95,19 @@ describe("AHSelling (the Selling tab's bags)", function()
     assert.are.equal(40, items[1].qty)
     assert.are.same({ "a", "c" }, items[1].locs)
     local market = { [2589] = { market = 100 }, [4306] = { market = 2000, signal = "sell" } }
+    -- what one nets and where comes from the quote (Quote:BestSale: after the cut and deposit, or a vendor's)
     S.Rank(items, function(k)
       return market[k]
     end, function(k)
-      return k == 2589 and 120 or nil
-    end, 0.05)
-    assert.are.equal(4306, items[1].key) -- 5 x 1900 beats 40 x 120
-    assert.are.equal(9500, items[1].worth)
-    assert.are.equal("vendor", items[2].where) -- a vendor pays 120, the AH nets 95
+      if k == 2589 then
+        return 120, "vendor" -- a vendor pays 120, the AH nets less
+      end
+      return 1880, "ah"
+    end)
+    assert.are.equal(4306, items[1].key) -- 5 x 1880 beats 40 x 120
+    assert.are.equal(9400, items[1].worth)
+    assert.are.equal("sell", items[1].signal)
+    assert.are.equal("vendor", items[2].where)
     assert.are.equal(4800, items[2].worth)
   end)
 end)
