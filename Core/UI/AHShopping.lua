@@ -289,10 +289,19 @@ local function selected(d)
   return d.itemID == T.selected
 end
 
--- a list's columns: the Market tab's, the cheapest listing after the market price, the cost at the listings
+-- a list's columns: the Market tab's, the cheapest listing after the market price, the cost at the listings;
+-- narrower, for the auction house window (the market price goes first when it's too narrow)
+local LIST_FIT = { name = 170, need = 44, have = 44, missing = 52, market = 76, cost = 76 }
+local LIST_DROP = { market = 3 }
 local function listColumns()
   local out = {}
-  for _, col in ipairs(UI.SHOPPING_COLUMNS or {}) do
+  for _, original in ipairs(UI.SHOPPING_COLUMNS or {}) do
+    local col = {}
+    for k, v in pairs(original) do
+      col[k] = v
+    end
+    col.width = LIST_FIT[col.key] or col.width
+    col.drop = LIST_DROP[col.key] or col.drop
     if col.key == "cost" then
       out[#out + 1] = {
         key = "cost",
@@ -309,7 +318,7 @@ local function listColumns()
       out[#out + 1] = {
         key = "cheapest",
         label = L["Cheapest"],
-        width = 80,
+        width = 76,
         text = function(r)
           return r.cheapest and W.Money(r.cheapest) or W.Dim(r.searched and L["none"] or "-")
         end,

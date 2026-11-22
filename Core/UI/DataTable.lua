@@ -317,6 +317,7 @@ local function flexIndex(opts)
 end
 
 DataTable.BAR_SPACE = 14 -- scrollbar (8) and a gap before it
+DataTable.MIN_FLEX = 60 -- the flexible column (the item names) never narrower than this
 
 -- Fit the columns to the table's width: rows span it up to the action button and scrollbar, and the flexible
 -- column grows to fill what the fixed columns leave (and gives up some of its own when the table is too narrow).
@@ -354,8 +355,10 @@ function DataTable:Layout(width)
     total = total - opts.columns[c].width - GAP
   end
   self.hiddenColumns = hidden
-  local rowW = math.max(total - flexCut, avail)
-  local extra = rowW - total
+  -- the flexible column takes up the difference: wider when there's room; when nothing more can be dropped, it
+  -- keeps giving way (down to DataTable.MIN_FLEX) rather than the row running past the table's edge
+  local extra = math.max(avail - total, DataTable.MIN_FLEX - opts.columns[flex].width)
+  local rowW = total + extra
   local widths, xs, x = {}, {}, 0
   for c, col in ipairs(opts.columns) do
     widths[c] = hidden[c] and 0 or col.width + (c == flex and extra or 0)

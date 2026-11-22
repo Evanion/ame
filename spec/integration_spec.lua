@@ -935,6 +935,9 @@ describe("addon in a stubbed client", function()
         for c in pairs(t.hiddenColumns) do
           assert.is_not_nil(t.opts.columns[c].drop) -- only droppable ones go
         end
+        -- narrower than every column that can't go: the names give way, the row never runs past the edge
+        t:Layout(520)
+        assert.is_true(t.rows[1]:GetWidth() <= 520 - ns.DataTable.BAR_SPACE, t.rows[1]:GetWidth())
       end)
 
       it("lays the item page out as chart + sidebar, and a summary + Details panel when narrow", function()
