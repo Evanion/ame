@@ -246,21 +246,27 @@ function UI:CreateMarketOverview(area)
     rows = LARGEST_ROWS,
     rowHeight = ROW_H,
     columns = {
-      { key = "name", label = L["Item"], width = 120, item = true },
+      -- "18,400 × Arcanite Bar", the price each it's counted at, and what that comes to - or, when the price was
+      -- capped at the outlier limit, what the listings would have come to ("capped from 2.5M g")
       {
-        key = "qty",
-        label = L["Listed"],
-        width = 120,
-        text = function(t)
-          return W.Count(t.qty) .. " x " .. W.Money(t.price, true)
+        key = "name",
+        label = L["Item"],
+        width = 170,
+        item = true,
+        prefix = function(t)
+          return W.Dim(W.Thousands(t.qty) .. " × ")
         end,
       },
+      { key = "price", label = L["Each"], width = 80, format = "money" },
       {
         key = "value",
         label = L["Value"],
         width = 110,
         text = function(t)
-          return W.BigMoney(t.value, 10000) .. (t.raw and W.Dim(" " .. L["capped"]) or "")
+          if t.rawValue then
+            return W.Dim(L["capped from %s"]:format(W.BigMoney(t.rawValue, 10000)))
+          end
+          return W.BigMoney(t.value, 10000)
         end,
       },
     },

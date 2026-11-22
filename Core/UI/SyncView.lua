@@ -284,10 +284,21 @@ function UI:RefreshSync()
       card:Set({ value = W.Dim(L["No data"]), note = L["No full scan yet: scan there, or trust someone who does"] })
     end
   end
-  v.statusLine:SetText(
-    (ns.Settings:Get("syncGuild") or ns.Settings:Get("syncTrusted")) and L["Sync is on"]
-      or L["Sync is off: turn on guild or trusted sharing below"]
-  )
+  local on = ns.Settings:Get("syncGuild") or ns.Settings:Get("syncTrusted")
+  local status = on and L["Sync is on"] or L["Sync is off: turn on guild or trusted sharing below"]
+  local nextIn = on and svc.NextAnnounceIn and svc:NextAnnounceIn(now)
+  if nextIn then
+    status = status .. W.SEP .. L["next announce in %s"]:format(UI.Duration(nextIn))
+    -- counting down while it's on screen: drawn again in half a minute
+    if not self.syncCountdown and C_Timer then
+      self.syncCountdown = true
+      C_Timer.After(30, function()
+        UI.syncCountdown = false
+        UI:RefreshSync()
+      end)
+    end
+  end
+  v.statusLine:SetText(status)
   v.guild:SetChecked(ns.Settings:Get("syncGuild"))
   v.protocol:SetValue(svc:Protocol())
   v.trusted:SetChecked(ns.Settings:Get("syncTrusted"))

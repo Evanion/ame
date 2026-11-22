@@ -10,6 +10,7 @@ ns.SyncService = Service
 
 Service.PREFIX = "AME1"
 Service.ANNOUNCE_EVERY = 600 -- seconds
+Service.FIRST_ANNOUNCE = 30 -- seconds after login
 Service.REQUEST_COOLDOWN = 600
 Service.MAX_REQUESTS_PER_ANNOUNCE = 4
 Service.GONE_QUIET = 600 -- a player who went offline mid-transfer gets nothing for this long (unless heard from)
@@ -689,7 +690,18 @@ function Service:Start()
   end
   local function loop()
     self:Announce()
+    self.nextAnnounceAt = GetServerTime() + Service.ANNOUNCE_EVERY
     C_Timer.After(Service.ANNOUNCE_EVERY, loop)
+    self:Changed() -- the Sharing status counts down to the next one
   end
-  C_Timer.After(30, loop)
+  self.nextAnnounceAt = GetServerTime() + Service.FIRST_ANNOUNCE
+  C_Timer.After(Service.FIRST_ANNOUNCE, loop)
+end
+
+-- seconds until the next periodic announcement (at least 0); nil while sharing is off or none is scheduled
+function Service:NextAnnounceIn(now)
+  if not (self.nextAnnounceAt and self:Active()) then
+    return nil
+  end
+  return math.max(0, self.nextAnnounceAt - (now or GetServerTime()))
 end

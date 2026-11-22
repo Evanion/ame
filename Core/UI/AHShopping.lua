@@ -24,6 +24,16 @@ end
 
 local money = W.Money
 
+-- a listing's time left (AHSearch.TimeLeft): "23 h", "40 min", or the game's band ("2-12 h"); "" when not known
+T.BANDS = { [0] = L["under 30 min"], [1] = L["30 min-2 h"], [2] = L["2-12 h"], [3] = L["12-48 h"] }
+function T.TimeLeftText(seconds, band)
+  if seconds then
+    return seconds >= 3600 and L["%d h"]:format(math.floor(seconds / 3600))
+      or L["%d min"]:format(math.max(1, math.floor(seconds / 60)))
+  end
+  return band and T.BANDS[band] or ""
+end
+
 -- the list on screen: one of yours, or a recipe's reagents (Search AH from the profession window)
 function T:Items()
   if self.temp then
@@ -462,8 +472,8 @@ function T:Create(ah)
   p.detailItem:SetPoint("TOPLEFT", 0, 0)
   p.detailTitle = W.Text(detail, "GameFontNormalSmall")
   p.detailTitle:SetPoint("LEFT", p.detailItem, "RIGHT", 0, 0)
-  -- the listings, cheapest first: a table (each, how many, yours), the ones the order takes from selected; an item
-  -- that isn't a commodity is bought a listing at a time (Buy on its row)
+  -- the listings, cheapest first: a table (each, how many, time left, yours), the ones the order takes from
+  -- selected; an item that isn't a commodity is bought a listing at a time (Buy on its row)
   p.listings = ns.DataTable.New(detail, {
     top = -20,
     rows = T.LISTINGS,
@@ -481,6 +491,16 @@ function T:Create(ah)
             return W.Count(n) .. W.Dim(" " .. L["of %s"]:format(W.Count(r.qty))) -- the last one partly
           end
           return W.Count(r.qty)
+        end,
+      },
+      {
+        key = "timeLeft",
+        label = L["Time left"],
+        width = 70,
+        sortKey = false,
+        text = function(r)
+          local text = T.TimeLeftText(r.timeLeft, r.band)
+          return text ~= "" and W.Dim(text) or ""
         end,
       },
       {
@@ -787,11 +807,12 @@ function T:RenderDetail()
     and book.commodity
     and (pending and pending.key == key and not pending.sent and pending.qty or tonumber(p.qty:GetText()))
   local taken, cost, covered = T.Fill(book and book.rows, want or 0)
-  local shown = {}
+  local shown, now = {}, GetServerTime()
   for i, row in ipairs(book and book.rows or {}) do
     if i > T.LISTINGS then
       break
     end
+    local left, band = ns.AHSearch.TimeLeft(book, row, now)
     shown[i] = {
       key = key,
       row = row,
@@ -800,6 +821,8 @@ function T:RenderDetail()
       mine = row.mine,
       taken = taken[i],
       commodity = book.commodity,
+      timeLeft = left,
+      band = band,
     }
   end
   p.listings:SetData(shown)

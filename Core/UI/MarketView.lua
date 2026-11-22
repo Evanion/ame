@@ -435,18 +435,7 @@ end
 
 -- the columns switched off: defaults (optional ones) overridden by the chooser (Settings "marketColumns")
 function UI:MarketHiddenColumns()
-  local chosen = ns.Settings:Table("marketColumns")
-  local hidden = {}
-  for _, col in ipairs(COLUMNS) do
-    local on = chosen[col.key]
-    if on == nil then
-      on = not col.optional
-    end
-    if not on and not col.item then
-      hidden[col.key] = true
-    end
-  end
-  return hidden
+  return ns.DataTable.ChosenHidden(COLUMNS, "marketColumns")
 end
 
 UI.MARKET_COMPACT_HIDDEN = { qty = true, score = true }
@@ -465,31 +454,13 @@ end
 
 function UI:UpdateColumnsButton()
   local v = self.marketView
-  local n = v.table:HiddenCount()
-  v.columns.label:SetText(n > 0 and L["Columns  ·  %d hidden"]:format(n) or L["Columns"])
+  v.columns.label:SetText(v.table:ColumnsLabel())
 end
 
 function UI:ColumnMenu(anchor)
-  local hidden = self:MarketHiddenColumns()
-  local dropped = self.marketView.table.hiddenColumns or {}
-  local entries = {}
-  for c, col in ipairs(COLUMNS) do
-    if not col.item then
-      local name = type(col.label) == "function" and col.label() or col.label
-      if dropped[c] and not hidden[col.key] then
-        name = name .. " " .. W.Dim(L["(no room)"])
-      end
-      entries[#entries + 1] = {
-        text = name,
-        checked = not hidden[col.key],
-        func = function()
-          ns.Settings:Table("marketColumns")[col.key] = hidden[col.key] and true or false
-          UI:ApplyMarketColumns()
-        end,
-      }
-    end
-  end
-  W.Menu(anchor, entries)
+  ns.DataTable.ColumnMenu(anchor, self.marketView.table, "marketColumns", function()
+    UI:ApplyMarketColumns()
+  end)
 end
 
 -- the filter fields a saved view keeps

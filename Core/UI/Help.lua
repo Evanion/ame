@@ -392,7 +392,7 @@ function Help.Articles()
             H(L["Fair numbers"]),
             L["Only items listed at least 3 at a time on most days count for the indexes, risers and fallers, so one item reposted every day can't move them. Listed value caps each price at the outlier limit (Settings, Data) times its 30-day average. Totals come only from days with a full scan."],
             H(L["Categories and movers"]),
-            L["Categories shows each item class's share of the listed value: click one to open it in the screener. Biggest risers and fallers are steadily listed items; click one for its chart. Largest by value lists the items the total leans on most - a capped one is marked."],
+            L["Categories shows each item class's share of the listed value: click one to open it in the screener. Biggest risers and fallers are steadily listed items; click one for its chart. Largest by value lists the items the total leans on most: how many are listed, the price each is counted at and what they come to. When an item's price was capped at the outlier limit, it says what its listings came to before the cap (capped from ...)."],
           },
         },
         {
@@ -461,6 +461,7 @@ function Help.Articles()
             L["Select a route to see what it pays after the cut and the deposit, and how fresh each side's price is. Routes paying over 2000% are gold transfers between factions, not trades: they're hidden and counted."],
             H(L["Filters and actions"]),
             L["Swap turns the route around. Minimum profit, margin and data age narrow the list. At the buy auction house, Search (or Shift-clicking a row) searches the item there, which also fills in how many units still pay; Chart opens it on the Item tab."],
+            L["Columns picks which columns show, as on the Market tab; the button says how many are hidden, counting the ones a narrow window has no room for."],
           },
         },
         {
@@ -497,7 +498,7 @@ function Help.Articles()
           body = {
             L["Sharing is a section of the Settings tab."],
             L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."],
-            L["Sharing happens on its own every 10 minutes. Sync now (in the Guild sharing card) does it right away: it sends what you have and asks your guild and trusted players to send theirs, so scans you're missing arrive within a minute or two."],
+            L["Sharing happens on its own every 10 minutes; the status line at the bottom says when the next announce is due. Sync now (in the Guild sharing card) does it right away: it sends what you have and asks your guild and trusted players to send theirs, so scans you're missing arrive within a minute or two."],
             H(L["Sync protocol"]),
             L["With v2 (the default), every scan goes to the whole guild at once, and hours you missed in the last week are filled in from whoever has them - a point per hour for the 7D chart, and whole days for days you have nothing of. It's paced at about one message a second, so a full scan takes several minutes to arrive, in the background. If sync seems to slow your game, pick v1 (lighter) under Guild sharing: you still get scans, the original way. The status under Guild sharing shows how many of the week's hours you have and what's on its way."],
             H(L["Sell-through"]),
@@ -560,7 +561,7 @@ function Help.Articles()
             H(L["Top prices and searching"]),
             L["Right-click an item on the list to change the quantity, set the most you'd pay for one (a star marks items at or under it right now) or remove it. Search the AH searches the open auction house for everything still needed - all at once with Auctionator."],
             H(L["The Shopping tab"]),
-            L["Without Auctionator, the auction house window gets a Shopping tab next to Buy, Sell and Auctions. Pick a list on the left and click Search all: AME searches each item in turn, as fast as the game allows, and shows how many you still need, the cheapest listing, how many are on sale at or under your top price, and what the rest costs. Click an item for its listings; Buy asks the game for the price, then Confirm buys it - the game wants a click for each purchase. The list counts down as you buy. Shift-click an item (in your bags, in chat) to search for it there, and Search the AH on AME's pages searches this tab too."],
+            L["Without Auctionator, the auction house window gets a Shopping tab next to Buy, Sell and Auctions. Pick a list on the left and click Search all: AME searches each item in turn, as fast as the game allows, and shows how many you still need, the cheapest listing, how many are on sale at or under your top price, and what the rest costs. Click an item for its listings, cheapest first, with how long each has left (for gear the game often gives only a range, such as 2-12 h); Buy asks the game for the price, then Confirm buys it - the game wants a click for each purchase. The list counts down as you buy. Shift-click an item (in your bags, in chat) to search for it there, and Search the AH on AME's pages searches this tab too."],
             L["Search the auction house from its box at the top: a name, and under Filters a category, required level, item level, lowest quality, highest price each, exact name or only what you can use. Each result shows its cheapest listing against the market price, and the signal. Your recent searches stay on the left with their filters: click one to run it again, right-click to remove it."],
             H(L["At a vendor"]),
             L["When a vendor sells something one of your shopping lists still needs (thread, vials, flux...), a For your lists panel opens beside the merchant window: how many you need, what that buys in the vendor's stacks, and the cost. Buy takes one row, Buy all everything you can afford. The rows count down as the items reach your bags, and the panel isn't there at vendors with nothing you need."],

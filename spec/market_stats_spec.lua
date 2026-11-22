@@ -95,7 +95,7 @@ describe("MarketStats", function()
         capped = t
       end
     end
-    assert.are.same({ id = 60, qty = 10, price = 80000, raw = 20000000, value = 800000 }, capped)
+    assert.are.same({ id = 60, qty = 10, price = 80000, raw = 20000000, rawValue = 200000000, value = 800000 }, capped)
     assert.is_nil(st.days[1].top) -- only the newest day keeps its biggest items
   end)
 

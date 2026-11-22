@@ -883,6 +883,56 @@ function DataTable:HiddenCount()
   return n
 end
 
+-- The column chooser behind a Columns button (the Market screener, Arbitrage). What's switched on or off is kept in
+-- Settings[settingsKey] ([column key] = true / false); a column never chosen is on unless it's `optional`. The item
+-- column always stays.
+--   DataTable.ChosenHidden(columns, settingsKey)    the keys switched off, for t:SetUserHidden
+--   DataTable.ColumnMenu(anchor, t, settingsKey, onChange)  the menu: a check per column, "(no room)" on dropped ones
+--   t:ColumnsLabel()                                 the button's text: "Columns" / "Columns  ·  2 hidden"
+function DataTable.ChosenHidden(columns, settingsKey)
+  local chosen = ns.Settings:Table(settingsKey)
+  local hidden = {}
+  for _, col in ipairs(columns) do
+    local on = chosen[col.key]
+    if on == nil then
+      on = not col.optional
+    end
+    if not on and not mainItem(col) and not col.button then
+      hidden[col.key] = true
+    end
+  end
+  return hidden
+end
+
+function DataTable.ColumnMenu(anchor, t, settingsKey, onChange)
+  local columns = t.opts.columns
+  local hidden = DataTable.ChosenHidden(columns, settingsKey)
+  local dropped = t.hiddenColumns or {}
+  local entries = {}
+  for c, col in ipairs(columns) do
+    if not mainItem(col) and not col.button then
+      local name = label(col)
+      if dropped[c] and not hidden[col.key] then
+        name = name .. " " .. W.Dim(L["(no room)"])
+      end
+      entries[#entries + 1] = {
+        text = name,
+        checked = not hidden[col.key],
+        func = function()
+          ns.Settings:Table(settingsKey)[col.key] = hidden[col.key] and true or false
+          onChange()
+        end,
+      }
+    end
+  end
+  W.Menu(anchor, entries)
+end
+
+function DataTable:ColumnsLabel()
+  local n = self:HiddenCount()
+  return n > 0 and L["Columns  ·  %d hidden"]:format(n) or L["Columns"]
+end
+
 -- text without colour codes, textures or atlases (exports)
 function DataTable.Plain(s)
   s = tostring(s or "")
