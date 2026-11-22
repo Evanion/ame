@@ -9,7 +9,8 @@
 --   CraftModel.Producers() -> { [product] = { recipe, ... } }: the recipes your characters know that make each item
 --   CraftModel.Craft() -> the one Crafting env every view prices crafts with (the Crafting tab, the profession bar
 --     and craft queue, recipe tooltips): your faction's auction house quote (fresh searches, bind-on-pickup products
---     unsellable) and parts crafted when that's cheaper. nil before there's a market index.
+--     unsellable) and parts crafted when that's cheaper; and that quote (an item's sales rate and signal). nil before
+--     there's a market index.
 local _, ns = ...
 
 local M = {}
@@ -56,7 +57,10 @@ end
 
 function M.Craft()
   local index = ns.AME and ns.AME:FactionIndex()
-  return index and env(index) or nil
+  if not index then
+    return nil
+  end
+  return env(index) -- craft, quote
 end
 
 -- Make something of an item instead of vendoring it? Recipes your characters know that use it, valued as the

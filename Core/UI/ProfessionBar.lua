@@ -1,7 +1,9 @@
 -- The profession window (the game's Professions frame on WoW Forever and retail): AME adds
---   - a profit figure on each recipe in the list (what it sells for after the AH cut, minus reagents at market)
---   - a bar under the window for the selected recipe: cost to craft, what it sells for, profit; Make N with the
---     batch's profit and what you'd actually spend; Queue, Add to shopping list, and Search AH at the auction house
+--   - a profit figure on each recipe in the list (what it sells for after the AH cut, minus reagents at market), "no
+--     price" where the product or a reagent has none, the breakdown on hover, and a footnote under the list
+--   - a bar under the window for the selected recipe: cost to craft, what it sells for, profit, and the product's
+--     Sells/day and market signal; Make N with the batch's profit and what you'd actually spend; Queue, Add to
+--     shopping list, and Search AH at the auction house
 --   - the craft queue beside the window (CraftQueue): steps parts first, each material's sources, what to do, and
 --     Craft next
 -- Recipes come from the open window (C_TradeSkillUI), and from what your characters' windows recorded
@@ -26,11 +28,15 @@ end
 
 -- one recipe's numbers for count crafts: { cost (each craft, reagents at market), sells (what a craft's items sell
 -- for after the cut), profit (each craft), made (items a craft), toBuy (what's missing, at market, for all count),
--- missing = { { itemID, qty } } } - pure given craft (Crafting) and held(itemID) -> units you have
-function PB.Summary(recipe, craft, count, held)
+-- missing = { { itemID, qty } }, sellRate (the product's units sold a day), signal (its market signal, "none"
+-- without one) } - pure given craft (Crafting), held(itemID) -> units you have, and quote (Quote, optional)
+function PB.Summary(recipe, craft, count, held, quote)
   local out = { made = recipe.made or 1, missing = {}, toBuy = 0 }
   local e = craft:Evaluate(recipe)
   out.cost, out.sells, out.profit = e.cost, e.revenue, e.profit
+  out.sellRate = recipe.product and craft:SalesPerDay(recipe.product)
+  local s = quote and recipe.product and quote:Summary(recipe.product)
+  out.signal = s and s.signal or "none"
   for _, g in ipairs(recipe.reagents or {}) do
     local short = g[2] * count - (held and held(g[1]) or 0)
     if short > 0 then
@@ -291,6 +297,20 @@ local function signed(c)
   return W.SignedMoney(c, { full = true })
 end
 
+-- Pure: units sold a day as a number for the "Sells/day" label ("0.8", "12", "32k"; "-" without a rate)
+function PB.RateText(perDay)
+  if not perDay then
+    return W.NONE
+  end
+  if perDay >= 1000 then
+    return W.Count(perDay)
+  end
+  if perDay >= 10 or perDay < 0.05 then
+    return tostring(math.floor(perDay + 0.5))
+  end
+  return ("%.1f"):format(perDay)
+end
+
 function PB:SelectedRecipe()
   return self.selected and recipeOf(self.selected)
 end
@@ -301,9 +321,15 @@ function PB:CreateBar(host)
   bar:SetHeight(84)
   bar:SetPoint("TOPLEFT", host, "BOTTOMLEFT", 0, 2)
   bar:SetPoint("TOPRIGHT", host, "BOTTOMRIGHT", 0, 2)
+  -- line 1, on the right: the product's sales rate and its market signal
+  bar.signal = W.SignalBadge(bar)
+  bar.signal:SetPoint("TOPRIGHT", -10, -9)
+  bar.rate = W.Text(bar, "GameFontHighlightSmall", "RIGHT")
+  bar.rate:SetPoint("RIGHT", bar.signal, "LEFT", -6, 0)
+  bar.rate:SetWordWrap(false)
   bar.line = W.Text(bar, "GameFontHighlightSmall")
   bar.line:SetPoint("TOPLEFT", 10, -10)
-  bar.line:SetPoint("RIGHT", -10, 0)
+  bar.line:SetPoint("RIGHT", bar.rate, "LEFT", -12, 0)
   bar.line:SetWordWrap(false)
   bar.batch = W.Text(bar, "GameFontHighlightSmall")
   bar.batch:SetPoint("TOPLEFT", bar.line, "BOTTOMLEFT", 92, -9)
@@ -351,17 +377,29 @@ function PB:CreateBar(host)
   return bar
 end
 
+-- line 1's right end: "Sells/day 0.8" and the signal badge (s: PB.Summary; nil clears them)
+function PB.SetMarket(bar, s)
+  bar.rate:SetText(s and (W.Dim(L["Sells/day"] .. " ") .. PB.RateText(s.sellRate)) or "")
+  local signal = s and s.signal ~= "none" and s.signal or nil
+  bar.signal:SetSignal(signal)
+  bar.signal:SetShown(signal ~= nil)
+  if not signal then
+    bar.signal:SetWidth(1) -- the rate sits at the right edge
+  end
+end
+
 function PB:RenderBar()
   local bar = self.bar
   if not bar then
     return
   end
   local recipe = self:SelectedRecipe()
-  local craft = ns.CraftModel.Craft()
+  local craft, quote = ns.CraftModel.Craft()
   local brand = ""
   bar.search:SetShown(ns.AME.ahOpen and true or false)
   local n = #queue().db.items
   bar.showQueue:SetText(n > 0 and L["Show queue (%d)"]:format(n) or L["Show queue"])
+  PB.SetMarket(bar, nil)
   if not (recipe and recipe.product) then
     bar.line:SetText(brand .. W.Dim(recipe and L["enchants make no item to price"] or L["pick a recipe"]))
     bar.batch:SetText("")
@@ -373,7 +411,8 @@ function PB:RenderBar()
     return
   end
   local count = self.count or 1
-  local s = PB.Summary(recipe, craft, count, PB.Unclaimed())
+  local s = PB.Summary(recipe, craft, count, PB.Unclaimed(), quote)
+  PB.SetMarket(bar, s)
   bar.line:SetText(
     brand
       .. W.Dim(L["Cost to craft"] .. " ")
@@ -897,22 +936,52 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- profit on the recipe list's rows
 
-local rowProfit = {} -- [recipeID] = profit (for this market index), cleared when prices change
-local profitIndex
+local rowEval = {} -- [recipeID] = the recipe's Crafting:Evaluate (for this market index), cleared when prices change
+local evalIndex
 
-local function profitFor(recipeID)
+-- a recipe in the list, priced: its evaluation (cost, revenue, profit, sellRate), false for one that makes no item
+-- (an enchant), nil before there's a market index
+local function evalFor(recipeID)
   local index = ns.AME and ns.AME:FactionIndex()
-  if index ~= profitIndex then
-    rowProfit, profitIndex = {}, index
+  if index ~= evalIndex then
+    rowEval, evalIndex = {}, index
   end
-  local v = rowProfit[recipeID]
+  if not index then
+    return nil
+  end
+  local v = rowEval[recipeID]
   if v == nil then
     local recipe, craft = recipeOf(recipeID), ns.CraftModel.Craft()
-    local e = recipe and recipe.product and craft and craft:Evaluate(recipe)
-    v = e and e.profit or false
-    rowProfit[recipeID] = v
+    v = recipe and recipe.product and craft and craft:Evaluate(recipe) or false
+    rowEval[recipeID] = v
   end
-  return v or nil
+  return v
+end
+
+-- Pure: a recipe row's figure from its evaluation: the signed profit, "no price" when the product or a reagent has
+-- none, nothing for an enchant (e false) or before there's a market index (e nil)
+function PB.RowText(e)
+  if not e then
+    return ""
+  end
+  if e.profit then
+    return signed(e.profit)
+  end
+  return W.Dim(L["no price"])
+end
+
+-- hovering a recipe row: the breakdown behind its figure
+function PB.RowTip(tip, frame)
+  local id = rawget(frame, "ameRecipe")
+  local e = PB.ROW_PROFIT and id and evalFor(id)
+  if not e then
+    return false
+  end
+  W.TipPair(tip, L["Cost to craft"], money(e.cost))
+  W.TipPair(tip, L["Sells for"], money(e.revenue))
+  W.TipPair(tip, L["Profit"], e.profit and signed(e.profit) or W.Dim(L["no price"]))
+  W.TipPair(tip, L["Sells/day"], PB.RateText(e.sellRate))
+  tip:AddLine(L["Profit after the AH cut, reagents at market."], nil, nil, nil, true)
 end
 
 local function decorateRow(frame, node)
@@ -923,9 +992,28 @@ local function decorateRow(frame, node)
     fs = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     fs:SetPoint("RIGHT", -6, 0)
     frame.ameProfit = fs
+    if frame.HookScript then
+      W.Tooltip(frame, PB.RowTip)
+    end
   end
-  local profit = PB.ROW_PROFIT and info and info.recipeID and profitFor(info.recipeID)
-  fs:SetText(profit and signed(profit) or "")
+  local id = info and info.recipeID
+  frame.ameRecipe = id or false
+  fs:SetText(PB.ROW_PROFIT and id and PB.RowText(evalFor(id)) or "")
+end
+
+-- under the recipe list: what its figures are
+function PB:AttachListNote(page)
+  local list = page and rawget(page, "RecipeList")
+  if self.listNote or not (list and list.CreateFontString) then
+    return
+  end
+  local fs = W.Text(list, "GameFontDisableSmall")
+  fs:SetPoint("TOPLEFT", list, "BOTTOMLEFT", 8, -2)
+  fs:SetPoint("TOPRIGHT", list, "BOTTOMRIGHT", -8, -2)
+  fs:SetWordWrap(true)
+  fs:SetText(L["Profit after the AH cut, reagents at market. Hover for the breakdown."])
+  fs:SetShown(PB.ROW_PROFIT)
+  self.listNote = fs
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -970,6 +1058,7 @@ function PB:Attach()
   if mixin and mixin.Init then
     hooksecurefunc(mixin, "Init", decorateRow)
   end
+  self:AttachListNote(page)
   frame:HookScript("OnShow", function()
     PB:Refresh()
     if not queue():Empty() then
