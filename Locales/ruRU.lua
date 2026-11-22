@@ -8,7 +8,6 @@ if not L then
   return
 end
 
-L["   the market takes it in"] = "   рынок поглотит за"
 L["%d AH sales and purchases. AME records them from auction mail: open your mailbox to catch new ones."] = "Продаж и покупок на аукционе: %d. AME берёт их из почты аукциона: откройте почтовый ящик, чтобы учесть новые."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] = "Активных аукционов на ваших персонажах: %d (на момент, когда каждый из них последний раз открывал аукцион). Продажи сразу появляются в журнале и закрываются, когда приходит письмо с аукциона."
 L["%d ahead"] = "%d впереди"
@@ -581,7 +580,6 @@ L["Sellers piling in"] = "Наплыв продавцов"
 L["Sellers piling in at high prices: a drop often follows."] = "Наплыв продавцов на высоких ценах: часто следует падение."
 L["Sellers withdrawing"] = "Уход продавцов"
 L["Selling"] = "Продажа"
-L["Selling it raw nets %s (after the cut and deposit)."] = "Продажа как есть даст %s (после комиссии и залога)."
 L["Selling: posting prices"] = "Продажа: цены выставления"
 L["Sells a day"] = "Продаж в день"
 L["Sells at the %s"] = "Продажа: %s"
@@ -812,7 +810,6 @@ L["last full scan"] = "последнее полное сканирование"
 L["last full scan %s"] = "последний полный скан %s"
 L["last full scan: %d items, %s ago"] = "последнее полное сканирование: %d предметов, %s назад"
 L["last seen %s (%s)"] = "последний раз %s (%s)"
-L["less"] = "меньше"
 L["libraries"] = "библиотеки"
 L["listed"] = "в продаже"
 L["loaded"] = "загружено"

@@ -1105,6 +1105,10 @@ describe("addon in a stubbed client", function()
         ns.UI.craftSelected = rows[1]
         ns.UI:RenderCraftingDetail()
         assert.truthy(v.note.text:find("Missing a price"), v.note.text)
+        -- the reagents are a table of item links, then the "Selling it" card ends on the profit
+        assert.is_true(v.detail.tables.reagents.holder:IsShown())
+        assert.are.equal(2589, v.detail.tables.reagents.rows[1].itemID)
+        assert.are.equal("Selling it", v.detail.cards[2].parts.title.text)
         -- the sidebar's button says what it does (its label is AME's own font string)
         assert.are.equal("Add reagents to a shopping list", v.action.label.text)
         -- sell or refine: the linen sells raw (the bandage has no price)
@@ -1115,6 +1119,11 @@ describe("addon in a stubbed client", function()
         assert.are.equal(20, rows[1].qty)
         assert.is_nil(rows[1].best)
         assert.truthy(rows[1].raw > 0)
+        -- its card: the material as a link, then what selling it raw nets
+        ns.UI.craftSelected = rows[1]
+        ns.UI:RenderCraftingDetail()
+        assert.are.equal(2589, v.detail.cards[1].parts.item.key)
+        assert.are.equal("Sell it raw", v.detail.cards[2].parts.title.text)
         -- recipes to buy: none listed in this market; its gaps toggle is on its toolbar only
         ns.UI:ShowCraftingPage("recipes")
         assert.are.equal(0, #ns.UI.craftRows)
@@ -2156,6 +2165,18 @@ describe("addon in a stubbed client", function()
       end
       assert.are.equal(6, list.items[3860].need) -- the whole need: the list counts down from what you hold
       assert.are.equal(2, list.items[2880].need) -- a vendor's reagent too: the vendor panel buys it
+      -- the Crafting tab's queue page: the side menu counts the step; the step's card, then the materials
+      ns.UI:Toggle()
+      ns.UI:ShowTab("crafting")
+      local cv = ns.UI.craftView
+      cv.scripts.OnShow(cv)
+      ns.UI:ShowCraftingPage("queue")
+      assert.are.equal(1, ns.UI.craftCounts.queue)
+      ns.UI.craftSelected = ns.UI.craftRows[1]
+      ns.UI:RenderCraftingDetail()
+      assert.are.equal("Materials", cv.detail.cards[2].parts.title.text)
+      assert.is_true(cv.detail.tables.materials.holder:IsShown())
+      ns.UI:Toggle()
       -- craft next, and the finished craft counts off the queue
       PB.panel.next.scripts.OnClick(PB.panel.next)
       assert.are.same({ { 100, 1 } }, crafted)

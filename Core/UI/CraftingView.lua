@@ -38,7 +38,13 @@ local NEEDS_DATA = { recipes = true, leveling = true }
 UI.CRAFT_HEADING_H = 22 -- a page's heading over its table
 UI.CRAFT_DETAIL_GAP = 8 -- between the right column's cards and tables
 -- pages whose table fades some rows: mode -> rowAlpha(row)
-UI.CRAFT_ROW_ALPHA = {}
+UI.CRAFT_ROW_ALPHA = {
+  -- Top earners: what binds when made can't be sold, so it's faded
+  earners = function(e)
+    return e.eval and e.eval.why == "unsellable" and 0.5 or 1
+  end,
+}
+UI.CRAFT_BEST_EARNERS = 3 -- Your professions: best earners in the card
 UI.RECIPE_LISTING_DAYS = 2 -- recipe items seen on the AH within this many days count as for sale
 
 local function charName(key)
@@ -124,12 +130,17 @@ end
 
 -- Your professions: one row per character and profession, with its best earner
 function UI:ProfessionRows(m)
+  -- each character's profession's best earners, best first (the card lists the first few)
   local best = {}
   for _, e in ipairs(m.craft:TopEarners(m.entries, m.heldSet)) do
     for _, key in ipairs(e.crafters) do
       local k = key .. ":" .. tostring(e.profession)
-      if not best[k] and e.eval.perDay then
-        best[k] = e
+      if e.eval.perDay then
+        best[k] = best[k] or {}
+        local list = best[k]
+        if #list < UI.CRAFT_BEST_EARNERS then
+          list[#list + 1] = e
+        end
       end
     end
   end
@@ -149,8 +160,10 @@ function UI:ProfessionRows(m)
             wait = math.min(wait or math.huge, t - now)
           end
         end
-        local b = best[key .. ":" .. tostring(skillLine)]
+        local earners = best[key .. ":" .. tostring(skillLine)] or {}
+        local b = earners[1]
         local row = {
+          earners = earners,
           key = key,
           char = charName(key),
           skillLine = skillLine,
@@ -404,16 +417,17 @@ local COLUMNS = {
     { key = "name", label = L["Material"], width = 170, item = true, sortKey = false },
     { key = "qty", label = L["Held"], width = 50, format = "count" },
     { key = "raw", label = L["Sell raw"], width = 72, format = "money" },
+    -- what to craft from it, as an item link; nothing worth more: sell it as it is
     {
       key = "use",
       label = L["Best use"],
       width = 170,
       sortKey = false,
-      text = function(r)
-        if not r.best then
-          return W.Color("hold", L["Sell it raw"])
-        end
-        return W.Color("good", L["Craft %s"]:format(itemName(r.best.recipe.product)))
+      item = function(r)
+        return r.best and r.best.recipe.product or nil
+      end,
+      fallback = function(r)
+        return r.best and "" or W.Color("hold", L["Sell it raw"])
       end,
     },
     { key = "net", label = L["That nets"], width = 72, format = "money" },
@@ -1384,74 +1398,203 @@ UI.CRAFT_DETAIL.leveling = function(self, v, e)
       or ""
 end
 
+-- a coloured dot before a crafter's name: online in green, offline dim (a small square: the game's fonts have no
+-- round bullet)
+function UI.CrafterDot(online)
+  return W.Swatch(W.RGB(online and "good" or "dim"))
+end
+
+local function itemID(d)
+  return d.itemID
+end
+
+-- the right column's small tables
+UI.CRAFT_DETAIL_TABLES.reagents = { -- Top earners: a craft's reagents and where each comes from
+  rows = 6,
+  itemID = itemID,
+  itemMenu = {},
+  columns = {
+    {
+      key = "name",
+      label = L["Reagent"],
+      width = 120,
+      item = true,
+      sortKey = false,
+      suffix = function(d)
+        return "  " .. W.Dim(d.countText)
+      end,
+    },
+    { key = "cost", label = L["Cost"], width = 60, format = "money", sortKey = false },
+  },
+}
+UI.CRAFT_DETAIL_TABLES.earners = { -- Your professions: its best earners
+  rows = UI.CRAFT_BEST_EARNERS,
+  itemID = itemID,
+  itemMenu = {},
+  columns = {
+    { key = "name", label = L["Makes"], width = 120, item = true, sortKey = false },
+    { key = "perDay", label = L["Market/day"], width = 70, format = "money", term = "marketDay", sortKey = false },
+  },
+}
+UI.CRAFT_DETAIL_TABLES.crafters = { -- Find a crafter: everyone who can make the picked recipe
+  rows = 8,
+  onClick = function() end, -- the rows are people, not items: nothing to open
+  columns = {
+    {
+      key = "crafter",
+      label = L["Crafter"],
+      width = 110,
+      align = "LEFT",
+      sortKey = false,
+      text = function(r)
+        local name = r.online and r.crafter or W.Dim(r.crafter)
+        return UI.CrafterDot(r.online) .. " " .. name .. (r.mine and W.Dim("  " .. L["you"]) or "")
+      end,
+    },
+    {
+      key = "skill",
+      label = L["Skill"],
+      width = 36,
+      sortKey = false,
+      text = function(r)
+        return r.skill and tostring(r.skill) or W.Dim("-")
+      end,
+    },
+    {
+      key = "whisper",
+      label = "",
+      width = 60,
+      button = {
+        label = L["Whisper"],
+        shown = function(r)
+          return not r.mine
+        end,
+        onClick = function(r)
+          ns.CraftersView.Whisper(r.crafter, r.recipe)
+        end,
+      },
+    },
+  },
+}
+UI.CRAFT_DETAIL_TABLES.materials = { -- the craft queue: every material, how many, and where it comes from
+  rows = 8,
+  itemID = itemID,
+  itemMenu = {},
+  columns = {
+    { key = "name", label = L["Item"], width = 90, item = true, sortKey = false },
+    { key = "needText", label = L["Need"], width = 34, sortKey = false },
+    { key = "source", label = L["Source"], width = 90, format = "tag", sortKey = false },
+  },
+}
+
 UI.CRAFT_DETAIL.professions = function(_, v, e)
-  local rows = {}
-  if e.best then
-    local product = e.best.recipe.product
-    rows[#rows + 1] = { label = L["Best earner"], text = product and link(product) or W.Dim(L["Enchant"]) }
-    rows[#rows + 1] = { label = L["Profit per craft"], copper = e.best.eval.profit or 0, signed = true }
-    rows[#rows + 1] = { label = L["Market a day"], copper = e.perDay }
+  local rows = {
+    { label = L["Skill"], text = ("%d / %d"):format(e.skill or 0, e.max or 0) },
+    { label = L["Recipes"], text = W.Thousands(e.known) },
+  }
+  if e.ready then
+    rows[#rows + 1] = { label = L["Cooldown"], text = L["ready"], color = "good" }
+  elseif e.wait then
+    rows[#rows + 1] = { label = L["Cooldown"], text = SecondsToTime(e.wait) }
+  end
+  local blocks = {
+    { card = { title = ("%s · %s"):format(e.char, e.profession), titleColor = "gold", rows = rows } },
+  }
+  if #e.earners > 0 then
+    local list = {}
+    for i, b in ipairs(e.earners) do
+      list[i] = { itemID = b.recipe.product, perDay = b.eval.perDay }
+    end
+    blocks[#blocks + 1] = { heading = L["Best earners"] }
+    blocks[#blocks + 1] = { table = "earners", rows = list }
   end
   v.action:SetText(L["Plan leveling"])
   v.action:SetShown(not GATHERING[e.skillLine])
-  return {
-    title = ("%s %s"):format(e.profession, W.Dim(e.char)),
-    subtitle = L["Skill %d of %d · %d recipes known"]:format(e.skill or 0, e.max or 0, e.known),
-    rows = rows,
-  },
-    e.ready and L["Cooldown ready."] or e.wait and L["On cooldown for %s."]:format(SecondsToTime(e.wait)) or ""
+  return { blocks = blocks }, ""
 end
 
-UI.CRAFT_DETAIL.crafters = function(_, v, e)
-  local rows = {
-    { label = L["Crafter"], text = e.mine and (e.crafter .. W.Dim("  " .. L["you"])) or e.crafter },
-    { label = L["Skill"], text = e.skill and tostring(e.skill) or W.Dim("-") },
-    { label = L["Online"], text = e.online and W.Color("good", L["yes"]) or W.Dim(L["no"]) },
-  }
-  if e.seen and not e.mine then
-    rows[#rows + 1] =
-      { label = L["Shared"], text = L["%s ago"]:format(SecondsToTime(math.max(60, GetServerTime() - e.seen))) }
+UI.CRAFT_DETAIL.crafters = function(self, v, e)
+  -- everyone the table lists for this recipe, in its order (online first)
+  local who = {}
+  for _, r in ipairs(self.craftRows or {}) do
+    if r.recipe == e.recipe then
+      who[#who + 1] = r
+    end
   end
   v.action:SetText(L["Whisper %s"]:format(e.crafter))
   v.action:SetShown(not e.mine)
+  local subtitle = L["%d can make it"]:format(e.count)
+  if e.seen and not e.mine then
+    subtitle = subtitle
+      .. W.SEP
+      .. L["%s shared %s ago"]:format(e.crafter, SecondsToTime(math.max(60, GetServerTime() - e.seen)))
+  end
   return {
-    item = e.itemID,
-    title = not e.itemID and e.name or nil,
-    subtitle = L["%d know it"]:format(e.count),
-    rows = rows,
+    blocks = {
+      { card = { item = e.itemID, title = not e.itemID and e.name or nil, subtitle = subtitle } },
+      { table = "crafters", rows = who },
+    },
   },
-    e.mine and "" or L["Whisper opens a chat to them with the recipe linked: you send it."]
+    L["Whisper opens a chat to them with the recipe linked: you send it."]
+end
+
+-- a material's sources as one tag: every place but your bags, in the AH's amber when some has to be bought
+local function sourceTag(mat)
+  local tags = ns.ProfessionBar.SourceTags(mat)
+  if #tags == 0 then
+    return nil
+  end
+  local texts, kind = {}, tags[1].kind
+  for _, t in ipairs(tags) do
+    texts[#texts + 1] = t.text
+    if t.kind == "ah" or (t.kind == "made" and kind ~= "ah") then
+      kind = t.kind
+    end
+  end
+  return { text = table.concat(texts, ", "), kind = kind }
 end
 
 UI.CRAFT_DETAIL.queue = function(self, v, e)
-  local s = e.s
-  local PB = ns.ProfessionBar
-  local r = PB.Recipe(s.recipe)
+  local plan = self.craftPlan or {}
   local mats = {}
-  for _, mat in ipairs(self.craftPlan and self.craftPlan.materials or {}) do
-    mats[mat.item] = mat
-  end
-  local rows = {}
-  for _, rg in ipairs(r and r.reagents or {}) do
-    local mat = mats[rg[1]]
-    rows[#rows + 1] = {
-      item = rg[1],
-      count = rg[2] * (s.count or 1),
-      text = mat and PB.SourcesText(mat) or W.Dim(L["made by a step"]),
+  for _, mat in ipairs(plan.materials or {}) do
+    local buy = false
+    for _, src in ipairs(mat.sources) do
+      buy = buy or src.kind == "ah"
+    end
+    mats[#mats + 1] = {
+      itemID = mat.item,
+      -- green when what you have covers it
+      needText = buy and tostring(mat.need) or W.Color("good", tostring(mat.need)),
+      source = sourceTag(mat),
     }
-  end
-  if e.profit then
-    rows[#rows + 1] = { label = L["Profit"], copper = e.profit, signed = true }
   end
   v.action:SetText(L["Missing to shopping list"])
   return {
-    item = e.itemID,
-    count = "×" .. tostring(e.made or 1),
-    subtitle = (e.who and L["crafted by %s"]:format(e.who) or W.Color("warn", L["nobody recorded knowing it"]))
-      .. (e.part and (W.SEP .. L["a part for a later step"]) or ""),
-    rows = rows,
+    blocks = {
+      {
+        card = {
+          item = e.itemID,
+          count = "×" .. tostring(e.made or 1),
+          subtitle = (e.who and L["crafted by %s"]:format(e.who) or W.Color("warn", L["nobody recorded knowing it"]))
+            .. (e.part and (W.SEP .. L["a part for a later step"]) or ""),
+          rows = e.profit and { { label = L["Profit"], copper = e.profit, signed = true } } or nil,
+        },
+      },
+      {
+        card = {
+          title = L["Materials"],
+          titleColor = "gold",
+          rows = {
+            { label = L["To buy"], copper = plan.toBuy or 0 },
+            { label = L["Profit"], copper = plan.profit or 0, signed = true, total = true },
+          },
+        },
+      },
+      { table = "materials", rows = mats },
+    },
   },
-    L["The whole queue's missing materials go on the Craft queue shopping list."]
+    L["Nothing for what's in your bags; the count is green when you have it all."]
 end
 
 UI.CRAFT_DETAIL.earners = function(_, v, e)
@@ -1460,20 +1603,32 @@ UI.CRAFT_DETAIL.earners = function(_, v, e)
   for _, k in ipairs(e.crafters) do
     names[#names + 1] = charName(k)
   end
-  local rows = {}
+  local reagents = {}
   for _, r in ipairs(ev.reagents) do
-    rows[#rows + 1] = { item = r.item, count = r.n, label = W.Dim(SOURCE[r.source] or ""), copper = r.each * r.n }
+    reagents[#reagents + 1] = {
+      itemID = r.item,
+      countText = SOURCE[r.source] and ("%d · %s"):format(r.n, SOURCE[r.source]) or tostring(r.n),
+      cost = r.each * r.n,
+    }
   end
-  rows[#rows + 1] = { label = L["Cost"], copper = ev.cost }
-  rows[#rows + 1] =
-    { label = L["Sells for, after cut"], copper = ev.revenue, text = not ev.revenue and W.Dim("-") or nil }
-  rows[#rows + 1] =
-    { label = L["Profit per craft"], copper = ev.profit, signed = true, text = not ev.profit and W.Dim("-") or nil }
-  rows[#rows + 1] = { label = L["Sells a day"], text = ev.sellRate and W.Rate(ev.sellRate) or W.Dim("-") }
+  local function money(copper, signed, extra)
+    local row = extra or {}
+    row.copper, row.signed = copper, signed
+    if copper == nil then
+      row.text = W.Dim("-")
+    end
+    return row
+  end
+  local rows = {
+    money(ev.cost, false, { label = L["Reagents cost"] }),
+    money(ev.revenue, false, { label = L["Sells for, after cut"] }),
+    money(ev.profit, true, { label = L["Profit per craft"], total = true }),
+    { label = L["Sells a day"], text = ev.sellRate and W.Rate(ev.sellRate) or W.Dim("-") },
+  }
   if ev.canPerDay then
     rows[#rows + 1] = { label = L["Your cooldown"], text = UI.CooldownText(ev.canPerDay) }
   end
-  rows[#rows + 1] = { label = L["Market a day"], copper = ev.perDay, text = not ev.perDay and W.Dim("-") or nil }
+  rows[#rows + 1] = money(ev.perDay, false, { label = L["Market a day"] })
   local why = ev.why == "unsellable" and L["Can't be sold: it binds when made."]
     or ev.why == "unpriced" and L["Missing a price: scan the auction house (or it's never listed)."]
     or ev.why == "enchant" and L["Enchants make no item to sell; valued later."]
@@ -1484,57 +1639,83 @@ UI.CRAFT_DETAIL.earners = function(_, v, e)
   end
   v.action:SetText(L["Add reagents to a shopping list"])
   return {
-    item = e.recipe.product,
-    title = not e.recipe.product and W.Dim(L["Enchant"]) or nil,
-    subtitle = L["%s · makes %s"]:format(table.concat(names, ", "), tostring(e.recipe.made)),
-    rows = rows,
+    blocks = {
+      {
+        card = {
+          item = e.recipe.product,
+          title = not e.recipe.product and W.Dim(L["Enchant"]) or nil,
+          subtitle = L["%s · makes %s"]:format(table.concat(names, ", "), tostring(e.recipe.made)),
+        },
+      },
+      { heading = L["Reagents"] },
+      { table = "reagents", rows = reagents },
+      {
+        card = {
+          title = L["Selling it"],
+          titleColor = "gold",
+          rows = rows,
+          note = L["The whole market's daily profit at this price: you'd sell a share of it, after the other sellers."],
+        },
+      },
+    },
   },
     why
 end
 
 UI.CRAFT_DETAIL.refine = function(_, v, e)
-  local rows = {}
+  local blocks = {
+    { card = { item = e.itemID, count = W.Count(e.qty) } },
+    {
+      card = {
+        title = L["Sell it raw"],
+        rows = { { label = L["After the cut and deposit"], copper = e.raw } },
+      },
+    },
+  }
+  -- each way to craft it, best first: what it nets and how much more than selling it raw
   for i, o in ipairs(e.options) do
-    if i > 4 then
+    if i > UI.CRAFT_REFINE_OPTIONS then
       break
     end
-    rows[#rows + 1] = {
-      label = L["Craft %s ×%d"]:format(link(o.recipe.product), o.crafts),
-      text = W.Money(o.net, true) .. " " .. (o.gain > 0 and W.SignedMoney(o.gain) or W.Dim(L["less"])),
+    local better = o.gain > 0
+    blocks[#blocks + 1] = {
+      card = {
+        title = L["Craft %s ×%d"]:format(link(o.recipe.product), o.crafts),
+        titleColor = (i == 1 and better) and "good" or nil,
+        subtitle = (i == 1 and better) and L["Best use"] or nil,
+        rows = {
+          { label = L["That nets"], copper = o.net },
+          better and { label = L["More than selling it raw"], copper = o.gain, signed = true, total = true }
+            or { label = L["Less than selling it raw"], copper = o.gain, signed = true, total = true },
+        },
+        note = o.days and L["The market takes it in %s."]:format(days(o.days)) or nil,
+      },
     }
-    if o.days then
-      rows[#rows + 1] = { label = W.Dim(L["   the market takes it in"]), text = W.Dim(days(o.days)) }
-    end
   end
   v.action:SetText(L["Search the AH"])
-  return {
-    item = e.itemID,
-    count = W.Count(e.qty),
-    subtitle = L["Selling it raw nets %s (after the cut and deposit)."]:format(W.Money(e.raw, true)),
-    rows = rows,
-  },
+  return { blocks = blocks },
     L["Materials you'd craft count at what they would sell for, not at their buy price: listing costs a cut, buying doesn't."]
 end
+UI.CRAFT_REFINE_OPTIONS = 3 -- Sell or refine: ways to craft a material, one card each
 
 UI.CRAFT_DETAIL.recipes = function(self, v, e)
   local rows = {}
-  if e.recipe.product then -- what it makes, as an item link
-    rows[#rows + 1] = { label = L["Makes"], text = link(e.recipe.product) }
+  local function money(label, copper, signed)
+    rows[#rows + 1] = { label = label, copper = copper, signed = signed, text = copper == nil and W.Dim("-") or nil }
   end
-  rows[#rows + 1] = { label = L["On the AH now"], copper = e.price }
+  money(L["On the AH now"], e.price)
   local s = self.craftModel and self.craftModel.index.items[e.item]
   if s and s.avg30 then
-    rows[#rows + 1] = { label = L["Usually"], copper = s.avg30 }
+    money(L["Usually"], s.avg30)
   end
   local ev = e.eval
-  rows[#rows + 1] = { label = L["Cost per craft"], copper = ev.cost, text = not ev.cost and W.Dim("-") or nil }
-  rows[#rows + 1] =
-    { label = L["Profit per craft"], copper = ev.profit, signed = true, text = not ev.profit and W.Dim("-") or nil }
-  rows[#rows + 1] = { label = L["Market a day"], copper = ev.perDay, text = not ev.perDay and W.Dim("-") or nil }
-  rows[#rows + 1] = { label = L["Pays back, at best"], text = days(e.payback) }
+  money(L["Cost per craft"], ev.cost)
+  money(L["Profit per craft"], ev.profit, true)
+  money(L["Market a day"], ev.perDay)
   if ev.canPerDay then
     rows[#rows + 1] = { label = L["Your cooldown"], text = UI.CooldownText(ev.canPerDay) }
   end
+  rows[#rows + 1] = { label = L["Pays back, at best"], text = days(e.payback), total = true }
   for _, l in ipairs(e.learners) do
     rows[#rows + 1] = {
       label = charName(l.char),
@@ -1548,15 +1729,22 @@ UI.CRAFT_DETAIL.recipes = function(self, v, e)
   }
   v.action:SetText(L["Search the AH"])
   return {
-    item = e.item,
-    subtitle = L["Teaches %s"]:format(e.recipe.product and link(e.recipe.product) or L["an enchant"])
-      .. W.SEP
-      .. L["needs %d"]:format(e.rank or 0),
-    rows = rows,
+    blocks = {
+      {
+        card = {
+          item = e.item,
+          subtitle = L["Teaches %s"]:format(e.recipe.product and link(e.recipe.product) or L["an enchant"])
+            .. W.SEP
+            .. L["needs %d"]:format(e.rank or 0),
+          rows = rows,
+          note = (e.network or 0) == 0
+              and L["Nobody in your guild or trusted players knows it: learning it fills a gap. Players who don't run AME aren't counted."]
+            or nil,
+        },
+      },
+    },
   },
-    (e.network or 0) == 0
-        and L["Nobody in your guild or trusted players knows it: learning it fills a gap. Players who don't run AME aren't counted."]
-      or ""
+    ""
 end
 
 -- the sidebar's main button: a shopping list of one craft's reagents (top earners), or search the auction house

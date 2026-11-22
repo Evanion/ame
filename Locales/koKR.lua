@@ -8,7 +8,6 @@ if not L then
   return
 end
 
-L["   the market takes it in"] = "   시장 소화 기간"
 L["%d AH sales and purchases. AME records them from auction mail: open your mailbox to catch new ones."] = "경매장 판매 및 구매 %d건. AME는 경매 우편에서 기록합니다: 새 내역을 받으려면 우편함을 여세요."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] = "캐릭터들의 진행 중인 경매 %d건 (각 캐릭터가 마지막으로 경매장을 열었을 때 기준). 판매는 거래 장부에 바로 표시되며 경매 우편이 도착하면 정산됩니다."
 L["%d ahead"] = "앞에 %d개"
@@ -581,7 +580,6 @@ L["Sellers piling in"] = "판매자 몰림"
 L["Sellers piling in at high prices: a drop often follows."] = "높은 가격에 판매자 몰림: 흔히 하락이 뒤따름."
 L["Sellers withdrawing"] = "판매자 철수"
 L["Selling"] = "판매"
-L["Selling it raw nets %s (after the cut and deposit)."] = "그대로 팔면 %s (수수료와 보증금 차감 후)."
 L["Selling: posting prices"] = "판매: 등록 가격"
 L["Sells a day"] = "일 판매량"
 L["Sells at the %s"] = "판매: %s"
@@ -812,7 +810,6 @@ L["last full scan"] = "마지막 전체 스캔"
 L["last full scan %s"] = "마지막 전체 스캔 %s"
 L["last full scan: %d items, %s ago"] = "마지막 전체 스캔: 아이템 %d개, %s 전"
 L["last seen %s (%s)"] = "마지막 확인 %s (%s)"
-L["less"] = "손해"
 L["libraries"] = "라이브러리"
 L["listed"] = "등록"
 L["loaded"] = "불러옴"

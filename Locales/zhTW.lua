@@ -8,7 +8,6 @@ if not L then
   return
 end
 
-L["   the market takes it in"] = "   市場消化需要"
 L["%d AH sales and purchases. AME records them from auction mail: open your mailbox to catch new ones."] = "%d 筆拍賣場買賣紀錄。AME 從拍賣郵件中記錄：打開信箱即可取得新紀錄。"
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] = "你的角色共有 %d 個進行中的拍賣（以各角色上次打開拍賣場時為準）。售出會立即顯示在帳本中，並在收到拍賣郵件時結算。"
 L["%d ahead"] = "前方 %d 件"
@@ -581,7 +580,6 @@ L["Sellers piling in"] = "賣家湧入"
 L["Sellers piling in at high prices: a drop often follows."] = "賣家在高價湧入：隨後往往下跌。"
 L["Sellers withdrawing"] = "賣家撤出"
 L["Selling"] = "出售"
-L["Selling it raw nets %s (after the cut and deposit)."] = "直接出售淨得 %s（扣除手續費和保證金後）。"
 L["Selling: posting prices"] = "出售：上架價格"
 L["Sells a day"] = "每日銷量"
 L["Sells at the %s"] = "在 %s 賣出"
@@ -812,7 +810,6 @@ L["last full scan"] = "上次完整掃描"
 L["last full scan %s"] = "上次完整掃描 %s"
 L["last full scan: %d items, %s ago"] = "上次完整掃描：%d 件物品，%s前"
 L["last seen %s (%s)"] = "最後看到 %s（%s）"
-L["less"] = "更少"
 L["libraries"] = "函式庫"
 L["listed"] = "在售"
 L["loaded"] = "已載入"

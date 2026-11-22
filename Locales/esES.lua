@@ -7,7 +7,6 @@ if not L then
   return
 end
 
-L["   the market takes it in"] = "   el mercado lo absorbe en"
 L["%d AH sales and purchases. AME records them from auction mail: open your mailbox to catch new ones."] = "%d ventas y compras en la CS. AME las registra desde el correo de subastas: abre tu buzón para recoger las nuevas."
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] = "%d subastas activas en tus personajes, según la última vez que cada uno abrió la casa de subastas. Las ventas aparecen en el registro al instante y se liquidan cuando llega el correo de la subasta."
 L["%d ahead"] = "%d delante"
@@ -580,7 +579,6 @@ L["Sellers piling in"] = "Vendedores en masa"
 L["Sellers piling in at high prices: a drop often follows."] = "Vendedores en masa a precios altos: suele seguir una caída."
 L["Sellers withdrawing"] = "Vendedores retirándose"
 L["Selling"] = "Venta"
-L["Selling it raw nets %s (after the cut and deposit)."] = "Venderlo sin procesar deja %s (tras la comisión y el depósito)."
 L["Selling: posting prices"] = "Venta: precios de subasta"
 L["Sells a day"] = "Ventas al día"
 L["Sells at the %s"] = "Venta en la %s"
@@ -811,7 +809,6 @@ L["last full scan"] = "último escaneo completo"
 L["last full scan %s"] = "último escaneo completo %s"
 L["last full scan: %d items, %s ago"] = "último escaneo completo: %d objetos, hace %s"
 L["last seen %s (%s)"] = "visto por última vez %s (%s)"
-L["less"] = "menos"
 L["libraries"] = "bibliotecas"
 L["listed"] = "en venta"
 L["loaded"] = "cargado"
