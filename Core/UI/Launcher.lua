@@ -8,7 +8,7 @@ local W = ns.Widgets
 local Launcher = {}
 ns.Launcher = Launcher
 
-local TITLE = W.Color("brand", "Azeroth") .. " Mercantile Exchange"
+local TITLE = W.Color("brand", "Azeroth") .. " " .. W.Color("gold", "Mercantile Exchange")
 
 function Launcher:Init()
   self:RegisterOptionsPage()
@@ -84,31 +84,32 @@ function Launcher:CreateLauncher()
       end
     end,
     OnTooltipShow = function(tt)
-      tt:AddLine(TITLE)
-      tt:AddLine(ns.ShardLabel(ns.AME:CurrentShard()), 0.7, 0.7, 0.7)
+      -- the title, where you are, the last scan, and the top buy signals as item names in their quality colours
+      local rows = { { TITLE }, { W.Dim(ns.ShardLabel(ns.AME:CurrentShard())) } }
       local last = AME_DB.stats.lastFull
       if last then
-        W.TipPair(tt, L["Last full scan"], date("%b %d %H:%M", last.at))
+        rows[#rows + 1] = { L["Last full scan"], date("%b %d %H:%M", last.at) }
       end
       local index = ns.AME.index
       if index then
-        W.TipPair(tt, L["Items tracked"], tostring(index.count))
+        rows[#rows + 1] = { L["Items tracked"], W.Count(index.count or 0) }
         local hidden = ns.AME.watch and ns.AME.watch:Hidden() or {}
         local top = ns.MarketIndex.Rank(index, "score", function(s)
           return s.signal == "buy" and not hidden[s.itemID]
         end)
         if #top > 0 then
-          tt:AddLine(" ")
-          tt:AddLine(L["Top buy signals"])
+          rows[#rows + 1] = { " " }
+          rows[#rows + 1] = { W.Color("gold", L["Top buy signals"]) }
           for i = 1, math.min(3, #top) do
             local s = top[i]
-            local name = W.ItemInfo(s.itemID) or ("item:" .. s.itemID)
-            W.TipPair(tt, name, W.Money(s.market) .. "  " .. W.Percent(s.change7))
+            rows[#rows + 1] =
+              { ns.Tooltip.Bits({ item = s.itemID }), W.Money(s.market) .. "  " .. W.Percent(s.change7) }
           end
         end
       end
-      tt:AddLine(" ")
-      tt:AddLine(W.Dim(L["Left-click: window   Right-click: settings"]))
+      rows[#rows + 1] = { " " }
+      rows[#rows + 1] = { W.Dim(L["Left-click: window   Right-click: settings"]) }
+      ns.Tooltip.AddRows(tt, rows)
     end,
   })
   local icon = LibStub("LibDBIcon-1.0", true)
@@ -135,7 +136,7 @@ function Launcher:CreateNoticeFeed()
   end
   local feed = LDB:NewDataObject(Launcher.FEED, {
     type = "data source",
-    label = L["AME notifications"],
+    label = L["Notifications"],
     text = "",
     icon = "Interface\\Icons\\INV_Misc_Bell_01",
     OnClick = function()
@@ -146,21 +147,21 @@ function Launcher:CreateNoticeFeed()
       end
     end,
     OnTooltipShow = function(tt)
-      tt:AddLine(TITLE)
+      local rows = { { TITLE } }
       local list, now = notices:List(), GetServerTime()
       if #list == 0 then
-        tt:AddLine(L["No notifications."], 0.7, 0.7, 0.7)
+        rows[#rows + 1] = { W.Dim(L["No notifications."]) }
       end
       for i = 1, math.min(Launcher.FEED_TIP, #list) do
         local e = list[i]
-        local line = ns.UI.NoticeLine(e)
-        tt:AddDoubleLine(line, W.Ago(e.at, now), 1, 1, 1, 0.6, 0.6, 0.6)
+        rows[#rows + 1] = { W.Color("white", ns.UI.NoticeLine(e)), W.Dim(W.Ago(e.at, now)) }
       end
       if #list > Launcher.FEED_TIP then
-        tt:AddLine(L["+ %d older"]:format(#list - Launcher.FEED_TIP), 0.6, 0.6, 0.6)
+        rows[#rows + 1] = { W.Dim(L["+ %d older"]:format(#list - Launcher.FEED_TIP)) }
       end
-      tt:AddLine(" ")
-      tt:AddLine(W.Dim(L["Click: open the notifications"]))
+      rows[#rows + 1] = { " " }
+      rows[#rows + 1] = { W.Dim(L["Click: open the notifications"]) }
+      ns.Tooltip.AddRows(tt, rows)
     end,
   })
   if not feed then

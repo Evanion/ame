@@ -1,21 +1,23 @@
 -- Item tooltip lines from the market index (no history decoding on hover), and the modified click (Settings) that
 -- opens an item's chart.
 --
--- The AME block, under the game's lines (prices from your faction's auction house), after a gap:
---   AME                                     Horde AH · 2 h ago
+-- The block, under the game's lines (prices from your faction's auction house), after a gap:
+--   Horde AH                                                2 h ago   (the house in gold: no addon name)
 --                                          each        your 43   (the columns: only when you have more than one)
 --   Market                               1g 20s        51g 60s
 --   Vendor                                    ·            86s   (only a total: the game shows the price per item)
 --   Disenchant ~                            99s        42g 57s   (gear)
 --   You have 43 · bags 20 · bank 18 · guild bank 5
---   +8% vs 7d avg · 3.4k listed · ~140 sold/day
---   Sells 16% better at the goblin AH, after its cut              (when it does)
+--   +8% vs 7-day avg · 3.4k listed · ~140 sold/day
+--   (!) Sells 16% better at the goblin AH, after its cut          (when it does)
 --   (icon) BUY  supply falling                          Shift: more
--- A row is { left, right, middle }: the middle column (each) is a font string of its own, lined up across the rows
--- (a game tooltip line has only a left and a right text).
--- Shift (or the "always" setting) adds what it disenchants into, yours per character and guild bank (with your
--- average cost), every auction house you have prices for, and the price and data details. When the UI has little
--- room (a large UI scale on a small screen) the block is compact: no freshness, holdings or context lines.
+--   RECIPE / SOURCE                                      (a recipe item: what it makes, where it's sold or drops)
+-- A row is { left, right, middle, ... }: the middle columns (each; a grid's further columns at r[4], r[5]) are font
+-- strings of their own, lined up across the rows (a game tooltip line has only a left and a right text).
+-- Shift (or the "always" setting) adds sections: what it disenchants into, yours per character (bags / bank / AH)
+-- and guild bank with your average cost, every auction house you have prices for (market / you get), the price and
+-- the data it rests on. When the UI has little room (a large UI scale on a small screen) the block is compact: no
+-- freshness, holdings or context lines.
 local _, ns = ...
 local L = ns.L
 
@@ -38,10 +40,6 @@ end
 
 local function pct(x)
   return math.floor(x * 100 + 0.5)
-end
-
-local function section(rows, title, note)
-  rows[#rows + 1] = { W.Color("dim", title) .. (note and Dim("  ·  " .. note) or "") }
 end
 
 -- Bits: the pieces a tooltip cell is written in, turned into the line's text. A cell is a string, a number (copper,
@@ -103,9 +101,11 @@ end
 --   sec = { heading, note, columns = { "each", "your 43" },        -- heads over the value columns, left to right
 --           rows = { { label = bits, note = "dim text", cells = { bits, bits } } | { left, right, middle } },
 --             (a cell that is false is empty: a dim "·")
---           lines = { bits, ... } }                                -- plain lines (after the rows)
--- A row with two cells puts the first in the middle column and the second on the right, as the block's own price
--- rows do. -> rows ({ left, right, middle } of text), for Tooltip.AddRows
+--           lines = { bits, ... },                                 -- plain lines (after the rows)
+--           wrap = true }                                          -- the lines wrap (long sentences)
+-- Cells fill the columns left to right with the last on the right: two cells put the first in the middle column, as
+-- the block's own price rows do; three (bags / bank / AH) use a second middle column. -> rows ({ left, right,
+-- middle, middle2 } of text), for Tooltip.AddRows
 local function cell(v)
   if v == false then
     return Dim("·") -- an empty cell
@@ -113,35 +113,39 @@ local function cell(v)
   return Tooltip.Bits(v) or Dim("·")
 end
 
+-- { left, last, ..., first }: the last value on the right, the others leftwards into the middle columns
+local function spread(left, values)
+  local row = { left }
+  for i = #values, 1, -1 do
+    row[#row + 1] = values[i]
+  end
+  return row
+end
+
 function Tooltip.SectionRows(sec)
   local rows = {}
-  local cols = sec.columns or {}
-  local head = W.TipSectionText(sec.heading, sec.note)
-  if #cols >= 2 then
-    rows[1] = { head, Dim(cols[2]), Dim(cols[1]) }
-  elseif #cols == 1 then
-    rows[1] = { head, Dim(cols[1]) }
-  else
-    rows[1] = { head }
+  local heads = {}
+  for i, c in ipairs(sec.columns or {}) do
+    heads[i] = Dim(c)
   end
+  rows[1] = spread(W.TipSectionText(sec.heading, sec.note), heads)
   for _, r in ipairs(sec.rows or {}) do
     if r.cells or r.label then
       local left = Tooltip.Bits(r.label) or ""
       if r.note then
         left = left .. " " .. Dim(r.note)
       end
-      local cells = r.cells or {}
-      if #cells >= 2 then
-        rows[#rows + 1] = { left, cell(cells[2]), cell(cells[1]) }
-      else
-        rows[#rows + 1] = { left, cells[1] ~= nil and cell(cells[1]) or nil }
+      local values = {}
+      for i, v in ipairs(r.cells or {}) do
+        values[i] = cell(v)
       end
+      rows[#rows + 1] = spread(left, values)
     else
       rows[#rows + 1] = { Tooltip.Bits(r[1]) or "", Tooltip.Bits(r[2]), Tooltip.Bits(r[3]) }
     end
   end
   for _, l in ipairs(sec.lines or {}) do
-    rows[#rows + 1] = { Tooltip.Bits(l) or "" }
+    rows[#rows + 1] = { Tooltip.Bits(l) or "", wrap = sec.wrap }
   end
   return rows
 end
@@ -201,9 +205,9 @@ function Tooltip.Lines(s, opts)
     end
   end
 
-  -- header: where the prices come from (no addon name: the block speaks for itself) and how fresh; then the
+  -- header: where the prices come from, in gold (no addon name: the block speaks for itself) and how fresh; then the
   -- columns' heads (compact: on the header line)
-  local label = W.Color("brand", opts.house or L["Auction house"])
+  local label = W.Color("gold", opts.house or L["Auction house"])
   local heads = many and { Dim(L["your %s"]:format(W.Count(n))), Dim(L["each"]) } or nil
   if opts.compact or not opts.age then
     rows[#rows + 1] = { label, heads and heads[1], heads and heads[2] }
@@ -233,7 +237,7 @@ function Tooltip.Lines(s, opts)
     local avg = s["avg" .. days] or s.avg30
     local parts = {}
     if s.market and avg and avg > 0 and s.days ~= 1 then
-      parts[#parts + 1] = W.Percent(s.market / avg - 1, 0) .. Dim(" " .. L["vs %dd avg"]:format(days))
+      parts[#parts + 1] = W.Percent(s.market / avg - 1, 0) .. Dim(" " .. L["vs %d-day avg"]:format(days))
     end
     parts[#parts + 1] = Dim(W.Count(s.qty or 0) .. " " .. L["listed"])
     if s.sellRate then
@@ -252,8 +256,12 @@ function Tooltip.Lines(s, opts)
     end
     rows[#rows + 1] = { table.concat(parts, Dim("  ·  ")) }
     if opts.better then
-      rows[#rows + 1] =
-        { W.Color("warn", L["Sells %d%% better at the goblin AH, after its cut"]:format(pct(opts.better))) }
+      -- the notice: the warning icon and the line in amber
+      rows[#rows + 1] = {
+        W.WARN_ICON
+          .. " "
+          .. W.Color("warn", L["Sells %d%% better at the goblin AH, after its cut"]:format(pct(opts.better))),
+      }
     end
   end
 
@@ -274,7 +282,7 @@ function Tooltip.Lines(s, opts)
       hint,
     }
   elseif not opts.detail then
-    rows[#rows + 1] = { Dim(L["Hold Shift for more AME data"]) .. goblin }
+    rows[#rows + 1] = { Dim(L["Hold Shift for more"]) .. goblin }
   end
   -- the caller's sections (Tooltip.SectionRows) come after the signal; detail = true ones only with Shift
   addSections(rows, opts.sections, opts.detail)
@@ -282,83 +290,123 @@ function Tooltip.Lines(s, opts)
     return rows
   end
 
-  -- what a disenchant gives: each outcome by its chance, what that many are worth, and the expected value
+  local more = {}
+  -- what a disenchant gives: each outcome by its chance, a count of the material at its market price each, what that
+  -- many are worth, and the expected value
   if de and de.outcomes then
-    section(rows, L["Disenchants into"])
+    local list = {}
     for _, o in ipairs(de.outcomes) do
       local count = o.min == o.max and tostring(o.min) or (o.min .. "-" .. o.max)
+      local name = o.item and Tooltip.Bits({ item = o.item }) or (o.name or "?")
       local worth = o.price and money(o.price * (o.min + o.max) / 2) or W.NONE
-      rows[#rows + 1] = { ("%d%%  %s %s"):format(pct(o.chance), count, o.name or "?"), worth }
+      list[#list + 1] = {
+        Dim(("%d%%"):format(pct(o.chance))) .. "  " .. count .. " " .. name,
+        worth,
+        o.price and (Dim("× ") .. money(o.price)) or nil,
+      }
     end
     if de.value then
-      rows[#rows + 1] = { Dim(L["Expected, weighted by chance"]), money(de.value) }
+      list[#list + 1] = { Dim(L["Expected, weighted by chance"]), money(de.value) }
     end
+    local note
+    if de.level then
+      note = L["item level %d, %s"]:format(de.level, de.classID == 2 and L["weapon"] or L["armor"])
+    end
+    more[#more + 1] = { heading = L["Disenchants into"], note = note, rows = list }
   end
 
-  -- yours: per character, then each guild bank, and what you paid for it
+  -- yours: a grid of each character's bags / bank (mail) / AH, then each guild bank, and what you paid for it
   if n > 0 then
-    section(rows, L["Yours"])
-    for _, c in ipairs(held.chars or {}) do
-      rows[#rows + 1] = { c.name .. (c.me and Dim(" " .. L["(you)"]) or ""), places(c) }
+    local chars = held.chars or {}
+    local mail = false
+    for _, c in ipairs(chars) do
+      mail = mail or (c.mail or 0) > 0
+    end
+    local keys = { "bags", "bank" }
+    local columns = { L["bags"], L["bank"] }
+    if mail then
+      keys[#keys + 1], columns[#columns + 1] = "mail", L["mail"]
+    end
+    keys[#keys + 1], columns[#columns + 1] = "auctions", L["AH"]
+    local list = {}
+    for _, c in ipairs(chars) do
+      local cells = {}
+      for i, k in ipairs(keys) do
+        cells[i] = (c[k] or 0) > 0 and W.Count(c[k]) or false
+      end
+      list[#list + 1] = { label = c.name, note = c.me and L["(you)"] or nil, cells = cells }
     end
     for _, g in ipairs(held.guilds or {}) do
-      rows[#rows + 1] = { "<" .. g.name .. ">" .. Dim(" " .. L["guild bank"]), W.Count(g.qty) }
+      list[#list + 1] = { label = "<" .. g.name .. ">", note = L["guild bank"], cells = { W.Count(g.qty) } }
     end
     local basis = opts.basis
     if basis and basis.unit then
-      rows[#rows + 1] = { L["Average cost"], money(basis.unit) }
+      list[#list + 1] = { L["Average cost"], money(basis.unit) }
       if s.market then
-        rows[#rows + 1] = { L["Unrealized"], signed((s.market - basis.unit) * math.min(basis.units or n, n)) }
+        list[#list + 1] = { L["Unrealized"], signed((s.market - basis.unit) * math.min(basis.units or n, n)) }
       end
     end
+    local note = #chars > 1 and L["%s on %d characters"]:format(W.Count(n), #chars) or W.Count(n)
+    more[#more + 1] = { heading = L["Yours"], note = note, columns = columns, rows = list }
   end
 
   -- every auction house with a price: its market and what you'd get there after its cut
   local houses = opts.houses or {}
   if #houses > 1 then
-    section(rows, L["Auction houses"], L["after each one's cut"])
     local mine
     for _, h in ipairs(houses) do
       if h.mine then
         mine = h.net
       end
     end
+    local list = {}
     for _, h in ipairs(houses) do
       -- how much more it pays than yours, after the label and its cut: only when it does
       local vs = ""
       if mine and mine > 0 and not h.mine and h.net > mine then
         vs = " " .. W.Color("good", ("+%d%%"):format(pct(h.net / mine - 1)))
       end
-      rows[#rows + 1] = {
-        h.label .. Dim((" (%d%%)"):format(pct(h.cut))) .. vs,
-        money(h.market) .. Dim("  >  ") .. money(h.net),
-      }
+      list[#list + 1] = { h.label .. Dim((" (%d%%)"):format(pct(h.cut))) .. vs, money(h.net), money(h.market) }
     end
+    more[#more + 1] = {
+      heading = L["Auction houses"],
+      note = L["after each one's cut"],
+      columns = { L["market"], L["you get"] },
+      rows = list,
+    }
   end
 
-  section(rows, L["Price"])
+  -- the price: its average, the lowest listing, the week's change
   local days = opts.avgDays or 7
   local avg = s["avg" .. days] or s.avg30
+  local price = {}
   if avg then
-    rows[#rows + 1] = { L["%d-day average"]:format(days), money(avg) }
+    price[#price + 1] = { L["%d-day average"]:format(days), money(avg) }
   end
-  rows[#rows + 1] = { L["lowest"], money(s.min) }
+  price[#price + 1] = { L["Lowest listing"], money(s.min) }
   if s.change7 then
-    rows[#rows + 1] = { L["7d change"], W.Percent(s.change7) }
+    price[#price + 1] = { L["7d change"], W.Percent(s.change7) }
   end
-  if s.supplyTrend30 then
-    rows[#rows + 1] = { L["supply trend"], W.Percent(s.supplyTrend30 * 7, 0) .. Dim(L["/week"]) }
-  end
-  if s.vol30 then
-    rows[#rows + 1] = { L["volatility"], ("%.1f%%"):format(s.vol30 * 100) }
-  end
-  rows[#rows + 1] = { L["score"], ("%+d"):format(s.score or 0) }
+  more[#more + 1] = { heading = L["Price"], rows = price }
+
+  -- the data it rests on: confidence and scans, the supply trend, volatility and the score
+  local data = {}
   local seen = ns.Widgets.DaysAgo(s.day, opts.today)
   if seen then
     local level = ns.Analytics and ns.Analytics.Confidence(s, opts.today) or nil
-    local scans = L["%d scans/7d, %s"]:format(s.scans7 or 0, seen)
-    rows[#rows + 1] = { L["data"], Dim(level and W.Confidence(level) or "") .. "  " .. scans }
+    local scans = L["%d scans in 7 days, %s"]:format(s.scans7 or 0, seen)
+    data[#data + 1] = { L["Confidence"], (level and (W.Confidence(level) .. "  ") or "") .. Dim(scans) }
   end
+  if s.supplyTrend30 then
+    data[#data + 1] = { L["Supply trend"], W.Percent(s.supplyTrend30 * 7, 0) .. Dim(L["/week"]) }
+  end
+  if s.vol30 then
+    data[#data + 1] = { L["Volatility"], ("%.1f%%"):format(s.vol30 * 100) }
+  end
+  data[#data + 1] = { L["Score"], ("%+d"):format(s.score or 0) }
+  more[#more + 1] = { heading = L["Data"], rows = data }
+
+  addSections(rows, more, true)
   return rows
 end
 
@@ -404,13 +452,15 @@ function Tooltip.Disenchant(itemID, items)
   for i, o in ipairs(outcomes) do
     local m = items[o[1]]
     local price = m and m.market
-    out.outcomes[i] = { name = ns.ItemCache.Name(o[1]), chance = o[2], min = o[3], max = o[4], price = price }
+    out.outcomes[i] =
+      { item = o[1], name = ns.ItemCache.Name(o[1]), chance = o[2], min = o[3], max = o[4], price = price }
     value = value and price and value + price * o[2] * (o[3] + o[4]) / 2 or nil
   end
   table.sort(out.outcomes, function(a, b)
     return a.chance > b.chance
   end)
   out.value = value
+  out.level, out.classID = info.level, info.classID
   return out
 end
 
@@ -540,7 +590,7 @@ function Tooltip.RecipeLines(itemID)
     local recipe = data:Recipe(spell)
     local product = recipe and recipe.product
     if product then
-      local name = W.ItemLabel(product)
+      local name = Tooltip.Bits({ item = product }) -- in its quality colour
       local made = (recipe.made or 1) > 1 and (" x" .. recipe.made) or ""
       local price = craft:Price(product)
       rows[#rows + 1] = {
@@ -549,10 +599,7 @@ function Tooltip.RecipeLines(itemID)
       }
       local e = craft:Evaluate(recipe)
       if e.profit then
-        rows[#rows + 1] = {
-          Dim("  " .. L["Per craft, after reagents"]),
-          W.Color(e.profit >= 0 and "good" or "bad", e.profit < 0 and "-" or "+") .. W.Money(math.abs(e.profit)),
-        }
+        rows[#rows + 1] = { Dim("  " .. L["Per craft, after reagents"]), signed(e.profit) }
       end
     end
   end
@@ -563,21 +610,31 @@ local function addLines(tooltip, itemID)
   if ns.Settings and not ns.Settings:Get("tooltip") then
     return
   end
+  -- a recipe item: what it makes, and where it's sold or drops (learned as you and your guild play, else the game's
+  -- own words): sections of the block, after the signal
+  local sections = {}
   local recipe = Tooltip.RecipeLines(itemID)
-  for _, r in ipairs(recipe or {}) do
-    W.TipPair(tooltip, r[1], r[2])
+  if recipe then
+    sections[#sections + 1] = { heading = L["Recipe"], rows = recipe }
   end
-  -- a recipe item: where it's sold or drops (learned as you and your guild play), else the game's own words
-  for i, line in ipairs(ns.RecipeSources and ns.RecipeSources.TooltipLines(itemID) or {}) do
-    local label = i == 1 and (W.Dim(L["Source:"]) .. " ") or "      "
-    tooltip:AddLine(label .. line, 1, 1, 1, true)
+  local sources = ns.RecipeSources and ns.RecipeSources.TooltipLines(itemID)
+  if sources then
+    sections[#sections + 1] = { heading = L["Source"], lines = sources, wrap = true }
   end
   local detail = ns.Settings:Get("tooltipDetail") or (IsShiftKeyDown and IsShiftKeyDown())
   local s, opts = Tooltip.Gather(itemID, detail)
-  if not s then
-    return
+  local rows
+  if s then
+    opts.sections = sections
+    rows = Tooltip.Lines(s, opts)
+  else
+    -- no price for it (a recipe nobody lists): only the sections
+    rows = {}
+    addSections(rows, sections, detail)
+    if #rows == 0 then
+      return
+    end
   end
-  local rows = Tooltip.Lines(s, opts)
   -- with Shift: who among your guild, trusted players and your characters can make it
   local madeBy = detail and ns.CraftersView and ns.CraftersView.MadeBy(itemID)
   if madeBy then
@@ -626,23 +683,42 @@ function Tooltip.AddRows(tooltip, rows)
       flat[#flat + 1] = r
     end
   end
+  local cols = 0 -- the most middle columns a row has
   for _, r in ipairs(flat) do
-    if r[3] and not columns then
-      W.TipPair(tooltip, r[1], r[3] .. "   " .. (r[2] or "")) -- no font strings to add: both on the right
-    elseif r[2] or r[3] then
+    local mids = {} -- r[3] (next to the right text), r[4] (left of it), ...
+    local k = 3
+    while r[k] ~= nil do
+      mids[#mids + 1] = r[k]
+      k = k + 1
+    end
+    if #mids > 0 and not columns then
+      -- no font strings to add: all of them on the right, the furthest left first
+      local out = {}
+      for i = #mids, 1, -1 do
+        out[#out + 1] = mids[i]
+      end
+      out[#out + 1] = r[2] or ""
+      W.TipPair(tooltip, r[1], table.concat(out, "   "))
+    elseif r[2] or #mids > 0 then
       W.TipPair(tooltip, r[1], r[2] or " ")
-      if r[3] then
-        placed[#placed + 1] = { line = tooltip:NumLines(), text = r[3], rightText = r[2] or "" }
+      if #mids > 0 then
+        placed[#placed + 1] = { line = tooltip:NumLines(), texts = mids, rightText = r[2] or "" }
+        cols = math.max(cols, #mids)
       end
     else
-      tooltip:AddLine(r[1])
+      -- a plain line: white unless its text says otherwise; wrapped when asked (long sentences)
+      tooltip:AddLine(r[1], 1, 1, 1, r.wrap)
     end
   end
   if #placed == 0 then
     return
   end
   local m = middles(tooltip)
-  local wLeft, wMid, wRight = 0, 0, 0
+  local wLeft, wRight = 0, 0
+  local wMid = {}
+  for j = 1, cols do
+    wMid[j] = 0
+  end
   -- a text's width; nil when the game hands it over as a secret value (12.x: some tooltips, e.g. one shown while an
   -- auction is posted, measure as secrets addons can't do arithmetic on)
   local secret = _G.issecretvalue
@@ -660,34 +736,50 @@ function Tooltip.AddRows(tooltip, rows)
     if not (left and right) then
       return
     end
-    local fs = m.strings[p.line]
-    if not fs then
-      fs = tooltip:CreateFontString(nil, "ARTWORK")
-      m.strings[p.line] = fs
+    p.fs, p.right = {}, right
+    for j, text in ipairs(p.texts) do
+      local key = j == 1 and p.line or (p.line .. ":" .. j)
+      local fs = m.strings[key]
+      if not fs then
+        fs = tooltip:CreateFontString(nil, "ARTWORK")
+        m.strings[key] = fs
+      end
+      fs:SetFontObject(right:GetFontObject() or _G.GameTooltipText)
+      fs:SetText(text)
+      fs:Show()
+      p.fs[j] = fs
+      wMid[j] = math.max(wMid[j], width(fs))
     end
-    fs:SetFontObject(right:GetFontObject() or _G.GameTooltipText)
-    fs:SetText(p.text)
-    fs:Show()
-    p.fs, p.right = fs, right
     wLeft = math.max(wLeft, width(left))
-    wMid = math.max(wMid, width(fs))
     wRight = math.max(wRight, width(right))
   end
   if hidden then
-    -- the widths are secret: no lined-up column - each goes beside the total on the right, as plain text
+    -- the widths are secret: no lined-up columns - each goes beside the total on the right, as plain text
     for _, p in ipairs(placed) do
-      p.fs:Hide()
-      p.right:SetText(p.text .. "   " .. p.rightText)
+      local out = {}
+      for j = #p.texts, 1, -1 do
+        p.fs[j]:Hide()
+        out[#out + 1] = p.texts[j]
+      end
+      out[#out + 1] = p.rightText
+      p.right:SetText(table.concat(out, "   "))
     end
     return
   end
   for _, p in ipairs(placed) do
-    p.fs:ClearAllPoints()
-    p.fs:SetPoint("RIGHT", p.right, "RIGHT", -(wRight + Tooltip.GAP), 0)
+    local x = wRight + Tooltip.GAP
+    for j, fs in ipairs(p.fs) do
+      fs:ClearAllPoints()
+      fs:SetPoint("RIGHT", p.right, "RIGHT", -x, 0)
+      x = x + wMid[j] + Tooltip.GAP
+    end
   end
   if tooltip.SetMinimumWidth then
-    local total = math.ceil(wLeft + wMid + wRight + 2 * Tooltip.GAP + 22) -- and the tooltip's own padding
-    m.width = math.max(m.width or 0, total)
+    local total = wLeft + wRight + Tooltip.GAP + 22 -- and the tooltip's own padding
+    for j = 1, cols do
+      total = total + wMid[j] + Tooltip.GAP
+    end
+    m.width = math.max(m.width or 0, math.ceil(total))
     tooltip:SetMinimumWidth(m.width)
   end
 end

@@ -1,9 +1,10 @@
 local addon = require("spec.helpers.addon")
 
 describe("Tooltip.Lines", function()
-  local T
+  local T, W
   before_each(function()
-    T = addon.load({ "Core/Init.lua", "Core/UI/Widgets.lua", "Core/UI/Tooltip.lua" }).Tooltip
+    local ns = addon.load({ "Core/Init.lua", "Core/UI/Widgets.lua", "Core/UI/Tooltip.lua" })
+    T, W = ns.Tooltip, ns.Widgets
   end)
 
   local s = {
@@ -25,7 +26,13 @@ describe("Tooltip.Lines", function()
   local function text(rows)
     local out = {}
     for _, r in ipairs(rows) do
-      out[#out + 1] = r[1] .. " = " .. (r[3] and (r[3] .. " | ") or "") .. (r[2] or "")
+      local mids = {} -- the middle columns, the furthest left first
+      local k = 3
+      while r[k] ~= nil do
+        table.insert(mids, 1, r[k] .. " | ")
+        k = k + 1
+      end
+      out[#out + 1] = r[1] .. " = " .. table.concat(mids) .. (r[2] or "")
     end
     return (table.concat(out, "\n"):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) -- without colour codes
   end
@@ -50,10 +57,11 @@ describe("Tooltip.Lines", function()
     assert.truthy(t:find("Market = 55g 98s", 1, true), t)
     assert.truthy(t:find("-14%", 1, true), t) -- 55g 98s vs 65g
     assert.is_nil(t:find("each")) -- one column: no heads
-    assert.truthy(t:find("vs 14d avg", 1, true), t)
+    assert.truthy(t:find("vs 14-day avg", 1, true), t)
     assert.truthy(t:find("13 listed", 1, true), t)
-    assert.truthy(t:find("Hold Shift"), t)
-    assert.is_nil(t:find("lowest"))
+    assert.truthy(t:find("Hold Shift for more", 1, true), t)
+    assert.is_nil(t:find("AME", 1, true)) -- no addon name anywhere in the block
+    assert.is_nil(t:find("Lowest"))
     assert.is_nil(t:find("You have"))
     assert.is_nil(t:find("Vendor")) -- nothing owned: the game's sell price says it
   end)
@@ -82,6 +90,13 @@ describe("Tooltip.Lines", function()
     buy.sellRate = 2.5
     assert.truthy(text(T.Lines(buy, {})):find("~2.5 sold/day", 1, true))
     assert.truthy(t:find("Sells 16% better at the goblin AH, after its cut", 1, true), t)
+    local rows = T.Lines(buy, { better = 0.16, house = "Horde AH" })
+    assert.are.equal(W.Color("gold", "Horde AH"), rows[1][1]) -- the house in gold
+    local notice
+    for _, r in ipairs(rows) do
+      notice = notice or (r[1]:find("goblin AH, after", 1, true) and r[1])
+    end
+    assert.are.equal(1, notice:find(W.WARN_ICON, 1, true)) -- the notice leads with the warning icon
   end)
 
   it("compact (little room): no freshness, holdings or context lines; the goblin AH joins the signal line", function()
@@ -132,8 +147,8 @@ describe("Tooltip.Lines", function()
     assert.truthy(t:find("Disenchant ~ = 99s | 42g 57s", 1, true), t)
     assert.is_nil(t:find("Strange Dust"))
     t = text(T.Lines(s, { de = de, detail = true }))
-    assert.truthy(t:find("75%  4-6 Strange Dust = 70s", 1, true), t)
-    assert.truthy(t:find("20%  1-2 Lesser Astral Essence = 1g 80s", 1, true), t)
+    assert.truthy(t:find("75%  4-6 Strange Dust = × 14s | 70s", 1, true), t) -- each at market, then that many
+    assert.truthy(t:find("20%  1-2 Lesser Astral Essence = × 1g 20s | 1g 80s", 1, true), t)
     assert.truthy(t:find("5%  1 Small Glimmering Shard = -", 1, true), t) -- no price for it
     assert.truthy(t:find("Expected, weighted by chance = 99s", 1, true), t)
   end)
@@ -151,16 +166,18 @@ describe("Tooltip.Lines", function()
           { label = "Goblin AH", market = 700000, net = 595000, cut = 0.15 },
         },
       }))
-      assert.truthy(t:find("Mainchar (you) = bags 12 · bank 10", 1, true), t)
-      assert.truthy(t:find("Bankalt = bags 8 · bank 8", 1, true), t)
+      assert.truthy(t:find("YOURS  ·  43 on 2 characters = bags | bank | AH", 1, true), t) -- a grid
+      assert.truthy(t:find("Mainchar (you) = 12 | 10 | ·", 1, true), t)
+      assert.truthy(t:find("Bankalt = 8 | 8 | ·", 1, true), t)
       assert.truthy(t:find("<Iron Ledger> guild bank = 5", 1, true), t)
       assert.truthy(t:find("Average cost = 50g", 1, true), t)
       assert.truthy(t:find("Unrealized = +59g 80s", 1, true), t) -- (55g 98s - 50g) x 10
-      assert.truthy(t:find("Goblin AH (15%) +12% = 70g  >  59g 50s", 1, true), t)
+      assert.truthy(t:find("= market | you get", 1, true), t)
+      assert.truthy(t:find("Goblin AH (15%) +12% = 70g | 59g 50s", 1, true), t)
       assert.is_nil(t:find("Horde AH (5%) +", 1, true)) -- yours: no margin against itself
-      assert.truthy(t:find("lowest"))
+      assert.truthy(t:find("Lowest listing = 55g", 1, true), t)
       assert.truthy(t:find("/week"))
-      assert.truthy(t:find("volatility"))
+      assert.truthy(t:find("Volatility"))
       assert.truthy(t:find("2 days ago"))
       assert.is_nil(t:find("Hold Shift"))
     end
@@ -322,6 +339,17 @@ describe("Tooltip.AddRows", function()
     tip.hooks.OnTooltipCleared(tip)
     assert.is_false(tip.made[1].shown)
     assert.are.equal(0, tip.minWidth)
+  end)
+
+  it("lines up a grid's further columns left of the middle one (bags / bank / AH)", function()
+    local tip = fakeTip()
+    T.AddRows(tip, { { "Mainchar", "5", "10", "12" }, { "Bankalt", "3", "8", "8" } })
+    assert.are.equal(4, #tip.made)
+    local bank, bags = tip.made[1], tip.made[2]
+    assert.are.equal("10", bank.text)
+    assert.are.equal("12", bags.text)
+    assert.are.equal(-(6 + T.GAP), bank.point[4]) -- right of it: the widest right text ("5", 6)
+    assert.are.equal(-(6 + T.GAP + 12 + T.GAP), bags.point[4]) -- then the middle column ("10", 12)
   end)
 
   it("puts each beside the total when the game keeps the text widths secret (12.x)", function()
