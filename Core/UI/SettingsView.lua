@@ -312,6 +312,19 @@ function UI:CreateSettingsView(parent, contentArea)
   end)
 
   -- Data
+  _, st = card("selling", L["Buying"])
+  local warns = { { 0, L["Off"] } }
+  for _, pct in ipairs({ 5, 10, 20, 50 }) do
+    warns[#warns + 1] = { pct, L["%d%% over"]:format(pct) }
+  end
+  v.buyWarn = dropdown(st, L["Warn when the price goes up"], 90, warns, function(value)
+    ns.Settings:Set("buyWarnPct", value)
+  end)
+  paragraph(
+    st,
+    L["Buying in bulk on the Shopping tab: when the game's price for the order is this much over what the listings showed, AME says so and the button reads Confirm anyway."]
+  )
+
   _, st = card("data", L["Data"], 0)
   v.scanMode = dropdown(st, L["Full scans"], 170, {
     { "detailed", L["Detailed: every listing"] },
@@ -477,6 +490,7 @@ function UI:RefreshSettings()
   v.cutFaction:SetText(tostring(ns.Settings:Get("cutFaction")))
   v.cutNeutral:SetText(tostring(ns.Settings:Get("cutNeutral")))
   v.hours:SetValue(ns.Settings:Get("listingHours"))
+  v.buyWarn:SetValue(ns.Settings:Get("buyWarnPct"))
   local hidden = ns.AME.watch and ns.AME.watch:HiddenCount() or 0
   v.hiddenText:SetText(
     hidden > 0

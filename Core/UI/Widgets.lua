@@ -137,6 +137,34 @@ function W.Button(parent, label, width, height, onClick, opts)
   function b:SetText(text)
     self.label:SetText(text)
   end
+  -- disabled looks it: faded, its label dimmed (the game's own state isn't drawn on AME's flat buttons)
+  local setEnabled, enable, disable = b.SetEnabled, b.Enable, b.Disable
+  local function look(self, on)
+    self:SetAlpha(on and 1 or 0.45)
+    if self.label.SetTextColor then
+      local c = on and W.COLORS.text or W.COLORS.dim
+      self.label:SetTextColor(c[1], c[2], c[3], c[4])
+    end
+  end
+  function b:SetEnabled(on)
+    on = on and true or false
+    if setEnabled then
+      setEnabled(self, on)
+    end
+    look(self, on)
+  end
+  function b:Enable()
+    if enable then
+      enable(self)
+    end
+    look(self, true)
+  end
+  function b:Disable()
+    if disable then
+      disable(self)
+    end
+    look(self, false)
+  end
   function b:GetText()
     return self.label:GetText()
   end
@@ -681,12 +709,17 @@ end
 -- An item's name (and icon) that shows the game's item tooltip on hover: an invisible frame over them, sized to
 -- what's shown. first: the leftmost piece (the icon, or the name), text: the name's font string.
 --   hover:SetItem(itemID) after setting the name; false hides it
+-- It behaves as an item link: Shift-click (or another modified click) does what it does on a link in chat or your
+-- bags (link it in chat, try it on, ...), a plain click opens the item in the AME window.
 function W.ItemHover(parent, first, text)
-  local f = CreateFrame("Frame", nil, parent)
+  local f = CreateFrame("Button", nil, parent)
   f:SetPoint("TOPLEFT", first, "TOPLEFT", 0, 0)
   f:SetPoint("BOTTOM", first, "BOTTOM", 0, 0)
   f:EnableMouse(true)
   f.itemID = false
+  f:SetScript("OnClick", function(self)
+    W.ItemLinkClicked(self.itemID)
+  end)
   function f:SetItem(itemID)
     self.itemID = itemID or false
     -- where the name starts (before the first layout pass: the icon's width and the usual 8 px gap)
@@ -702,6 +735,20 @@ function W.ItemHover(parent, first, text)
     W.SetItemTip(tip, self.itemID)
   end)
   return f
+end
+
+-- a click on an item name: modified, the game's own handling of an item link (chat, try on); plain, the AME window
+function W.ItemLinkClicked(key)
+  if not key then
+    return
+  end
+  local link = ns.ItemCache.Link(key)
+  local modified = IsModifiedClick and (IsModifiedClick("CHATLINK") or IsModifiedClick("DRESSUP"))
+  if link and modified and HandleModifiedItemClick then
+    HandleModifiedItemClick(link)
+  elseif ns.UI and ns.UI.ShowItem then
+    ns.UI:ShowItem(key)
+  end
 end
 
 -- the game's item tooltip for an item key (a random-suffix variant shows its own stats)

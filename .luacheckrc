@@ -30,7 +30,7 @@ read_globals = {
   "SecondsToTime", "BackdropTemplateMixin", "GameFontNormal", "GameFontHighlight",
   "GameFontHighlightSmall", "GameFontNormalLarge", "GameFontDisableSmall", "UISpecialFrames", "GetCursorPosition",
   "StaticPopup_Show", "RELOADUI", "CANCEL", "ACCEPT", "DELETE", "UIErrorsFrame", "PlaySound", "SOUNDKIT", "C_Texture", "ERR_AUCTION_SOLD_S", "ERR_AUCTION_EXPIRED_S",
-  "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "Item", "TooltipDataProcessor", "debugstack", "Enum", "C_TooltipInfo",
+  "IsAltKeyDown", "IsModifiedClick", "IsShiftKeyDown", "IsControlKeyDown", "Item", "TooltipDataProcessor", "debugstack", "Enum", "C_TooltipInfo",
   "C_TradeSkillUI",
   "GetItemInfo", "C_Item", "GetItemInfoInstant", "GetItemClassInfo", "GetItemSubClassInfo", "CreateFramePool", "CreateTexturePool", "Mixin", "CreateFromMixins", "ColorMixin",
   "CreateColor", "ITEM_QUALITY_COLORS", "ItemRefTooltip", "ChatEdit_InsertLink", "HandleModifiedItemClick",

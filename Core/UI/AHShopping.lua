@@ -75,6 +75,30 @@ function T.Rows(items, holdings, market, results)
   return rows, totals
 end
 
+-- Pure: buying qty of a commodity climbs its listings, cheapest first: how many each listing gives (taken[i]),
+-- what it all costs, and how many the listings hold in all (when that's fewer than qty)
+function T.Fill(rows, qty)
+  local taken, cost, left = {}, 0, qty or 0
+  for i, r in ipairs(rows or {}) do
+    if left <= 0 then
+      break
+    end
+    local n = math.min(left, r.qty)
+    taken[i], cost, left = n, cost + n * r.price, left - n
+  end
+  return taken, cost, (qty or 0) - left
+end
+
+-- Pure: the game's price against the listings it was worked out from: the share it's higher by when that's over the
+-- warning (Settings buyWarnPct), else nil
+function T.PriceJump(total, expected, warnPct)
+  if not (total and expected and expected > 0 and warnPct and warnPct > 0) then
+    return nil
+  end
+  local up = total / expected - 1
+  return up * 100 > warnPct and up or nil
+end
+
 -- recent searches (AME_DB.recentSearches, newest first): the same text and filters again moves to the top
 local function sameFilters(a, b)
   for _, k in ipairs({ "category", "minLevel", "maxLevel", "minItemLevel", "maxItemLevel", "quality", "maxPrice" }) do
@@ -441,6 +465,10 @@ function T:Create(ah)
     l.bg = l:CreateTexture(nil, "BACKGROUND")
     l.bg:SetAllPoints()
     l.bg:SetColorTexture(1, 1, 1, i % 2 == 0 and 0.025 or 0)
+    l.fill = l:CreateTexture(nil, "BACKGROUND", nil, 1) -- a listing the order takes from
+    l.fill:SetAllPoints()
+    W.Fill(l.fill, W.COLORS.rowSelected)
+    l.fill:Hide()
     l.price = cell(l, 110)
     l.price:SetPoint("LEFT", 0, 0)
     l.qty = cell(l, 70)
@@ -455,7 +483,15 @@ function T:Create(ah)
   buyLabel:SetPoint("BOTTOMLEFT", 0, 6)
   buyLabel:SetText(L["Buy"])
   p.buyLabel = buyLabel
-  p.qty = W.Input(detail, { numeric = true, width = 50 })
+  p.qty = W.Input(detail, {
+    numeric = true,
+    width = 50,
+    onChange = function(_, _, user)
+      if user then
+        T:RenderDetail() -- the listings it takes from, as you type
+      end
+    end,
+  })
   p.qty:SetPoint("LEFT", buyLabel, "RIGHT", 6, 0)
   p.buyText = W.Text(detail, "GameFontHighlightSmall")
   p.buyText:SetPoint("LEFT", p.qty, "RIGHT", 8, 0)
@@ -464,7 +500,12 @@ function T:Create(ah)
     if pending and not pending.sent then
       ns.AHSearch:Confirm()
     else
-      ns.AHSearch:Buy(T.selected, math.max(1, tonumber(p.qty:GetText()) or 1))
+      local qty = math.max(1, tonumber(p.qty:GetText()) or 1)
+      local book = ns.AHSearch.results[T.selected]
+      local _, expected = T.Fill(book and book.rows, qty)
+      if ns.AHSearch:Buy(T.selected, qty) and ns.AHSearch.pending then
+        ns.AHSearch.pending.expected = expected -- what the listings shown added up to (the price warning)
+      end
     end
   end)
   p.buy:SetPoint("BOTTOMRIGHT", 0, 2)
@@ -714,11 +755,21 @@ function T:RenderDetail()
   end
   local note = book and (#book.rows > 0 and L["cheapest first"] or L["none listed"]) or L["searching..."]
   p.detailTitle:SetText(name(key) .. W.Dim("  ·  " .. note))
+  -- a commodity: the listings the order takes from, highlighted; the last one partly ("20 of 555")
+  local pending = ns.AHSearch.pending
+  local want = book
+    and book.commodity
+    and (pending and pending.key == key and not pending.sent and pending.qty or tonumber(p.qty:GetText()))
+  local taken, cost, covered = T.Fill(book and book.rows, want or 0)
   for i, l in ipairs(p.listings) do
     local row = book and book.rows[i]
     if row then
       l.price:SetText(money(row.price))
-      l.qty:SetText(W.Count(row.qty))
+      local n = taken[i]
+      l.qty:SetText(
+        n and n < row.qty and (W.Count(n) .. W.Dim(" " .. L["of %s"]:format(W.Count(row.qty)))) or W.Count(row.qty)
+      )
+      l.fill:SetShown(n ~= nil)
       l.mine:SetText(row.mine and W.Color("brand", L["yours"]) or "")
       l.buy:SetShown(not book.commodity)
       l.buy:SetScript("OnClick", function()
@@ -729,16 +780,27 @@ function T:RenderDetail()
       l:Hide()
     end
   end
-  local pending = ns.AHSearch.pending
   local commodity = book and book.commodity
   p.qty:SetShown(commodity or false)
   p.buyLabel:SetShown(commodity or false)
   if pending and pending.key == key and not pending.sent then
-    p.buy:SetText(L["Confirm"])
     p.buyText:SetText(
       pending.total and (L["%s for %s"]:format(W.Count(pending.qty), money(pending.total))) or L["asking the price..."]
     )
-    p.note:SetText(W.Dim(L["click Confirm to buy"]))
+    -- the game's price against the listings it was worked out from: prices can move between the search and now
+    local jump = T.PriceJump(pending.total, pending.expected, ns.Settings:Get("buyWarnPct"))
+    if jump then
+      p.buy:SetText(L["Confirm anyway"])
+      p.note:SetText(
+        W.Color(
+          "bad",
+          L["%d%% above the listings shown (%s)"]:format(math.floor(jump * 100 + 0.5), money(pending.expected))
+        )
+      )
+    else
+      p.buy:SetText(L["Confirm"])
+      p.note:SetText(W.Dim(L["click Confirm to buy"]))
+    end
   else
     p.buy:SetText(L["Buy"])
     local missing
@@ -749,8 +811,15 @@ function T:RenderDetail()
     end
     if commodity and p.qty:GetText() == "" then
       p.qty:SetText(tostring(missing and missing > 0 and missing or 1))
+      return self:RenderDetail() -- the listings it takes from, for that many
     end
-    p.buyText:SetText("")
+    -- what the order should cost at the listings shown (the game says the real price when you click Buy)
+    if commodity and want and want > 0 and covered > 0 then
+      local short = covered < want and W.Color("bad", "  " .. L["only %s listed"]:format(W.Count(covered))) or ""
+      p.buyText:SetText(W.Dim("~") .. money(cost) .. short)
+    else
+      p.buyText:SetText("")
+    end
     local last = ns.AHSearch.last
     p.note:SetText(
       last and last.key == key and (last.ok and L["bought"] or W.Color("bad", L["the purchase failed"])) or ""
