@@ -4431,6 +4431,11 @@ describe("addon in a stubbed client", function()
         local lines = ns.CraftersView.Lines(results)
         assert.are.equal("recipe", lines[1].kind)
         assert.are.equal("Brakka", lines[3].name)
+        -- the window draws them as one table: the recipe, then its crafters (yours: log in there, no Whisper)
+        local t = ns.CraftersView.frame.table
+        assert.are.equal("recipe", t.data[1].kind)
+        assert.is_true(lines[2].mine)
+        assert.are.equal("log in there", lines[2].seen)
       end
     )
 

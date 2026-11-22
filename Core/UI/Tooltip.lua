@@ -581,7 +581,7 @@ local function addLines(tooltip, itemID)
   -- with Shift: who among your guild, trusted players and your characters can make it
   local madeBy = detail and ns.CraftersView and ns.CraftersView.MadeBy(itemID)
   if madeBy then
-    rows[#rows + 1] = { W.Color("dim", L["Made by"]), madeBy }
+    rows[#rows + 1] = { section = madeBy } -- its own section: a line per crafter
   end
   tooltip:AddLine(" ") -- a gap: AME's block apart from the game's lines and other addons'
   Tooltip.AddRows(tooltip, rows)
