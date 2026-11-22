@@ -161,7 +161,7 @@ local function addSections(rows, sections, detail)
   end
 end
 
--- "bags 12 · bank 10 · on AH 5": the places that hold some
+-- "bags 12 · bank 10 · guild bank 5": the places you can use it from that hold some (the AH is its own row)
 local function places(p)
   local out = {}
   if (p.bags or 0) > 0 then
@@ -172,9 +172,6 @@ local function places(p)
   end
   if (p.mail or 0) > 0 then
     out[#out + 1] = L["mail %s"]:format(W.Count(p.mail))
-  end
-  if (p.auctions or 0) > 0 then
-    out[#out + 1] = L["on AH %s"]:format(W.Count(p.auctions))
   end
   if (p.guildBank or 0) > 0 then
     out[#out + 1] = L["guild bank %s"]:format(W.Count(p.guildBank))
@@ -226,7 +223,9 @@ function Tooltip.Lines(s, opts)
   opts = opts or {}
   local rows = {}
   local held = opts.held or { total = 0 }
-  local n = held.total or 0
+  -- what you have to use or sell: what's up for sale on the AH is counted apart
+  local onAH = held.auctions or 0
+  local n = (held.total or 0) - onAH
   local many = n > 1
   local function row(left, each, total)
     if many and total then
@@ -260,8 +259,13 @@ function Tooltip.Lines(s, opts)
 
   if not opts.compact then
     if n > 0 then
-      local where_ = places(held)
-      rows[#rows + 1] = { L["You have %s"]:format(W.Count(n)) .. (where_ ~= "" and Dim("  ·  " .. where_) or "") }
+      rows[#rows + 1] = { L["You have %s"]:format(W.Count(n)), Dim(places(held)) }
+    end
+    if onAH > 0 then
+      rows[#rows + 1] = { L["AH"], Dim(W.Count(onAH)) }
+    end
+    if opts.stash and opts.stash > 0 then
+      rows[#rows + 1] = { L["Bags + bank"], money(opts.stash) }
     end
     -- how it trades: against its average, how many sell, how much of what's listed sells
     local days = opts.avgDays or 7
@@ -477,6 +481,24 @@ local function factionIndex()
   return ns.AME and ns.AME:FactionIndex()
 end
 
+-- What this character's bags and bank are worth (each item at Quote:Worth: the better of listing it and a vendor),
+-- worked out again at most every STASH_SECONDS, so you can see while farming how much you've gathered.
+Tooltip.STASH_SECONDS = 5
+local stash = { at = nil }
+function Tooltip.Stash()
+  local index = factionIndex()
+  local now = GetServerTime()
+  if not (index and ns.Trading and AME_DB and AME_DB.holdings) then
+    return nil
+  end
+  if stash.index ~= index or not stash.at or now - stash.at >= Tooltip.STASH_SECONDS then
+    local counts = ns.Holdings.Totals(AME_DB.holdings, { "bags", "bank" }, ns.Holdings.Keep(ns.Trading.CharKey()))
+    stash.value = ns.Quote.For(ns.AME:FactionShard(), index, { fresh = false }):WorthOf(counts)
+    stash.at, stash.index = now, index
+  end
+  return stash.value
+end
+
 -- the item's summary at your faction's auction house (nil when unknown)
 function Tooltip.Summary(itemID)
   local index = factionIndex()
@@ -606,6 +628,7 @@ function Tooltip.Gather(itemID, detail)
     house = ns.HOUSE_LABEL[own] or own,
     age = age(shard, itemID, s, today),
     held = ns.Trading and AME_DB and ns.Trading.Held(itemID) or nil,
+    stash = Tooltip.Stash(),
     vendor = ns.ItemCache.Get(itemID).sellPrice,
     -- what one disenchant gives, its materials at what selling them nets (Quote:Disenchant, as the DE signal)
     de = ns.Quote.For(shard, factionIndex(), { fresh = false }):Disenchant(itemID),

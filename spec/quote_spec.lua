@@ -65,6 +65,8 @@ describe("Quote nets", function()
     assert.are.same({ nil, "unsellable" }, { q:BestSale(3) })
     assert.are.equal(89, q:Worth(1))
     assert.is_nil(q:BestSale(4)) -- no price, no vendor
+    -- a pile of them: each at Worth, and how many kinds have no price
+    assert.are.same({ 89 * 3 + 200 * 2, 2 }, { q:WorthOf({ [1] = 3, [2] = 2, [3] = 1, [4] = 7 }) })
   end)
 
   it("values a disenchant at what its materials sell for", function()
