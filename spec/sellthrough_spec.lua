@@ -99,4 +99,22 @@ describe("SellThrough", function()
     ST.Decay(r, 1 + DAY)
     assert.truthy(r.s > 9.6 and r.s < 10)
   end)
+
+  it("estimates what sells of items nobody listed from the market's own sell-through", function()
+    assert.are.equal(ST.DEFAULT_SHARE, ST.Prior({})) -- nothing to go on yet
+    -- many outcomes, a fifth sold: the share moves most of the way there
+    local through = { [1] = { s = 20, e = 80, c = 0, n = 200 } }
+    local share = ST.Prior(through)
+    assert.truthy(share > 0.2 and share < 0.22, share)
+    local s = { sellRate = 300 }
+    ST.Estimate(s, share)
+    assert.are.equal(300, s.churnRate)
+    assert.are.equal(300 * share, s.sellRate)
+    assert.are.equal(share, s.stPrior)
+    -- an item with a few outcomes of its own leans on that share for the rest
+    local own = { sellRate = 100 }
+    ST.Apply(own, { s = 1, e = 0, c = 0, n = 1 }, nil, 0.5)
+    local w = 1 / (1 + ST.WEIGHT)
+    assert.are.equal(100 * (w * 1 + (1 - w) * 0.5), own.sellRate)
+  end)
 end)

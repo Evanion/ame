@@ -172,9 +172,10 @@ describe("Crafting sales and cooldowns", function()
     assert.are.equal(50, new():SalesPerDay(1))
   end)
 
-  it("counts at most one craft per cooldown a day", function()
+  it("counts what the whole market takes a day, and how often a cooldown lets you craft it", function()
     local transmute = { product = 2, made = 1, reagents = { { 1, 1 } }, cooldown = 2 * 86400 }
     local e = new():Evaluate(transmute)
-    assert.are.equal(900 * 0.5, e.perDay) -- one craft every two days, not three a day
+    assert.are.equal(900 * 3, e.perDay) -- the market's three a day: the cooldown limits you, not the market
+    assert.are.equal(0.5, e.canPerDay) -- one craft every two days
   end)
 end)

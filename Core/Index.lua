@@ -57,10 +57,14 @@ function AME:BuildIndex(store, shard, job)
   -- sell-through from real auction outcomes (yours and your guildmates'): corrects the scans' sales rate, the value
   -- and what a listing nets
   local through = ns.Posting and ns.Posting:SellThroughTotals(shard) or {}
+  -- items nobody has listed: only the market's share of the scans' rate counts as sold (SellThrough.Prior)
+  local prior = ns.SellThrough.Prior(through)
   local function vendorCheck(s)
     local vendor = ns.ItemCache.Get(s.itemID).sellPrice
     if through[s.itemID] then
-      ns.SellThrough.Apply(s, through[s.itemID], vendor)
+      ns.SellThrough.Apply(s, through[s.itemID], vendor, prior)
+    else
+      ns.SellThrough.Estimate(s, prior)
     end
     if vendor and vendor > 0 then
       s.vendorPrice = vendor -- kept with the index (saved at logout), so a restored index has it without the client

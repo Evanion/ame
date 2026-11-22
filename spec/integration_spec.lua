@@ -2620,7 +2620,11 @@ describe("addon in a stubbed client", function()
       env:advance(4)
       drainJobs()
       local s = ns.AME.index.items[2589]
-      assert.are.equal(120, s.sellRate) -- 30 per 6 h = 120 a day
+      -- 30 per 6 h = 120 a day leave the AH; with no outcomes for it, the market's share of those sold (40% to
+      -- start with: SellThrough.DEFAULT_SHARE)
+      assert.are.equal(120, s.churnRate)
+      assert.are.equal(0.4, s.stPrior)
+      assert.are.equal(48, s.sellRate)
       ns.UI:Toggle()
       ns.UI:ShowTab("market")
       local v = ns.UI.marketView
@@ -2630,7 +2634,7 @@ describe("addon in a stubbed client", function()
           col = c
         end
       end
-      assert.are.equal("~120/d", v.rows[1].cells[col].text)
+      assert.are.equal("~48/d", v.rows[1].cells[col].text)
     end)
 
     it("counts real auction outcomes: an item that leaves the AH every day but never sells isn't selling", function()
@@ -2643,7 +2647,7 @@ describe("addon in a stubbed client", function()
       fullScan({ { 2589, 1000, 70 } }) -- 30 gone in 6 hours: 120 a day leave the AH (sold? expired? reposted?)
       env:advance(4)
       drainJobs()
-      assert.are.equal(120, ns.AME.index.items[2589].sellRate)
+      assert.are.equal(120, ns.AME.index.items[2589].churnRate)
       local shard = ns.AME:CurrentShard()
       -- you list it four times, 10 each for 24 hours
       for _ = 1, 4 do

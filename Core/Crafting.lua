@@ -138,7 +138,8 @@ function Crafting:CraftCost(recipe, depth, seen, heldSet, breakdown)
 end
 
 -- Everything about one recipe: { cost, revenue (per craft), profit, made, sellRate (product units a day),
--- perDay (gold a day the market absorbs), reagents (breakdown), why (nil, or "unsellable" / "unpriced" / "enchant") }
+-- perDay (gold a day the whole market absorbs), canPerDay (crafts a day its cooldown allows you, or nil),
+-- reagents (breakdown), why (nil, or "unsellable" / "unpriced" / "enchant") }
 function Crafting:Evaluate(recipe, heldSet)
   local out = { recipe = recipe, made = recipe.made or 1, reagents = {} }
   out.cost = self:CraftCost(recipe, 0, nil, heldSet, out.reagents)
@@ -159,12 +160,11 @@ function Crafting:Evaluate(recipe, heldSet)
   out.revenue = net * out.made
   out.profit = out.revenue - out.cost
   out.sellRate = self:SalesPerDay(recipe.product)
+  if recipe.cooldown and recipe.cooldown > 0 then
+    out.canPerDay = 86400 / recipe.cooldown -- yours to make, not the market's to take
+  end
   if out.sellRate and where == "ah" then
-    local crafts = out.sellRate / out.made -- crafts a day the market absorbs...
-    if recipe.cooldown and recipe.cooldown > 0 then
-      crafts = math.min(crafts, 86400 / recipe.cooldown) -- ...and the cooldown allows
-    end
-    out.perDay = out.profit * crafts
+    out.perDay = out.profit * out.sellRate / out.made -- crafts a day the market absorbs
   elseif where == "vendor" then
     out.perDay = nil -- a vendor takes any amount: profit per craft is the measure
   end

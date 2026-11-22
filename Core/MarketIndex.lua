@@ -104,7 +104,7 @@ end
 -- bumped when saved indexes gain information (2: vendor prices, 3: what a listing nets for VENDOR items, 4: DE);
 -- older
 -- saves are shown, then rebuilt once
-MarketIndex.SAVE_VERSION = 5 -- 5: sell-through
+MarketIndex.SAVE_VERSION = 6 -- 5: sell-through, 6: estimated sales rates
 
 MarketIndex.SAVED_FIELDS = {
   { "market", 1 },
@@ -137,6 +137,7 @@ MarketIndex.SAVED_FIELDS = {
   { "stEnded", 10 },
   { "stPeers", 1 },
   { "churnRate", 1e3 },
+  { "stPrior", 1e3 }, -- items without outcomes: the market's share their sales rate was scaled by
   { "value", 1 },
 }
 

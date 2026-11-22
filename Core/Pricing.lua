@@ -302,7 +302,7 @@ function Pricing.Params(p, prior, summary)
   local longRun = summary and summary.sellRate and summary.sellRate / 24
   -- scans count expired and cancelled listings as sold: where real auction outcomes corrected the summary's rate
   -- (SellThrough.Apply; churnRate is the scans' own), the scans' demand here is corrected the same way
-  local churn = summary and summary.churnRate
+  local churn = summary and not summary.stPrior and summary.churnRate -- an estimate (no outcomes) isn't one
   local real = churn and churn > 0 and summary.sellRate and summary.sellRate / churn or 1
   local demand
   if p.n > 0 and longRun then

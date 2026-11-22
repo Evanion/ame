@@ -21,6 +21,12 @@ SellThrough.PEER_AGE = 30 * 86400 -- a guildmate's shared numbers are dropped th
 SellThrough.MAX_ITEMS = 300 -- items shared per message (the ones with the most outcomes)
 SellThrough.MAX_UNITS = 100000 -- per item and kind, in shared numbers (anything above is junk)
 SellThrough.MAX_OUTCOMES = 1000
+-- Items nobody has listed: the scans' rate counts expired and cancelled listings as sold, so only a share of it is.
+-- That share is the market's own sell-through (every item with outcomes, by how many it has), starting from
+-- DEFAULT_SHARE until there are PRIOR_WEIGHT outcomes to go on.
+SellThrough.DEFAULT_SHARE = 0.4
+SellThrough.PRIOR_WEIGHT = 20
+SellThrough.MIN_SHARE = 0.05
 
 local FIELD = { sold = "s", expired = "e", cancelled = "c" }
 
@@ -109,14 +115,40 @@ function SellThrough.Rate(tot)
   return tot.s / ended, tot.n / (tot.n + SellThrough.WEIGHT)
 end
 
+-- The share of the scans' rate that sells, for items without outcomes of their own: the market's sell-through
+-- (through = { [item] = Combine totals }), weighed by outcomes and pulled toward DEFAULT_SHARE while there are few.
+function SellThrough.Prior(through)
+  local sum, n = 0, 0
+  for _, tot in pairs(through or {}) do
+    local p = SellThrough.Rate(tot)
+    if p then
+      sum, n = sum + p * tot.n, n + tot.n
+    end
+  end
+  local k = SellThrough.PRIOR_WEIGHT
+  local share = (sum + SellThrough.DEFAULT_SHARE * k) / (n + k)
+  return math.max(SellThrough.MIN_SHARE, math.min(1, share))
+end
+
+-- An item without outcomes: its sales rate is the scans' rate times the market's share (Prior). stPrior marks the
+-- rate as estimated that way; churnRate keeps the scans' own.
+function SellThrough.Estimate(s, prior)
+  if s.sellRate and prior and prior < 1 then
+    s.churnRate = s.sellRate
+    s.sellRate = s.sellRate * prior
+    s.stPrior = prior
+  end
+end
+
 -- Fold an item's sell-through into its market summary (Analytics.Summarize):
 --   sellThrough, stWeight     the rate and how much it counts
 --   stSold, stEnded, stPeers  units sold, units whose listing ended, guildmates who contributed
 --   churnRate                 the scans' rate (units leaving the AH a day: sold, expired or cancelled)
---   sellRate                  scaled to the share of those that sold
+--   sellRate                  scaled to the share of those that sold (while its outcomes are few, partly the
+--                             market's share: prior, from Prior; 1 when not given)
 --   value                     what one is worth to you: the market price when it sells, else the vendor's
 -- vendor: the vendor price (copper, or nil). Returns true when the item has data.
-function SellThrough.Apply(s, tot, vendor)
+function SellThrough.Apply(s, tot, vendor, prior)
   local p, w = SellThrough.Rate(tot)
   if not p then
     return false
@@ -125,7 +157,7 @@ function SellThrough.Apply(s, tot, vendor)
   s.stSold, s.stEnded, s.stPeers = tot.s, tot.s + tot.e + tot.c, tot.peers
   if s.sellRate then
     s.churnRate = s.sellRate
-    s.sellRate = s.sellRate * (w * p + (1 - w))
+    s.sellRate = s.sellRate * (w * p + (1 - w) * (prior or 1))
   end
   if s.market then
     s.value = w * (p * s.market + (1 - p) * (vendor or 0)) + (1 - w) * s.market

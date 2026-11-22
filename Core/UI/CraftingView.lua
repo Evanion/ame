@@ -567,7 +567,7 @@ local COLUMNS = {
       label = L["Cost"],
       width = 72,
       text = function(e)
-        return UI.CostText(e.cost)
+        return e.cost and W.Money(e.cost, true) or W.Dim("-")
       end,
     },
     { key = "revenue", label = L["Sells for"], width = 72, format = "money" },
@@ -757,7 +757,7 @@ local COLUMNS = {
       label = L["Price"],
       width = 72,
       text = function(r)
-        return UI.CostText(r.price)
+        return r.price and W.Money(r.price, true) or W.Dim("-")
       end,
     },
     {
@@ -1224,6 +1224,14 @@ function UI.CraftRowItem(mode, e)
   return e.itemID
 end
 
+-- crafts a day a cooldown allows, in words: "1 every 2 days", "1 a day", "3 a day"
+function UI.CooldownText(perDay)
+  if perDay < 1 then
+    return L["1 every %d days"]:format(math.floor(1 / perDay + 0.5))
+  end
+  return L["%d a day"]:format(math.floor(perDay + 0.5))
+end
+
 -- the breakdown's lines: { label, value, itemID (optional: the line is about that item) }
 local function setLines(v, pairsList)
   for i, line in ipairs(v.lines) do
@@ -1392,6 +1400,9 @@ function UI:RenderCraftingDetailRows()
     lines[#lines + 1] = { L["Sells for, after cut"], ev.revenue and W.Money(ev.revenue, true) or W.Dim("-") }
     lines[#lines + 1] = { L["Profit per craft"], ev.profit and W.SignedMoney(ev.profit) or W.Dim("-") }
     lines[#lines + 1] = { L["Sells a day"], ev.sellRate and W.Rate(ev.sellRate) or W.Dim("-") }
+    if ev.canPerDay then
+      lines[#lines + 1] = { L["Your cooldown"], UI.CooldownText(ev.canPerDay) }
+    end
     lines[#lines + 1] = { L["Market a day"], ev.perDay and W.Money(ev.perDay, true) or W.Dim("-") }
     local why = ev.why == "unsellable" and L["Can't be sold: it binds when made."]
       or ev.why == "unpriced" and L["Missing a price: scan the auction house (or it's never listed)."]
@@ -1443,6 +1454,9 @@ function UI:RenderCraftingDetailRows()
     lines[#lines + 1] = { L["Profit per craft"], ev.profit and W.SignedMoney(ev.profit) or W.Dim("-") }
     lines[#lines + 1] = { L["Market a day"], ev.perDay and W.Money(ev.perDay, true) or W.Dim("-") }
     lines[#lines + 1] = { L["Pays back, at best"], days(e.payback) }
+    if ev.canPerDay then
+      lines[#lines + 1] = { L["Your cooldown"], UI.CooldownText(ev.canPerDay) }
+    end
     for _, l in ipairs(e.learners) do
       lines[#lines + 1] = {
         charName(l.char),
