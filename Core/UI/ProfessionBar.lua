@@ -107,12 +107,13 @@ local function name(id)
   return W.ItemLabel(id)
 end
 
--- an item's name in its quality colour; while the client hasn't loaded it, the queue redraws once it has
+-- an item's name as a link (quality colour, its tooltip, Shift-click) in a line whose frame has links switched on;
+-- while the client hasn't loaded it, the queue redraws once it has
 local function redrawQueue()
   PB:RenderQueue()
 end
 local function itemText(id)
-  return W.ItemNameOrLoad(id, redrawQueue)
+  return W.LinkText(id, nil, redrawQueue)
 end
 
 local function charName(key)
@@ -163,9 +164,7 @@ function PB:QueueToShopping()
   if ns.UI.ShoppingChanged then
     ns.UI:ShoppingChanged(i)
   end
-  print(
-    "|cff33ccffAME|r " .. L["the craft queue's missing materials are on the %s shopping list"]:format(L["Craft queue"])
-  )
+  ns.AME.Say(L["the craft queue's missing materials are on the %s shopping list"], L["Craft queue"])
 end
 
 -- the selected recipe's reagents (for count crafts) onto a shopping list (picked from a menu, or a new one)
@@ -265,7 +264,7 @@ function PB:CraftNext()
   local plan = PB.Plan()
   local step = self:NextStep(plan)
   if not step then
-    print("|cff33ccffAME|r " .. L["nothing in the queue can be crafted here yet"])
+    ns.AME.Say(L["nothing in the queue can be crafted here yet"])
     return
   end
   local n = math.min(step.count, available(step))
@@ -280,7 +279,7 @@ function PB:CraftNext()
         profession = ok and info2 and info2.professionName or c.name
       end
     end
-    print("|cff33ccffAME|r " .. L["open %s to craft %s"]:format(profession or L["its profession"], name(step.item)))
+    ns.AME.Say(L["open %s to craft %s"], profession or L["its profession"], name(step.item))
     return
   end
   self:ShowRecipe(step.recipe) -- the window shows what's being crafted
@@ -322,6 +321,7 @@ function PB:CreateBar(host)
   bar.batch:SetPoint("TOPLEFT", bar.line, "BOTTOMLEFT", 92, -9)
   bar.batch:SetPoint("RIGHT", -10, 0)
   bar.batch:SetWordWrap(false)
+  W.EnableLinks(bar) -- the reagents to buy are item links
   local makeLabel = W.Text(bar, "GameFontDisableSmall")
   makeLabel:SetPoint("TOPLEFT", bar.line, "BOTTOMLEFT", 0, -9)
   makeLabel:SetText(L["Make"])
@@ -345,7 +345,7 @@ function PB:CreateBar(host)
   end)
   bar.queue:SetPoint("BOTTOMLEFT", 10, 8)
   W.Primary(bar.queue)
-  bar.shop = W.Button(bar, L["Add to shopping list"], 150, 22)
+  bar.shop = W.Button(bar, L["Add to shopping list"] .. W.ARROW_DOWN, 160, 22) -- it opens a menu of lists
   bar.shop:SetScript("OnClick", function(b)
     PB:RecipeToShopping(PB:SelectedRecipe(), PB.count or 1, b)
   end)
@@ -354,7 +354,8 @@ function PB:CreateBar(host)
     PB:Search(PB:SelectedRecipe())
   end)
   bar.search:SetPoint("LEFT", bar.shop, "RIGHT", 6, 0)
-  bar.showQueue = W.Button(bar, L["Queue"], 90, 22, function()
+  -- opens and closes the panel (Queue, the main button, adds to it)
+  bar.showQueue = W.Button(bar, L["Show queue"], 110, 22, function()
     PB:ShowQueue(not (PB.panel and PB.panel:IsShown()))
   end)
   bar.showQueue:SetPoint("BOTTOMRIGHT", -10, 8)
@@ -372,7 +373,7 @@ function PB:RenderBar()
   local brand = ""
   bar.search:SetShown(ns.AME.ahOpen and true or false)
   local n = #queue().db.items
-  bar.showQueue:SetText(n > 0 and L["Queue (%d)"]:format(n) or L["Queue"])
+  bar.showQueue:SetText(n > 0 and L["Show queue (%d)"]:format(n) or L["Show queue"])
   if not (recipe and recipe.product) then
     bar.line:SetText(brand .. W.Dim(recipe and L["enchants make no item to price"] or L["pick a recipe"]))
     bar.batch:SetText("")
@@ -398,7 +399,19 @@ function PB:RenderBar()
   )
   local batch = W.Dim(("x%d: "):format(count) .. L["profit"] .. " ") .. signed(s.profit and s.profit * count)
   if #s.missing > 0 then
-    batch = batch .. W.Dim("  ·  " .. L["to buy"] .. " ") .. money(s.toBuy)
+    -- what's short, by name: "(2 Mithril Bar, 4 Mageweave Cloth)"
+    local list = {}
+    for _, m in ipairs(s.missing) do
+      list[#list + 1] = m[2] .. " " .. W.LinkText(m[1], nil, function()
+        PB:RenderBar()
+      end)
+    end
+    batch = batch
+      .. W.Dim("  ·  " .. L["to buy"] .. " ")
+      .. money(s.toBuy)
+      .. W.Dim(" (")
+      .. table.concat(list, W.Dim(", "))
+      .. W.Dim(")")
   else
     batch = batch .. W.Dim("  ·  " .. L["you have every reagent"])
   end
@@ -538,7 +551,7 @@ function PB:CreateQueue(host)
   body:SetPoint("BOTTOMRIGHT", -10, 40)
   p.pane = W.ScrollPane(body)
   p.content = p.pane.content
-  p.heads, p.cards, p.mats, p.todos = {}, {}, {}, {}
+  p.heads, p.cards, p.mats, p.todos, p.notes = {}, {}, {}, {}, {}
   p.empty = W.Text(p.content, "GameFontDisableSmall")
   p.empty:SetPoint("TOPLEFT", 0, 0)
   p.empty:SetPoint("RIGHT", 0, 0)
@@ -572,37 +585,14 @@ local function head(p, i)
   return h
 end
 
--- an item's icon and name, as a link (tooltip, Shift-click, click opens it in the AME window)
-local function itemLink(parent)
-  local icon = parent:CreateTexture(nil, "ARTWORK")
-  icon:SetSize(16, 16)
-  local text = W.Text(parent, "GameFontHighlightSmall")
-  text:SetPoint("LEFT", icon, "RIGHT", 6, 0)
-  text:SetWordWrap(false)
-  local hover = W.ItemHover(parent, icon, text)
-  return icon, text, hover
-end
-
-local function showItem(icon, text, hover, key, before)
-  local _, _, _, tex = W.ItemInfo(key)
-  icon:SetTexture(tex or 134400)
-  text:SetText((before or "") .. itemText(key))
-  hover:SetItem(key)
-end
-
--- source tags: a small panel per source, coloured by where it comes from
-local TAG_COLORS = {
-  carried = { { 0.10, 0.20, 0.14, 1 }, "good" },
-  ah = { { 0.23, 0.16, 0.10, 1 }, "warn" },
-}
-local function tag(pool, parent, i)
-  local t = pool[i]
+-- a dim wrapped line in the body (the panel's notes)
+local function note(p, key)
+  local t = p.notes[key]
   if not t then
-    t = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    t:SetHeight(16)
-    t.text = W.Text(t, "GameFontHighlightSmall")
-    t.text:SetPoint("LEFT", 5, 0)
-    pool[i] = t
+    t = W.Text(p.content, "GameFontDisableSmall")
+    t:SetWordWrap(true)
+    t:SetJustifyV("TOP")
+    p.notes[key] = t
   end
   return t
 end
@@ -614,20 +604,37 @@ local function card(p, i)
   end
   c = CreateFrame("Frame", nil, p.content, "BackdropTemplate")
   W.Skin(c, W.COLORS.panel)
+  W.EnableLinks(c) -- the reagents on its lines are item links
   c.num = W.Text(c, "GameFontDisableSmall", "RIGHT")
   c.num:SetWidth(14)
   c.num:SetPoint("TOPLEFT", 6, -7)
-  c.icon, c.text, c.hover = itemLink(c)
-  c.icon:SetPoint("TOPLEFT", 26, -5)
-  c.text:SetPoint("RIGHT", -100, 0)
+  c.qty = W.Text(c, "GameFontHighlightSmall")
+  c.qty:SetPoint("TOPLEFT", 26, -7)
+  c.link = W.ItemLink(c, { icon = 16 })
+  c.link:SetPoint("LEFT", c.qty, "RIGHT", 4, 0)
+  -- what it takes, on two lines: who makes it (or that it's a part), then its reagents or what making it saves
   c.sub = W.Text(c, "GameFontDisableSmall")
-  c.sub:SetPoint("TOPLEFT", 48, -24)
+  c.sub:SetPoint("TOPLEFT", 26, -24)
   c.sub:SetPoint("RIGHT", -8, 0)
   c.sub:SetWordWrap(false)
-  c.make = W.Button(c, L["Make"], 42, 18)
-  c.buy = W.Button(c, L["Buy"], 42, 18)
-  c.buy:SetPoint("TOPRIGHT", -6, -4)
-  c.make:SetPoint("RIGHT", c.buy, "LEFT", -2, 0)
+  c.sub2 = W.Text(c, "GameFontDisableSmall")
+  c.sub2:SetPoint("TOPLEFT", c.sub, "BOTTOMLEFT", 0, -3)
+  c.sub2:SetPoint("RIGHT", -8, 0)
+  c.sub2:SetWordWrap(false)
+  -- a part: make it or buy it
+  c.choice = W.Segmented(c, { { "make", L["Make"] }, { "buy", L["Buy"] } }, {
+    width = 42,
+    height = 18,
+    gap = 2,
+    onSelect = function(key)
+      if c.item then
+        queue():SetChoice(c.item, key)
+        PB:Refresh()
+      end
+    end,
+  })
+  c.choice:SetPoint("TOPRIGHT", -6, -4)
+  c.make, c.buy = c.choice.byKey.make, c.choice.byKey.buy
   c.profit = W.Text(c, "GameFontHighlightSmall", "RIGHT")
   c.profit:SetPoint("TOPRIGHT", -30, -7)
   c.remove = W.Button(c, "x", 18, 18)
@@ -644,9 +651,8 @@ local function material(p, i)
     return r
   end
   r = CreateFrame("Frame", nil, p.content)
-  r.icon, r.text, r.hover = itemLink(r)
-  r.icon:SetPoint("TOPLEFT", 0, -1)
-  r.text:SetWidth(NEED_X - 30)
+  r.link = W.ItemLink(r, { icon = 16, maxWidth = NEED_X - 6 })
+  r.link:SetPoint("TOPLEFT", 0, 0)
   r.need = W.Text(r, "GameFontHighlightSmall", "RIGHT")
   r.need:SetWidth(32)
   r.need:SetPoint("TOPLEFT", NEED_X, -2)
@@ -672,35 +678,37 @@ local function todoLine(p, i)
   r.text:SetPoint("LEFT", r.num, "RIGHT", 6, 0)
   r.text:SetPoint("RIGHT", 0, 0)
   r.text:SetWordWrap(false)
-  r.hover = W.ItemHover(r, r.text, r.text) -- the line links its item
+  W.EnableLinks(r) -- the line's item is a link in its text
   p.todos[i] = r
   return r
 end
 
--- the second line of a step's card: what you queued lists its reagents; a part says what making it saves
-local function stepSub(s)
-  local parts = {}
+-- a step's two lines under its name: who makes it (on another character, nobody, or a part for a later step); then
+-- what it's made from, as item links, and for a part what making it saves
+local function stepLines(s)
+  local who
   if s.crafter and not s.mine then
-    parts[#parts + 1] = W.Color("warn", L["on %s"]:format(charName(s.crafter)))
+    who = W.Color("warn", L["on %s"]:format(charName(s.crafter)))
   elseif not s.crafter then
-    parts[#parts + 1] = W.Color("bad", L["nobody of yours knows it"])
+    who = W.Color("bad", L["nobody of yours knows it"])
   end
   if s.part then
-    parts[#parts + 1] = L["a part"]
-    if s.saves and s.saves > 0 then
-      parts[#parts + 1] = L["making saves %s each"]:format(money(s.saves))
-    end
-  else
-    local r = PB.Recipe(s.recipe)
-    local list = {}
-    for _, reagent in ipairs(r and r.reagents or {}) do
-      list[#list + 1] = ("%d %s"):format(reagent[2] * (s.count or 1), ns.ItemCache.Name(reagent[1]) or "?")
-    end
-    if #list > 0 then
-      parts[#parts + 1] = table.concat(list, ", ")
-    end
+    who = who and (who .. W.Dim("  ·  ") .. L["a part"]) or L["a part"]
   end
-  return table.concat(parts, W.Dim("  ·  "))
+  local r = PB.Recipe(s.recipe)
+  local list = {}
+  for _, reagent in ipairs(r and r.reagents or {}) do
+    list[#list + 1] = reagent[2] * (s.count or 1) .. " " .. W.LinkText(reagent[1], nil, redrawQueue)
+  end
+  local from = #list > 0 and (L["from"] .. " " .. table.concat(list, W.Dim(", "))) or nil
+  if s.part and s.saves and s.saves > 0 then
+    local saves = L["making saves %s each"]:format(money(s.saves))
+    from = from and (from .. W.Dim("  ·  ") .. saves) or saves
+  end
+  if not who then -- yours to craft here: the reagents go on the first line
+    return from or "", ""
+  end
+  return who, from or ""
 end
 
 function PB:RenderQueue()
@@ -728,6 +736,18 @@ function PB:RenderQueue()
     h:SetText(text)
     h:Show()
   end
+  local function noteAt(key, text)
+    local t = note(p, key)
+    t:SetShown(text ~= nil)
+    if not text then
+      return
+    end
+    t:ClearAllPoints()
+    t:SetPoint("TOPLEFT", p.content, "TOPLEFT", 0, -y)
+    t:SetWidth(width) -- wrapped text measures at its real width now
+    t:SetText(text)
+    y = y + (t:GetStringHeight() or 12) + 4
+  end
   -- the steps, in order: a card each
   if #plan.steps > 0 then
     heading(L["In order"]:upper())
@@ -739,29 +759,20 @@ function PB:RenderQueue()
     c:SetPoint("TOPLEFT", p.content, "TOPLEFT", 0, -y)
     c:SetPoint("RIGHT", p.content, "RIGHT", 0, 0)
     c.num:SetText(tostring(k))
-    showItem(c.icon, c.text, c.hover, s.item, ("%d "):format(s.made or s.count))
-    c.text:SetText(("%d "):format(s.made or s.count) .. itemText(s.item))
-    c.hover:SetItem(s.item)
-    local sub = stepSub(s)
-    c.sub:SetText(sub)
-    local h = sub ~= "" and 40 or 26
+    c.item = s.item
+    c.qty:SetText(W.Thousands(s.made or s.count))
+    c.link:SetItem(s.item)
+    c.link:SetMaxWidth(math.max(60, width - 150))
+    local first, second = stepLines(s)
+    c.sub:SetText(first)
+    c.sub2:SetText(second)
+    local h = 26 + (first ~= "" and 16 or 0) + (second ~= "" and 15 or 0)
     c:SetHeight(h)
-    c.make:SetShown(s.part or false)
-    c.buy:SetShown(s.part or false)
+    c.choice:SetShown(s.part or false)
     c.profit:SetShown(not s.part)
     c.remove:SetShown(not s.part)
     if s.part then
-      local buying = s.choice == "buy"
-      c.make:SetSelected(not buying)
-      c.buy:SetSelected(buying)
-      c.make:SetScript("OnClick", function()
-        queue():SetChoice(s.item, "make")
-        PB:Refresh()
-      end)
-      c.buy:SetScript("OnClick", function()
-        queue():SetChoice(s.item, "buy")
-        PB:Refresh()
-      end)
+      c.choice:Select(s.choice == "buy" and "buy" or "make", true)
     else
       c.profit:SetText(s.profit and signed(s.profit) or "")
       c.remove:SetScript("OnClick", function()
@@ -789,7 +800,7 @@ function PB:RenderQueue()
     r:ClearAllPoints()
     r:SetPoint("TOPLEFT", p.content, "TOPLEFT", 0, -y)
     r:SetPoint("RIGHT", p.content, "RIGHT", 0, 0)
-    showItem(r.icon, r.text, r.hover, m.item)
+    r.link:SetItem(m.item)
     local tags = PB.SourceTags(m)
     -- all of it in your bags: no tags, the count in green
     r.need:SetText(#tags == 0 and W.Color("good", W.Count(m.need)) or W.Count(m.need))
@@ -803,18 +814,15 @@ function PB:RenderQueue()
     local tx, ty = 0, 0
     local room = tagWidth - (back and 46 or 0)
     for j, src in ipairs(tags) do
-      local t = tag(r.tags, r, j)
-      local color = TAG_COLORS[src.kind]
-      W.Skin(t, color and color[1] or W.COLORS.panelHover)
-      t.text:SetText(color and W.Color(color[2], src.text) or src.text)
-      local w = math.ceil((t.text:GetStringWidth() or 0) + 10)
-      t:SetWidth(w)
+      local t = r.tags[j] or W.Tag(r)
+      r.tags[j] = t
+      t:Set(src.text, src.kind)
+      local w = t:GetWidth() or 40
       if tx > 0 and tx + w > room then
         tx, ty = 0, ty + 18
       end
       t:ClearAllPoints()
       t:SetPoint("TOPLEFT", r, "TOPLEFT", SOURCE_X + tx, -ty)
-      t:Show()
       tx = tx + w + 4
     end
     for j = #tags + 1, #r.tags do
@@ -828,12 +836,21 @@ function PB:RenderQueue()
   for k = #plan.materials + 1, #p.mats do
     p.mats[k]:Hide()
   end
-  -- what to do, in order (each line links its item)
+  if #plan.materials > 0 then
+    y = y + 4
+  end
+  noteAt(
+    "sourcesNote",
+    #plan.materials > 0
+        and L["Sources go in this order: what this character carries, its bank, your other characters (mail it over), your guild bank, a vendor, a step of the queue, and the auction house for what's left."]
+      or nil
+  )
+  -- what to do, in order (each line's item is a link)
   local todo = {}
   for _, t in ipairs(plan.todo or {}) do
     local text = PB.TodoText(t, me)
     if text then
-      todo[#todo + 1] = { text = text, item = t.item }
+      todo[#todo + 1] = text
     end
   end
   if #todo > 0 then
@@ -841,20 +858,28 @@ function PB:RenderQueue()
     heading(L["To do"]:upper())
     y = y + 16
   end
-  for k, t in ipairs(todo) do
+  for k, text in ipairs(todo) do
     local r = todoLine(p, k)
     r:ClearAllPoints()
     r:SetPoint("TOPLEFT", p.content, "TOPLEFT", 0, -y)
     r:SetPoint("RIGHT", p.content, "RIGHT", 0, 0)
     r.num:SetText(k .. ".")
-    r.text:SetText(t.text)
-    r.hover:SetItem(t.item)
+    r.text:SetText(text)
     r:Show()
     y = y + 18
   end
   for k = #todo + 1, #p.todos do
     p.todos[k]:Hide()
   end
+  if #plan.steps > 0 then
+    y = y + 6
+  end
+  noteAt(
+    "nextNote",
+    #plan.steps > 0
+        and L["Craft next skips steps this character can't do, and steps still missing materials. The queue is kept per account: an alt sees its steps when you log in there."]
+      or nil
+  )
   for k = heads + 1, #p.heads do
     p.heads[k]:Hide()
   end

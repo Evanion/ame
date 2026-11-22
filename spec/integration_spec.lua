@@ -2152,6 +2152,8 @@ describe("addon in a stubbed client", function()
       -- queue it: the plan buys the 2 missing bars, then crafts
       PB.bar.queue.scripts.OnClick(PB.bar.queue)
       assert.are.same({ { recipe = 100, count = 1 } }, AME_DB.craftQueue.items)
+      assert.are.equal("Show queue (1)", PB.bar.showQueue:GetText()) -- the panel's toggle, not a second "Queue"
+      assert.is_true(PB.panel.cards[1].link:IsShown()) -- the step's item is a link
       local plan = PB.Plan()
       assert.are.equal(1, #plan.steps)
       assert.is_true(plan.steps[1].mine)
