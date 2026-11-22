@@ -53,8 +53,9 @@ function UI.SideList(side, opts)
   local lineH = opts.lineHeight or UI.SIDE_LINE_H
   local list = { sidebar = side, lines = {}, entries = {}, offset = 0, rows = opts.rows or 1, opts = opts }
   side.lines = list.lines
-  if side.pane then
-    side.pane:Hide() -- the list pages itself, so a long one needs no scroll bar
+  local pane = rawget(side, "pane") -- a sidebar's scroll pane (UI.Sidebar); a plain frame has none
+  if pane then
+    pane:Hide() -- the list pages itself, so a long one needs no scroll bar
   end
 
   local function line(i)

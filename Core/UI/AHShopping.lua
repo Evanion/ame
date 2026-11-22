@@ -14,6 +14,7 @@ local T = {}
 ns.AHShopping = T
 
 T.LISTINGS = 5
+T.LISTING_H = 18
 T.RECENT = 6 -- recent searches kept
 T.SIDE_W = UI.SIDEBAR_W -- the same width as every sidebar in the main window
 
@@ -159,13 +160,6 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- the panel
 
-local function cell(parent, width, justify)
-  local fs = W.Text(parent, "GameFontHighlightSmall", justify or "RIGHT")
-  fs:SetWidth(width)
-  fs:SetWordWrap(false)
-  return fs
-end
-
 -- a panel like the main window's (its colour, the discreet border) and the frame inside it, inset by pad
 local function makePanel(parent, pad)
   local outer = W.Panel(parent, pad)
@@ -173,16 +167,24 @@ local function makePanel(parent, pad)
 end
 T.Panel = makePanel
 
--- a small labelled control in the filters (y: the row's top)
-local function labeled(parent, text, control, x, y)
+-- The filters are a small grid: three columns, each control under its label, rows a fixed step apart
+T.FILTER_COL = 160 -- a column's step (150 wide controls and a gap)
+T.FILTER_ROW = 43 -- a row's step (the label, the control and a gap)
+local function cellAt(col, row)
+  return (col - 1) * T.FILTER_COL, -(row - 1) * T.FILTER_ROW
+end
+
+-- a labelled control in the filters' grid
+local function labeled(parent, text, control, col, row)
+  local x, y = cellAt(col, row)
   local label = W.Text(parent, "GameFontDisableSmall")
-  label:SetPoint("TOPLEFT", x, y or 0)
+  label:SetPoint("TOPLEFT", x, y)
   label:SetText(text)
-  control:SetPoint("TOPLEFT", x, (y or 0) - 13)
+  control:SetPoint("TOPLEFT", x, y - 13)
   return control
 end
 
-T.FILTERS_H = 92 -- two rows, in a panel
+T.FILTERS_H = 2 * T.FILTER_ROW + 16 + 16 -- two rows of controls, the checks' row, in a panel
 
 -- the subcategory choices under a top category ({ path, name })
 local function subOptions(top)
@@ -196,8 +198,9 @@ local function subOptions(top)
   return out
 end
 
--- Two rows: category, subcategory and quality; then required level, item level, the highest price each, exact
--- name and usable. (Two dropdowns for the category: the game's whole tree is too long for one menu.)
+-- Three rows: category, subcategory and quality; required level, item level and the highest price each; then the
+-- exact name and usable checks on their own row. (Two dropdowns for the category: the game's whole tree is too long
+-- for one menu.)
 function T:CreateFilters(main)
   local p = self.panel
   local outer, box = makePanel(main, 8)
@@ -223,7 +226,8 @@ function T:CreateFilters(main)
       f.category = v or p.category.value or nil
       changed()
     end),
-    160
+    2,
+    1
   )
   p.category = labeled(
     box,
@@ -235,7 +239,8 @@ function T:CreateFilters(main)
       p.subcategory:SetValue(false)
       changed()
     end),
-    0
+    1,
+    1
   )
   local qualities = { { 0, L["Any quality"] } }
   for q = 1, 5 do
@@ -245,34 +250,33 @@ function T:CreateFilters(main)
   p.quality = labeled(
     box,
     L["Quality at least"],
-    W.Dropdown(box, 110, qualities, function(v)
+    W.Dropdown(box, 120, qualities, function(v)
       f.quality = (v and v > 0) and v or nil
       changed()
     end),
-    320
+    3,
+    1
   )
-  local row2 = -40
-  local function level(key, x, tip)
-    local input = W.Input(box, {
-      width = 34,
-      numeric = true,
-      hint = tip,
-      onChange = function(_, n)
-        f[key] = n
-        changed()
-      end,
-    })
-    input:SetPoint("TOPLEFT", x, row2 - 13)
-    return input
+  -- a min / max pair under one label
+  local function range(label, col, minKey, maxKey)
+    local function input(key, tip)
+      return W.Input(box, {
+        width = 40,
+        numeric = true,
+        hint = tip,
+        onChange = function(_, n)
+          f[key] = n
+          changed()
+        end,
+      })
+    end
+    local lo = labeled(box, label, input(minKey, L["min"]), col, 2)
+    local hi = input(maxKey, L["max"])
+    hi:SetPoint("LEFT", lo, "RIGHT", 4, 0)
+    return lo, hi
   end
-  local req = W.Text(box, "GameFontDisableSmall")
-  req:SetPoint("TOPLEFT", 0, row2)
-  req:SetText(L["Required level"])
-  p.minLevel, p.maxLevel = level("minLevel", 0, L["min"]), level("maxLevel", 40, L["max"])
-  local il = W.Text(box, "GameFontDisableSmall")
-  il:SetPoint("TOPLEFT", 92, row2)
-  il:SetText(L["Item level"])
-  p.minItemLevel, p.maxItemLevel = level("minItemLevel", 92, L["min"]), level("maxItemLevel", 132, L["max"])
+  p.minLevel, p.maxLevel = range(L["Required level"], 1, "minLevel", "maxLevel")
+  p.minItemLevel, p.maxItemLevel = range(L["Item level"], 2, "minItemLevel", "maxItemLevel")
   p.maxPrice = labeled(
     box,
     L["Each at most"],
@@ -280,48 +284,21 @@ function T:CreateFilters(main)
       f.maxPrice = copper
       changed()
     end),
-    184,
-    row2
+    3,
+    2
   )
+  local x1, y = cellAt(1, 3)
+  local x2 = cellAt(2, 3)
   p.exact = W.Check(box, L["Exact name"], function(on)
     f.exact = on or nil
     changed()
   end)
-  p.exact:SetPoint("TOPLEFT", 270, row2 - 15)
+  p.exact:SetPoint("TOPLEFT", x1, y)
   p.usable = W.Check(box, L["Usable by you"], function(on)
     f.usable = on or nil
     changed()
   end)
-  p.usable:SetPoint("TOPLEFT", 380, row2 - 15)
-end
-
--- the sidebar, styled like the Market tab's: plain lines on a panel, headings, the picked line filled, counts right
-T.LINE_H = 20
-
-local function sideLine(side, i)
-  local b = CreateFrame("Button", nil, side)
-  b:SetHeight(T.LINE_H)
-  b:SetPoint("TOPLEFT", 4, -4 - (i - 1) * T.LINE_H)
-  b:SetPoint("RIGHT", -4, 0)
-  b.sel = b:CreateTexture(nil, "BACKGROUND")
-  b.sel:SetAllPoints()
-  W.Fill(b.sel, W.COLORS.rowSelected)
-  b.hl = b:CreateTexture(nil, "HIGHLIGHT")
-  b.hl:SetAllPoints()
-  W.Fill(b.hl, W.COLORS.rowHover)
-  b.text = W.Text(b, "GameFontHighlightSmall")
-  b.text:SetPoint("LEFT", 6, 0)
-  b.text:SetPoint("RIGHT", -40, 0)
-  b.text:SetWordWrap(false)
-  b.count = W.Text(b, "GameFontDisableSmall", "RIGHT")
-  b.count:SetPoint("RIGHT", -4, 0)
-  b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-  b:SetScript("OnClick", function(self, button)
-    if self.entry and self.entry.click then
-      self.entry.click(button)
-    end
-  end)
-  return b
+  p.usable:SetPoint("TOPLEFT", x2, y)
 end
 
 -- The tables are the AME window's own: search results are the Market screener's (UI.ScreenerOpts: its columns,
@@ -388,24 +365,22 @@ function T:Create(ah)
   self.panel = p
   self.filters = self.filters or {}
   self.mode = self.mode or "list"
-  self.sideOffset = 0
 
-  -- the sidebar: recent searches, then the lists
+  -- the sidebar: recent searches, then the lists - the shared side menu, as tall as the auction house window
   local side = CreateFrame("Frame", nil, p, "BackdropTemplate")
   W.Skin(side, W.COLORS.panel)
   side:SetPoint("TOPLEFT", 0, 0)
   side:SetPoint("BOTTOMLEFT", 0, 0)
   side:SetWidth(T.SIDE_W)
-  side.lines = {}
-  for i = 1, 24 do
-    side.lines[i] = sideLine(side, i)
-  end
-  side:EnableMouseWheel(true)
-  side:SetScript("OnMouseWheel", function(_, delta)
-    T.sideOffset = math.max(0, (T.sideOffset or 0) - delta * 2)
-    T:RenderSide()
-  end)
   p.side = side
+  p.sideList = UI.SideList(side, {
+    rows = 24,
+    onClick = function(e, button)
+      if e.click then
+        e.click(button)
+      end
+    end,
+  })
 
   -- search row, filters, the title row, then the table
   local main = CreateFrame("Frame", nil, p)
@@ -436,10 +411,13 @@ function T:Create(ah)
   local top = CreateFrame("Frame", nil, main)
   top:SetHeight(22)
   p.top = top
-  p.title = W.Text(top, "GameFontNormal")
-  p.title:SetPoint("LEFT", 0, 0)
+  -- the list's or search's name as a page heading (gold), what it found or costs on the right
   p.status = W.Text(top, "GameFontDisableSmall", "RIGHT")
   p.status:SetPoint("RIGHT", -110, 0)
+  p.heading = W.PageHeading(top)
+  p.heading:SetPoint("LEFT", 0, 0)
+  p.heading:SetPoint("RIGHT", p.status, "LEFT", -8, 0)
+  p.title = p.heading.title
   p.searchAll = W.Button(top, L["Search all"], 100, 20, function()
     T:SearchAll()
   end)
@@ -481,7 +459,7 @@ function T:Create(ah)
   local detailPanel, detail = makePanel(main, 8)
   detailPanel:SetPoint("BOTTOMLEFT", 0, 0)
   detailPanel:SetPoint("RIGHT", 0, 0)
-  detailPanel:SetHeight(T.LISTINGS * 16 + 68)
+  detailPanel:SetHeight(T.LISTINGS * T.LISTING_H + 20 + 66)
   detailPanel:Hide()
   p.detail = detailPanel
   -- the item whose listings these are, as a link, then a note on them
@@ -489,29 +467,56 @@ function T:Create(ah)
   p.detailItem:SetPoint("TOPLEFT", 0, 0)
   p.detailTitle = W.Text(detail, "GameFontNormalSmall")
   p.detailTitle:SetPoint("LEFT", p.detailItem, "RIGHT", 0, 0)
-  p.listings = {}
-  for i = 1, T.LISTINGS do
-    local l = CreateFrame("Frame", nil, detail)
-    l:SetHeight(16)
-    l:SetPoint("TOPLEFT", 0, -16 - (i - 1) * 16)
-    l:SetPoint("RIGHT", 0, 0)
-    l.bg = l:CreateTexture(nil, "BACKGROUND")
-    l.bg:SetAllPoints()
-    l.bg:SetColorTexture(1, 1, 1, i % 2 == 0 and 0.025 or 0)
-    l.fill = l:CreateTexture(nil, "BACKGROUND", nil, 1) -- a listing the order takes from
-    l.fill:SetAllPoints()
-    W.Fill(l.fill, W.COLORS.rowSelected)
-    l.fill:Hide()
-    l.price = cell(l, 110)
-    l.price:SetPoint("LEFT", 0, 0)
-    l.qty = cell(l, 70)
-    l.qty:SetPoint("LEFT", l.price, "RIGHT", 8, 0)
-    l.mine = W.Text(l, "GameFontHighlightSmall")
-    l.mine:SetPoint("LEFT", l.qty, "RIGHT", 10, 0)
-    l.buy = W.Button(l, L["Buy"], 50, 16)
-    l.buy:SetPoint("RIGHT", 0, 0)
-    p.listings[i] = l
-  end
+  -- the listings, cheapest first: a table (each, how many, yours), the ones the order takes from selected; an item
+  -- that isn't a commodity is bought a listing at a time (Buy on its row)
+  p.listings = ns.DataTable.New(detail, {
+    top = -20,
+    rows = T.LISTINGS,
+    rowHeight = T.LISTING_H,
+    columns = {
+      { key = "price", label = L["Each"], width = 110, format = "money", align = "LEFT", sortKey = false },
+      {
+        key = "qty",
+        label = L["Qty"],
+        width = 90,
+        sortKey = false,
+        text = function(r)
+          local n = r.taken
+          if n and n < r.qty then
+            return W.Count(n) .. W.Dim(" " .. L["of %s"]:format(W.Count(r.qty))) -- the last one partly
+          end
+          return W.Count(r.qty)
+        end,
+      },
+      {
+        key = "mine",
+        label = "",
+        width = 60,
+        align = "LEFT",
+        sortKey = false,
+        text = function(r)
+          return r.mine and W.Color("gold", L["yours"]) or ""
+        end,
+      },
+      {
+        key = "buy",
+        label = "",
+        width = 50,
+        button = {
+          label = L["Buy"],
+          shown = function(r)
+            return not r.commodity
+          end,
+          onClick = function(r)
+            ns.AHSearch:Buy(r.key, r.row.qty, r.row)
+          end,
+        },
+      },
+    },
+    selected = function(r)
+      return r.taken ~= nil
+    end,
+  })
   local buyLabel = W.Text(detail, "GameFontDisableSmall")
   buyLabel:SetPoint("BOTTOMLEFT", 0, 6)
   buyLabel:SetText(L["Buy"])
@@ -648,15 +653,16 @@ function T:ShowFilters()
   self:RenderFiltersButton()
 end
 
--- the sidebar's lines: { header } or { label, count, selected, click(button) }
+-- the sidebar's entries (UI.SideList): { heading } or { label, note, count, selected, kind, click(button) }
 function T:SideEntries()
   local out = {}
-  out[#out + 1] = { header = L["Recent searches"] }
+  out[#out + 1] = { heading = L["Recent searches"] }
   local searches = recent()
   for i, s in ipairs(searches) do
     local head, note = ns.AHBrowse.Label(s.text, s.f, _G.AuctionCategories)
     out[#out + 1] = {
-      label = head .. (note ~= "" and W.Dim("  " .. note) or ""),
+      label = head,
+      note = note ~= "" and note or nil,
       selected = self.mode == "search" and i == 1,
       click = function(button)
         if button == "RightButton" then
@@ -673,9 +679,9 @@ function T:SideEntries()
     }
   end
   if #searches == 0 then
-    out[#out + 1] = { label = W.Dim(L["none yet"]) }
+    out[#out + 1] = { label = L["none yet"], kind = "dim" }
   end
-  out[#out + 1] = { header = L["Shopping lists"] }
+  out[#out + 1] = { heading = L["Shopping lists"] }
   local function pick(index)
     return function()
       if index then
@@ -698,31 +704,13 @@ function T:SideEntries()
     }
   end
   if #shopping():Lists() == 0 and not self.temp then
-    out[#out + 1] = { label = W.Dim(L["make one in the AME window or from the craft queue"]) }
+    out[#out + 1] = { label = L["make one in the main window or from the craft queue"], kind = "dim" }
   end
   return out
 end
 
 function T:RenderSide()
-  local side = self.panel.side
-  local entries = self:SideEntries()
-  local h = side:GetHeight() or 0
-  local rows = h > 0 and math.min(#side.lines, math.floor((h - 8) / T.LINE_H)) or #side.lines
-  self.sideOffset = math.max(0, math.min(self.sideOffset or 0, #entries - rows))
-  for i, b in ipairs(side.lines) do
-    local e = i <= rows and entries[i + self.sideOffset]
-    b.entry = e or nil
-    if e then
-      b.text:SetFontObject(e.header and "GameFontDisableSmall" or "GameFontNormalSmall")
-      b.text:SetText(e.header or e.label)
-      b.count:SetText(e.count and tostring(e.count) or "")
-      b.sel:SetShown(e.selected or false)
-      b.hl:SetShown(e.click ~= nil)
-      b:Show()
-    else
-      b:Hide()
-    end
-  end
+  self.panel.sideList:SetEntries(self:SideEntries())
 end
 
 -- the table's rows for the mode, its title and status
@@ -774,7 +762,7 @@ function T:Render()
   end
   self:RenderSide()
   local rows, title, status = self:TableRows()
-  p.title:SetText(title)
+  p.heading:Set(title)
   p.status:SetText(status)
   p.searchAll:SetShown(self.mode == "list")
   local shown, other = p.listTable, p.searchTable
@@ -804,25 +792,23 @@ function T:RenderDetail()
     and book.commodity
     and (pending and pending.key == key and not pending.sent and pending.qty or tonumber(p.qty:GetText()))
   local taken, cost, covered = T.Fill(book and book.rows, want or 0)
-  for i, l in ipairs(p.listings) do
-    local row = book and book.rows[i]
-    if row then
-      l.price:SetText(money(row.price))
-      local n = taken[i]
-      l.qty:SetText(
-        n and n < row.qty and (W.Count(n) .. W.Dim(" " .. L["of %s"]:format(W.Count(row.qty)))) or W.Count(row.qty)
-      )
-      l.fill:SetShown(n ~= nil)
-      l.mine:SetText(row.mine and W.Color("brand", L["yours"]) or "")
-      l.buy:SetShown(not book.commodity)
-      l.buy:SetScript("OnClick", function()
-        ns.AHSearch:Buy(key, row.qty, row)
-      end)
-      l:Show()
-    else
-      l:Hide()
+  local shown = {}
+  for i, row in ipairs(book and book.rows or {}) do
+    if i > T.LISTINGS then
+      break
     end
+    shown[i] = {
+      key = key,
+      row = row,
+      price = row.price,
+      qty = row.qty,
+      mine = row.mine,
+      taken = taken[i],
+      commodity = book.commodity,
+    }
   end
+  p.listings:SetData(shown)
+  p.listings:Render()
   local commodity = book and book.commodity
   p.qty:SetShown(commodity or false)
   p.buyLabel:SetShown(commodity or false)

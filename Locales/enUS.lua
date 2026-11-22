@@ -356,6 +356,7 @@ L["Drag the title bar to move the window and the bottom-right corner to resize i
 L["Drops from %s"] = true
 L["Dumping"] = true
 L["Duration"] = true
+L["Each"] = true
 L["Each AME shares what its characters can craft (recipe IDs only) along with the guild's sync - open each of your professions once so yours count. Turn it off under Settings, Sharing: Share what my characters can craft."] = true
 L["Each at most"] = true
 L["Each candle covers one or more days. It opens at the previous candle's close and closes at the market price; green closed higher, red lower. The thin wick reaches down to the cheapest listing seen."] = true
@@ -1169,7 +1170,7 @@ L["mail"] = true
 L["mail %s"] = true
 L["mailbox"] = true
 L["make %s"] = true
-L["make one in the AME window or from the craft queue"] = true
+L["make one in the main window or from the craft queue"] = true
 L["making saves %s each"] = true
 L["market"] = true
 L["market %s"] = true
