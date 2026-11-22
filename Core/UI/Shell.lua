@@ -206,7 +206,7 @@ function UI.Stack(content, pad)
     local inner = width and math.max(1, width - 2 * pad)
     for _, it in ipairs(self.items) do
       local obj = it[1]
-      if obj.card then
+      if obj.card or obj.fits then -- cards and rows that lay themselves out at a width (wrapping buttons)
         obj:Fit(inner)
       end
       local oh
@@ -487,6 +487,131 @@ function UI.LayoutCardContent(card, width)
   end
   text(p.note, 4)
   card:SetHeight(y + CARD_PAD)
+end
+
+-- A Settings card (the Settings and Sharing pages): a gold heading, then rows in order.
+--   local card = UI.SettingsCard(stack, "Window", {
+--     { check = "Open with the auction house", key = "openWithAH", onChange = fn },
+--     { check = "...and close with it", key = "closeWithAH", indent = true },
+--     { field = "Scale", note = "(70-120%)", dropdown = { width, options, onSelect } },
+--     { field = "Protocol", control = function(row) return frame end },   -- any control, right-aligned
+--     { text = "A dim explanatory paragraph." },
+--     { input = "Player name", button = "Add", onClick = function(text, box) end },
+--     { list = { W.RowList opts } },                                          -- player rows
+--     { buttons = { { "Export", onClick, width = 90, primary = true }, ... } }, -- wrapping to the width
+--   }, { gap = 10 })
+-- Every row's control is card.controls[i] (the check, dropdown, paragraph, box, list or the button row);
+-- card.checks are the setting checks, and card:Refresh() ticks them from ns.Settings.
+UI.SETTINGS_INDENT = 20
+local function settingsRow(st, r)
+  if r.check then
+    local row = st:Row(18, 6)
+    local c = W.SettingCheck(row, r.check, r.key, r.indent and UI.SETTINGS_INDENT or 0, -1, r.onChange)
+    return c, row
+  elseif r.field then
+    local row = st:Row(22, 6)
+    local control
+    if r.dropdown then
+      local d = r.dropdown
+      control = W.Dropdown(row, d[1], d[2], d[3], { neutral = true })
+    else
+      control = r.control(row)
+    end
+    control:ClearAllPoints()
+    control:SetPoint("RIGHT", 0, 0)
+    local text = W.Text(row, "GameFontHighlightSmall")
+    text:SetPoint("LEFT", 0, 0)
+    text:SetPoint("RIGHT", control, "LEFT", -6, 0)
+    text:SetText(r.note and (r.field .. "  " .. W.Dim(r.note)) or r.field)
+    text:SetWordWrap(false)
+    row.text = text
+    return control, row
+  elseif r.text then
+    local t = st:Text("GameFontDisableSmall", 4)
+    t:SetSpacing(2)
+    t:SetText(r.text)
+    return t, t
+  elseif r.input then
+    local row = st:Row(22, 6)
+    local b = W.Button(row, r.button or "", r.buttonWidth or 90, 22)
+    b:SetPoint("RIGHT", 0, 0)
+    local box = W.Input(row, { hint = r.input, height = 22 })
+    box:SetPoint("LEFT", 0, 0)
+    box:SetPoint("RIGHT", b, "LEFT", -6, 0)
+    local function submit()
+      if r.onClick then
+        r.onClick(box:GetText() or "", box)
+      end
+    end
+    b:SetScript("OnClick", submit)
+    box:SetScript("OnEnterPressed", submit)
+    box.button = b
+    return box, row
+  elseif r.list then
+    local holder = st:Row(1, 6)
+    local opts = {}
+    for k, v in pairs(r.list) do
+      opts[k] = v
+    end
+    opts.fill = true
+    local list = W.RowList(holder, opts)
+    list:SetPoint("TOPLEFT", 0, 0)
+    list:SetPoint("RIGHT", 0, 0)
+    -- the holder is as tall as the rows the list shows
+    holder.fits = true
+    function holder:Fit()
+      self:SetHeight(math.max(1, list:GetHeight() or 1))
+    end
+    return list, holder
+  elseif r.buttons then
+    local row = st:Row(22, 8)
+    row.buttons = {}
+    for i, d in ipairs(r.buttons) do
+      local b = W.Button(row, d[1], d.width or 90, 22, d[2])
+      if d.primary then
+        W.Primary(b)
+      end
+      row.buttons[i] = b
+    end
+    -- left to right, onto a new line when the next one doesn't fit the card's width
+    row.fits = true
+    function row:Fit(width)
+      local x, y, lineH = 0, 0, 22
+      for _, b in ipairs(self.buttons) do
+        local w = b:GetWidth() or 90
+        if x > 0 and width and x + w > width then
+          x, y = 0, y + lineH + 6
+        end
+        b:ClearAllPoints()
+        b:SetPoint("TOPLEFT", x, -y)
+        x = x + w + 6
+      end
+      self:SetHeight(y + lineH)
+    end
+    row:Fit()
+    return row, row
+  end
+  error("UI.SettingsCard: unknown row " .. tostring(next(r)))
+end
+
+function UI.SettingsCard(stack, title, rows, opts)
+  local card = stack:Card(opts and opts.gap)
+  local st = card.stack
+  card.title = st:Heading(title, 0)
+  card.controls, card.rowFrames, card.checks = {}, {}, {}
+  for i, r in ipairs(rows) do
+    local control, frame = settingsRow(st, r)
+    card.controls[i], card.rowFrames[i] = control, frame
+    if r.check then
+      card.checks[#card.checks + 1] = control
+    end
+  end
+  function card:Refresh()
+    for _, c in ipairs(self.checks) do
+      c:SetChecked(ns.Settings:Get(c.key))
+    end
+  end
+  return card
 end
 
 -- Re-measure after the game lays text out: fn() now, and once more on the next frame (wrapped text only gets its

@@ -10,6 +10,7 @@ describe("shell widgets", function()
     env = wow.install()
     ns = addon.load({
       "Core/Init.lua",
+      "Core/Settings.lua",
       "Core/ItemCache.lua",
       "Core/UI/Widgets.lua",
       "Core/UI/Help.lua",
@@ -17,6 +18,7 @@ describe("shell widgets", function()
     })
     W = ns.Widgets
     W.SetTheme("Horde")
+    _G.AME_DB = { settings = {} }
     ns.UI = {}
     UI = ns.UI
     addon.load({ "Core/UI/Shell.lua" }, ns)
@@ -202,6 +204,132 @@ describe("shell widgets", function()
       head.scripts.OnClick(head, "LeftButton")
       line.scripts.OnClick(line, "RightButton")
       assert.are.same({ { "s:1", "RightButton" } }, clicks)
+    end)
+  end)
+
+  describe("UI.SettingsCard", function()
+    local function newCard(rows)
+      return UI.SettingsCard(UI.Stack(UIParent, 0), "Window", rows)
+    end
+
+    it("binds a check to its setting: ticked from it, and a click saves it", function()
+      AME_DB.settings.openWithAH = true
+      local changed
+      local card = newCard({
+        { check = "Open with the auction house", key = "openWithAH" },
+        {
+          check = "...and close with it",
+          key = "closeWithAH",
+          indent = true,
+          onChange = function(on)
+            changed = on
+          end,
+        },
+      })
+      card:Refresh()
+      local open, close = card.controls[1], card.controls[2]
+      assert.are.equal("Window", card.title.text)
+      assert.is_true(open.checked)
+      assert.is_false(close.checked)
+      assert.are.equal(UI.SETTINGS_INDENT, close.points[1][2]) -- set in under the one above
+      close.scripts.OnClick(close)
+      assert.is_true(ns.Settings:Get("closeWithAH"))
+      assert.is_true(changed)
+      open.scripts.OnClick(open)
+      assert.is_false(ns.Settings:Get("openWithAH"))
+      assert.are.same({ open, close }, card.checks)
+    end)
+
+    it("puts a field's control on the right, and passes an input's text to its button", function()
+      local picked, sent
+      local card = newCard({
+        {
+          field = "Scale",
+          note = "(70-120%)",
+          dropdown = {
+            80,
+            { { 1, "100%" } },
+            function(v)
+              picked = v
+            end,
+          },
+        },
+        {
+          input = "Player name",
+          button = "Add",
+          onClick = function(text)
+            sent = text
+          end,
+        },
+        { text = "Shared with your guild." },
+      })
+      local dd, box, para = card.controls[1], card.controls[2], card.controls[3]
+      assert.are.same({ "RIGHT", 0, 0 }, dd.points[#dd.points])
+      assert.truthy(card.rowFrames[1].text.text:find("Scale", 1, true))
+      box:SetText("Tyken")
+      box.button.scripts.OnClick(box.button)
+      assert.are.equal("Tyken", sent)
+      assert.are.equal("Shared with your guild.", para.text)
+      assert.is_nil(picked)
+    end)
+
+    it("wraps a row of buttons onto a new line when they don't fit", function()
+      local card =
+        newCard({ { buttons = { { "Export", nil, width = 90, primary = true }, { "Import", nil, width = 90 } } } })
+      local row = card.controls[1]
+      row:Fit(400)
+      assert.are.equal(22, row:GetHeight())
+      row:Fit(150)
+      assert.are.equal(22 + 6 + 22, row:GetHeight())
+      assert.are.same({ "TOPLEFT", 0, -28 }, row.buttons[2].points[1])
+      assert.is_true(same(row.buttons[1]._backdrop, W.COLORS.primary))
+      card:Fit(500) -- the card measures the row at its width
+      assert.are.equal(22, row:GetHeight())
+    end)
+  end)
+
+  describe("W.Panel and W.PageHeading", function()
+    it("a panel has the panel colour, and an inner frame inset by pad", function()
+      local p = W.Panel(UIParent, 8)
+      assert.is_true(same(p._backdrop, W.COLORS.panel))
+      assert.are.same({ "TOPLEFT", 8, -8 }, p.inner.points[1])
+    end)
+
+    it("a page heading has a gold title and a dim subtitle, hidden when empty", function()
+      local h = W.PageHeading(UIParent)
+      h:Set("Top earners", "what pays most to craft")
+      assert.are.equal("GameFontNormal", h.title._font)
+      assert.are.equal("what pays most to craft", h.subtitle.text)
+      h:Set("Recipes to buy")
+      assert.is_false(h.subtitle:IsShown())
+    end)
+  end)
+
+  describe("W.Menu", function()
+    it("draws separators as short lines that don't click, and marks submenus", function()
+      local clicked = 0
+      local anchor = CreateFrame("Button", nil, UIParent)
+      local m = W.Menu(anchor, {
+        {
+          text = "Open chart",
+          func = function()
+            clicked = clicked + 1
+          end,
+        },
+        { separator = true },
+        { text = "Watchlists...", submenu = true },
+      })
+      local open, sep, sub = m.items[1], m.items[2], m.items[3]
+      assert.is_true(sep.rule:IsShown())
+      assert.is_false(open.rule:IsShown())
+      assert.is_true(sub.arrow:IsShown())
+      assert.is_false(open.arrow:IsShown())
+      assert.is_true(sep:GetHeight() < open:GetHeight())
+      assert.are.equal(3 + 18 + 9 + 18 + 3, m:GetHeight())
+      sep.scripts.OnClick(sep)
+      assert.is_true(m:IsShown())
+      open.scripts.OnClick(open)
+      assert.are.equal(1, clicked)
     end)
   end)
 end)

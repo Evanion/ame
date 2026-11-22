@@ -168,12 +168,8 @@ end
 
 -- a panel like the main window's (its colour, the discreet border) and the frame inside it, inset by pad
 local function makePanel(parent, pad)
-  local outer = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-  W.Skin(outer, W.COLORS.panel)
-  local inner = CreateFrame("Frame", nil, outer)
-  inner:SetPoint("TOPLEFT", pad, -pad)
-  inner:SetPoint("BOTTOMRIGHT", -pad, pad)
-  return outer, inner
+  local outer = W.Panel(parent, pad)
+  return outer, outer.inner
 end
 T.Panel = makePanel
 

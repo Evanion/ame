@@ -1831,14 +1831,11 @@ function W.Menu(anchor, entries, opts)
     menu:Hide()
     return menu
   end
-  local ROW, width = 18, 140
+  local ROW, SEP, width, top = 18, 9, 140, 3
   for i, e in ipairs(entries) do
     local it = menu.items[i]
     if not it then
       it = CreateFrame("Button", nil, menu)
-      it:SetHeight(ROW)
-      it:SetPoint("TOPLEFT", 3, -3 - (i - 1) * ROW)
-      it:SetPoint("RIGHT", -3, 0)
       it.hl = it:CreateTexture(nil, "HIGHLIGHT")
       it.hl:SetAllPoints()
       W.Fill(it.hl, W.COLORS.rowHover)
@@ -1848,25 +1845,51 @@ function W.Menu(anchor, entries, opts)
       it.check:SetPoint("LEFT", 2, 0)
       it.text = W.Text(it, "GameFontHighlightSmall")
       it.text:SetPoint("LEFT", 20, 0)
+      -- a separator: a thin line across the middle of a short row
+      it.rule = it:CreateTexture(nil, "ARTWORK")
+      it.rule:SetHeight(1)
+      it.rule:SetPoint("LEFT", 6, 0)
+      it.rule:SetPoint("RIGHT", -6, 0)
+      W.Fill(it.rule, W.COLORS.border)
+      -- a submenu: a dim arrow on the right (the game's font has no triangle glyphs)
+      it.arrow = it:CreateTexture(nil, "ARTWORK")
+      it.arrow:SetTexture("Interface\\ChatFrame\\ChatFrameExpandArrow")
+      it.arrow:SetSize(10, 10)
+      it.arrow:SetPoint("RIGHT", -4, 0)
+      it.arrow:SetVertexColor(0.6, 0.62, 0.66, 1)
       menu.items[i] = it
     end
-    it.text:SetText(e.text)
+    -- { separator = true } is a line between groups; { text, submenu = true } opens more choices (its func)
+    local sep = e.separator == true
+    it:ClearAllPoints()
+    it:SetPoint("TOPLEFT", 3, -top)
+    it:SetPoint("RIGHT", -3, 0)
+    it:SetHeight(sep and SEP or ROW)
+    top = top + (sep and SEP or ROW)
+    it.rule:SetShown(sep)
+    it.hl:SetShown(not sep)
+    it:EnableMouse(not sep)
+    it.text:SetText(sep and "" or e.text)
     it.text:SetTextColor(e.disabled and 0.5 or 1, e.disabled and 0.5 or 1, e.disabled and 0.5 or 1)
-    it.check:SetShown(e.checked == true)
+    it.check:SetShown(not sep and e.checked == true)
+    it.arrow:SetShown(not sep and e.submenu == true)
     it:SetScript("OnClick", function()
+      if sep then
+        return
+      end
       menu:Hide()
       if e.func and not e.disabled then
         e.func()
       end
     end)
     it:Show()
-    width = math.max(width, (it.text:GetStringWidth() or 0) + 34)
+    width = math.max(width, (it.text:GetStringWidth() or 0) + 34 + (e.submenu and 14 or 0))
   end
   for i = #entries + 1, #menu.items do
     menu.items[i]:Hide()
   end
   menu.anchor = anchor
-  menu:SetSize(width, #entries * ROW + 6)
+  menu:SetSize(width, top + 3)
   menu:ClearAllPoints()
   local x, y
   if opts and opts.cursor and GetCursorPosition then
@@ -2018,6 +2041,40 @@ function W.Heading(parent, text, x, y)
   h:SetPoint("TOPLEFT", x, y)
   h:SetText(text)
   return h
+end
+
+-- A panel: the window's panel colour with the discreet grey border (lists, the Guide's article, the AH tabs'
+-- panes). pad: also make panel.inner, a frame inset by that much, for the content.
+function W.Panel(parent, pad)
+  local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+  W.Skin(f, W.COLORS.panel)
+  if pad then
+    f.inner = CreateFrame("Frame", nil, f)
+    f.inner:SetPoint("TOPLEFT", pad, -pad)
+    f.inner:SetPoint("BOTTOMRIGHT", -pad, pad)
+  end
+  return f
+end
+
+-- A page heading: a gold title and a dim subtitle after it on the same line (the Crafting pages, the vendor panel,
+-- the AH tabs' lists). Anchor the returned frame's left and right; :Set(title, subtitle).
+function W.PageHeading(parent)
+  local f = CreateFrame("Frame", nil, parent)
+  f:SetHeight(16)
+  f.title = W.Text(f, "GameFontNormal")
+  f.title:SetPoint("BOTTOMLEFT", 0, 2)
+  f.title:SetWordWrap(false)
+  f.subtitle = W.Text(f, "GameFontDisableSmall")
+  -- the bottoms line up, so the smaller subtitle sits on the title's baseline
+  f.subtitle:SetPoint("BOTTOMLEFT", f.title, "BOTTOMRIGHT", 8, 1)
+  f.subtitle:SetPoint("RIGHT", f, "RIGHT", 0, 0)
+  f.subtitle:SetWordWrap(false)
+  function f:Set(title, subtitle)
+    self.title:SetText(title or "")
+    self.subtitle:SetText(subtitle or "")
+    self.subtitle:SetShown((subtitle or "") ~= "")
+  end
+  return f
 end
 
 -- A short fixed list of text rows with buttons on the right (people, requests). Anchor the returned frame.
