@@ -13,11 +13,13 @@ local HOUSES = {
   { "Horde", L["Horde AH"] },
   { "Neutral", L["Goblin AH"] },
 }
+-- the age filter says what it filters ("Data up to 3 days"), as the design's "Data ≤ 3 days" does: the game's
+-- fonts have no ≤
 local AGES = {
-  { 1, L["Up to 1 day"] },
-  { 3, L["Up to 3 days"] },
-  { 7, L["Up to 7 days"] },
-  { false, L["Any age"] },
+  { 1, L["Data up to 1 day"] },
+  { 3, L["Data up to 3 days"] },
+  { 7, L["Data up to 7 days"] },
+  { false, L["Data of any age"] },
 }
 UI.ARB_SIDEBAR = UI.SIDE_PANEL_W
 UI.ARB_POST_UNITS = 20 -- deposit basis when the route's depth isn't known: one post of up to this many
@@ -36,16 +38,7 @@ local COLUMNS = {
   { key = "name", label = L["Item"], width = 180, item = true, sortKey = false },
   { key = "buy", label = L["Buy"], width = 80, format = "money", term = "arbBuy" },
   { key = "sell", label = L["Sell"], width = 80, format = "money", term = "arbSell" },
-  {
-    key = "net",
-    money = true,
-    label = L["Net"],
-    width = 80,
-    term = "arbNet",
-    text = function(e)
-      return W.SignedMoney(e.net)
-    end,
-  },
+  { key = "net", label = L["Net"], width = 80, format = "signedMoney", term = "arbNet" },
   {
     key = "margin",
     label = L["Margin"],
@@ -147,7 +140,7 @@ function UI:CreateArbitrageView(parent, contentArea)
   })
   v.minMargin:SetPoint("LEFT", v.minProfit, "RIGHT", 6, 0)
   v.minMargin:SetWidth(90)
-  v.age = W.Dropdown(bar, 104, AGES, function(value)
+  v.age = W.Dropdown(bar, 124, AGES, function(value)
     UI.arb.maxAge = value
     UI:RefreshArbitrage(true)
   end, { neutral = true })
@@ -235,30 +228,9 @@ end
 function UI:CreateRouteSidebar(v, side)
   local col = UI.Stack(side.content, 0)
   local r = {}
-  local st = col:Card(0).stack
-  r.name = st:Text("GameFontNormalLarge")
-  r.name:SetWordWrap(false)
-  r.nameHover = W.ItemHover(side.content, r.name, r.name) -- the game's item tooltip over the name
-  r.hint = st:Text("GameFontDisableSmall", 4)
-  st = col:Card().stack
-  r.buy = st:Pair(L["Buy at"], "arbBuy")
-  r.sell = st:Pair(L["Sells for"], "arbSell")
-  r.cut = st:Pair(L["AH cut"], nil)
-  r.deposit = st:Pair(L["Deposit if unsold"], "arbDeposit")
-  r.rule = st:Row(1, 6) -- a line above "You net"
-  local line = r.rule:CreateTexture(nil, "ARTWORK")
-  line:SetAllPoints()
-  W.Fill(line, W.COLORS.border)
-  r.net = st:Pair(L["You net"], "arbNet", 6)
-  r.net.label:SetFontObject("GameFontNormal")
-  r.net.value:SetFontObject("GameFontHighlight")
-  r.margin = st:Pair(L["Margin"], "arbMargin")
-  st = col:Card().stack
-  r.buyAge = st:Pair(L["Buy-side data"], "arbAge")
-  r.sellAge = st:Pair(L["Sell-side data"], "arbAge")
-  r.rate = st:Pair(L["Sales per day there"], "arbSellRate")
-  r.depth = st:Pair(L["Depth"], "arbDepth")
-  r.warn = st:Text("GameFontDisableSmall", 6)
+  r.title = col:Card(0) -- the item as a link, and the route under it
+  r.cost = col:Card() -- what it pays: buy, sell, the cut, the deposit, then what you net
+  r.data = col:Card() -- how fresh each side is and how fast it sells; a warning as the note
   local actions = col:Row(26, 10)
   r.search = W.Button(actions, L["Search"], 140, 26, function()
     if UI.arbRoute then
@@ -323,18 +295,36 @@ function UI:RenderRoute()
     end
   end
   self.arbRoute = e
-  local parts = { r.sell, r.cut, r.deposit, r.buy, r.net, r.margin, r.depth, r.rate, r.buyAge, r.sellAge }
   local buyHouse, sellHouse = ns.HOUSE_LABEL[a.buy], ns.HOUSE_LABEL[a.sell]
+  -- the cards keep the same rows with or without a route (dashes without), so r.buy ... r.depth stay the same rows
+  local function cards(cost, data, note)
+    r.cost:SetContent({ rows = cost })
+    r.data:SetContent({ rows = data, note = note })
+    local c, d = r.cost.rows, r.data.rows
+    r.buy, r.sell, r.cut, r.deposit, r.net, r.margin = c[1], c[2], c[3], c[4], c[5], c[6]
+    r.buyAge, r.sellAge, r.rate, r.depth = d[1], d[2], d[3], d[4]
+    r.warn = r.data.parts.note
+  end
+  local cut = L["%d%% cut"]:format(W.CutPct(self.arbCut))
   if not e then
-    r.name:SetText(W.Dim(L["Select a route"]))
-    r.nameHover:SetItem(false)
-    r.hint:SetText(
-      L["Click a row to see what the route pays after the cut and the deposit, and how fresh both prices are."]
-    )
-    for _, p in ipairs(parts) do
-      p.value:SetText("-")
-    end
-    r.warn:SetText("")
+    r.title:SetContent({
+      title = W.Dim(L["Select a route"]),
+      subtitle = L["Click a row to see what the route pays after the cut and the deposit, and how fresh both prices are."],
+    })
+    local dash = "-"
+    cards({
+      { label = L["Buy at"], text = dash, term = "arbBuy" },
+      { label = L["Sells for"], text = dash, term = "arbSell" },
+      { label = L["AH cut"], text = dash },
+      { label = L["Deposit if unsold"], text = dash, term = "arbDeposit" },
+      { label = L["You net"], text = dash, total = true, term = "arbNet" },
+      { label = L["Margin"], text = dash, term = "arbMargin" },
+    }, {
+      { label = L["Buy-side data"], text = dash, term = "arbAge" },
+      { label = L["Sell-side data"], text = dash, term = "arbAge" },
+      { label = L["Sales per day there"], text = dash, term = "arbSellRate" },
+      { label = L["Depth"], text = dash, term = "arbDepth" },
+    })
     r.search:Hide()
     r.chart:Hide()
     r.searchHint:SetText("")
@@ -342,33 +332,38 @@ function UI:RenderRoute()
     v.sidebar.pane:Measure()
     return
   end
-  local name, _, quality = W.ItemInfo(e.itemID)
-  r.name:SetText(W.QualityText(quality, name or ("item:" .. e.itemID)))
-  r.nameHover:SetItem(e.itemID)
-  r.hint:SetText(L["%s to %s"]:format(buyHouse, sellHouse))
-  r.buy.label:SetText(L["Buy at the %s"]:format(buyHouse))
-  r.buy.value:SetText(W.Money(e.buy))
-  r.sell.label:SetText(L["Sells at the %s"]:format(sellHouse))
-  r.sell.value:SetText(W.Money(e.sell))
-  r.cut.label:SetText(L["%d%% cut"]:format(math.floor((self.arbCut or 0) * 100 + 0.5)))
-  r.cut.value:SetText(W.Color("bad", "- " .. W.Money(e.fee)))
-  r.deposit.value:SetText(e.deposit and W.Money(e.deposit) or W.NONE)
-  r.net.value:SetText(
-    W.Color(e.net >= 0 and "good" or "bad", (e.net >= 0 and "+" or "-") .. W.Plain(W.Money(math.abs(e.net))))
-  )
-  r.margin.value:SetText(W.Percent(e.margin, 0))
-  r.depth.value:SetText(self:DepthText(e))
-  r.rate.value:SetText(e.sellRate and ("~" .. W.Count(e.sellRate)) or W.NONE)
-  r.buyAge.value:SetText(self:SideData(a.buy, e.buyAge))
-  r.sellAge.value:SetText(self:SideData(a.sell, e.sellAge))
+  r.title:SetContent({ item = e.itemID, subtitle = L["%s to %s"]:format(buyHouse, sellHouse) })
   local old = math.max(e.buyAge or 0, e.sellAge or 0)
+  local note
   if old > UI.STALE_DAYS then
-    r.warn:SetText(W.Color("warn", L["One side is %d days old: scan both auction houses before you buy."]:format(old)))
+    note = W.Color("warn", L["One side is %d days old: scan both auction houses before you buy."]:format(old))
   elseif (e.buyAge or 0) >= 1 then
-    r.warn:SetText(L["The buy price is a day or more old: search it before you travel."])
+    note = L["The buy price is a day or more old: search it before you travel."]
   else
-    r.warn:SetText(L["Search the buy house to see how many units still pay (Depth)."])
+    note = L["Search the buy house to see how many units still pay (Depth)."]
   end
+  cards({
+    { label = L["Buy at the %s"]:format(buyHouse), copper = e.buy, term = "arbBuy" },
+    { label = L["Sells at the %s"]:format(sellHouse), copper = e.sell, term = "arbSell" },
+    { label = cut, copper = -e.fee, signed = true },
+    {
+      label = L["Deposit if unsold"],
+      copper = e.deposit,
+      text = e.deposit == nil and W.NONE or nil,
+      term = "arbDeposit",
+    },
+    { label = L["You net"], copper = e.net, signed = true, total = true, term = "arbNet" },
+    { label = L["Margin"], text = W.Percent(e.margin, 0), term = "arbMargin" },
+  }, {
+    { label = L["Buy-side data"], text = self:SideData(a.buy, e.buyAge), term = "arbAge" },
+    { label = L["Sell-side data"], text = self:SideData(a.sell, e.sellAge), term = "arbAge" },
+    {
+      label = L["Sales per day there"],
+      text = e.sellRate and ("~" .. W.Count(e.sellRate)) or W.NONE,
+      term = "arbSellRate",
+    },
+    { label = L["Depth"], text = self:DepthText(e), term = "arbDepth" },
+  }, note)
   r.search:Show()
   r.chart:Show()
   r.search.label:SetText(L["Search at the %s"]:format(buyHouse))

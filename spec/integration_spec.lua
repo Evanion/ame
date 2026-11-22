@@ -1947,6 +1947,8 @@ describe("addon in a stubbed client", function()
       assert.truthy(route.cut.label.text:find("15%%"))
       assert.truthy(route.buyAge.value.text:find("your scan"), route.buyAge.value.text) -- source and age
       assert.truthy(route.searchHint.text:find("Visit the Horde AH")) -- we're at the goblin AH
+      assert.are.equal(2589, route.title.parts.item.key) -- the card's title is the item as a link
+      assert.are.equal("total", route.net.kind) -- "You net" is the cost card's total, under a rule
       ns.ItemCache.Get(2589).sellPrice = 1000
       ns.UI:RefreshArbitrage(true)
       drainJobs()
