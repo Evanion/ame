@@ -151,6 +151,7 @@ function UI:LevelingRows(m)
           local price = W.Plain(W.Money(st.learn, true))
           rows[#rows + 1] = {
             note = true,
+            forEntry = c,
             skill = st.from,
             itemID = c.recipeItem, -- the table shows the recipe item as a link, with what it costs after it
             learn = L["learn · AH %s · needs %d"]:format(price, c.learnAt or 0),
@@ -161,6 +162,7 @@ function UI:LevelingRows(m)
         elseif c.estimated then
           rows[#rows + 1] = {
             note = true,
+            forEntry = c,
             skill = st.from,
             text = function()
               return L["Train %s · trainer, about %d"]:format(link(c.recipe.product or 0), c.learnAt)
@@ -182,7 +184,44 @@ function UI:LevelingRows(m)
       ),
     }
   end
-  return rows
+  return self:LevelingSearch(rows)
+end
+
+-- the toolbar's search narrows the steps to the recipes whose name has it: a step by what it makes (an enchant by
+-- its own name), a learn / train line with its step; rank training and the "stuck" line stay out of a search
+function UI:LevelingSearch(rows)
+  local text = self.craftSearch
+  if not text or text == "" then
+    return rows
+  end
+  local kept = {}
+  for _, r in ipairs(rows) do
+    local c = r.entry
+    if c then
+      local name = not c.recipe.product and ns.Crafters.RecipeName(c.recipe.id) or nil
+      kept[c] = self:CraftFilter({ itemID = c.recipe.product, name = name }, nil) or nil
+    end
+  end
+  local out = {}
+  for _, r in ipairs(rows) do
+    if (r.entry and kept[r.entry]) or (r.forEntry and kept[r.forEntry]) then
+      out[#out + 1] = r
+    end
+  end
+  return out
+end
+
+-- the whole path's crafts onto the craft queue, in order (its parts are worked out there)
+function UI:LevelingQueue()
+  local lv = self.leveling
+  if not lv then
+    return
+  end
+  local plan = lv.plans[self.levelGoal or "recovery"]
+  self:QueueCrafts(
+    ns.Leveling.QueueList(plan),
+    L["%s to %d"]:format(lv.choice.p.name or "?", lv.target) .. " (" .. L["%d crafts"]:format(plan.crafts) .. ")"
+  )
 end
 
 local function resultsText(st)
