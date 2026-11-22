@@ -169,20 +169,32 @@ Help.TERMS = {
   },
 }
 
--- show a term's explanation on hover
+-- show a term's explanation on hover. key: a term, or function(frame) -> term for a reused frame whose term changes
+-- (a card's pooled rows); no term, no tooltip
 function Help.Explain(frame, key)
-  local term = Help.TERMS[key]
-  if not term then
+  local dynamic = type(key) == "function"
+  if not dynamic and not Help.TERMS[key] then
     return
   end
-  W.Tooltip(frame, function(tip)
+  local function keyOf(self)
+    if dynamic then
+      return key(self)
+    end
+    return key
+  end
+  W.Tooltip(frame, function(tip, self)
+    local term = Help.TERMS[keyOf(self) or ""]
+    if not term then
+      return false
+    end
     W.TipText(tip, term[1], term[2])
     tip:AddLine(L["Right-click: open it in the Guide's glossary"], 0.5, 0.5, 0.5)
   end, "ANCHOR_TOP")
   -- right-click: the term's glossary entry on the Guide tab
-  frame:HookScript("OnMouseUp", function(_, button)
-    if button == "RightButton" and ns.UI and ns.UI.ShowGuide then
-      ns.UI:ShowGuide(key)
+  frame:HookScript("OnMouseUp", function(self, button)
+    local k = keyOf(self)
+    if button == "RightButton" and Help.TERMS[k or ""] and ns.UI and ns.UI.ShowGuide then
+      ns.UI:ShowGuide(k)
     end
   end)
 end

@@ -102,10 +102,10 @@ local function newObject(kind)
       self.text = t
     end,
     GetText = function(self)
-      return self.text
+      return rawget(self, "text")
     end,
     GetStringWidth = function(self)
-      return #(self.text or "") * 6
+      return #(rawget(self, "text") or "") * 6
     end,
     GetStringHeight = function()
       return 12
@@ -113,8 +113,10 @@ local function newObject(kind)
     CreateTexture = function()
       return newObject("Texture")
     end,
-    CreateFontString = function()
-      return newObject("FontString")
+    CreateFontString = function(_, _, _, font)
+      local fs = newObject("FontString")
+      fs._font = font
+      return fs
     end,
     CreateLine = function()
       return newObject("Line")
@@ -153,6 +155,12 @@ local function newObject(kind)
     end,
     SetTextColor = function(self, r, g, b, a)
       self._textColor = { r, g, b, a }
+    end,
+    SetFontObject = function(self, font)
+      self._font = font
+    end,
+    EnableMouse = function(self, on)
+      self.mouse = on
     end,
     SetTexture = function(self, t)
       self._texture = t

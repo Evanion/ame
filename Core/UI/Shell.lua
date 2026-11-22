@@ -136,8 +136,14 @@ function UI.Stack(content, pad)
     W.Skin(card, W.COLORS.panel)
     card.card = true
     card.stack = UI.Stack(card, 8)
+    card.SetContent = UI.SetCardContent
+    card.parts, card.redraw, card.fitWidth = false, false, false -- set by SetContent
     function card:Fit(width)
-      self:SetHeight(self.stack:Height(width))
+      if self.parts then
+        UI.LayoutCardContent(self, width)
+      else
+        self:SetHeight(self.stack:Height(width))
+      end
     end
     return card
   end
@@ -177,6 +183,169 @@ function UI.Stack(content, pad)
     return row
   end
   return st
+end
+
+-- Card content: card:SetContent(c) draws a whole label / value card from a table, so views describe a card instead
+-- of building and re-filling its pieces by hand. Every piece is optional:
+--   title, titleColor (a text role or "RRGGBB"; white by default)   or   item, count: the title as an item link
+--   subtitle: a dim line under the title           note: a dim wrapped line under the rows
+--   rows = { { label, copper | text, signed, color, total, big, term, item, count, hidden }, ... }
+--     copper: money (W.Money, or W.SignedMoney with every unit when signed); text: any text, in color if given
+--     total: a rule above and a brighter, larger line (a sum); big: a headline value
+--     term: the label explains itself on hover (Help); item (+ count): an item link before the label
+--     hidden: left out, taking no room (so a card can keep a row's place in its list)
+-- The pieces are made on the first call and reused on every later one: card.rows[i] keeps its .label and .value
+-- font strings, so callers and specs can read them. A card uses SetContent or its stack, not both.
+local CARD_PAD = 8
+local CARD_ROW_H, CARD_BIG_H, CARD_TOTAL_PAD = 16, 22, 4
+local CARD_FONTS = {
+  plain = { "GameFontDisableSmall", "GameFontHighlightSmall" },
+  total = { "GameFontHighlight", "GameFontHighlight" },
+  big = { "GameFontHighlight", "GameFontHighlightLarge" },
+}
+
+local function cardRow(card)
+  local row = CreateFrame("Frame", nil, card)
+  row.rule = row:CreateTexture(nil, "ARTWORK")
+  row.rule:SetHeight(1)
+  row.rule:SetPoint("TOPLEFT", 0, 0)
+  row.rule:SetPoint("TOPRIGHT", 0, 0)
+  W.Fill(row.rule, W.COLORS.border)
+  -- label and value share a bottom line, so a big value and its small label sit on one baseline
+  row.label = W.Text(row, "GameFontDisableSmall")
+  row.label:SetPoint("BOTTOMLEFT", 0, 2)
+  row.label:SetWordWrap(false)
+  row.value = W.Text(row, "GameFontHighlightSmall", "RIGHT")
+  row.value:SetPoint("BOTTOMRIGHT", 0, 2)
+  row.value:SetPoint("LEFT", row.label, "RIGHT", 6, 0)
+  row.value:SetWordWrap(false)
+  W.EnableLinks(row) -- the label's item link
+  if ns.Help then
+    ns.Help.Explain(row, function(self)
+      return self.term
+    end)
+  end
+  return row
+end
+
+local function cardParts(card)
+  local p = { rows = {} }
+  p.title = W.Text(card, "GameFontHighlightLarge")
+  p.title:SetWordWrap(false)
+  p.title.wraps = false
+  p.item = W.ItemLink(card, { icon = 16 })
+  p.item:SetFont(14, true)
+  p.subtitle = W.Text(card, "GameFontDisableSmall")
+  p.subtitle:SetWordWrap(true)
+  p.subtitle:SetJustifyV("TOP")
+  p.subtitle.wraps = true
+  p.note = W.Text(card, "GameFontDisableSmall")
+  p.note:SetWordWrap(true)
+  p.note:SetJustifyV("TOP")
+  p.note.wraps = true
+  card.parts, card.rows = p, p.rows
+  return p
+end
+
+local function cardValue(r)
+  if r.copper ~= nil then
+    return r.signed and W.SignedMoney(r.copper, { full = true }) or W.Money(r.copper)
+  end
+  if r.text == nil then
+    return ""
+  end
+  return r.color and W.Color(r.color, r.text) or tostring(r.text)
+end
+
+function UI.SetCardContent(card, c)
+  c = c or {}
+  card.contentData = c
+  local p = card.parts or cardParts(card)
+  -- an item name the client hasn't loaded yet comes back through this
+  card.redraw = card.redraw or function()
+    card:SetContent(card.contentData)
+  end
+  if c.item then
+    p.item:SetItem(c.item, c.count)
+    p.title:SetText("")
+  else
+    p.item:SetItem(false)
+    p.title:SetText(c.title or "")
+    local tc = c.titleColor and W.RGB(c.titleColor) or W.COLORS.text
+    p.title:SetTextColor(tc[1], tc[2], tc[3], 1)
+  end
+  p.subtitle:SetText(c.subtitle or "")
+  p.note:SetText(c.note or "")
+  local n = 0
+  for _, r in ipairs(c.rows or {}) do
+    if not r.hidden then
+      n = n + 1
+      local row = p.rows[n] or cardRow(card)
+      p.rows[n] = row
+      local kind = r.total and "total" or r.big and "big" or "plain"
+      row.kind = kind
+      row.label:SetFontObject(CARD_FONTS[kind][1])
+      row.value:SetFontObject(CARD_FONTS[kind][2])
+      local label = r.label or ""
+      if r.item then
+        label = W.LinkText(r.item, r.count, card.redraw) .. (label ~= "" and " " .. label or "")
+      end
+      row.label:SetText(label)
+      row.value:SetText(cardValue(r))
+      row.rule:SetShown(kind == "total")
+      row:SetHeight((kind == "big" and CARD_BIG_H or CARD_ROW_H) + (kind == "total" and CARD_TOTAL_PAD or 0))
+      row.term = r.term or false
+      row:EnableMouse((row.term or r.item) and true or false)
+      row:Show()
+    end
+  end
+  for i = n + 1, #p.rows do
+    p.rows[i]:Hide()
+  end
+  p.shownRows = n
+  card:Fit(card.fitWidth)
+end
+
+-- Lays the content out from the top and sizes the card to it; pieces with nothing to show take no room.
+-- width: the card's width (wrapped lines measure at it), or the last one given.
+function UI.LayoutCardContent(card, width)
+  local p = card.parts
+  width = width or card.fitWidth
+  card.fitWidth = width
+  local inner = width and math.max(1, width - 2 * CARD_PAD)
+  local y, gap = CARD_PAD, 0
+  local function place(obj, h, before)
+    y = y + (gap > 0 and (before or 2) or 0)
+    obj:ClearAllPoints()
+    obj:SetPoint("TOPLEFT", card, "TOPLEFT", CARD_PAD, -y)
+    if obj ~= p.item then
+      obj:SetPoint("RIGHT", card, "RIGHT", -CARD_PAD, 0)
+    end
+    y, gap = y + h, 1
+  end
+  local function text(fs, before)
+    local t = fs:GetText()
+    if not t or t == "" then
+      fs:Hide()
+      return
+    end
+    fs:Show()
+    if inner and fs.wraps then
+      fs:SetWidth(inner) -- wrapped text measures at its real width now
+    end
+    place(fs, fs:GetStringHeight() or 12, before)
+  end
+  text(p.title)
+  if p.item:IsShown() then
+    place(p.item, p.item:GetHeight() or 16)
+  end
+  text(p.subtitle)
+  for i = 1, p.shownRows or 0 do
+    local row = p.rows[i]
+    place(row, row:GetHeight() or CARD_ROW_H, i == 1 and 4 or 0)
+  end
+  text(p.note, 4)
+  card:SetHeight(y + CARD_PAD)
 end
 
 -- Re-measure after the game lays text out: fn() now, and once more on the next frame (wrapped text only gets its
