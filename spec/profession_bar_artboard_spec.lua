@@ -86,6 +86,39 @@ describe("Who can make it pieces", function()
     assert.are.equal("crafter", lines[3].kind)
     assert.are.equal("", V.Meta(0))
     assert.are.equal("recipes from 38 players · guild and trusted", V.Meta(38))
+
+    -- Whisper: the game's own "whisper this player", with the whole name (Forever's names have two words), then the
+    -- link; never "/w First Last", which whispers First with Last as the message
+    local told, typed, linked
+    rawset(_G, "ChatFrame_SendTell", function(name)
+      told = name
+    end)
+    rawset(_G, "ChatFrame_OpenChat", function(text)
+      typed = text
+    end)
+    rawset(_G, "ChatEdit_InsertLink", function(link)
+      linked = link
+    end)
+    finally(function()
+      rawset(_G, "ChatFrame_SendTell", nil)
+      rawset(_G, "ChatFrame_OpenChat", nil)
+      rawset(_G, "ChatEdit_InsertLink", nil)
+    end)
+    ns.Crafters = ns.Crafters or {}
+    ns.Crafters.RecipeName = function()
+      return "Enchant Weapon - Crusader"
+    end
+    V.Whisper("Roach Earthshaker", 100)
+    assert.are.equal("Roach Earthshaker", told)
+    assert.is_nil(typed)
+    assert.is_not_nil(linked)
+    -- an old client without it: "/w" for a one-word name, nothing for two words
+    rawset(_G, "ChatFrame_SendTell", nil)
+    V.Whisper("Sela", 100)
+    assert.are.equal("/w Sela ", typed)
+    typed = nil
+    V.Whisper("Roach Earthshaker", 100)
+    assert.is_nil(typed)
   end)
 end)
 

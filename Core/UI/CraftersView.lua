@@ -28,13 +28,19 @@ local function linkFor(recipeID)
   return spellLink or ns.Crafters.RecipeName(recipeID)
 end
 
--- open the chat box to a crafter with the item linked (you press Enter)
+-- open the chat box to a crafter with the item linked (you press Enter). The game's own "whisper this player"
+-- (SendTell, as its player menu does) takes the whole name: on WoW Forever names have two words ("Roach
+-- Earthshaker"), and "/w Roach Earthshaker" would whisper "Roach" with "Earthshaker" as the message.
 function V.Whisper(name, recipeID)
+  local tell = (ChatFrameUtil and ChatFrameUtil.SendTell) or _G.ChatFrame_SendTell
   local open = _G.ChatFrame_OpenChat or (ChatFrameUtil and ChatFrameUtil.OpenChat)
-  if not open then
+  if tell then
+    tell(name)
+  elseif open and not name:find(" ", 1, true) then
+    open("/w " .. name .. " ")
+  else
     return
   end
-  open("/w " .. name .. " ")
   local insert = _G.ChatEdit_InsertLink or (ChatFrameUtil and ChatFrameUtil.InsertLink)
   local link = linkFor(recipeID)
   if insert and link then
