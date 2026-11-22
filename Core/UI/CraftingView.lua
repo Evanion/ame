@@ -937,6 +937,8 @@ function UI:CreateCraftingView(parent, contentArea)
           ns.CraftersView.Whisper(d.crafter, d.recipe)
         end,
       } or nil,
+      -- Top earners opens on profit per craft (Market/day is the whole market's, not what you'd earn)
+      sort = mode == "earners" and { key = "profit", ascending = false } or nil,
       rows = 16,
       fill = true,
       top = 0,

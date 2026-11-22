@@ -1047,6 +1047,8 @@ describe("addon in a stubbed client", function()
         v.pageLinks.earners.scripts.OnClick(v.pageLinks.earners)
         assert.are.equal("earners", ns.UI.craftMode)
         assert.is_true(v.pageLinks.earners.sel:IsShown())
+        assert.are.equal("profit", v.tables.earners.sort.key) -- opens on profit per craft, best first
+        assert.is_false(v.tables.earners.sort.ascending)
         rows = ns.UI.craftRows
         assert.are.equal(1, #rows)
         assert.are.equal(1251, rows[1].itemID)
