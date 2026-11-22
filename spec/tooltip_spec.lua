@@ -156,7 +156,8 @@ describe("Tooltip.Lines", function()
       assert.truthy(t:find("<Iron Ledger> guild bank = 5", 1, true), t)
       assert.truthy(t:find("Average cost = 50g", 1, true), t)
       assert.truthy(t:find("Unrealized = +59g 80s", 1, true), t) -- (55g 98s - 50g) x 10
-      assert.truthy(t:find("Goblin AH (15%) = 70g  >  59g 50s  +12%", 1, true), t)
+      assert.truthy(t:find("Goblin AH (15%) +12% = 70g  >  59g 50s", 1, true), t)
+      assert.is_nil(t:find("Horde AH (5%) +", 1, true)) -- yours: no margin against itself
       assert.truthy(t:find("lowest"))
       assert.truthy(t:find("/week"))
       assert.truthy(t:find("volatility"))

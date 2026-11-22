@@ -209,13 +209,14 @@ function Tooltip.Lines(s, opts)
       end
     end
     for _, h in ipairs(houses) do
+      -- how much more it pays than yours, after the label and its cut: only when it does
       local vs = ""
-      if mine and mine > 0 and not h.mine then
-        vs = "  " .. W.Percent(h.net / mine - 1, 0)
+      if mine and mine > 0 and not h.mine and h.net > mine then
+        vs = " " .. W.Color("good", ("+%d%%"):format(pct(h.net / mine - 1)))
       end
       rows[#rows + 1] = {
-        h.label .. Dim((" (%d%%)"):format(pct(h.cut))),
-        money(h.market) .. Dim("  >  ") .. money(h.net) .. vs,
+        h.label .. Dim((" (%d%%)"):format(pct(h.cut))) .. vs,
+        money(h.market) .. Dim("  >  ") .. money(h.net),
       }
     end
   end
