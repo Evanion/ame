@@ -399,7 +399,7 @@ function Help.Articles()
             H(L["Sell or refine"]),
             L["For the materials your characters hold: sell them as they are, or craft them into something worth more and sell that. Takes says how long the market needs to absorb what you'd list."],
             H(L["Recipes to buy"]),
-            L["Recipes on the auction house that one of your characters could learn and none knows yet, ranked by payback: the recipe's price divided by its Market/day - at best, if you sold all the market takes; with other sellers it takes longer. Recipes that need more skill are listed after the ones you can learn now."],
+            L["Recipes on the auction house that one of your characters could learn and none knows yet, by profit per craft. Click one for when it pays back: the recipe's price divided by its Market/day - at best, if you sold all the market takes; with other sellers it takes longer. Recipes that need more skill are listed after the ones you can learn now."],
             L["Network says how many in your guild and trusted players already know it. Only what nobody has keeps the gaps: recipes nobody you know can craft yet. Players who don't run AME aren't counted."],
             H(L["Leveling"]),
             L["The cheapest way to raise a profession from where a character is to the skill you pick, recalculated from today's prices. For every skill point AME picks the recipe with the lowest expected cost per point: how many crafts a point takes (always one while a recipe is orange, more as it turns yellow and green) times what a craft costs, minus what its result gets back."],

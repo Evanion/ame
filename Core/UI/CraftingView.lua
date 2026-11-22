@@ -518,7 +518,7 @@ function UI:CraftingModeRows(m)
   local out = {}
   for _, r in ipairs(rows) do
     r.itemID = r.item
-    r.perDay = r.eval.perDay
+    r.perDay, r.profit = r.eval.perDay, r.eval.profit
     local others = 0
     for _, c in ipairs(shared and r.spell and shared:WhoKnows(r.spell) or {}) do
       if not c.mine then
@@ -752,6 +752,16 @@ local COLUMNS = {
       end,
     },
     {
+      -- profit per craft of what it teaches (how long it takes to pay back is in the sidebar)
+      key = "profit",
+      money = true,
+      label = L["Profit"],
+      width = 72,
+      text = function(r)
+        return r.profit and W.SignedMoney(r.profit) or W.Dim("-")
+      end,
+    },
+    {
       key = "perDay",
       money = true,
       label = L["Market/day"],
@@ -759,14 +769,6 @@ local COLUMNS = {
       width = 72,
       text = function(r)
         return r.perDay and W.Money(r.perDay, true) or W.Dim("-")
-      end,
-    },
-    {
-      key = "payback",
-      label = L["Pays back"],
-      width = 72,
-      text = function(r)
-        return days(r.payback)
       end,
     },
     {
@@ -937,8 +939,8 @@ function UI:CreateCraftingView(parent, contentArea)
           ns.CraftersView.Whisper(d.crafter, d.recipe)
         end,
       } or nil,
-      -- Top earners opens on profit per craft (Market/day is the whole market's, not what you'd earn)
-      sort = mode == "earners" and { key = "profit", ascending = false } or nil,
+      -- Top earners and Recipes to buy open on profit per craft (Market/day is the whole market's, not what you'd earn)
+      sort = (mode == "earners" or mode == "recipes") and { key = "profit", ascending = false } or nil,
       rows = 16,
       fill = true,
       top = 0,
