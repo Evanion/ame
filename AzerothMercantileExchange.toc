@@ -87,6 +87,7 @@ Core\UI\CraftingView.lua
 Core\UI\ProfessionBar.lua
 Core\UI\AHSelling.lua
 Core\UI\AHShopping.lua
+Core\UI\VendorPanel.lua
 Core\UI\CraftersView.lua
 Core\UI\Tooltip.lua
 Core\UI\SellAssist.lua

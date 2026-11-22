@@ -2198,6 +2198,61 @@ describe("addon in a stubbed client", function()
       end
     )
 
+    it(
+      "at a vendor: a panel with what your lists need from it, bought in its stacks; none when nothing is needed",
+      function()
+        boot()
+        local merchant = CreateFrame("Frame")
+        merchant:Show()
+        local bought = {}
+        local stubs = {
+          MerchantFrame = merchant,
+          GetMerchantNumItems = function()
+            return 2
+          end,
+          GetMerchantItemID = function(i)
+            return ({ 3371, 2320 })[i]
+          end,
+          GetMerchantItemInfo = function(i)
+            if i == 1 then
+              return "Empty Vial", 134400, 18, 5, -1, true, nil, false
+            end
+            return "Coarse Thread", 134400, 9, 1, -1, true, nil, false
+          end,
+          GetMerchantItemMaxStack = function()
+            return 100
+          end,
+          BuyMerchantItem = function(i, n)
+            bought[#bought + 1] = { i, n }
+          end,
+          GetMoney = function()
+            return 100000
+          end,
+        }
+        for k, v in pairs(stubs) do
+          rawset(_G, k, v)
+        end
+        finally(function()
+          for k in pairs(stubs) do
+            rawset(_G, k, nil)
+          end
+        end)
+        local V = ns.VendorPanel
+        env:fire("MERCHANT_SHOW")
+        assert.is_true(V.frame == nil or not V.frame:IsShown()) -- no list needs anything here: no panel
+        local i = ns.AME.shopping:AddList("Potions")
+        ns.AME.shopping:SetItem(i, 3371, 23)
+        env:fire("MERCHANT_SHOW")
+        assert.is_true(V.frame:IsShown())
+        assert.are.equal(1, #V.rows)
+        assert.are.equal(25, V.rows[1].buys)
+        V:Buy(V.rows[1])
+        assert.are.same({ { 1, 25 } }, bought) -- 5 stacks of 5, in one purchase
+        env:fire("MERCHANT_CLOSED")
+        assert.is_false(V.frame:IsShown())
+      end
+    )
+
     it("counts the guild bank (every tab, as last seen) with what your characters hold, for the tooltip", function()
       boot()
       local slots = { [1] = { [3] = { 2589, 20 } }, [2] = { [1] = { 2589, 5 }, [2] = { 2592, 1 } } }
