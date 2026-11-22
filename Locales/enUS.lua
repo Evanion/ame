@@ -178,6 +178,7 @@ L["Alerts that fired and players asking to share, kept here after chat scrolls o
 L["All"] = true
 L["All categories"] = true
 L["All characters"] = true
+L["All in bags + bank"] = true
 L["All items"] = true
 L["All markets: %s of price history."] = true
 L["All of AME's settings are in its own window: %s, Settings tab."] = true
@@ -219,7 +220,6 @@ L["Avg cost"] = true
 L["BUY"] = true
 L["BUY signal at %s"] = true
 L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] = true
-L["Bags + bank"] = true
 L["Balanced"] = true
 L["Best earner"] = true
 L["Best earners"] = true

@@ -73,7 +73,7 @@ describe("Tooltip.Lines", function()
     assert.truthy(t:find("Horde AH = now", 1, true), t) -- the header on a line of its own
     assert.truthy(t:find("  = each | your 43", 1, true), t) -- then the columns' heads
     assert.truthy(t:find("Market = 55g 98s | 2,407g", 1, true), t) -- each in the middle, all of yours on the right
-    assert.truthy(t:find("Vendor = · | 86s", 1, true), t)
+    assert.truthy(t:find("Vendor = 2s | 86s", 1, true), t) -- each, and for all of yours
     assert.truthy(t:find("You have 43 · bags 20 · bank 18 · guild bank 5", 1, true), t) -- one line, as drawn
   end)
 
@@ -83,7 +83,7 @@ describe("Tooltip.Lines", function()
     assert.truthy(t:find("You have 43 · bags 20 · bank 18 · guild bank 5", 1, true), t) -- not the 5 on the AH
     assert.truthy(t:find("guild bank 5 = \nAH 5 = ", 1, true), t) -- a line of its own, under it
     assert.truthy(t:find("your 43", 1, true), t) -- the totals are for what you have too
-    assert.truthy(t:find("Bags + bank = 123g 45s", 1, true), t)
+    assert.truthy(t:find("All in bags + bank = 123g 45s", 1, true), t)
   end)
 
   it("leaves out the comparison on the first day (nothing to compare with)", function()

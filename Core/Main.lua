@@ -750,8 +750,11 @@ function handlers.BANKFRAME_OPENED()
   ns.Trading.bankOpen = true
   ns.Trading:ScanBank()
 end
+-- (the game also sends this away from the bank, at login: the bank reads empty then, and what was recorded stays)
 function handlers.PLAYERBANKSLOTS_CHANGED()
-  ns.Trading:ScanBank()
+  if ns.Trading.bankOpen then
+    ns.Trading:ScanBank()
+  end
 end
 function handlers.BANKFRAME_CLOSED()
   ns.Trading.bankOpen = nil

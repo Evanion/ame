@@ -2515,6 +2515,16 @@ describe("addon in a stubbed client", function()
       assert.is_true(held.chars[1].me)
     end)
 
+    it("keeps what the bank held when the game says its slots changed away from the bank (it does at login)", function()
+      boot()
+      AME_DB.holdings[ns.Trading.CharKey()] = { bags = {}, bank = { [2589] = 40 } }
+      env:fire("PLAYERBANKSLOTS_CHANGED") -- not at the bank: the bank reads empty
+      assert.are.equal(40, AME_DB.holdings[ns.Trading.CharKey()].bank[2589])
+      env:fire("BANKFRAME_OPENED") -- at the bank: what's really there
+      assert.is_nil(AME_DB.holdings[ns.Trading.CharKey()].bank[2589])
+      env:fire("BANKFRAME_CLOSED")
+    end)
+
     it("lets you pick a fixed window theme in Settings, saved with the settings", function()
       boot()
       env.npcFaction = "Horde"

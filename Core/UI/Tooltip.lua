@@ -250,7 +250,7 @@ function Tooltip.Lines(s, opts)
 
   row(L["Market"], s.market, s.market and s.market * n)
   if many and (opts.vendor or 0) > 0 then
-    rows[#rows + 1] = { L["Vendor"], money(opts.vendor * n), Dim("·") }
+    row(L["Vendor"], opts.vendor, opts.vendor * n)
   end
   local de = opts.de
   if de and de.value then
@@ -268,7 +268,7 @@ function Tooltip.Lines(s, opts)
       rows[#rows + 1] = { L["AH"] .. " " .. Dim(W.Count(onAH)) }
     end
     if opts.stash and opts.stash > 0 then
-      rows[#rows + 1] = { L["Bags + bank"], money(opts.stash) }
+      rows[#rows + 1] = { L["All in bags + bank"], money(opts.stash) }
     end
     -- how it trades, one dim line: the change against its average (in its colour), how many sell a day (else how
     -- many are listed), how much of what's listed sells
