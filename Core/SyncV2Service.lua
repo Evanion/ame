@@ -122,6 +122,9 @@ function Service:SaveV2()
     end)
     AME_DB.sync.v2Partial = #items > 0 and { at = GetServerTime(), items = items } or nil
   end
+  -- the sync log (Service:Trace) kept over a /reload: the SavedVariables file shows what came in and why it was
+  -- turned down, without a report sent
+  AME_DB.sync.lastTrace = self.trace and { at = GetServerTime(), trace = self.trace, blocks = self.traceBlocks } or nil
 end
 
 -- a fresh full scan of mine: to the guild right away
