@@ -783,21 +783,110 @@ function W.SignalGlyph(signal)
   return s and (W.SignalIcon(signal) .. " " .. W.Color(s[1], s[2])) or W.NONE
 end
 
+-- the plain form of a signal: icon and word in its tone (tooltips, text lines); the design's plain SignalBadge
+W.SignalText = W.SignalGlyph
+
 -- A signal as a selectable button (W.Segmented's item[3]): the coloured glyph normally; selected, inverted - the
 -- button filled with the signal's colour and the icon and word in near-black (6:1 or better on every signal colour,
--- in both palettes). Worked out on each call, so it follows the colour-blind palette.
+-- in both palettes). Worked out on each call, so it follows the colour-blind palette. short: the icon alone.
 W.INVERTED_TEXT = "141414"
-function W.SignalTone(signal)
+function W.SignalTone(signal, short)
   return function(selected)
     local s = SIGNALS[signal]
     if not (selected and s) then
+      if short and s then
+        return W.SignalIcon(signal)
+      end
       return W.SignalGlyph(signal)
     end
     local hex = ns.HEX[s[1]] or "ffffff"
     local fill =
       { tonumber(hex:sub(1, 2), 16) / 255, tonumber(hex:sub(3, 4), 16) / 255, tonumber(hex:sub(5, 6), 16) / 255 }
-    return W.SignalIcon(signal, nil, W.INVERTED_TEXT) .. " " .. ns.Color(W.INVERTED_TEXT, s[2]), fill
+    local icon = W.SignalIcon(signal, nil, W.INVERTED_TEXT)
+    if short then
+      return icon, fill
+    end
+    return icon .. " " .. ns.Color(W.INVERTED_TEXT, s[2]), fill
   end
+end
+
+-- The Market's signal filter: one button per signal, the icon and word in its tone, the picked one inverted.
+--   W.SignalFilter(parent, {
+--     signals = { "all", "buy", "hold", "sell", "wait", "vendor", "disenchant" },  -- which, in order
+--     short = false,                -- icons only (narrow windows); "All" stays a word
+--     onSelect = function(key) end, minWidth = 40, height = 20,
+--   })
+-- Returns the W.Segmented: :Select(key, silent), .byKey, .buttons.
+W.SIGNAL_ORDER = { "all", "buy", "hold", "sell", "wait", "vendor", "disenchant" }
+function W.SignalFilter(parent, opts)
+  opts = opts or {}
+  local items = {}
+  for _, key in ipairs(opts.signals or W.SIGNAL_ORDER) do
+    if key == "all" then
+      items[#items + 1] = { "all", L["All"] }
+    elseif SIGNALS[key] then
+      local tone = W.SignalTone(key, opts.short)
+      items[#items + 1] = { key, (tone(false)), tone }
+    end
+  end
+  return W.Segmented(parent, items, {
+    minWidth = opts.minWidth or (opts.short and 28 or 40),
+    height = opts.height or 20,
+    onSelect = opts.onSelect,
+  })
+end
+
+-- A signal badge's colours: the word a little lighter than the signal's tone, on a pill that is a dark tint of it,
+-- darkened further where the word needs it to stay readable (4.5:1, WCAG AA). Worked out on each call, so it
+-- follows the colour-blind palette. -> word "RRGGBB", pill colour table (nil for no signal)
+W.BADGE_LIGHTEN, W.BADGE_TINT = 0.3, 0.3
+function W.SignalBadgeColors(signal)
+  local s = SIGNALS[signal]
+  if not s then
+    return nil
+  end
+  local c = W.RGB(ns.HEX[s[1]] or "ffffff")
+  local word = {}
+  for i = 1, 3 do
+    word[i] = c[i] + (1 - c[i]) * W.BADGE_LIGHTEN
+  end
+  local wordHex = hexOf(word)
+  for step = 100, 0, -5 do
+    local f = W.BADGE_TINT * step / 100
+    local pill = { c[1] * f, c[2] * f, c[3] * f, 1 }
+    if W.Contrast(wordHex, hexOf(pill)) >= 4.5 then
+      return wordHex, pill
+    end
+  end
+  return wordHex, { 0, 0, 0, 1 }
+end
+
+-- A signal as a badge: the icon and word on a tinted pill (tables, the item card, the profession bar).
+--   local badge = W.SignalBadge(parent); badge:SetSignal("buy")
+-- No signal ("none", nil): a dim dash, no pill. badge:GetWidth() is what it takes.
+function W.SignalBadge(parent)
+  local f = CreateFrame("Frame", nil, parent)
+  f:SetHeight(14)
+  f.pill = f:CreateTexture(nil, "BACKGROUND")
+  f.pill:SetAllPoints()
+  f.text = W.Text(f, "GameFontHighlightSmall", "CENTER")
+  f.text:SetPoint("CENTER", 0, 0)
+  f.text:SetWordWrap(false)
+  f.signal = false
+  function f:SetSignal(signal)
+    self.signal = signal or false
+    local wordHex, pill = W.SignalBadgeColors(signal)
+    if not wordHex then
+      self.pill:Hide()
+      self.text:SetText(W.NONE)
+    else
+      self.pill:SetColorTexture(pill[1], pill[2], pill[3], 1)
+      self.pill:Show()
+      self.text:SetText(W.SignalIcon(signal, 10, wordHex) .. " " .. ns.Color(wordHex, SIGNALS[signal][2]))
+    end
+    self:SetWidth(math.ceil(self.text:GetStringWidth() or 0) + (wordHex and 10 or 0))
+  end
+  return f
 end
 
 -- item name/icon/quality colour; may be nil until the client has cached the item (call again after load)

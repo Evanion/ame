@@ -13,6 +13,7 @@
 --         (a second item in the row: its own icon, hover and modified click; a plain click is the row's)
 --       { key = "net", label = "Net", width = 70, format = "signedMoney" },   -- "+1g 20s" / "-35s"
 --       { key = "share", label = "Share", width = 110, format = "share", max = 0.4 }, -- bar (full at max) and %
+--       { key = "signal", label = "Signal", width = 64, format = "signal" },  -- a SignalBadge (W.SignalBadge)
 --       { key = "buy", label = "", width = 50, button = { label = "Buy" or function(d) end,
 --           variant = function(d) return "primary" end, onClick = function(d) end, shown = fn, enabled = fn } },
 --     },
@@ -101,6 +102,12 @@ end
 
 local SHARE_W = 64 -- a share cell's bar track
 
+-- items, bars and badges read from the left, numbers from the right
+local LEFT_FORMATS = { share = true, signal = true }
+local function leftAligned(col)
+  return col.item or col.align == "LEFT" or LEFT_FORMATS[col.format] or false
+end
+
 -- a modified click on an item: the game's handling of a link (chat, try on). Shift-click is the owner's while it
 -- has a Shift-click of its own (shiftClick) and no chat box is open to take the link.
 local function linksItem(opts)
@@ -139,7 +146,7 @@ function DataTable.New(parent, opts)
     local h = CreateFrame("Button", nil, frame)
     h:SetHeight(18) -- width and position: t:Layout()
     h:SetShown(not opts.bare)
-    local left = col.item or col.align == "LEFT" or col.format == "share"
+    local left = leftAligned(col)
     h.text = W.Text(h, "GameFontNormalSmall", left and "LEFT" or "RIGHT")
     h.text:SetAllPoints()
     if col.term and ns.Help then
@@ -188,9 +195,9 @@ function DataTable.New(parent, opts)
     end
     row.cells = {}
     row.star, row.icon, row.conf, row.action = false, false, false, false -- optional parts, set below
-    row.links, row.shares, row.buttons = {}, {}, {} -- by column: other items, share bars, buttons
+    row.links, row.shares, row.buttons, row.badges = {}, {}, {}, {} -- by column: items, share bars, buttons, signals
     for c, col in ipairs(opts.columns) do
-      local left = col.item or col.align == "LEFT" or col.format == "share"
+      local left = leftAligned(col)
       local fs = W.Text(row, "GameFontHighlightSmall", left and "LEFT" or "RIGHT")
       fs:SetWordWrap(false)
       fs:SetHeight(rowH) -- width and position (and of the star, icon, confidence bars): t:Layout()
@@ -227,6 +234,8 @@ function DataTable.New(parent, opts)
         bar:SetHeight(6)
         bar:SetPoint("LEFT", track, "LEFT", 0, 0)
         row.shares[c] = { track = track, bar = bar }
+      elseif col.format == "signal" then
+        row.badges[c] = W.SignalBadge(row)
       elseif col.button then
         local def = col.button
         local b = W.Button(row, "", col.width, rowH - 4, function()
@@ -505,6 +514,11 @@ function DataTable:Layout(width)
         s.track:SetPoint("LEFT", cx, 0)
         fs:SetSize(math.max(1, widths[c] - SHARE_W - 6), rowH)
         fs:SetPoint("LEFT", cx + SHARE_W + 6, 0)
+      elseif row.badges[c] then
+        row.badges[c]:ClearAllPoints()
+        row.badges[c]:SetPoint("LEFT", cx, 0)
+        fs:SetSize(1, rowH)
+        fs:SetPoint("LEFT", cx, 0)
       elseif row.buttons[c] then
         local b = row.buttons[c]
         b:SetWidth(math.max(1, widths[c]))
@@ -783,6 +797,11 @@ function DataTable:Render()
         elseif row.shares[c] then
           shareCell(row.shares[c], col, d[col.key], not hidden[c])
           val = FORMATS.share(d[col.key])
+        elseif row.badges[c] then
+          local badge = row.badges[c]
+          badge:SetSignal(d[col.key])
+          badge:SetShown(not hidden[c])
+          val = ""
         elseif row.buttons[c] then
           buttonCell(row.buttons[c], col.button, d, not hidden[c])
           val = ""

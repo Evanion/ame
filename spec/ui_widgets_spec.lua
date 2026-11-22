@@ -150,6 +150,66 @@ describe("frame widgets", function()
     end)
   end)
 
+  describe("signals", function()
+    it("a badge draws the icon and word on its pill; no signal is a dim dash", function()
+      local badge = W.SignalBadge(UIParent)
+      badge:SetSignal("sell")
+      local word, pill = W.SignalBadgeColors("sell")
+      assert.truthy(badge.text:GetText():find("SELL", 1, true))
+      assert.truthy(badge.text:GetText():find("Signals\\Down", 1, true))
+      assert.truthy(badge.text:GetText():find("|cff" .. word, 1, true))
+      assert.is_true(same(badge.pill._color, pill))
+      assert.is_true(badge.pill:IsShown())
+      assert.is_true(badge:GetWidth() > badge.text:GetStringWidth())
+      badge:SetSignal("none")
+      assert.are.equal(W.NONE, badge.text:GetText())
+      assert.is_false(badge.pill:IsShown())
+    end)
+
+    it("SignalText is the plain form, SignalGlyph's", function()
+      assert.are.equal(W.SignalGlyph("buy"), W.SignalText("buy"))
+    end)
+
+    it("a signal filter has a button per signal; short ones are icons only; the picked one inverts", function()
+      local picked
+      local f = W.SignalFilter(UIParent, {
+        onSelect = function(key)
+          picked = key
+        end,
+      })
+      assert.are.equal(7, #f.buttons)
+      assert.truthy(f.byKey.buy.label:GetText():find("BUY", 1, true))
+      local short = W.SignalFilter(UIParent, { signals = { "all", "buy", "sell" }, short = true })
+      assert.are.equal(3, #short.buttons)
+      assert.is_falsy(short.byKey.buy.label:GetText():find("BUY", 1, true))
+      assert.truthy(short.byKey.buy.label:GetText():find("Signals\\Up", 1, true))
+      f.byKey.sell.scripts.OnClick(f.byKey.sell)
+      assert.are.equal("sell", picked)
+      assert.truthy(f.byKey.sell.label:GetText():find(W.INVERTED_TEXT, 1, true))
+    end)
+
+    it("a DataTable signal column draws a badge per row", function()
+      local t = ns.DataTable.New(UIParent, {
+        rows = 2,
+        columns = {
+          { key = "name", label = "Item", width = 150, item = true },
+          { key = "signal", label = "Signal", width = 64, format = "signal" },
+        },
+        itemID = function(d)
+          return d.id
+        end,
+      })
+      t.frame:SetWidth(400)
+      t:SetData({ { id = 1, signal = "buy" } })
+      t:Render()
+      local badge = t.rows[1].badges[2]
+      assert.are.equal("buy", badge.signal)
+      assert.is_true(badge:IsShown())
+      assert.are.equal("", t.rows[1].cells[2]:GetText())
+      assert.truthy(t:ExportText():find("BUY", 1, true))
+    end)
+  end)
+
   describe("W.Button", function()
     it("colours its label with opts.color, dimmed while disabled", function()
       local b = W.Button(UIParent, "Buy", 60, 20, nil, { color = "good" })

@@ -28,6 +28,27 @@ describe("Widgets formatters", function()
     end)
   end)
 
+  describe("signal badges", function()
+    it("keep their word readable on the pill: every signal, in both palettes (WCAG AA, 4.5:1)", function()
+      for name, palette in pairs(W.PALETTES) do
+        W.HEX.good, W.HEX.bad = palette.good, palette.bad
+        for _, signal in ipairs({ "buy", "hold", "sell", "wait", "vendor", "disenchant" }) do
+          local word, pill = W.SignalBadgeColors(signal)
+          local ratio = W.Contrast(word, W.Hex(pill):sub(3))
+          assert.is_true(ratio >= 4.5, ("%s %s: %.2f:1"):format(name, signal, ratio))
+        end
+      end
+    end)
+
+    it("tint the pill with the signal's own colour, so each reads as its signal", function()
+      local _, buy = W.SignalBadgeColors("buy")
+      local _, sell = W.SignalBadgeColors("sell")
+      assert.is_true(buy[2] > buy[1]) -- green
+      assert.is_true(sell[1] > sell[2]) -- red
+      assert.is_nil(W.SignalBadgeColors("none"))
+    end)
+  end)
+
   describe("selected buttons", function()
     it("keep white labels readable on every faction theme's fill (the accent at half strength, WCAG AA)", function()
       for house, c in pairs(W.THEMES) do

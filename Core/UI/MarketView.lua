@@ -740,13 +740,7 @@ function UI:CreateMarketView(parent)
   v.views:SetPoint("RIGHT", v.columns, "LEFT", -6, 0)
 
   -- second row: signal filter (text + glyph + colour) and chips for the other active filters
-  local signals = { { "all", L["All"] } }
-  for _, key in ipairs({ "buy", "hold", "sell", "wait", "vendor", "disenchant" }) do
-    signals[#signals + 1] = { key, W.SignalGlyph(key), W.SignalTone(key) }
-  end
-  v.signals = W.Segmented(slots.chips, signals, {
-    minWidth = 40,
-    height = 20,
+  v.signals = W.SignalFilter(slots.chips, {
     onSelect = function(key)
       UI.mq.signal = key ~= "all" and key or nil
       UI.offset = 0
@@ -836,12 +830,8 @@ function UI:CreateMarketView(parent)
   end)
 
   -- narrow: a short signal filter on the toolbar, and More for the rest (Wait / Vendor, price range, views, columns)
-  local short = { { "all", L["All"] } }
-  for _, key in ipairs({ "buy", "hold", "sell" }) do
-    short[#short + 1] = { key, W.SignalGlyph(key) }
-  end
-  v.signalsShort = W.Segmented(bar, short, {
-    minWidth = 40,
+  v.signalsShort = W.SignalFilter(bar, {
+    signals = { "all", "buy", "hold", "sell" },
     onSelect = function(key)
       UI.mq.signal = key ~= "all" and key or nil
       UI.offset = 0
