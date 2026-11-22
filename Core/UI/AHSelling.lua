@@ -192,7 +192,7 @@ function S:Create(ah)
           return e.qty > 1 and W.Dim("  " .. W.Count(e.qty)) or ""
         end,
       },
-      -- the tip, one short word in a narrow column of its own (the item gets the width): list it ("Auction"), make
+      -- the tip, one short word in a narrow column of its own (the item gets the width): list it ("Sell"), make
       -- something worth more first ("Arbitrate": what to make shows when you pick it), disenchant it, vendor it
       {
         key = "hint",
@@ -203,7 +203,7 @@ function S:Create(ah)
         text = function(e)
           local tip = S.Tip(e)
           if tip == "auction" then
-            return L["Auction"]
+            return L["Sell"]
           elseif tip == "craft" then
             return W.Color("warn", L["Arbitrate"])
           elseif tip == "vendor" then

@@ -207,7 +207,6 @@ L["Asked your guild and trusted players for their latest scans: they arrive over
 L["Asking prices"] = true
 L["At a vendor"] = true
 L["At market price"] = true
-L["Auction"] = true
 L["Auction house"] = true
 L["Auction houses"] = true
 L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] = true
@@ -601,7 +600,7 @@ L["New list..."] = true
 L["New name:"] = true
 L["New shopping list"] = true
 L["New shopping list..."] = true
-L["Next to it, Selling lists what in your bags can be listed, worth the most first (what each nets after the cut and deposit, or a vendor's price when that's more), with a tip for each: Auction (list it), Arbitrate (make something worth more from it first), DE or vendor - click the Tip heading to sort by it. Click one for AME's Quick, Normal and Patient prices, how many, how long and the deposit, then Post (the game's own posting, a click per post). What's on sale now shows beside it, yours marked: click a listing to price just under it. The AME window beside the auction house shows the item's chart. The game's Sell tab is still there, and right-clicking an item in your bags still fills it."] = true
+L["Next to it, Selling lists what in your bags can be listed, worth the most first (what each nets after the cut and deposit, or a vendor's price when that's more), with a tip for each: Sell (list it), Arbitrate (make something worth more from it first), DE or vendor - click the Tip heading to sort by it. Click one for AME's Quick, Normal and Patient prices, how many, how long and the deposit, then Post (the game's own posting, a click per post). What's on sale now shows beside it, yours marked: click a listing to price just under it. The AME window beside the auction house shows the item's chart. The game's Sell tab is still there, and right-clicking an item in your bags still fills it."] = true
 L["No articles match"] = true
 L["No call yet"] = true
 L["No data"] = true
