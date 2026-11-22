@@ -108,3 +108,20 @@ describe("Shopping lists", function()
     assert.is_nil(ns.Shopping.Recipe(api))
   end)
 end)
+
+describe("Shopping lists tell the screen they changed", function()
+  it("calls onChange when a list is added, renamed, changed or removed", function()
+    local ns = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Shopping.lua" })
+    local s = ns.Shopping.New({})
+    local n = 0
+    s.onChange = function()
+      n = n + 1
+    end
+    local i = s:AddList("Craft queue")
+    s:SetItem(i, 2589, 10)
+    s:RenameList(i, "Queue")
+    s:SetItem(i, 2589, 0)
+    s:RemoveList(i)
+    assert.are.equal(5, n)
+  end)
+end)

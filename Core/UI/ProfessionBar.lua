@@ -486,12 +486,30 @@ function PB.QueueLines(plan)
   return lines
 end
 
+-- beside the profession window, clear of whatever sticks out of its right edge (its side tabs, other addons' buttons)
+function PB.PlaceQueue(p, host)
+  local right, edge = host.GetRight and host:GetRight(), 0
+  if type(right) == "number" and host.GetChildren then
+    for _, child in ipairs({ host:GetChildren() }) do
+      local r = child ~= p and child.IsShown and child:IsShown() and child.GetRight and child:GetRight()
+      if type(r) == "number" and r > right and r - right < 120 then
+        edge = math.max(edge, r - right)
+      end
+    end
+  end
+  p:ClearAllPoints()
+  p:SetPoint("TOPLEFT", host, "TOPRIGHT", edge + 4, 0)
+  p:SetPoint("BOTTOMLEFT", host, "BOTTOMRIGHT", edge + 4, 0)
+end
+
 function PB:CreateQueue(host)
   local p = CreateFrame("Frame", nil, host, "BackdropTemplate")
   W.Skin(p, W.COLORS.bg)
   p:SetWidth(PB.QUEUE_W)
-  p:SetPoint("TOPLEFT", host, "TOPRIGHT", 4, 0)
-  p:SetPoint("BOTTOMLEFT", host, "BOTTOMRIGHT", 4, 0)
+  PB.PlaceQueue(p, host)
+  p:HookScript("OnShow", function(self)
+    PB.PlaceQueue(self, host)
+  end)
   p.title = W.Text(p, "GameFontNormal")
   p.title:SetPoint("TOPLEFT", 10, -10)
   p.title:SetText(L["Craft queue"])

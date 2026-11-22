@@ -398,6 +398,17 @@ function T:Create(ah)
   p.note = W.Text(detail, "GameFontDisableSmall")
   p.note:SetPoint("RIGHT", p.buy, "LEFT", -10, 0)
 
+  -- a list added or changed anywhere (the craft queue, the AME window): shown at once, once per frame
+  shopping().onChange = function()
+    if T.renderPending or not C_Timer then
+      return
+    end
+    T.renderPending = true
+    C_Timer.After(0, function()
+      T.renderPending = false
+      T:Render()
+    end)
+  end
   self:Layout()
   return p
 end
@@ -769,6 +780,17 @@ local function addTab(ah, key, label, panel)
   tab.displayMode = mode
   tab:SetText(label)
   tab:SetPoint("LEFT", last, "RIGHT", -15, 0)
+  -- the template sizes a tab when it shows; this one showed (with the window already open) before it had its label
+  if _G.PanelTemplates_TabResize and rawget(tab, "Text") then
+    pcall(
+      _G.PanelTemplates_TabResize,
+      tab,
+      rawget(ah, "tabPadding"),
+      nil,
+      rawget(ah, "minTabWidth"),
+      rawget(ah, "maxTabWidth")
+    )
+  end
   -- the game's tab template puts itself in the frame's Tabs already (a second entry anchors the tab to itself)
   local index
   for i, t in ipairs(ah.Tabs) do

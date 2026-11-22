@@ -22,6 +22,13 @@ function Shopping.New(db)
   return setmetatable({ db = db }, Shopping)
 end
 
+-- tell whoever shows the lists (shopping.onChange: the AH's Shopping tab) that they changed
+local function changed(self)
+  if self.onChange then
+    self.onChange()
+  end
+end
+
 local function trim(name)
   return (tostring(name or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
@@ -42,6 +49,7 @@ function Shopping:AddList(name)
     end
   end
   self.db.lists[#self.db.lists + 1] = { name = name, items = {}, version = 1 }
+  changed(self)
   return #self.db.lists
 end
 
@@ -58,11 +66,14 @@ function Shopping:RenameList(i, name)
   end
   l.name = name
   l.version = (l.version or 0) + 1
+  changed(self)
   return true
 end
 
 function Shopping:RemoveList(i)
-  return table.remove(self.db.lists, i) ~= nil
+  local gone = table.remove(self.db.lists, i) ~= nil
+  changed(self)
+  return gone
 end
 
 local function touch(l)
@@ -80,6 +91,7 @@ function Shopping:SetItem(i, key, need, max)
   if need <= 0 then
     l.items[key] = nil
     touch(l)
+    changed(self)
     return nil
   end
   local e = l.items[key] or {}
@@ -91,6 +103,7 @@ function Shopping:SetItem(i, key, need, max)
   end
   l.items[key] = e
   touch(l)
+  changed(self)
   return e
 end
 
