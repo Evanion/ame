@@ -543,10 +543,16 @@ function S:RenderListings()
   local p, e = self.panel, self.entry
   local book = e and ns.AHSearch.results[e.key]
   p.listings:SetData(book and book.rows or {})
-  p.listings:SetMessage(
-    e and (book and (#book.rows == 0 and L["none listed"] or nil) or L["searching..."])
-      or L["Pick an item on the left."]
-  )
+  -- (spelled out: "book and (... or nil) or searching" fell through to searching once listings were in)
+  local message
+  if not e then
+    message = L["Pick an item on the left."]
+  elseif not book then
+    message = L["searching..."]
+  elseif #book.rows == 0 then
+    message = L["none listed"]
+  end
+  p.listings:SetMessage(message)
   p.listings:Render()
   p.saleNote:SetShown(book ~= nil and #book.rows > 0)
 end

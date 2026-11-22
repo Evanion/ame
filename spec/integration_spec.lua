@@ -2206,6 +2206,10 @@ describe("addon in a stubbed client", function()
         assert.are.equal(40, Sel.items[1].qty)
         Sel:Select(Sel.items[1])
         assert.are.equal(40, Sel.qty) -- a stackable: all of it
+        ns.AHSearch.results[2589] = { commodity = true, rows = { { price = 90, qty = 10 } } }
+        Sel:RenderListings() -- listings in: no "searching..." left over them
+        local msg = Sel.panel.listings.message
+        assert.is_true(msg == nil or not msg:IsShown())
         Sel:Undercut({ price = 90 })
         assert.are.equal(89, Sel.price)
         assert.is_true(Sel:Post())
