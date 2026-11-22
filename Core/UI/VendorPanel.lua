@@ -12,7 +12,9 @@ local W = ns.Widgets
 local V = { rows = {} }
 ns.VendorPanel = V
 
-V.WIDTH = 380
+V.WIDTH = 500
+V.TOP = 32 -- the heading over the table
+V.BOTTOM = 74 -- under it: the total and Buy all, then the note
 V.MAX_ROWS = 10
 
 -- What a vendor charges for one, for items a vendor sells (nil otherwise): the crafting data's vendor prices, and
@@ -155,31 +157,31 @@ function V:Create(host)
   f:SetWidth(V.WIDTH)
   f:SetPoint("TOPLEFT", host, "TOPRIGHT", 4, 0)
   f:Hide()
-  f.title = W.Text(f, "GameFontNormal")
-  f.title:SetPoint("TOPLEFT", 10, -10)
-  f.title:SetText(L["For your lists"])
-  f.sub = W.Text(f, "GameFontDisableSmall")
-  f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -3)
-  f.sub:SetPoint("RIGHT", -10, 0)
-  f.sub:SetText(L["what this vendor sells that your shopping lists still need"])
+  -- the heading: the gold title and the dim subtitle on one line
+  f.heading = W.PageHeading(f)
+  f.heading:SetPoint("TOPLEFT", 10, -10)
+  f.heading:SetPoint("RIGHT", -10, 0)
+  f.heading:Set(L["For your lists"], L["what this vendor sells that your shopping lists still need"])
+  f.title, f.sub = f.heading.title, f.heading.subtitle
   local box = CreateFrame("Frame", nil, f)
-  box:SetPoint("TOPLEFT", 8, -44)
+  box:SetPoint("TOPLEFT", 8, -V.TOP)
   box:SetPoint("RIGHT", -8, 0)
-  box:SetPoint("BOTTOM", 0, 40)
+  box:SetPoint("BOTTOM", 0, V.BOTTOM - 4)
   f.table = ns.DataTable.New(box, {
     columns = {
-      { key = "name", label = L["Item"], width = 130, item = true },
-      { key = "need", label = L["Need"], width = 40, format = "count" },
+      { key = "name", label = L["Item"], width = 220, item = true },
+      { key = "need", label = L["Need"], width = 50, format = "count" },
       {
         key = "buys",
         label = L["Buys"],
-        width = 60,
+        width = 90,
         text = function(r)
-          return r.stack > 1 and (W.Count(r.buys) .. W.Dim((" (%d×%d)"):format(r.buys / r.stack, r.stack)))
+          -- in the vendor's stacks: "25 (5 × 5)", the stacks dim
+          return r.stack > 1 and (W.Count(r.buys) .. W.Dim((" (%d × %d)"):format(r.buys / r.stack, r.stack)))
             or W.Count(r.buys)
         end,
       },
-      { key = "cost", label = L["Cost"], width = 60, format = "money" },
+      { key = "cost", label = L["Cost"], width = 70, format = "money" },
     },
     fill = true,
     rows = V.MAX_ROWS,
@@ -198,15 +200,24 @@ function V:Create(host)
       end,
     },
   })
-  f.totalLabel = W.Text(f, "GameFontDisableSmall")
-  f.totalLabel:SetPoint("BOTTOMLEFT", 10, 14)
-  f.total = W.Text(f, "GameFontHighlightSmall")
-  f.total:SetPoint("LEFT", f.totalLabel, "RIGHT", 6, 0)
   f.buyAll = W.Button(f, L["Buy all"], 80, 22, function()
     V:BuyAll()
   end)
-  f.buyAll:SetPoint("BOTTOMRIGHT", -10, 9)
+  f.buyAll:SetPoint("BOTTOMRIGHT", -10, 40)
   W.Primary(f.buyAll)
+  f.totalLabel = W.Text(f, "GameFontDisableSmall")
+  f.totalLabel:SetPoint("LEFT", f, "BOTTOMLEFT", 10, 51)
+  f.total = W.Text(f, "GameFontHighlightSmall")
+  f.total:SetPoint("LEFT", f.totalLabel, "RIGHT", 6, 0)
+  -- the design's note: how the rows count down, and that the names are item links
+  f.note = W.Text(f, "GameFontDisableSmall")
+  f.note:SetPoint("BOTTOMLEFT", 10, 8)
+  f.note:SetPoint("RIGHT", -10, 0)
+  f.note:SetWordWrap(true)
+  f.note:SetJustifyH("LEFT")
+  f.note:SetText(
+    L["Bought items go straight to your bags, so each row counts down by itself; a row goes when you have enough. Hover a name for the item, Shift-click to link it."]
+  )
   self.frame = f
   return f
 end
@@ -230,7 +241,7 @@ function V:Refresh()
     return
   end
   local f = self.frame or self:Create(host)
-  f:SetHeight(44 + 20 + math.min(#rows, V.MAX_ROWS) * 20 + 48)
+  f:SetHeight(V.TOP + 20 + math.min(#rows, V.MAX_ROWS) * 20 + V.BOTTOM)
   f:Show()
   local total = 0
   for _, r in ipairs(rows) do

@@ -228,6 +228,7 @@ L["Biggest fallers"] = true
 L["Biggest risers"] = true
 L["Block"] = true
 L["Blocked"] = true
+L["Bought items go straight to your bags, so each row counts down by itself; a row goes when you have enough. Hover a name for the item, Shift-click to link it."] = true
 L["Breadth"] = true
 L["Building market index..."] = true
 L["Building market statistics..."] = true
