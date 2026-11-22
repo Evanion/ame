@@ -23,6 +23,7 @@ Locales\zhTW.lua
 Core\Locale.lua
 Core\Init.lua
 Core\Events.lua
+Core\Quote.lua
 Core\Packed.lua
 Core\Settings.lua
 Core\ItemCache.lua

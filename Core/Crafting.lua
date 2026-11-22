@@ -30,29 +30,14 @@ function Crafting.New(env)
   return setmetatable({ env = env, memo = {} }, Crafting)
 end
 
--- Units of an item that sell a day: its sell rate, but never more than is listed (the rate counts expired and
--- cancelled listings too, and scales short observations up to a day). nil without a rate.
+-- Units of an item that sell a day (Quote.UnitsPerDay: its sell rate, never more than is listed). nil without a rate.
 function Crafting:SalesPerDay(itemID)
-  local s = self.env.market(itemID)
-  local rate = s and s.sellRate
-  if rate and s.qty and s.qty < rate then
-    rate = s.qty
-  end
-  return rate
+  return ns.Quote.UnitsPerDay(self.env.market(itemID))
 end
 
--- the market price, capped at factor x the 30-day average (a fantasy listing isn't a price)
+-- the market price, capped at factor x the 30-day average (Quote.CapPrice: a fantasy listing isn't a price)
 function Crafting:Price(itemID)
-  local s = self.env.market(itemID)
-  local p = s and s.market
-  if not p or p <= 0 then
-    return nil
-  end
-  local f = self.env.factor
-  if f and f > 1 and s.avg30 and s.avg30 > 0 then
-    p = math.min(p, f * s.avg30)
-  end
-  return p
+  return ns.Quote.CapPrice(self.env.market(itemID), self.env.factor)
 end
 
 -- what selling one unit nets: on the AH after the cut and deposit, or at a vendor, whichever is more (nil: neither)

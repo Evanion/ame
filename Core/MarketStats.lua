@@ -108,11 +108,7 @@ end
 -- sell rate counts every listing that leaves between full scans - expired and cancelled ones too - and a short
 -- observation scales up to a day, so for gear (single listings that mostly expire) it can be far above what sells.
 function MarketStats.SoldPerDay(s)
-  local rate = s.sellRate or 0
-  if s.qty and s.qty < rate then
-    rate = s.qty
-  end
-  return rate
+  return ns.Quote.UnitsPerDay(s) or 0
 end
 
 -- One item: raw = its points in the window (oldest first, as Store:BucketSeries gives them), clean = the same with
