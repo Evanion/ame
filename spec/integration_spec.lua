@@ -996,6 +996,51 @@ describe("addon in a stubbed client", function()
         assert.is_false(v.summaryBar:IsShown())
       end)
 
+      it("the Crafting toolbar shows what each page declares: search, scope, checks, the page's buttons", function()
+        seeded()
+        ns.UI:Toggle()
+        ns.UI:ShowTab("crafting")
+        local v = ns.UI.craftView
+        v.scripts.OnShow(v)
+        local queue = ns.UI.CRAFT_TOOLBAR.queue
+        local clicked = 0
+        queue.actions = {
+          {
+            "Buy all",
+            function()
+              clicked = clicked + 1
+            end,
+            primary = true,
+          },
+        }
+        finally(function()
+          queue.actions = nil
+        end)
+        -- Recipes to buy: search, then who and which profession, then its two checks
+        ns.UI:ShowCraftingPage("recipes")
+        assert.is_true(v.search:IsShown())
+        assert.are.equal(v.search, v.char.points[1][2])
+        assert.are.equal(v.char, v.prof.points[1][2])
+        assert.are.equal(v.prof, v.gaps.points[1][2])
+        assert.are.equal(v.gaps.label, v.learnable.points[1][2]) -- after the first check's label
+        -- the craft queue: its button on the right, made once, primary; gone on another page
+        ns.UI:ShowCraftingPage("queue")
+        assert.is_false(v.gaps:IsShown())
+        local b = v.toolbar.actions.queue[1]
+        assert.is_true(b:IsShown())
+        assert.are.equal("RIGHT", b.points[1][1])
+        assert.is_true(b.primary)
+        b.scripts.OnClick(b)
+        assert.are.equal(1, clicked)
+        ns.UI:ShowCraftingPage("crafters")
+        assert.is_false(b:IsShown())
+        assert.is_false(v.char:IsShown()) -- Find a crafter searches your network: no scope
+        -- the footer's text comes from the page
+        assert.truthy(
+          v.toolbar:StatusText("queue", { recorded = { "Tyken (First Aid)" } }):find("Recorded: Tyken", 1, true)
+        )
+      end)
+
       it("the Crafting tab: its pages, from recorded professions", function()
         seeded()
         ns.UI:Toggle()

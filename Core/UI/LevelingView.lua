@@ -337,7 +337,10 @@ function UI:CreateLevelingControls(v, slots)
       UI:RefreshCrafting()
     end
   end, { neutral = true })
-  v.levelProf:SetPoint("LEFT", v.modes, "RIGHT", 12, 0) -- v.modes: an anchor CraftingView places
+  -- the pickers come after the toolbar's own controls (UI.CraftingToolbar places them)
+  v.toolbar:SetExtra("leveling", function(place)
+    place(v.levelProf, 12)
+  end)
   local targets = {}
   for _, t in ipairs(TARGETS) do
     targets[#targets + 1] = { t, L["to %d"]:format(t) }

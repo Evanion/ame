@@ -588,64 +588,44 @@ local COLUMNS = {
   leveling = UI.LEVELING_COLUMNS, -- Core/UI/LevelingView.lua
 }
 
-function UI:CreateCraftingView(parent, contentArea)
-  local v = contentArea(parent)
-  self.craftView = v
-  self.craftMode = "professions"
-  local slots = UI.Slots(v, {
-    toolbar = 22,
-    header = 42,
-    headerBelow = true,
-    left = UI.SIDEBAR_W,
-    right = UI.SIDE_PANEL_W,
-    rightCards = true,
-    status = true,
-  })
-  v.slots = slots
-  local bar = slots.toolbar
+-- What each page's toolbar holds (UI.CraftingToolbar), left to right: the search box (search = true, or its hint),
+-- the scope (the character and profession pickers, kept as you switch pages), the page's checks (the toolbar's own,
+-- by name: v.gaps, v.learnable), then the page's own controls (extra, set by the page's file: Leveling's), and its
+-- buttons on the right (actions = { { label, onClick, width = 90, primary = true }, ... }). status(info) is the
+-- footer's text; info.recorded lists the characters' recorded professions.
+local function recordedStatus(info)
+  local recorded = info.recorded or {}
+  return #recorded > 0
+      and L["Recorded: %s"]:format(table.concat(recorded, "; ")) .. W.SEP .. L["prices: your faction's auction house"]
+    or ""
+end
+UI.CRAFT_TOOLBAR = {
+  professions = { search = true, scope = true },
+  crafters = { search = L["Who can make... (an item or enchant)"] },
+  queue = { search = true, scope = true },
+  earners = { search = true, scope = true },
+  refine = { search = true, scope = true },
+  recipes = { search = true, scope = true, checks = { "gaps", "learnable" } },
+  leveling = {},
+}
+for _, page in pairs(UI.CRAFT_TOOLBAR) do
+  page.status = page.status or recordedStatus
+end
 
-  -- the pages: Market-style lines under their group headings (narrow windows: a dropdown on the toolbar)
-  local list = slots.left.content
-  v.pageLinks = {}
-  local y = -6
-  for _, p in ipairs(PAGES) do
-    if p.heading then
-      local h = W.Text(list, "GameFontNormalSmall")
-      h:SetPoint("TOPLEFT", 10, y - (y < -6 and 6 or 2))
-      h:SetText(p.heading)
-      y = y - (y < -6 and 26 or 22)
-    else
-      local b = CreateFrame("Button", nil, list)
-      b:SetHeight(20)
-      b:SetPoint("TOPLEFT", 4, y)
-      b:SetPoint("RIGHT", list, "RIGHT", -4, 0)
-      b.sel = b:CreateTexture(nil, "BACKGROUND")
-      b.sel:SetAllPoints()
-      W.Fill(b.sel, W.COLORS.rowSelected)
-      b.hl = b:CreateTexture(nil, "HIGHLIGHT")
-      b.hl:SetAllPoints()
-      W.Fill(b.hl, W.COLORS.rowHover)
-      b.text = W.Text(b, "GameFontHighlightSmall")
-      b.text:SetPoint("LEFT", 12, 0)
-      b.text:SetPoint("RIGHT", -4, 0)
-      b.text:SetWordWrap(false)
-      b.text:SetText(p.label)
-      b:SetScript("OnClick", function()
-        UI:ShowCraftingPage(p.key)
-      end)
-      v.pageLinks[p.key] = b
-      y = y - 22
-    end
-  end
-  list:SetHeight(6 - y)
+-- The Crafting tab's toolbar, the same on every page. The controls it holds are v.page (the pages, when narrow),
+-- v.search, v.char, v.prof, v.gaps, v.learnable and v.details (the Details panel, when narrow); each page shows what
+-- UI.CRAFT_TOOLBAR declares for it. -> toolbar, with :Layout() (also v:LayoutToolbar()),
+-- :SetExtra(page, fn(place, compact)) for a page's own controls (place(widget, gap) puts one after the last), and
+-- :StatusText(page, info).
+function UI.CraftingToolbar(v)
+  local slots = v.slots
+  local bar = slots.toolbar
+  local tb = { actions = {} }
   v.page = W.Dropdown(bar, 130, MODES, function(key)
     if key then
       UI:ShowCraftingPage(key)
     end
   end, { neutral = true, default = "professions" })
-  -- kept for the leveling controls' anchor (Core/UI/LevelingView.lua): placed by LayoutToolbar
-  v.modes = CreateFrame("Frame", nil, bar)
-  v.modes:SetSize(1, 20)
 
   -- the filters, kept as you switch pages: search, character, profession
   v.search = W.Input(bar, {
@@ -685,58 +665,161 @@ function UI:CreateCraftingView(parent, contentArea)
     UI.craftSelected = nil
     UI:RefreshCrafting()
   end)
-
-  -- the toolbar for the page and the window's width
-  function v:LayoutToolbar()
-    local compact = slots.compact
-    local mode = UI.craftMode
-    local leveling, crafters = mode == "leveling", mode == "crafters"
-    local last
-    local function place(w, gap)
-      w:ClearAllPoints()
-      if last then
-        w:SetPoint("LEFT", last, "RIGHT", gap or 6, 0)
-      else
-        w:SetPoint("LEFT", 0, 0)
-      end
-      last = w
-    end
-    self.page:SetShown(compact)
-    if compact then
-      place(self.page)
-    end
-    self.search:SetShown(not leveling)
-    if not leveling then
-      place(self.search)
-      self.search:SetWidth(compact and 140 or UI.SIDEBAR_W) -- wide: lines up with the sidebar under it
-      self.search:SetHint(crafters and L["Who can make... (an item or enchant)"] or L["Search recipes or items..."])
-    end
-    -- the leveling controls go after this anchor
-    self.modes:ClearAllPoints()
-    if last then
-      self.modes:SetPoint("LEFT", last, "RIGHT", -1, 0)
-    else
-      self.modes:SetPoint("LEFT", compact and -13 or (UI.SIDEBAR_W + UI.SLOT_GAP - 13), 0)
-    end
-    self.char:SetShown(not (leveling or crafters))
-    self.prof:SetShown(not (leveling or crafters))
-    if not (leveling or crafters) then
-      place(self.char, compact and 6 or UI.SLOT_GAP)
-      place(self.prof)
-    end
-    self.gaps:SetShown(mode == "recipes")
-    self.learnable:SetShown(mode == "recipes")
-    if mode == "recipes" then
-      place(self.gaps, 10)
-      self.learnable:ClearAllPoints()
-      self.learnable:SetPoint("LEFT", self.gaps.label, "RIGHT", 12, 0) -- after the first check's label
-    end
-  end
+  tb.checks = { gaps = v.gaps, learnable = v.learnable }
   v.details = W.Button(bar, L["Details"], 64, 20, function()
     slots:ToggleDetails()
     v.details:SetSelected(slots.details)
   end)
   v.details:SetPoint("RIGHT", 0, 0)
+
+  function tb:SetExtra(page, fn)
+    UI.CRAFT_TOOLBAR[page].extra = fn
+  end
+
+  -- a page's buttons, made the first time it shows
+  local function actionButtons(mode, decl)
+    local list = tb.actions[mode]
+    if not list then
+      list = {}
+      for i, a in ipairs(decl.actions or {}) do
+        local b = W.Button(bar, a[1], a.width or 90, 20, a[2])
+        if a.primary then
+          W.Primary(b)
+        end
+        list[i] = b
+      end
+      tb.actions[mode] = list
+    end
+    return list
+  end
+
+  function tb:Layout()
+    local compact = slots.compact
+    local mode = UI.craftMode
+    local decl = UI.CRAFT_TOOLBAR[mode] or {}
+    local last
+    local function place(w, gap)
+      w:ClearAllPoints()
+      if last then
+        w:SetPoint("LEFT", last, "RIGHT", gap or 6, 0)
+      elseif compact or w == v.search then
+        w:SetPoint("LEFT", 0, 0)
+      else
+        -- nothing before it, wide: the page's controls line up with the content beside the sidebar
+        w:SetPoint("LEFT", UI.SIDEBAR_W + UI.SLOT_GAP, 0)
+      end
+      last = w
+    end
+    v.page:SetShown(compact)
+    if compact then
+      place(v.page)
+    end
+    v.search:SetShown(decl.search and true or false)
+    if decl.search then
+      place(v.search)
+      v.search:SetWidth(compact and 140 or UI.SIDEBAR_W) -- wide: lines up with the sidebar under it
+      v.search:SetHint(type(decl.search) == "string" and decl.search or L["Search recipes or items..."])
+    end
+    v.char:SetShown(decl.scope and true or false)
+    v.prof:SetShown(decl.scope and true or false)
+    if decl.scope then
+      place(v.char, compact and 6 or UI.SLOT_GAP)
+      place(v.prof)
+    end
+    local shown = {}
+    for i, key in ipairs(decl.checks or {}) do
+      local c = self.checks[key]
+      shown[c] = true
+      place(c, i == 1 and 10 or 12)
+      last = c.label -- the next one goes after this one's label
+    end
+    for _, c in pairs(self.checks) do
+      c:SetShown(shown[c] or false)
+    end
+    if decl.extra then
+      decl.extra(place, compact)
+    end
+    -- the page's buttons, right to left from Details (when it shows) or the toolbar's end
+    for m, list in pairs(self.actions) do
+      for _, b in ipairs(list) do
+        b:SetShown(m == mode)
+      end
+    end
+    local right = compact and v.details or nil
+    local buttons = actionButtons(mode, decl)
+    for i = #buttons, 1, -1 do
+      local b = buttons[i]
+      b:ClearAllPoints()
+      if right then
+        b:SetPoint("RIGHT", right, "LEFT", -6, 0)
+      else
+        b:SetPoint("RIGHT", 0, 0)
+      end
+      b:Show()
+      right = b
+    end
+  end
+  function v:LayoutToolbar()
+    tb:Layout()
+  end
+
+  function tb:StatusText(mode, info)
+    local decl = UI.CRAFT_TOOLBAR[mode]
+    return decl and decl.status and decl.status(info or {}) or ""
+  end
+  return tb
+end
+
+function UI:CreateCraftingView(parent, contentArea)
+  local v = contentArea(parent)
+  self.craftView = v
+  self.craftMode = "professions"
+  local slots = UI.Slots(v, {
+    toolbar = 22,
+    header = 42,
+    headerBelow = true,
+    left = UI.SIDEBAR_W,
+    right = UI.SIDE_PANEL_W,
+    rightCards = true,
+    status = true,
+  })
+  v.slots = slots
+
+  -- the pages: Market-style lines under their group headings (narrow windows: a dropdown on the toolbar)
+  local list = slots.left.content
+  v.pageLinks = {}
+  local y = -6
+  for _, p in ipairs(PAGES) do
+    if p.heading then
+      local h = W.Text(list, "GameFontNormalSmall")
+      h:SetPoint("TOPLEFT", 10, y - (y < -6 and 6 or 2))
+      h:SetText(p.heading)
+      y = y - (y < -6 and 26 or 22)
+    else
+      local b = CreateFrame("Button", nil, list)
+      b:SetHeight(20)
+      b:SetPoint("TOPLEFT", 4, y)
+      b:SetPoint("RIGHT", list, "RIGHT", -4, 0)
+      b.sel = b:CreateTexture(nil, "BACKGROUND")
+      b.sel:SetAllPoints()
+      W.Fill(b.sel, W.COLORS.rowSelected)
+      b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+      b.hl:SetAllPoints()
+      W.Fill(b.hl, W.COLORS.rowHover)
+      b.text = W.Text(b, "GameFontHighlightSmall")
+      b.text:SetPoint("LEFT", 12, 0)
+      b.text:SetPoint("RIGHT", -4, 0)
+      b.text:SetWordWrap(false)
+      b.text:SetText(p.label)
+      b:SetScript("OnClick", function()
+        UI:ShowCraftingPage(p.key)
+      end)
+      v.pageLinks[p.key] = b
+      y = y - 22
+    end
+  end
+  list:SetHeight(6 - y)
+  v.toolbar = UI.CraftingToolbar(v)
 
   v.tables = {}
   for mode, columns in pairs(COLUMNS) do
@@ -974,11 +1057,7 @@ function UI:RefreshCrafting()
       recorded[#recorded + 1] = ("%s (%s)"):format(charName(key), table.concat(crafts, ", "))
     end
   end
-  v.slots.status:SetText(
-    #recorded > 0
-        and L["Recorded: %s"]:format(table.concat(recorded, "; ")) .. W.SEP .. L["prices: your faction's auction house"]
-      or ""
-  )
+  v.slots.status:SetText(v.toolbar:StatusText(mode, { recorded = recorded }))
   self:RenderCraftingDetail()
 end
 
