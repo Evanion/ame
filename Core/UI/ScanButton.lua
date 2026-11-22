@@ -213,6 +213,7 @@ function Scan:Attach()
       ns.AME.Say(why)
     end
   end)
+  W.Primary(b) -- the theme's accent (red on Horde): the neutral panel colour was lost in the window's title bar
   -- in the window's title bar, left of its close button (above the window, other frames covered it); drawn over
   -- the window's own pieces
   local close = rawget(ah, "CloseButton")
