@@ -293,9 +293,24 @@ function PB:Search(recipe)
 end
 
 -- can this character craft a step now? (the open window knows the recipe and says how many can be made)
+-- Pure: crafts the reagents in your bags make (bags: { [itemID] = count })
+function PB.CraftsFromBags(recipe, bags)
+  local n
+  for _, g in ipairs(recipe and recipe.reagents or {}) do
+    local each = math.floor((bags[g[1]] or 0) / math.max(1, g[2]))
+    n = n and math.min(n, each) or each
+  end
+  return n or 0
+end
+
+-- how many of a step this character can craft now: the game's count when its window has the recipe open, else
+-- what the reagents in your bags make (the game's count lags behind your bags, and knows only the open profession)
 local function available(step)
   local info = C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(step.recipe)
-  return info and info.learned and (info.numAvailable or 0) or 0
+  local game = info and info.learned and (info.numAvailable or 0) or 0
+  local h = AME_DB and AME_DB.holdings and AME_DB.holdings[ns.Trading.CharKey()]
+  local bags = PB.CraftsFromBags(PB.Recipe(step.recipe), h and h.bags or {})
+  return math.max(game, bags)
 end
 
 -- the next step this character can craft now (it knows it and has what it takes): step, or nil
@@ -313,6 +328,20 @@ function PB:CraftNext()
     return
   end
   local n = math.min(step.count, available(step))
+  -- the game crafts only from the profession window that's open: another one is, say which to open
+  local info = C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(step.recipe)
+  if not (info and info.learned) then
+    local profession
+    for skillLine, c in pairs(AME_DB.crafting and AME_DB.crafting.catalog or {}) do
+      if c.recipes and c.recipes[step.recipe] then
+        local get = C_TradeSkillUI and C_TradeSkillUI.GetProfessionInfoBySkillLineID
+        local ok, info2 = pcall(get or error, skillLine)
+        profession = ok and info2 and info2.professionName or c.name
+      end
+    end
+    print("|cff33ccffAME|r " .. L["open %s to craft %s"]:format(profession or L["its profession"], name(step.item)))
+    return
+  end
   if C_TradeSkillUI and C_TradeSkillUI.CraftRecipe then
     C_TradeSkillUI.CraftRecipe(step.recipe, n)
   end
@@ -1012,6 +1041,7 @@ function PB:Start()
   f:RegisterEvent("ADDON_LOADED")
   pcall(f.RegisterEvent, f, "UNIT_SPELLCAST_SUCCEEDED")
   pcall(f.RegisterEvent, f, "BAG_UPDATE_DELAYED")
+  pcall(f.RegisterEvent, f, "TRADE_SKILL_LIST_UPDATE") -- the game's craftable counts changed
   f:SetScript("OnEvent", function(_, event, a, _, spellID)
     if event == "ADDON_LOADED" then
       if a == "Blizzard_Professions" then

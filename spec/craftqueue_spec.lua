@@ -175,3 +175,15 @@ describe("CraftQueue", function()
     assert.are.equal(100, next.recipe) -- the bars are Bankalt's to smelt
   end)
 end)
+
+describe("ProfessionBar.CraftsFromBags", function()
+  it("counts the crafts the reagents in your bags make", function()
+    local ns =
+      require("spec.helpers.addon").load({ "Core/Init.lua", "Core/UI/Widgets.lua", "Core/UI/ProfessionBar.lua" })
+    local PB = ns.ProfessionBar
+    local stew = { reagents = { { 1, 2 }, { 2, 1 }, { 3, 1 } } } -- 2 eyes, a crab meat, a spice each
+    assert.are.equal(20, PB.CraftsFromBags(stew, { [1] = 40, [2] = 20, [3] = 20 }))
+    assert.are.equal(5, PB.CraftsFromBags(stew, { [1] = 40, [2] = 5, [3] = 20 }))
+    assert.are.equal(0, PB.CraftsFromBags(stew, { [1] = 40 }))
+  end)
+end)
