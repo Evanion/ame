@@ -29,19 +29,16 @@ local function itemName(id)
   end)
 end
 
+-- the ledger: spending in red, getting back in green, the whole amount tinted; nothing: a dim dash (signed: 0)
 local function cost(v)
-  return v and v > 0 and W.Color("bad", "-" .. W.Plain(W.Money(v, true))) or W.Dim("-")
+  return v and v > 0 and W.SignedMoney(-v, { tint = true }) or W.Dim("-")
 end
 local function gain(v)
-  return v and v > 0 and W.Color("good", "+" .. W.Plain(W.Money(v, true))) or W.Dim("-")
+  return v and v > 0 and W.SignedMoney(v, { tint = true }) or W.Dim("-")
 end
 local function signed(v)
-  if not v or math.abs(v) < 1 then
-    return W.Dim("0")
-  end
-  return v > 0 and gain(v) or cost(-v)
+  return W.SignedMoney(v or 0, { tint = true, zero = "0" })
 end
-UI.CostText, UI.GainText, UI.SignedText = cost, gain, signed
 
 -- the professions the dropdown offers: every recorded (character, crafting profession)
 function UI:LevelingChoices()

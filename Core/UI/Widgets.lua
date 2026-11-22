@@ -625,14 +625,34 @@ function W.Count(n)
 end
 
 -- profit / loss: green "+12g", red "-3g 5s", "-" for nothing
-function W.SignedMoney(v)
+-- A gain or a loss: "+1g 20s" / "-35s", the sign in green / red. opts (all optional):
+--   full = true   every unit (W.Money's long form; the default is short, for columns)
+--   zero = "0"    what an amount under 1c shows (dimmed); default: signed as usual
+--   tint = true   the whole amount in the sign's colour, not just the sign (Leveling's ledger)
+function W.SignedMoney(v, opts)
   if not v then
     return W.NONE
   end
-  if v < 0 then
-    return W.Color("bad", "-") .. W.Money(-v, true)
+  opts = opts or {}
+  if opts.zero and math.abs(v) < 1 then
+    return W.Dim(opts.zero)
   end
-  return W.Color("good", "+") .. W.Money(v, true)
+  local tone, sign = v < 0 and "bad" or "good", v < 0 and "-" or "+"
+  local m = W.Money(math.abs(v), not opts.full)
+  if opts.tint then
+    return W.Color(tone, sign .. W.Plain(m))
+  end
+  return W.Color(tone, sign) .. m
+end
+
+-- an auction house cut (0.05) as whole percent (5), for "the 5% cut"
+function W.CutPct(cut)
+  return math.floor((cut or 0) * 100 + 0.5)
+end
+
+-- an item's name, or "item:12345" while the client hasn't loaded it (plain text; W.ItemNameOrLoad also redraws)
+function W.ItemLabel(key)
+  return ns.ItemCache.Name(key) or ("item:" .. tostring(key))
 end
 
 function W.Percent(x, decimals)
@@ -875,7 +895,7 @@ function W.ItemNameOrLoad(key, redraw)
       watch(key)
     end
   end
-  return W.QualityText(quality, name or ("item:" .. tostring(key)))
+  return W.QualityText(quality, name or W.ItemLabel(key))
 end
 
 -- a tooltip is loading this key: if a list shows it unnamed, look again

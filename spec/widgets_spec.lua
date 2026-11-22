@@ -80,6 +80,33 @@ describe("Widgets formatters", function()
     end)
   end)
 
+  describe("SignedMoney", function()
+    it("signs gains and losses, short by default, every unit with full", function()
+      assert.are.equal("+171g", plain(W.SignedMoney(1706000)))
+      assert.are.equal("+170g 60s", plain(W.SignedMoney(1706000, { full = true })))
+      assert.are.equal("-35s", plain(W.SignedMoney(-3500)))
+      assert.are.equal("-", plain(W.SignedMoney(nil)))
+    end)
+
+    it("colours only the sign, or the whole amount with tint", function()
+      assert.truthy(W.SignedMoney(-3500):find("^|c%x+%-|r"))
+      local tinted = W.SignedMoney(-3500, { tint = true })
+      assert.are.equal(1, select(2, tinted:gsub("|c%x%x%x%x%x%x%x%x", ""))) -- one colour for all of it
+      assert.are.equal("-35s", plain(tinted))
+    end)
+
+    it("shows a dim zero for nothing when asked", function()
+      assert.are.equal("0", plain(W.SignedMoney(0.4, { zero = "0" })))
+      assert.are.equal("+0c", plain(W.SignedMoney(0)))
+    end)
+  end)
+
+  it("turns a cut into whole percent", function()
+    assert.are.equal(5, W.CutPct(0.05))
+    assert.are.equal(15, W.CutPct(0.15))
+    assert.are.equal(0, W.CutPct(nil))
+  end)
+
   it("formats percentages with a sign, and dashes for nothing", function()
     assert.are.equal("+59.6%", plain(W.Percent(0.596)))
     assert.are.equal("-42.7%", plain(W.Percent(-0.427)))

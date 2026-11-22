@@ -1302,11 +1302,11 @@ end
 
 -- "Better: make Silk Bandage and vendor it (Tyken) - ~2s per item instead of 1s 50c."
 function UI.CraftInsteadText(c)
-  local name = ns.ItemCache.Name(c.product) or ("item:" .. tostring(c.product))
+  local name = W.ItemLabel(c.product)
   local text = c.where == "vendor" and L["Better: make %s and vendor it - ~%s per item instead of %s."]
     or L["Better: make %s and sell it - ~%s per item after the cut, instead of %s."]
   local who = c.crafter and (" " .. W.Dim("(" .. c.crafter .. ")")) or ""
-  return text:format(name, W.Money(math.floor(c.each + 0.5)), W.Money(math.floor(c.raw + 0.5))) .. who
+  return text:format(name, W.Money(c.each), W.Money(c.raw)) .. who
 end
 
 function UI:FillVerdict(s, ctx)
@@ -1374,11 +1374,7 @@ function UI:UpdatePostAdvice()
     local cut = ns.Settings:AuctionCut(house or ns.AME:CurrentHouse())
     local net = n.price * (1 - (cut or 0)) - (advice.deposit or 0) / (advice.qty or 1)
     v.postNet:SetText(
-      L["sells in %s  ·  you net %s after the %d%% cut"]:format(
-        W.Hours(n.hours),
-        W.Money(net),
-        math.floor((cut or 0) * 100 + 0.5)
-      )
+      L["sells in %s  ·  you net %s after the %d%% cut"]:format(W.Hours(n.hours), W.Money(net), W.CutPct(cut))
     )
     if advice.quick.price == advice.patient.price then
       local onlyLowest = n.ahead == 0 and (advice.book and #advice.book.prices or 0) > 0
@@ -1393,13 +1389,7 @@ function UI:UpdatePostAdvice()
     if vendor and vendor > 0 and net < vendor and self.craftInstead then
       local c = self.craftInstead
       v.postWarn:SetText(
-        W.Color(
-          "warn",
-          L["Make %s first: ~%s per item"]:format(
-            ns.ItemCache.Name(c.product) or ("item:" .. tostring(c.product)),
-            W.Money(math.floor(c.each + 0.5))
-          )
-        )
+        W.Color("warn", L["Make %s first: ~%s per item"]:format(W.ItemLabel(c.product), W.Money(c.each)))
       )
     elseif vendor and vendor > 0 and net < vendor then
       v.postWarn:SetText(W.Color("bad", L["Vendor it: a vendor pays %s"]:format(W.Money(vendor))))

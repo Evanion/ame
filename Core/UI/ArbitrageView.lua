@@ -497,9 +497,9 @@ function UI:RenderArbitrage()
       .. W.SEP
       .. L["buy at the %s (%d%% cut), sell at the %s (%d%% cut)"]:format(
         ns.HOUSE_LABEL[a.buy],
-        math.floor(ns.Settings:AuctionCut(a.buy) * 100 + 0.5),
+        W.CutPct(ns.Settings:AuctionCut(a.buy)),
         ns.HOUSE_LABEL[a.sell],
-        math.floor((self.arbCut or 0) * 100 + 0.5)
+        W.CutPct(self.arbCut)
       )
       .. W.SEP
       .. L["deposits for %d h listings counted in net"]:format(ns.Settings:Get("listingHours"))

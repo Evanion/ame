@@ -31,12 +31,9 @@ Tooltip.BETTER_DAYS = 3 -- ... and its prices are this recent
 Tooltip.COMPACT_HEIGHT = 700 -- the UI (UIParent) shorter than this (a UI scale over ~1.1): compact tooltips
 Tooltip.SMALL_SCREEN = 900 -- ... or a screen fewer pixels tall than this
 
-local function money(c)
-  return W.Money(c and math.floor(c + 0.5))
-end
-
+local money = W.Money
 local function signed(c)
-  return W.Color(c >= 0 and "good" or "bad", c < 0 and "-" or "+") .. money(math.abs(c))
+  return W.SignedMoney(c, { full = true })
 end
 
 local function pct(x)
@@ -432,7 +429,7 @@ function Tooltip.RecipeLines(itemID)
     local recipe = data:Recipe(spell)
     local product = recipe and recipe.product
     if product then
-      local name = ns.ItemCache.Name(product) or ("item:" .. product)
+      local name = W.ItemLabel(product)
       local made = (recipe.made or 1) > 1 and (" x" .. recipe.made) or ""
       local price = craft:Price(product)
       rows[#rows + 1] = {

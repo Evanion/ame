@@ -174,7 +174,7 @@ function PB.Plan()
 end
 
 local function name(id)
-  return ns.ItemCache.Name(id) or ("item:" .. tostring(id))
+  return W.ItemLabel(id)
 end
 
 -- an item's name in its quality colour; while the client hasn't loaded it, the queue redraws once it has
@@ -369,15 +369,9 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- the bar
 
-local function money(c)
-  return c and W.Money(math.floor(c + 0.5)) or W.NONE
-end
-
+local money = W.Money
 local function signed(c)
-  if not c then
-    return W.NONE
-  end
-  return W.Color(c >= 0 and "good" or "bad", c < 0 and "-" or "+") .. money(math.abs(c))
+  return W.SignedMoney(c, { full = true })
 end
 
 function PB:SelectedRecipe()

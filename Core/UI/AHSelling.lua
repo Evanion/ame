@@ -14,9 +14,7 @@ ns.AHSelling = S
 S.LIST_W = 260
 S.FORM_W = 280
 
-local function money(c)
-  return c and W.Money(math.floor(c + 0.5)) or W.NONE
-end
+local money = W.Money
 
 -- Pure: bag slots -> one entry per item, with every slot holding it.
 --   slots = { { key, count, loc, quality, icon, link, commodity } }
@@ -192,7 +190,7 @@ function S:Create(ah)
         label = L["Worth"],
         width = 64,
         text = function(e)
-          return e.worth > 0 and W.Money(math.floor(e.worth + 0.5), true) or W.Dim("·")
+          return e.worth > 0 and W.Money(e.worth, true) or W.Dim("·")
         end,
       },
     },
@@ -501,7 +499,7 @@ function S:RenderForm()
     return
   end
   p.icon:SetTexture(e.icon or 134400)
-  p.itemName:SetText(W.QualityText(e.quality, ns.ItemCache.Name(e.key) or ("item:" .. e.key)))
+  p.itemName:SetText(W.QualityText(e.quality, W.ItemLabel(e.key)))
   local s = e.summary
   local info = {}
   if s and s.market then
@@ -541,7 +539,7 @@ function S:RenderForm()
   if self.price then
     local c = cut()
     p.net:SetText(
-      W.Dim(L["You get, after the %d%% cut"]:format(math.floor(c * 100 + 0.5)) .. "  ")
+      W.Dim(L["You get, after the %d%% cut"]:format(W.CutPct(c)) .. "  ")
         .. money(self.price * (e.commodity and qty or 1) * (1 - c))
     )
   else

@@ -21,13 +21,7 @@ local function shopping()
   return ns.AME.shopping
 end
 
-local function name(id)
-  return ns.ItemCache.Name(id) or ("item:" .. tostring(id))
-end
-
-local function money(c)
-  return c and W.Money(math.floor(c + 0.5)) or W.NONE
-end
+local name, money = W.ItemLabel, W.Money
 
 -- the list on screen: one of yours, or a recipe's reagents (Search AH from the profession window)
 function T:Items()
@@ -366,7 +360,7 @@ local function listColumns()
           if r.vendor then
             return "" -- bought from a vendor, not here
           end
-          return r.missing > 0 and W.Money(math.floor((r.buyCost or r.cost or 0) + 0.5)) or ""
+          return r.missing > 0 and W.Money(r.buyCost or r.cost or 0) or ""
         end,
       }
     else

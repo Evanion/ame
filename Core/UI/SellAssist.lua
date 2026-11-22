@@ -345,7 +345,7 @@ function Sell:Draw()
   local vendor = info and info.sellPrice
   self.chance = choice.chance and math.floor(choice.chance * 100 + 0.5)
   local _, house = ns.SplitShard(ns.AME:CurrentShard())
-  local cutPct = math.floor((ns.Settings:AuctionCut(house or ns.AME:CurrentHouse()) or 0) * 100 + 0.5)
+  local cutPct = W.CutPct(ns.Settings:AuctionCut(house or ns.AME:CurrentHouse()))
   bar.fill:Show()
   if vendor and vendor > 0 and net < vendor then
     -- the auction house nets less than a vendor: say so; posting anyway is the only (secondary) button
