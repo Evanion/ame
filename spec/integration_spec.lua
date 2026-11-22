@@ -3880,7 +3880,7 @@ describe("addon in a stubbed client", function()
       v.syncNow.scripts.OnClick(v.syncNow)
       assert.truthy(kinds(before):find("query:GUILD", 1, true))
       assert.truthy(kinds(before):find("announce:GUILD", 1, true))
-      assert.truthy(v.syncStatus.text:find("latest scans"))
+      assert.truthy(v.act.message:find("latest scans"))
       -- again right away: not yet
       local ok, why = ns.SyncService:SyncNow()
       assert.is_nil(ok)
@@ -3897,7 +3897,7 @@ describe("addon in a stubbed client", function()
       ns.Settings:Set("syncTrusted", false)
       env.now = env.now + 60
       v.syncNow.scripts.OnClick(v.syncNow)
-      assert.truthy(v.syncStatus.text:find("Sync is off"))
+      assert.truthy(v.act.message:find("Sync is off"))
     end)
 
     it("relays other players' scans for every auction house, and backfills a day of scans quickly", function()
@@ -4237,22 +4237,25 @@ describe("addon in a stubbed client", function()
         end
         assert.are.equal(1, v.protocol.index) -- v2
         assert.truthy(v.activity.text:find("Hours of the last week here: 1 of 168", 1, true), v.activity.text)
-        -- a catch-up: a dozen objects queued from one guildmate read as one line, with the time left
+        -- a catch-up: a dozen objects queued from one guildmate read as one progress row, with the time left
         local incoming = ns.SyncService.v2.incoming
         for i = 1, 12 do
           incoming["Guild Mate#" .. i] =
-            { kind = "h", ref = i, got = i == 1 and 50 or 0, n = 100, sender = "Guild Mate" }
+            { shard = SHARD, kind = "h", ref = i, got = i == 1 and 50 or 0, n = 100, sender = "Guild Mate" }
         end
         ns.UI:RefreshSync()
-        local lines = 0
-        for _ in v.activity.text:gmatch("Receiving from") do
-          lines = lines + 1
+        local moving = {}
+        for _, m in ipairs(v.act.data.moving) do
+          if not m.mine then -- (our own fresh scan may be going out too)
+            moving[#moving + 1] = m
+          end
         end
-        assert.are.equal(1, lines)
-        assert.truthy(
-          v.activity.text:find("Receiving from Guild Mate: 12 objects, 4%% %(~21 min left%)"),
-          v.activity.text
-        )
+        assert.are.equal(1, #moving)
+        assert.are.equal("From Guild Mate", moving[1].who)
+        assert.truthy(moving[1].what:find("12 hours", 1, true), moving[1].what)
+        assert.are.equal("~21 min left", moving[1].left)
+        assert.truthy(math.abs(moving[1].frac - 50 / 1200) < 1e-9)
+        assert.truthy(v.statusLine:GetText():find("receiving from 1 player", 1, true), v.statusLine:GetText())
         for k in pairs(incoming) do
           incoming[k] = nil
         end
@@ -4282,6 +4285,63 @@ describe("addon in a stubbed client", function()
           got[#got + 1] = w.kind .. ":" .. w.ref
         end
         assert.are.same({ "h:" .. recent, "h:" .. inDay, "d:" .. (today - 5) }, got)
+      end)
+
+      it("Sharing, Missing here: what a guildmate announced that we don't hold, its size and time", function()
+        bootSync(2)
+        fullScan({ { 2589, 1000, 10 } })
+        local V2 = ns.SyncV2
+        local sizes = ns.SyncService.v2.sizes
+        for k in pairs(sizes) do -- (our own scan went out to the guild: its size was learned)
+          sizes[k] = nil
+        end
+        local hour0, today = math.floor(env.now / 3600), math.floor(env.now / 86400)
+        local newer = env.now + 30 -- a full scan newer than ours
+        handlers.AME2(
+          V2.EncodeManifest(SHARD, {
+            scanT = newer,
+            hour0 = hour0,
+            hours = { [hour0 - 5] = true, [hour0 - 6] = true },
+            day0 = today - 1,
+            days = {},
+          }),
+          "GUILD",
+          "Guild Mate"
+        )
+        local rows, total = ns.SyncService:V2Missing()
+        assert.are.equal(1, #rows)
+        local r = rows[1]
+        assert.are.equal("Guild Mate", r.from)
+        assert.are.equal(newer, r.scan)
+        assert.are.equal(2, r.hours)
+        assert.are.equal(0, r.bytes) -- no sizes learned yet
+        assert.are.equal(3, r.unknown)
+        assert.are.equal(1, total.scans)
+        -- sizes learned from offers: estimates in bytes and seconds
+        ns.SyncService.v2:LearnSize(SHARD, "s", 23000)
+        ns.SyncService.v2:LearnSize(SHARD, "h", 2300)
+        rows, total = ns.SyncService:V2Missing()
+        assert.are.equal(23000 + 2 * 2300, rows[1].bytes)
+        assert.are.equal(math.ceil((100 + 2 * 10) * V2.PACE), rows[1].seconds)
+        assert.are.equal(rows[1].seconds, total.seconds)
+        assert.are.same(AME_DB.sync.v2Sizes, ns.SyncService.v2.sizes) -- kept for the next session
+        -- the card shows it
+        ns.UI:Toggle()
+        ns.UI:ShowTab("sync")
+        local v = ns.UI.syncView
+        v.scripts.OnShow(v)
+        local cells = v.act.data.rows[1]
+        assert.are.equal("Guild Mate", cells[1])
+        assert.are.equal("Horde AH", cells[2])
+        assert.truthy(v.act.data.total:find("full scan, 2 hours", 1, true), v.act.data.total)
+        assert.truthy(v.statusLine:GetText():find("caught up in", 1, true), v.statusLine:GetText())
+        -- once asked (the hearers ask after a moment), the row says so
+        env:advance(3)
+        rows = ns.SyncService:V2Missing()
+        assert.are.equal("asked", rows[1].state)
+        -- a blocked player's announcement doesn't count
+        ns.SyncService.trust:Block("Guild Mate")
+        assert.are.equal(0, #ns.SyncService:V2Missing())
       end)
 
       it("in combat, blocks still arrive, but checking and storing them waits until it ends", function()
@@ -4809,6 +4869,55 @@ describe("addon in a stubbed client", function()
       env:slash("AZEROTHMERCANTILEEXCHANGE", "sync") -- Settings, Sharing
       assert.are.equal("settings", ns.UI.current)
       assert.are.equal("sharing", ns.UI.settingsView.current)
+    end)
+
+    it("tells everyone its version, and says once when someone has a newer one", function()
+      local saved = ns.VERSION
+      finally(function()
+        ns.VERSION = saved
+      end)
+      bootSync()
+      ns.VERSION = "0.4.1-beta.12"
+      fullScan({ { 2589, 1000, 10 } })
+      local shard = ns.AME:CurrentShard()
+      -- ours goes out with each announcement
+      local before = #sent
+      ns.SyncService:Announce()
+      local ours
+      for i = before + 1, #sent do
+        local m = ns.Sync.Decode(sent[i].msg)
+        if m and m.type == "version" and sent[i].distribution == "GUILD" then
+          ours = m.version
+        end
+      end
+      assert.are.equal("0.4.1-beta.12", ours)
+      -- an older one: noted, nothing said
+      deliver(ns.Sync.EncodeVersion(shard, "0.4.0"), "GUILD", "Old Mate")
+      assert.are.equal("0.4.0", ns.SyncService:VersionOf("Old Mate"))
+      assert.is_nil(ns.SyncService:NewerVersion())
+      -- a newer one: chat, the notification center and the footer
+      deliver(ns.Sync.EncodeVersion(shard, "0.4.1"), "GUILD", "Guild Mate")
+      assert.is_true(env:chatContains("Guild Mate has a newer version %(0%.4%.1; you have 0%.4%.1%-beta%.12%)"))
+      local list = ns.AME.notices:List()
+      assert.are.equal("update", list[1].kind)
+      assert.are.equal("0.4.1", list[1].text)
+      assert.truthy(ns.UI:FooterRight():find("Update available: 0.4.1", 1, true))
+      -- the same version again: said once
+      local lines = #env.chat
+      env.now = env.now + 60
+      deliver(ns.Sync.EncodeVersion(shard, "0.4.1"), "GUILD", "Other Mate")
+      assert.are.equal(lines, #env.chat)
+      -- the player list shows it
+      ns.UI:Toggle()
+      ns.UI:ShowTab("sync")
+      assert.truthy(ns.UI.SyncVersionText("Guild Mate"):find("0.4.1 (newer)", 1, true))
+      assert.are.equal("0.4.0  ·  ", ns.UI.SyncVersionText("Old Mate"))
+      -- versions compare as releases: a release after its betas; a development build compares with nothing
+      assert.are.equal(1, ns.Sync.CompareVersions("0.4.1", "0.4.1-beta.12"))
+      assert.are.equal(-1, ns.Sync.CompareVersions("0.4.1-beta.9", "0.4.1-beta.12"))
+      assert.are.equal(1, ns.Sync.CompareVersions("v0.5.0-alpha.1", "0.4.9"))
+      assert.are.equal(0, ns.Sync.CompareVersions("0.4.1", "v0.4.1"))
+      assert.is_nil(ns.Sync.CompareVersions("dev", "0.4.1"))
     end)
 
     it("ignores other realms, its own messages and garbage", function()

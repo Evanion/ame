@@ -440,4 +440,65 @@ describe("Sync v2 (engine)", function()
       assert.is_true(g.Bob.have[V2.ObjKey(SHARD, "h", 999)] == hour)
     end)
   end)
+
+  describe("what the Sharing page reads", function()
+    local e, t
+    before_each(function()
+      t = 0
+      e = V2.New({
+        name = "Me",
+        send = function() end,
+        now = function()
+          return t
+        end,
+        after = function() end,
+        random = function()
+          return 0
+        end,
+        host = {
+          Allowed = function()
+            return true
+          end,
+          Wants = function()
+            return {}
+          end,
+          Wanted = function()
+            return true
+          end,
+        },
+      })
+    end)
+
+    it("learns how big each kind of object is, as a running average", function()
+      assert.is_nil(e:SizeOf(SHARD, "h"))
+      e:LearnSize(SHARD, "h", 1000)
+      assert.are.equal(1000, e:SizeOf(SHARD, "h"))
+      e:LearnSize(SHARD, "h", 2000)
+      assert.are.equal(1300, e:SizeOf(SHARD, "h"))
+      assert.is_nil(e:SizeOf(SHARD, "d"))
+    end)
+
+    it("keeps each player's last manifest, and knows where an object stands", function()
+      local m = { scanT = 0, hour0 = 100, hours = { [99] = true }, day0 = 3, days = {} }
+      e:OnMessage(V2.EncodeManifest(SHARD, m), "Bob")
+      assert.truthy(e.manifests.Bob[SHARD].m.hours[99])
+      assert.is_nil(e:Track(SHARD, "h", 99))
+      -- offered: its size is known from the offer
+      e:OnMessage(
+        V2.EncodeOffer(SHARD, { oid = "x1", kind = "h", ref = 99, t = 0, n = 3, len = 600, sum = 1, src = "Bob" }),
+        "Bob"
+      )
+      local track = e:Track(SHARD, "h", 99)
+      assert.are.equal("receiving", track.state) -- wanted: its blocks are expected now
+      assert.are.equal(3, track.n)
+      assert.are.equal(600, e:SizeOf(SHARD, "h"))
+      e:OnMessage(V2.EncodeBlock("x1", 1, string.rep("a", 230)), "Bob")
+      assert.are.equal(1, e:Track(SHARD, "h", 99).got)
+      -- asked for, nothing offered yet
+      e.requested[V2.ObjKey(SHARD, "d", 2)] = t
+      assert.are.equal("asked", e:Track(SHARD, "d", 2).state)
+      t = t + V2.REQUEST_COOLDOWN + 1
+      assert.is_nil(e:Track(SHARD, "d", 2))
+    end)
+  end)
 end)

@@ -22,6 +22,12 @@ function UI.NoticeLine(e)
     return (link or ("item:" .. tostring(e.itemID))) .. " " .. (e.text or ""), icon or BELL
   elseif e.kind == "request" then
     return L["%s wants to share auction prices with you"]:format(e.who or "?"), "Interface\\Icons\\INV_Letter_15"
+  elseif e.kind == "update" then
+    return L["A newer version is out: %s (%s has it). Update from CurseForge or your addon manager."]:format(
+      e.text or "?",
+      e.who or "?"
+    ),
+      "Interface\\Icons\\INV_Misc_Gear_01"
   end
   return e.text or "", BELL
 end
@@ -221,7 +227,7 @@ function UI:OpenNotice(e)
   end
   if e.kind == "alert" and e.itemID then
     self:ShowItem(e.itemID)
-  elseif e.kind == "request" then
+  elseif e.kind == "request" or e.kind == "update" then
     self:ShowTab("sync")
   end
 end

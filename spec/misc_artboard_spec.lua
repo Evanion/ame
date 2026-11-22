@@ -202,7 +202,7 @@ describe("artboard features", function()
     assert.truthy(row.cells[1].text:find("Item " .. row.data.id, 1, true), row.cells[1].text)
   end)
 
-  it("Sharing: the status says when the next announce is due", function()
+  it("Sharing: the Sync activity card says when the next announce is due", function()
     boot()
     env.inGuild = true
     ns.Settings:Set("syncGuild", true)
@@ -218,18 +218,22 @@ describe("artboard features", function()
     ns.UI:ShowTab("sync")
     local v = ns.UI.syncView
     v.scripts.OnShow(v)
+    local function nextText()
+      return ns.Widgets.Plain(v.act.data.next)
+    end
     assert.truthy(v.statusLine.text:find("Sync is on", 1, true), v.statusLine.text)
-    assert.truthy(v.statusLine.text:find("next announce in 8 min", 1, true), v.statusLine.text)
+    assert.truthy(nextText():find("Next announce in 8 min", 1, true), nextText())
+    assert.truthy(math.abs(v.act.data.nextFrac - 120 / 600) < 1e-9) -- the countdown bar
     -- it counts down while it's on screen
     assert.is_true(v:IsShown())
     env:advance(30)
     env:advance(30)
-    assert.truthy(v.statusLine.text:find("next announce in 7 min", 1, true), v.statusLine.text)
+    assert.truthy(nextText():find("Next announce in 7 min", 1, true), nextText())
     -- sharing off: nothing is due
     ns.Settings:Set("syncGuild", false)
     ns.Settings:Set("syncTrusted", false)
     assert.is_nil(svc:NextAnnounceIn())
     ns.UI:RefreshSync()
-    assert.is_nil(v.statusLine.text:find("next announce", 1, true))
+    assert.is_nil(nextText():find("Next announce", 1, true))
   end)
 end)

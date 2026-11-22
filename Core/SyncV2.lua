@@ -268,6 +268,8 @@ function V2.New(o)
     heard = {}, -- [sender] = when last heard sending (an offer or a block)
     asking = {}, -- [objKey] = true while waiting to ask for it
     offerAsked = {}, -- [sender .. "\n" .. oid] = true: asked for that offer again
+    manifests = {}, -- [sender] = { [shard] = { m = manifest, at } }: what each player last said they hold
+    sizes = o.sizes or {}, -- [shard .. "#" .. kind] = bytes an object of that kind usually is (learned)
   }, V2)
 end
 
@@ -412,7 +414,8 @@ function V2:startSending(shard, obj)
     end
   end
   table.insert(self.order, at, o)
-  self.offers[o.k] = { sender = self.name, oid = oid, at = self.now() }
+  self.offers[o.k] = { sender = self.name, oid = oid, at = self.now(), n = o.n, len = o.len }
+  self:LearnSize(shard, o.kind, o.len)
   -- the offer goes out now, ahead of other objects' blocks: it claims the object, so other holders stay quiet
   self.control[#self.control + 1] = V2.EncodeOffer(shard, o)
   self:wake()
@@ -452,6 +455,8 @@ function V2:OnMessage(msg, sender)
     if not self.host:Allowed(m.shard, sender) then
       return
     end
+    self.manifests[sender] = self.manifests[sender] or {}
+    self.manifests[sender][m.shard] = { m = m, at = now }
     -- ask after a random moment, for what nobody else asked for meanwhile (everyone hears a manifest at once)
     local list = {}
     for _, w in ipairs(self.host:Wants(m.shard, m)) do
@@ -506,8 +511,9 @@ function V2:OnMessage(msg, sender)
     end
     local k = objKey(m.shard, m.kind, m.ref)
     local id = sender .. "\n" .. m.oid
-    self.offers[k] = { sender = sender, oid = m.oid, at = now }
+    self.offers[k] = { sender = sender, oid = m.oid, at = now, n = m.n, len = m.len }
     self.offerOf[id] = k
+    self:LearnSize(m.shard, m.kind, m.len)
     -- the same object offered by me too: the name sorting first keeps sending
     for _, o in pairs(self.outgoing) do
       if o.k == k and #o.pending > 0 and who < self.me then
@@ -703,21 +709,23 @@ function V2:check()
   end
 end
 
--- what's going on, for the Sharing status: sending = { kind, ref, sent, n } or nil, queued = objects waiting,
--- receiving = { { kind, ref, got, n, from }, ... }
+-- what's going on, for the Sharing status: sending = { shard, kind, ref, sent, n } or nil, queued = objects
+-- waiting (queue = { { shard, kind, ref }, ... }), receiving = { { shard, kind, ref, got, n, from }, ... }
 function V2:Status()
-  local s = { queued = 0, receiving = {} }
+  local s = { queued = 0, receiving = {}, queue = {} }
   for _, o in ipairs(self.order) do
     if not o.cancelled and #o.pending > 0 then
       if not s.sending then
-        s.sending = { kind = o.kind, ref = o.ref, sent = o.n - #o.pending, n = o.n }
+        s.sending = { shard = o.shard, kind = o.kind, ref = o.ref, sent = o.n - #o.pending, n = o.n }
       else
         s.queued = s.queued + 1
+        s.queue[#s.queue + 1] = { shard = o.shard, kind = o.kind, ref = o.ref }
       end
     end
   end
   for _, inc in pairs(self.incoming) do
-    s.receiving[#s.receiving + 1] = { kind = inc.kind, ref = inc.ref, got = inc.got, n = inc.n, from = inc.sender }
+    s.receiving[#s.receiving + 1] =
+      { shard = inc.shard, kind = inc.kind, ref = inc.ref, got = inc.got, n = inc.n, from = inc.sender }
   end
   -- the same, per sender (a player catching up gets a dozen objects queued from one guildmate): objects, blocks
   -- in and in all, sorted by name; a sender sends one block every PACE seconds, so blocks left x PACE is the wait
@@ -726,11 +734,13 @@ function V2:Status()
   for _, r in ipairs(s.receiving) do
     local e = by[r.from]
     if not e then
-      e = { from = r.from, objects = 0, got = 0, n = 0 }
+      e = { from = r.from, objects = 0, got = 0, n = 0, kinds = {}, shards = {} }
       by[r.from] = e
       s.senders[#s.senders + 1] = e
     end
     e.objects, e.got, e.n = e.objects + 1, e.got + (r.got or 0), e.n + (r.n or 0)
+    e.kinds[r.kind] = (e.kinds[r.kind] or 0) + 1 -- how many full scans ("s"), hours ("h") and days ("d")
+    e.shards[r.shard or "?"] = true
   end
   for _, e in ipairs(s.senders) do
     e.secondsLeft = math.ceil((e.n - e.got) * V2.PACE)
@@ -746,6 +756,42 @@ function V2:Status()
     end
   end
   return s
+end
+
+-- how big an object of a kind at an auction house usually is: a running average of the ones offered (bytes)
+V2.SIZE_WEIGHT = 0.3
+function V2:LearnSize(shard, kind, len)
+  if not (shard and kind and len and len > 0) then
+    return
+  end
+  local k = shard .. "#" .. kind
+  local old = self.sizes[k]
+  self.sizes[k] = old and floor(old + V2.SIZE_WEIGHT * (len - old) + 0.5) or len
+end
+
+function V2:SizeOf(shard, kind)
+  return self.sizes[shard .. "#" .. kind]
+end
+
+-- where an object stands here: { state = "receiving", got, n, len, from } (its blocks are coming), "offered"
+-- (someone offered it; its turn hasn't come), "asked" (asked for, no offer yet), or nil (nobody asked yet)
+function V2:Track(shard, kind, ref)
+  local k = objKey(shard, kind, ref)
+  for _, inc in pairs(self.incoming) do
+    if inc.k == k then
+      return { state = "receiving", got = inc.got, n = inc.n, len = inc.len, from = inc.sender }
+    end
+  end
+  local now = self.now()
+  local o = self.offers[k]
+  if o and o.sender ~= self.name and now - o.at < V2.WAIT_TURN then
+    return { state = "offered", n = o.n, len = o.len, from = o.sender }
+  end
+  local asked = self.requested[k]
+  if asked and now - asked < V2.REQUEST_COOLDOWN then
+    return { state = "asked" }
+  end
+  return nil
 end
 
 -- incoming objects, to save at logout (Restore resumes them: the missing blocks are asked for)

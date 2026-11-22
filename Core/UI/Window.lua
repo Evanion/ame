@@ -273,6 +273,15 @@ end
 -- and it sits by the version, where the eye goes to see whether AME is done.
 function UI:FooterRight()
   local version = "v" .. ns.VERSION
+  -- someone you share with runs a newer version: recommend updating, by the version
+  local newer = ns.SyncService
+    and ns.SyncService.NewerVersion
+    and AME_DB
+    and AME_DB.sync
+    and ns.SyncService:NewerVersion()
+  if newer then
+    version = W.Color("warn", L["Update available: %s"]:format(newer.v)) .. "  " .. version
+  end
   local busy = self:BusyNow()
   return busy and (W.Color("warn", busy) .. "    " .. version) or version
 end

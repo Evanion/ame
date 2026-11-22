@@ -66,7 +66,9 @@ function Service:InitV2()
     end,
     random = math.random,
     host = self:V2Host(),
+    sizes = AME_DB.sync.v2Sizes, -- how big each kind of object usually is, learned (the Sharing page's estimates)
   })
+  AME_DB.sync.v2Sizes = self.v2.sizes
   self.transport:Register(V2.PREFIX, function(msg, distribution, sender)
     local ok, err = pcall(self.OnV2Message, self, msg, distribution, sender)
     if not ok then
@@ -487,6 +489,90 @@ function Service:Received(shard, sender, done, result, scanned)
   else -- hours and days come in runs: once they've been quiet a while
     AME:InvalidateIndexLater(shard)
   end
+end
+
+-- What others announced that I don't hold (Sharing, Missing here), from each player's last manifest: one row per
+-- player and auction house - { from, shard, house, scan (its time, when newer than mine), mine (my newest), hours,
+-- days, bytes (known or learned sizes), unknown (objects of a size not learned yet), seconds (blocks left x PACE),
+-- state ("receiving" | "offered" | "asked" | "waiting") } - and totals { scans, hours, days, bytes, unknown,
+-- seconds (the slowest sender: senders send at once), senders }. An object several players hold counts once, under
+-- whoever announced it last. nil without v2 or before the history is loaded.
+Service.MANIFEST_KEEP = 45 * 60 -- a manifest this old is forgotten (they come every ANNOUNCE_EVERY)
+local STATE_RANK = { receiving = 1, offered = 2, asked = 3, waiting = 4 }
+
+function Service:V2Missing()
+  local v2, AME = self.v2, self.AME
+  if not (v2 and AME:HistoryLoaded()) then
+    return nil
+  end
+  local now = v2.now()
+  local heard = {}
+  for sender, shards in pairs(v2.manifests) do
+    for shard, e in pairs(shards) do
+      if now - e.at > Service.MANIFEST_KEEP then
+        shards[shard] = nil
+      elseif not self.trust:IsBlocked(sender) then
+        heard[#heard + 1] = { from = sender, shard = shard, m = e.m, at = e.at }
+      end
+    end
+  end
+  table.sort(heard, function(a, b)
+    if a.at ~= b.at then
+      return a.at > b.at
+    end
+    return tostring(a.from) .. a.shard < tostring(b.from) .. b.shard
+  end)
+  local seen, rows, perSender = {}, {}, {}
+  local total = { scans = 0, hours = 0, days = 0, bytes = 0, unknown = 0, seconds = 0, senders = 0 }
+  for _, h in ipairs(heard) do
+    local _, house = ns.SplitShard(h.shard)
+    local row = { from = h.from, shard = h.shard, house = house, hours = 0, days = 0, bytes = 0, unknown = 0 }
+    local blocks, best = 0, nil
+    for _, w in ipairs(v2.host:Wants(h.shard, h.m)) do
+      local k = V2.ObjKey(h.shard, w.kind, w.ref)
+      if not seen[k] then
+        seen[k] = true
+        if w.kind == "s" then
+          row.scan = w.ref
+        elseif w.kind == "h" then
+          row.hours = row.hours + 1
+        else
+          row.days = row.days + 1
+        end
+        local t = v2:Track(h.shard, w.kind, w.ref)
+        local len = t and t.len or v2:SizeOf(h.shard, w.kind)
+        if len then
+          row.bytes = row.bytes + len
+        else
+          row.unknown = row.unknown + 1
+        end
+        if t and t.state == "receiving" and t.n then
+          blocks = blocks + math.max(0, t.n - (t.got or 0))
+        elseif len then
+          blocks = blocks + math.ceil(len / V2.BLOCK)
+        end
+        local state = t and t.state or "waiting"
+        if not best or STATE_RANK[state] < STATE_RANK[best] then
+          best = state
+        end
+      end
+    end
+    if best then
+      row.state = best
+      row.seconds = math.ceil(blocks * V2.PACE)
+      row.mine = newestFull(AME.history.shards[h.shard])
+      rows[#rows + 1] = row
+      perSender[h.from] = (perSender[h.from] or 0) + row.seconds
+      total.scans = total.scans + (row.scan and 1 or 0)
+      total.hours, total.days = total.hours + row.hours, total.days + row.days
+      total.bytes, total.unknown = total.bytes + row.bytes, total.unknown + row.unknown
+    end
+  end
+  for _, seconds in pairs(perSender) do
+    total.seconds = math.max(total.seconds, seconds)
+    total.senders = total.senders + 1
+  end
+  return rows, total
 end
 
 -- for the Sharing status: hours of the last 7 days I hold for the auction house I'm at, and transfers going on

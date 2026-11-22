@@ -67,17 +67,29 @@ function UI:CreateSyncSection(v, host)
   end
   v.fresh = cards.cards
 
-  -- the cards, one column under the freshness row
+  -- Sync activity, the whole width under the freshness row (Core/UI/SyncActivity.lua)
+  local gap = UI.SETTINGS_GAP or 10
+  local activity = CreateFrame("Frame", nil, v)
+  activity:SetPoint("TOPLEFT", 0, -(56 + gap))
+  activity:SetPoint("RIGHT", 0, 0)
+  activity:SetHeight(1)
+  local activityCard = self:CreateSyncActivity(v, activity)
+
+  -- the cards, in columns under the activity card
   local column = CreateFrame("Frame", nil, v)
-  column:SetPoint("TOPLEFT", 0, -(56 + (UI.SETTINGS_GAP or 10)))
   column:SetPoint("RIGHT", 0, 0)
   column:SetHeight(1)
   local stack = UI.Stack(column, 0)
-  -- the section's height: the freshness row and the cards (the settings tab places the section)
+  -- the section's height: the freshness row, the activity card and the cards (the settings tab places the section)
   function v:Measure(width)
-    local h = stack:Flow(width, UI.SETTINGS_COLUMN or 380, UI.SETTINGS_GAP or 10, UI.SETTINGS_COLUMNS or 3)
+    local ah = activityCard:Height(width)
+    activity:SetHeight(math.max(1, ah))
+    column:ClearAllPoints()
+    column:SetPoint("TOPLEFT", 0, -(56 + gap + ah + gap))
+    column:SetPoint("RIGHT", 0, 0)
+    local h = stack:Flow(width, UI.SETTINGS_COLUMN or 380, gap, UI.SETTINGS_COLUMNS or 3)
     column:SetHeight(math.max(1, h))
-    return 56 + (UI.SETTINGS_GAP or 10) + h
+    return 56 + gap + ah + gap + h
   end
   function v:LayoutColumns()
     if host.relayout then
@@ -177,18 +189,6 @@ function UI:CreateSyncSection(v, host)
   v.peersMoreRow = c[9]
   v.peersMore = c[9].buttons[1]
   v.peersExpanded = false
-  -- Sync now: announce ours, and ask everyone to announce theirs (missing scans arrive in a minute or two)
-  local syncNow = W.Button(guild.rowFrames[1], L["Sync now"], 90, 20, function()
-    local ok, why = svc:SyncNow()
-    v.syncStatus:SetText(
-      ok and L["Asked your guild and trusted players for their latest scans: they arrive over the next minutes."]
-        or W.Color("bad", why or "")
-    )
-    UI:RefreshSync()
-  end)
-  syncNow:SetWidth(math.ceil(syncNow.label:GetStringWidth() or 60) + 16)
-  syncNow:SetPoint("RIGHT", 0, 0)
-  v.syncNow = syncNow
 
   -- Trusted players: intro, the switch, ask by name, the list, then requests
   local function add()
@@ -285,18 +285,30 @@ function UI:RefreshSync()
     end
   end
   local on = ns.Settings:Get("syncGuild") or ns.Settings:Get("syncTrusted")
+  -- the activity card (Core/UI/SyncActivity.lua), and the footer: on or off, who's sending to you, when you're
+  -- caught up
+  local act = self:SyncActivityData()
+  v.act.data = act
   local status = on and L["Sync is on"] or L["Sync is off: turn on guild or trusted sharing below"]
-  local nextIn = on and svc.NextAnnounceIn and svc:NextAnnounceIn(now)
-  if nextIn then
-    status = status .. W.SEP .. L["next announce in %s"]:format(UI.Duration(nextIn))
-    -- counting down while it's on screen: drawn again in half a minute
-    if not self.syncCountdown and C_Timer then
-      self.syncCountdown = true
-      C_Timer.After(30, function()
-        UI.syncCountdown = false
-        UI:RefreshSync()
-      end)
-    end
+  if on and act.receivingFrom > 0 then
+    status = status
+      .. W.SEP
+      .. (
+        act.receivingFrom == 1 and L["receiving from 1 player"]
+        or L["receiving from %d players"]:format(act.receivingFrom)
+      )
+  end
+  if on and act.catchUp > 0 then
+    status = status .. W.SEP .. L["caught up in ~%s"]:format(UI.Duration(act.catchUp))
+  end
+  -- drawn again while it's on screen: every few seconds while data is moving (the progress bars), else every half
+  -- minute (the countdown to the next announcement)
+  if on and not self.syncCountdown and C_Timer then
+    self.syncCountdown = true
+    C_Timer.After(#act.moving > 0 and 3 or 30, function()
+      UI.syncCountdown = false
+      UI:RefreshSync()
+    end)
   end
   v.statusLine:SetText(status)
   v.guild:SetChecked(ns.Settings:Get("syncGuild"))
@@ -323,24 +335,7 @@ function UI:RefreshSync()
     end
     local v2 = svc.V2Status and svc:V2Status()
     if v2 then
-      local parts = { L["Hours of the last week here: %d of %d"]:format(v2.hours, ns.SyncV2.HOURS) }
-      if v2.sending then
-        parts[#parts + 1] = L["sending %d%%"]:format(math.floor(100 * v2.sending.sent / math.max(1, v2.sending.n)))
-          .. (v2.queued > 0 and (" " .. L["(+%d waiting)"]:format(v2.queued)) or "")
-          .. " "
-          .. L["(~%s left)"]:format(UI.Duration(math.ceil((v2.sendLeft or 0) * ns.SyncV2.PACE)))
-      end
-      lines[#lines + 1] = table.concat(parts, "  ·  ")
-      -- one line per sender, however many objects they're sending
-      for _, e in ipairs(v2.senders or {}) do
-        lines[#lines + 1] = L["Receiving from %s: %d %s, %d%% (~%s left)"]:format(
-          e.from,
-          e.objects,
-          e.objects == 1 and L["object"] or L["objects"],
-          math.floor(100 * e.got / math.max(1, e.n)),
-          UI.Duration(e.secondsLeft)
-        )
-      end
+      lines[#lines + 1] = L["Hours of the last week here: %d of %d"]:format(v2.hours, ns.SyncV2.HOURS)
     end
     v.activity:SetText(table.concat(lines, "\n"))
   end
@@ -401,7 +396,8 @@ function UI:RefreshSync()
     row.text:SetText(p.name)
     row.state:SetText(
       W.Dim(
-        (proto and ("v" .. proto .. "  ·  ") or "")
+        UI.SyncVersionText(p.name)
+          .. (proto and ("v" .. proto .. "  ·  ") or "")
           .. (p.via == "GUILD" and L["guild"] or L["whisper"])
           .. "  ·  "
           .. L["heard %s"]:format(ago(p.at))
@@ -437,7 +433,13 @@ function UI:RefreshSync()
     row.text:SetText(e.name)
     local heard = svc.trust:LastHeard(e.name)
     row.state:SetText(
-      e.mutual and W.Dim(L["trusted"] .. "  ·  " .. (heard and L["heard %s"]:format(ago(heard)) or L["not heard yet"]))
+      e.mutual
+          and W.Dim(
+            UI.SyncVersionText(e.name)
+              .. L["trusted"]
+              .. "  ·  "
+              .. (heard and L["heard %s"]:format(ago(heard)) or L["not heard yet"])
+          )
         or W.Dim(L["waiting for them to approve"])
     )
   end)
@@ -447,6 +449,21 @@ function UI:RefreshSync()
   end)
   v:FitLists()
   v:LayoutColumns()
+end
+
+-- a player's AME version for their row, then a separator: "0.4.2 (newer)  ·  " - newer than mine in the warning
+-- colour, older dim; "" when they haven't said
+function UI.SyncVersionText(name)
+  local svc = ns.SyncService
+  local version = svc.VersionOf and svc:VersionOf(name)
+  if not version then
+    return ""
+  end
+  local cmp = ns.Sync.CompareVersions(version, ns.VERSION)
+  if cmp == 1 then
+    return "|r" .. W.Color("warn", version .. " " .. L["(newer)"]) .. "|cff" .. ns.HEX.dim .. "  ·  "
+  end
+  return version .. "  ·  "
 end
 
 -- a wait in seconds, roughly: "40 s", "12 min", "1 h 50 min"

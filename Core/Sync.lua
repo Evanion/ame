@@ -11,6 +11,7 @@
 --   recipes   "1|C|<shard>|<t36>|<char>|<Crafters.Encode>"      guild (and trusted): what one of your characters
 --             can craft (recipe IDs per profession), for "who can make it"
 --   sources   "1|V|<shard>|<t36>|<RecipeSources.Encode>"        guild (and trusted): where recipes are sold or drop
+--   version   "1|U|<shard>|<version>"                           guild (and trusted): the AME version I run
 --
 -- Transport (chunking + pacing at BULK priority) is AceComm/ChatThrottleLib in the WoW glue. Received scans are
 -- merged with Store:AddScan, whose dedupe makes repeats harmless; announcements repeat, so dropped whispers retry
@@ -134,6 +135,44 @@ function Sync.EncodeAccept(shard)
   return table.concat({ Sync.PROTO, "K", shard }, "|")
 end
 
+-- the AME version I run ("0.4.1-beta.12"), so others can see who's behind (older versions ignore the message)
+function Sync.EncodeVersion(shard, version)
+  return table.concat({ Sync.PROTO, "U", shard, (tostring(version or ""):gsub("[|;]", "")) }, "|")
+end
+
+-- "0.4.1", "v0.4.2-beta.3" -> { 0, 4, 2, stage, n }: a release sorts after its betas (alpha 1, beta 2, rc 3,
+-- release 4); nil for anything else (a development build: "dev")
+local STAGES = { alpha = 1, beta = 2, rc = 3 }
+function Sync.ParseVersion(v)
+  local a, b, c, rest = tostring(v or ""):match("^v?(%d+)%.(%d+)%.(%d+)(.*)$")
+  if not a then
+    return nil
+  end
+  local stage, n = 4, 0
+  if rest ~= "" then
+    local name, num = rest:match("^%-(%a+)%.?(%d*)$")
+    if not (name and STAGES[name:lower()]) then
+      return nil
+    end
+    stage, n = STAGES[name:lower()], tonumber(num) or 0
+  end
+  return { tonumber(a), tonumber(b), tonumber(c), stage, n }
+end
+
+-- 1: a is newer, -1: b is newer, 0: the same; nil when either isn't a release version
+function Sync.CompareVersions(a, b)
+  local pa, pb = Sync.ParseVersion(a), Sync.ParseVersion(b)
+  if not (pa and pb) then
+    return nil
+  end
+  for i = 1, 5 do
+    if pa[i] ~= pb[i] then
+      return pa[i] > pb[i] and 1 or -1
+    end
+  end
+  return 0
+end
+
 -- shard keys contain "|" (realm|house), so fields are counted from the known layout
 function Sync.Decode(msg)
   if type(msg) ~= "string" or msg:sub(1, 2) ~= Sync.PROTO .. "|" then
@@ -186,6 +225,8 @@ function Sync.Decode(msg)
       return { type = "recipes", shard = shard, t = Codec.FromBase36(f[5]), char = f[6], body = f[7] }
     elseif kind == "V" and #f == 6 then
       return { type = "sources", shard = shard, t = Codec.FromBase36(f[5]), body = f[6] }
+    elseif kind == "U" and #f == 5 then
+      return { type = "version", shard = shard, version = f[5] }
     elseif kind == "Q" and #f == 4 then
       return { type = "query", shard = shard }
     elseif kind == "H" and #f == 4 then

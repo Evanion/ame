@@ -88,6 +88,7 @@ Core\UI\ShoppingView.lua
 Core\UI\MarketView.lua
 Core\UI\MarketOverview.lua
 Core\UI\SyncView.lua
+Core\UI\SyncActivity.lua
 Core\UI\SettingsView.lua
 Core\UI\ArbitrageView.lua
 Core\UI\PortfolioView.lua

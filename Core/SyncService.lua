@@ -352,6 +352,7 @@ function Service:Announce()
   if self.v2 and self:GuildActive() then
     self.v2:Announce()
   end
+  self:ShareVersion(targets)
   self:ShareWatchlists()
   self:ShareOutcomes(targets)
   self:ShareRecipes(targets)
@@ -513,6 +514,7 @@ function Service:Allowed(m, distribution, sender)
     or m.type == "query"
     or m.type == "recipes"
     or m.type == "sources"
+    or m.type == "version"
   then
     return trusted
   elseif m.type == "scan" then
@@ -538,6 +540,10 @@ function Service:OnMessage(msg, distribution, sender)
     return
   end
   self.trust:Heard(sender, GetServerTime(), distribution)
+  if m.type == "version" then
+    self:HeardVersion(sender, m.version)
+    return
+  end
   if m.type == "watchlist" then
     if self.AME.watch and self.AME.watch:SetGuildList(sender, m.name, m.t, m.ids) then
       self:Changed()
@@ -696,6 +702,79 @@ function Service:Start()
   end
   self.nextAnnounceAt = GetServerTime() + Service.FIRST_ANNOUNCE
   C_Timer.After(Service.FIRST_ANNOUNCE, loop)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- versions: everyone's AME version goes out with each announcement (guild, and whispered to trusted players); a
+-- newer one than mine says so once per version - in chat and the notification center - and the window's footer
+-- recommends updating
+
+Service.VERSION_FORGET = 30 * 86400
+
+function Service:ShareVersion(targets)
+  if not Sync.ParseVersion(ns.VERSION) then
+    return -- a development build: nothing to compare
+  end
+  local msg = Sync.EncodeVersion(self.AME:CurrentShard(), ns.VERSION)
+  if self:GuildActive() then
+    self.transport:Send(Service.PREFIX, msg, "GUILD")
+  end
+  for _, name in ipairs(targets or self:TrustedTargets()) do
+    self.transport:Send(Service.PREFIX, msg, "WHISPER", name)
+  end
+end
+
+local function versions()
+  AME_DB.sync.versions = AME_DB.sync.versions or {}
+  return AME_DB.sync.versions
+end
+
+function Service:HeardVersion(sender, version)
+  if not Sync.ParseVersion(version) then
+    return
+  end
+  local now = GetServerTime()
+  local all = versions()
+  all[ns.Trust.Key(sender)] = { v = version, at = now, name = sender }
+  for k, e in pairs(all) do
+    if now - (e.at or 0) > Service.VERSION_FORGET then
+      all[k] = nil
+    end
+  end
+  local newer = self:NewerVersion()
+  if newer and AME_DB.sync.updateNotified ~= newer.v then
+    AME_DB.sync.updateNotified = newer.v
+    self.AME.Say(
+      L["%s has a newer version (%s; you have %s). Update from CurseForge or your addon manager for the latest fixes."],
+      newer.name,
+      newer.v,
+      ns.VERSION
+    )
+    if self.AME.notices then
+      self.AME.notices:Add({ kind = "update", text = newer.v, who = newer.name }, now)
+    end
+  end
+  self:Changed()
+  if ns.UI and ns.UI.UpdateFooter then
+    ns.UI:UpdateFooter()
+  end
+end
+
+-- the version a player runs (heard within VERSION_FORGET), or nil
+function Service:VersionOf(name)
+  local e = AME_DB.sync and AME_DB.sync.versions and AME_DB.sync.versions[ns.Trust.Key(name)]
+  return e and e.v
+end
+
+-- the newest version heard that's newer than mine: { v, name, at }, or nil (none; or I run a development build)
+function Service:NewerVersion()
+  local best
+  for _, e in pairs(AME_DB.sync and AME_DB.sync.versions or {}) do
+    if Sync.CompareVersions(e.v, ns.VERSION) == 1 and (not best or Sync.CompareVersions(e.v, best.v) == 1) then
+      best = e
+    end
+  end
+  return best
 end
 
 -- seconds until the next periodic announcement (at least 0); nil while sharing is off or none is scheduled
