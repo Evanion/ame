@@ -100,7 +100,25 @@ local function setAccent(c)
   W.COLORS.rowSelected = { c[1], c[2], c[3], 0.2 }
   W.COLORS.primary = W.PrimaryShade(c, W.PRIMARY_CONTRAST)
   W.COLORS.primaryHover = W.PrimaryShade(c, W.PRIMARY_HOVER_CONTRAST)
+  W.TintMadeTag(c)
 end
+
+-- Source tags (where a material comes from, W.Tag): { fill, text } by kind. The AH in amber, made in the queue in a
+-- tint of the theme's accent, the rest plain. What's in your bags gets no tag.
+W.COLORS.tag = {
+  other = { { 0.137, 0.153, 0.184, 1 }, { 0.81, 0.8, 0.78, 1 } },
+  vendor = { { 0.137, 0.153, 0.184, 1 }, { 0.81, 0.8, 0.78, 1 } },
+  ah = { { 0.227, 0.165, 0.102, 1 }, { 1, 0.8, 0.2, 1 } },
+}
+W.TAG_TINT, W.TAG_LIGHTEN = 0.25, 0.75
+function W.TintMadeTag(c)
+  W.COLORS.tag.made = {
+    { c[1] * W.TAG_TINT, c[2] * W.TAG_TINT, c[3] * W.TAG_TINT, 1 },
+    { c[1] + (1 - c[1]) * W.TAG_LIGHTEN, c[2] + (1 - c[2]) * W.TAG_LIGHTEN, c[3] + (1 - c[3]) * W.TAG_LIGHTEN, 1 },
+  }
+end
+W.TintMadeTag(W.COLORS.accent)
+W.tags = setmetatable({}, { __mode = "k" }) -- every W.Tag, for re-tinting "made" on a theme change
 
 function W.SetTheme(house)
   local c = W.THEMES[house] or W.THEMES.Neutral
@@ -114,6 +132,11 @@ function W.SetTheme(house)
   end
   for check in pairs(W.checks) do
     check:SetChecked(check.checked)
+  end
+  for tag in pairs(W.tags) do
+    if tag.kind == "made" then
+      tag:Set(tag.value, tag.kind)
+    end
   end
 end
 
@@ -886,6 +909,32 @@ function W.SignalBadge(parent)
     end
     self:SetWidth(math.ceil(self.text:GetStringWidth() or 0) + (wordHex and 10 or 0))
   end
+  return f
+end
+
+-- A source tag: short text on a small tinted panel ("4 · bank", "AH", "made"), coloured by kind (W.COLORS.tag):
+-- "other" (default), "vendor", "ah", "made" (follows the theme's accent).
+--   local tag = W.Tag(parent); tag:Set("12 · AH", "ah"); tag:GetWidth()
+function W.Tag(parent)
+  local f = CreateFrame("Frame", nil, parent)
+  f:SetHeight(16)
+  f.bg = f:CreateTexture(nil, "BACKGROUND")
+  f.bg:SetAllPoints()
+  f.text = W.Text(f, "GameFontHighlightSmall", "CENTER")
+  f.text:SetPoint("CENTER", 0, 0)
+  f.text:SetWordWrap(false)
+  f.value, f.kind = "", "other"
+  function f:Set(text, kind)
+    self.value = text or ""
+    self.kind = W.COLORS.tag[kind] and kind or "other"
+    local c = W.COLORS.tag[self.kind]
+    self.bg:SetColorTexture(c[1][1], c[1][2], c[1][3], c[1][4])
+    self.text:SetText(self.value)
+    self.text:SetTextColor(c[2][1], c[2][2], c[2][3], 1)
+    self:SetWidth(math.ceil(self.text:GetStringWidth() or 0) + 12)
+    self:SetShown(self.value ~= "")
+  end
+  W.tags[f] = true
   return f
 end
 

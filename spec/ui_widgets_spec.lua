@@ -210,6 +210,52 @@ describe("frame widgets", function()
     end)
   end)
 
+  describe("W.Tag", function()
+    it("draws its text in its kind's colours, as wide as the text", function()
+      local tag = W.Tag(UIParent)
+      tag:Set("12 · AH", "ah")
+      local c = W.COLORS.tag.ah
+      assert.is_true(same(tag.bg._color, c[1]))
+      assert.is_true(same(tag.text._textColor, c[2]))
+      assert.are.equal(math.ceil(tag.text:GetStringWidth()) + 12, tag:GetWidth())
+      tag:Set("odd", "nonsense")
+      assert.are.equal("other", tag.kind)
+      tag:Set("")
+      assert.is_false(tag:IsShown())
+    end)
+
+    it("re-tints made tags on a theme change", function()
+      local tag = W.Tag(UIParent)
+      tag:Set("made", "made")
+      W.SetTheme("Alliance")
+      assert.is_true(same(tag.bg._color, W.COLORS.tag.made[1]))
+    end)
+
+    it("a DataTable tag column draws one per row, and exports its text", function()
+      local t = ns.DataTable.New(UIParent, {
+        rows = 2,
+        columns = {
+          { key = "name", label = "Item", width = 150, item = true },
+          { key = "from", label = "From", width = 80, format = "tag" },
+        },
+        itemID = function(d)
+          return d.id
+        end,
+      })
+      t.frame:SetWidth(400)
+      t:SetData({
+        { id = 1, from = { text = "4 · bank", kind = "other" } },
+        { id = 2, from = { text = "AH", kind = "ah" } },
+      })
+      t.headers[2].scripts.OnClick(t.headers[2]) -- sorting by it works on the text
+      t:Render()
+      local kinds = { t.rows[1].tags[2].kind, t.rows[2].tags[2].kind }
+      table.sort(kinds)
+      assert.are.same({ "ah", "other" }, kinds)
+      assert.truthy(t:ExportText():find("4 · bank", 1, true))
+    end)
+  end)
+
   describe("W.Button", function()
     it("colours its label with opts.color, dimmed while disabled", function()
       local b = W.Button(UIParent, "Buy", 60, 20, nil, { color = "good" })

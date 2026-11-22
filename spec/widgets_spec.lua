@@ -49,6 +49,27 @@ describe("Widgets formatters", function()
     end)
   end)
 
+  describe("source tags", function()
+    it("keep their text readable on their panel: every kind, on every theme (WCAG AA, 4.5:1)", function()
+      for house in pairs(W.THEMES) do
+        W.SetTheme(house)
+        for kind, c in pairs(W.COLORS.tag) do
+          local ratio = W.Contrast(W.Hex(c[2]):sub(3), W.Hex(c[1]):sub(3))
+          assert.is_true(ratio >= 4.5, ("%s %s: %.2f:1"):format(house, kind, ratio))
+        end
+      end
+    end)
+
+    it("tint made in the theme's accent", function()
+      W.SetTheme("Horde")
+      local horde = W.COLORS.tag.made[1]
+      W.SetTheme("Alliance")
+      local alliance = W.COLORS.tag.made[1]
+      assert.is_true(horde[1] > horde[3]) -- red
+      assert.is_true(alliance[3] > alliance[1]) -- blue
+    end)
+  end)
+
   describe("selected buttons", function()
     it("keep white labels readable on every faction theme's fill (the accent at half strength, WCAG AA)", function()
       for house, c in pairs(W.THEMES) do

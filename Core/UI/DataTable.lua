@@ -14,6 +14,8 @@
 --       { key = "net", label = "Net", width = 70, format = "signedMoney" },   -- "+1g 20s" / "-35s"
 --       { key = "share", label = "Share", width = 110, format = "share", max = 0.4 }, -- bar (full at max) and %
 --       { key = "signal", label = "Signal", width = 64, format = "signal" },  -- a SignalBadge (W.SignalBadge)
+--       { key = "from", label = "From", width = 80, format = "tag" },   -- a W.Tag: d.from = { text =, kind = "ah" }
+--                                                                        -- (or plain text: kind "other")
 --       { key = "buy", label = "", width = 50, button = { label = "Buy" or function(d) end,
 --           variant = function(d) return "primary" end, onClick = function(d) end, shown = fn, enabled = fn } },
 --     },
@@ -55,6 +57,9 @@ local FORMATS = {
   end,
   signedMoney = function(v)
     return W.SignedMoney(v)
+  end,
+  tag = function(v) -- a tag's text (the cell draws a W.Tag)
+    return type(v) == "table" and (v.text or "") or v and tostring(v) or ""
   end,
   share = function(v) -- the percent beside the bar
     return v and ("%d%%"):format(math.floor(v * 100 + 0.5)) or W.NONE
@@ -103,7 +108,7 @@ end
 local SHARE_W = 64 -- a share cell's bar track
 
 -- items, bars and badges read from the left, numbers from the right
-local LEFT_FORMATS = { share = true, signal = true }
+local LEFT_FORMATS = { share = true, signal = true, tag = true }
 local function leftAligned(col)
   return col.item or col.align == "LEFT" or LEFT_FORMATS[col.format] or false
 end
@@ -195,7 +200,7 @@ function DataTable.New(parent, opts)
     end
     row.cells = {}
     row.star, row.icon, row.conf, row.action = false, false, false, false -- optional parts, set below
-    row.links, row.shares, row.buttons, row.badges = {}, {}, {}, {} -- by column: items, share bars, buttons, signals
+    row.links, row.shares, row.buttons, row.badges, row.tags = {}, {}, {}, {}, {} -- by column: their parts
     for c, col in ipairs(opts.columns) do
       local left = leftAligned(col)
       local fs = W.Text(row, "GameFontHighlightSmall", left and "LEFT" or "RIGHT")
@@ -236,6 +241,8 @@ function DataTable.New(parent, opts)
         row.shares[c] = { track = track, bar = bar }
       elseif col.format == "signal" then
         row.badges[c] = W.SignalBadge(row)
+      elseif col.format == "tag" then
+        row.tags[c] = W.Tag(row)
       elseif col.button then
         local def = col.button
         local b = W.Button(row, "", col.width, rowH - 4, function()
@@ -514,9 +521,10 @@ function DataTable:Layout(width)
         s.track:SetPoint("LEFT", cx, 0)
         fs:SetSize(math.max(1, widths[c] - SHARE_W - 6), rowH)
         fs:SetPoint("LEFT", cx + SHARE_W + 6, 0)
-      elseif row.badges[c] then
-        row.badges[c]:ClearAllPoints()
-        row.badges[c]:SetPoint("LEFT", cx, 0)
+      elseif row.badges[c] or row.tags[c] then
+        local part = row.badges[c] or row.tags[c]
+        part:ClearAllPoints()
+        part:SetPoint("LEFT", cx, 0)
         fs:SetSize(1, rowH)
         fs:SetPoint("LEFT", cx, 0)
       elseif row.buttons[c] then
@@ -617,6 +625,9 @@ function DataTable:SortValue(d, key)
     end
   else
     v = d[key]
+  end
+  if type(v) == "table" then -- a tag cell's { text, kind }
+    v = v.text
   end
   if type(v) == "string" then
     return v:lower()
@@ -801,6 +812,15 @@ function DataTable:Render()
           local badge = row.badges[c]
           badge:SetSignal(d[col.key])
           badge:SetShown(not hidden[c])
+          val = ""
+        elseif row.tags[c] then
+          local tag, v = row.tags[c], d[col.key]
+          if type(v) == "table" then
+            tag:Set(v.text, v.kind)
+          else
+            tag:Set(v and tostring(v) or "", "other")
+          end
+          tag:SetShown(tag:IsShown() and not hidden[c])
           val = ""
         elseif row.buttons[c] then
           buttonCell(row.buttons[c], col.button, d, not hidden[c])
