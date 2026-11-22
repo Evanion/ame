@@ -2386,6 +2386,22 @@ describe("addon in a stubbed client", function()
         local Sel = ns.AHSelling
         Sel:Refresh()
         assert.are.equal(1, #Sel.items)
+        -- right after login the market index isn't loaded yet: no verdicts (not a vendor's price for everything),
+        -- and the list is valued again once it's ready
+        local where = Sel.items[1].where
+        local shard = ns.AME:FactionShard()
+        local index = ns.AME.indexes[shard]
+        ns.AME.indexes[shard] = nil
+        if ns.AME.indexShard == shard then
+          ns.AME.index = nil
+        end
+        Sel:Refresh()
+        assert.is_nil(Sel.items[1].where)
+        Sel.panel:Show()
+        if index then
+          ns.AME:SetIndex(shard, index)
+          assert.are.equal(where, Sel.items[1].where)
+        end
         -- hidden (the item menu's Hide): out of the list; shown again: back
         ns.AME.watch:SetHidden(2589, true)
         Sel:Refresh()

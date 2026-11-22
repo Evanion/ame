@@ -131,9 +131,14 @@ function S:Refresh()
   end
   -- what a unit nets where you post (Quote:BestSale: listed after the cut and deposit, or at a vendor)
   local q = ns.Quote.For(ns.AME:FactionShard(), index, { house = ns.AME:CurrentHouse(), fresh = false })
+  -- (no index yet - it's loaded a few seconds after login: no verdicts, rather than a vendor's price for
+  -- everything; IndexReady lists them again)
   self.items = S.Rank(shown, function(k)
     return items[k]
   end, function(k)
+    if not index then
+      return nil
+    end
     return q:BestSale(k)
   end)
   -- a VENDOR item: a recipe you know may make it worth more (UI:CraftInstead)
@@ -495,6 +500,13 @@ function S:HiddenChanged()
   end
   self:Render()
 end
+
+-- the market index arrived (or was rebuilt): the bags valued with it
+ns.Events.On("IndexReady", function(shard)
+  if shard == ns.AME:FactionShard() then
+    S:OnBagsChanged()
+  end
+end)
 
 -- after a post (or any bag change): the bags again, the same item kept selected while it's still there
 function S:OnBagsChanged()
