@@ -245,4 +245,18 @@ describe("Tooltip.AddRows", function()
     assert.is_false(tip.made[1].shown)
     assert.are.equal(0, tip.minWidth)
   end)
+
+  it("puts each beside the total when the game keeps the text widths secret (12.x)", function()
+    local tip = fakeTip()
+    _G.issecretvalue = function()
+      return true
+    end
+    finally(function()
+      _G.issecretvalue = nil
+    end)
+    T.AddRows(tip, { { "Market", "2,407g", "55g 98s" } })
+    assert.is_false(tip.made[1].shown)
+    assert.are.equal("55g 98s   2,407g", _G.FakeTipTextRight1.text)
+    assert.is_nil(tip.minWidth)
+  end)
 end)

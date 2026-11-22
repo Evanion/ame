@@ -513,7 +513,7 @@ function Tooltip.AddRows(tooltip, rows)
     elseif r[2] or r[3] then
       W.TipPair(tooltip, r[1], r[2] or " ")
       if r[3] then
-        placed[#placed + 1] = { line = tooltip:NumLines(), text = r[3] }
+        placed[#placed + 1] = { line = tooltip:NumLines(), text = r[3], rightText = r[2] or "" }
       end
     else
       tooltip:AddLine(r[1])
@@ -524,6 +524,18 @@ function Tooltip.AddRows(tooltip, rows)
   end
   local m = middles(tooltip)
   local wLeft, wMid, wRight = 0, 0, 0
+  -- a text's width; nil when the game hands it over as a secret value (12.x: some tooltips, e.g. one shown while an
+  -- auction is posted, measure as secrets addons can't do arithmetic on)
+  local secret = _G.issecretvalue
+  local hidden = false
+  local function width(fs)
+    local w = fs:GetStringWidth()
+    if secret and secret(w) then
+      hidden = true
+      return 0
+    end
+    return w or 0
+  end
   for _, p in ipairs(placed) do
     local left, right = _G[name .. "TextLeft" .. p.line], _G[name .. "TextRight" .. p.line]
     if not (left and right) then
@@ -538,17 +550,25 @@ function Tooltip.AddRows(tooltip, rows)
     fs:SetText(p.text)
     fs:Show()
     p.fs, p.right = fs, right
-    wLeft = math.max(wLeft, left:GetStringWidth() or 0)
-    wMid = math.max(wMid, fs:GetStringWidth() or 0)
-    wRight = math.max(wRight, right:GetStringWidth() or 0)
+    wLeft = math.max(wLeft, width(left))
+    wMid = math.max(wMid, width(fs))
+    wRight = math.max(wRight, width(right))
+  end
+  if hidden then
+    -- the widths are secret: no lined-up column - each goes beside the total on the right, as plain text
+    for _, p in ipairs(placed) do
+      p.fs:Hide()
+      p.right:SetText(p.text .. "   " .. p.rightText)
+    end
+    return
   end
   for _, p in ipairs(placed) do
     p.fs:ClearAllPoints()
     p.fs:SetPoint("RIGHT", p.right, "RIGHT", -(wRight + Tooltip.GAP), 0)
   end
   if tooltip.SetMinimumWidth then
-    local width = math.ceil(wLeft + wMid + wRight + 2 * Tooltip.GAP + 22) -- and the tooltip's own padding
-    m.width = math.max(m.width or 0, width)
+    local total = math.ceil(wLeft + wMid + wRight + 2 * Tooltip.GAP + 22) -- and the tooltip's own padding
+    m.width = math.max(m.width or 0, total)
     tooltip:SetMinimumWidth(m.width)
   end
 end
