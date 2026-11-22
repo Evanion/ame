@@ -116,4 +116,50 @@ describe("artboard features", function()
     assert.is_nil(ns.UI:MarketHiddenColumns().phase)
   end)
 
+  it("Shopping: each listing's time left, from what the game says about it", function()
+    boot()
+    local S = ns.AHSearch
+    -- the game's search results: commodities give seconds, gear a band
+    local api = {
+      GetNumCommoditySearchResults = function(id)
+        return id == 2589 and 2 or 0
+      end,
+      GetCommoditySearchResultInfo = function(_, i)
+        return ({
+          { unitPrice = 100, quantity = 5, timeLeftSeconds = 23 * 3600 + 120 },
+          { unitPrice = 120, quantity = 3 }, -- the client said nothing
+        })[i]
+      end,
+      MakeItemKey = function(id)
+        return { itemID = id }
+      end,
+      GetNumItemSearchResults = function(key)
+        return key.itemID == 4306 and 1 or 0
+      end,
+      GetItemSearchResultInfo = function()
+        return { buyoutAmount = 5000, quantity = 1, auctionID = 7, timeLeft = 2 }
+      end,
+    }
+    local book = S.Book(api, 2589)
+    book.at = 1000
+    assert.are.equal(23 * 3600 + 120, book.rows[1].timeLeft)
+    -- counted from the search: an hour later, an hour less
+    assert.are.equal(22 * 3600 + 120, (S.TimeLeft(book, book.rows[1], 1000 + 3600)))
+    assert.is_nil(S.TimeLeft(book, book.rows[1], 1000 + 24 * 3600)) -- run out: sold or expired, not known
+    local left, band = S.TimeLeft(book, book.rows[2], 1000)
+    assert.is_nil(left)
+    assert.is_nil(band)
+    local gear = S.Book(api, 4306)
+    left, band = S.TimeLeft(gear, gear.rows[1], 1000)
+    assert.is_nil(left)
+    assert.are.equal(2, band)
+    -- drawn as the design has it: "23 h", minutes under an hour, the band's range, nothing when not known
+    local T = ns.AHShopping
+    assert.are.equal("23 h", T.TimeLeftText(23 * 3600 + 120))
+    assert.are.equal("40 min", T.TimeLeftText(40 * 60 + 5))
+    assert.are.equal("2-12 h", T.TimeLeftText(nil, 2))
+    assert.are.equal("under 30 min", T.TimeLeftText(nil, 0))
+    assert.are.equal("", T.TimeLeftText(nil, nil))
+  end)
+
 end)

@@ -3,7 +3,9 @@
 -- per item at the pace the game allows (it says when it's ready for the next), and keeps each item's listings.
 --
 --   AHSearch:Start(keys, onChange)   search them in turn; onChange() after each answer
---   AHSearch.results[key]  { rows = { { price (each), qty, auctionID?, mine? } } cheapest first, commodity, at }
+--   AHSearch.results[key]  { rows = { { price (each), qty, auctionID?, mine?, timeLeft?, band? } } cheapest first,
+--                            commodity, at }
+--   AHSearch.TimeLeft(book, row, now)  a listing's time left now: seconds, or the game's band; nil when not known
 --   AHSearch:Buy(key, qty, row)      commodities: ask the game for the price of qty (then Confirm); gear: row's auction
 --   AHSearch:Confirm()               buy what Buy priced (the game wants a click for each purchase)
 -- Book is pure (the client API is passed in), so it's tested with a fake C_AuctionHouse.
@@ -15,6 +17,19 @@ ns.AHSearch = S
 S.TIMEOUT = 6 -- seconds to wait for an answer before moving on
 S.GAP = 0.15 -- seconds between searches when the game is ready
 
+-- A listing's time left: the game gives commodities the seconds left at the search (timeLeftSeconds) and gear a
+-- band (Enum.AuctionHouseTimeLeftBand: 0 under 30 min, 1 up to 2 h, 2 up to 12 h, 3 up to 48 h). Returns the
+-- seconds left now (nil once they've run out: it may have sold or expired), or nil and the band; nil when the game
+-- said neither.
+function S.TimeLeft(book, row, now)
+  if row.timeLeft then
+    local since = (book and book.at and now) and math.max(0, now - book.at) or 0 -- searched this long ago
+    local left = row.timeLeft - since
+    return left > 0 and left or nil
+  end
+  return nil, row.band
+end
+
 -- the listings of an item the game has search results for: { commodity, rows = { { price, qty, auctionID } } }
 function S.Book(api, key)
   local id, suffix = ns.BaseID(key), math.floor(key / ns.SUFFIX_STEP)
@@ -24,7 +39,12 @@ function S.Book(api, key)
     for i = 1, n do
       local info = api.GetCommoditySearchResultInfo(id, i)
       if info and info.unitPrice and info.quantity then
-        rows[#rows + 1] = { price = info.unitPrice, qty = info.quantity, mine = (info.numOwnerItems or 0) > 0 }
+        rows[#rows + 1] = {
+          price = info.unitPrice,
+          qty = info.quantity,
+          mine = (info.numOwnerItems or 0) > 0,
+          timeLeft = info.timeLeftSeconds,
+        }
       end
     end
     table.sort(rows, function(a, b)
@@ -44,6 +64,8 @@ function S.Book(api, key)
         total = info.buyoutAmount,
         auctionID = info.auctionID,
         mine = info.containsOwnerItem or nil,
+        timeLeft = info.timeLeftSeconds, -- not on every client: the band otherwise
+        band = info.timeLeft,
       }
     end
   end
