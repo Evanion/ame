@@ -278,41 +278,42 @@ describe("crafting artboard: the pages", function()
     assert.is_nil(ns.UI.QueueTodoRow(4, { kind = "carried", item = 2589, qty = 1 }, me))
   end)
 
-  it("Find a crafter: one row per recipe, then its recipe item; who can make it on the right", function()
-    local v = seeded()
-    rawset(_G, "GetSpellInfo", function(id)
-      return id == 3275 and "Linen Bandage" or nil
-    end)
-    local taughtBy = ns.Recipes.TaughtBy
-    ns.Recipes.TaughtBy = function(spell)
-      return spell == 3275 and { { item = 4306, rank = 1 } } or {}
+  it(
+    "Find a crafter: one row per crafted thing; who can make it on the right, filling it, then the recipe item",
+    function()
+      local v = seeded()
+      rawset(_G, "GetSpellInfo", function(id)
+        return id == 3275 and "Linen Bandage" or nil
+      end)
+      local taughtBy = ns.Recipes.TaughtBy
+      ns.Recipes.TaughtBy = function(spell)
+        return spell == 3275 and { { item = 4306, rank = 1 } } or {}
+      end
+      finally(function()
+        rawset(_G, "GetSpellInfo", nil)
+        ns.Recipes.TaughtBy = taughtBy
+      end)
+      ns.UI.craftSearch = "bandage"
+      ns.UI:ShowCraftingPage("crafters")
+      local rows = ns.UI.craftRows
+      assert.are.equal(1, #rows) -- the recipe item that teaches it isn't a row: nobody crafts it
+      assert.are.equal(1251, rows[1].itemID)
+      assert.are.equal("First Aid", rows[1].profession)
+      assert.are.equal(1, rows[1].count)
+      -- the recipe: its crafters in a table, then the recipe item's card with its price
+      v.slots.right.pane:SetHeight(500) -- the column, as tall as a window gives it
+      ns.UI.craftSelected = rows[1]
+      ns.UI:RenderCraftingDetail()
+      assert.is_false(v.action:IsShown()) -- Whisper is on each crafter's row
+      local t = v.detail.tables.crafters
+      assert.are.equal(1, #t.data)
+      assert.are.equal(4306, v.detail.cards[2].parts.item.key)
+      assert.is_number(ns.UI:CrafterRecipeItems(rows[1])[1].price) -- seen on the AH lately
+      -- the crafters take the column's height left over: room for far more than one
+      local room = (t.holder:GetHeight() - t.headH) / t.rowH
+      assert.truthy(room >= 8, room)
     end
-    finally(function()
-      rawset(_G, "GetSpellInfo", nil)
-      ns.Recipes.TaughtBy = taughtBy
-    end)
-    ns.UI.craftSearch = "bandage"
-    ns.UI:ShowCraftingPage("crafters")
-    local rows = ns.UI.craftRows
-    assert.are.equal(2, #rows)
-    assert.are.equal(1251, rows[1].itemID)
-    assert.are.equal("First Aid", rows[1].profession)
-    assert.are.equal(1, rows[1].count)
-    assert.is_true(rows[2].recipeItem)
-    assert.are.equal(4306, rows[2].itemID)
-    assert.are.equal(0, rows[2].count)
-    assert.is_number(rows[2].price) -- seen on the AH lately
-    -- the recipe: its crafters in a table, then the recipe item's card with its price
-    ns.UI.craftSelected = rows[1]
-    ns.UI:RenderCraftingDetail()
-    assert.is_false(v.action:IsShown()) -- Whisper is on each crafter's row
-    assert.are.equal(1, #v.detail.tables.crafters.data)
-    assert.are.equal(4306, v.detail.cards[2].parts.item.key)
-    -- the recipe item: search it on the AH
-    ns.UI.craftSelected = rows[2]
-    ns.UI:RenderCraftingDetail()
-    assert.are.equal("Search the AH", v.action.label.text)
-  end)
+  )
 
   it("Sell or refine: crafting beats selling raw, and the button queues those crafts", function()
     local v = seeded()

@@ -65,7 +65,7 @@ function UI.CraftRowKey(r)
   elseif r.profRow then
     return "prof:" .. tostring(r.key) .. ":" .. tostring(r.skillLine)
   elseif r.find then
-    return "find:" .. tostring(r.find) .. ":" .. tostring(r.recipeItem and r.itemID or "")
+    return "find:" .. tostring(r.find)
   elseif r.step then
     return "queue:" .. tostring(r.s.recipe) .. ":" .. tostring(r.itemID)
   elseif r.recipe and r.crafters then
@@ -257,8 +257,8 @@ local function professionName(skillLine)
   return nil
 end
 
--- Find a crafter: one row per recipe matching the search (an item or an enchant), most crafters first, each followed
--- by the recipe items that teach it; who can make it is in the right column, online first
+-- Find a crafter: one row per recipe matching the search (an item or an enchant), most crafters first; who can make
+-- it is in the right column, online first, with the recipe items that teach it under them (UI.CrafterRecipeItems)
 function UI:CrafterRows(m)
   local crafters = ns.Crafters and ns.Crafters.Shared()
   local text = self.craftSearch or ""
@@ -279,21 +279,25 @@ function UI:CrafterRows(m)
       who = res.who,
       count = #res.who,
     }
-    for _, t in ipairs(ns.Recipes.TaughtBy(res.recipe)) do
-      rows[#rows + 1] = {
-        find = res.recipe,
-        recipe = res.recipe,
-        recipeItem = true,
-        name = res.name,
-        itemID = t.item,
-        product = product,
-        rank = t.rank,
-        count = 0,
-        price = recentListing(m and m.index, t.item),
-      }
-    end
   end
+  self.crafterIndex = m and m.index
   return rows
+end
+
+-- the recipe items that teach a Find a crafter row's recipe, with their price on the auction house lately
+function UI:CrafterRecipeItems(e)
+  local out = {}
+  for _, t in ipairs(ns.Recipes.TaughtBy(e.recipe)) do
+    out[#out + 1] = {
+      recipe = e.recipe,
+      name = e.name,
+      itemID = t.item,
+      product = e.itemID,
+      rank = t.rank,
+      price = recentListing(self.crafterIndex, t.item),
+    }
+  end
+  return out
 end
 
 -- the craft queue's steps (the profession window's queue, planned the same way)
@@ -618,7 +622,7 @@ local COLUMNS = {
       align = "LEFT",
       sortKey = false,
       text = function(r)
-        return W.Dim(r.recipeItem and L["recipe item"] or r.profession or "-")
+        return W.Dim(r.profession or "-")
       end,
     },
     { key = "count", label = L["Can make it"], width = 72, format = "count", sortKey = false },
@@ -1516,10 +1520,11 @@ end
 -- Lays the right column out from the page's blocks, top to bottom, then its note:
 --   { card = content }             a card (card:SetContent: title or item, subtitle, rows, note)
 --   { heading = text }             a small gold heading over a table
---   { table = name, rows = list }  one of the column's small tables (UI.CRAFT_DETAIL_TABLES[name])
+--   { table = name, rows = list }  one of the column's small tables (UI.CRAFT_DETAIL_TABLES[name]); fill = true: it
+--                                  also takes the height the column has left (a list of people, say)
 --   { colors = true }              Leveling's skill-colour bar (v.colorRow)
 -- v.detail.cards[i] are the cards in order (cards[1] is the title card on every page).
-function UI:LayoutCraftingDetail(blocks, note)
+function UI:LayoutCraftingDetail(blocks, note, extra)
   local v = self.craftView
   local d = v.detail
   local content = d.content
@@ -1558,6 +1563,11 @@ function UI:LayoutCraftingDetail(blocks, note)
       used[t] = true
       local rows = b.rows or {}
       local h = t.headH + math.max(1, math.min(#rows, t.maxRows)) * t.rowH + t:NoteSpace()
+      if b.fill then
+        h = t.headH + math.max(1, #rows) * t.rowH + t:NoteSpace()
+        h = math.min(h, t.headH + math.max(1, t.maxRows) * t.rowH + t:NoteSpace()) + (extra or 0)
+        used.fill = true
+      end
       t.holder:SetHeight(h)
       t:SetData(rows)
       t:Render()
@@ -1586,6 +1596,7 @@ function UI:LayoutCraftingDetail(blocks, note)
   else
     v.note:Hide()
   end
+  return y, used.fill
 end
 
 -- the right column, then its scroll pane re-measured (its pieces change height with their text)
@@ -1595,7 +1606,12 @@ function UI:RenderCraftingDetail()
     return
   end
   local blocks, note = self:CraftingDetailBlocks()
-  self:LayoutCraftingDetail(blocks, note)
+  local height, fills = self:LayoutCraftingDetail(blocks, note)
+  -- a filling table takes what the column has left (laid out again with it)
+  local paneH = v.slots.right.pane and v.slots.right.pane:GetHeight()
+  if fills and type(paneH) == "number" and paneH - height > UI.CRAFT_DETAIL_GAP then
+    self:LayoutCraftingDetail(blocks, note, paneH - height - UI.CRAFT_DETAIL_GAP)
+  end
   self:LayoutCraftingButtons(v)
   v.slots.right.pane:Measure()
 end
@@ -1749,7 +1765,7 @@ UI.CRAFT_DETAIL_TABLES.earners = { -- Your professions: its best earners
   },
 }
 UI.CRAFT_DETAIL_TABLES.crafters = { -- Find a crafter: everyone who can make the picked recipe
-  rows = 8,
+  rows = 40, -- (it takes the column's height left over: as many as fit, the rest scroll)
   onClick = function() end, -- the rows are people, not items: nothing to open
   columns = {
     {
@@ -1881,11 +1897,6 @@ local function recipeItemCard(r, withTeaches)
 end
 
 UI.CRAFT_DETAIL.crafters = function(self, v, e)
-  if e.recipeItem then
-    -- a recipe item: what it teaches and what it costs
-    v.action:SetText(L["Search the AH"])
-    return { blocks = { recipeItemCard(e, true) } }, ""
-  end
   -- everyone who can make it, online first; Whisper is on each of their rows
   local who = {}
   for _, c in ipairs(e.who or {}) do
@@ -1899,13 +1910,11 @@ UI.CRAFT_DETAIL.crafters = function(self, v, e)
   end
   local blocks = {
     { card = { item = e.itemID, title = not e.itemID and e.name or nil, subtitle = subtitle } },
-    { table = "crafters", rows = who },
+    { table = "crafters", rows = who, fill = true }, -- the column's height left over: everyone, not a few
   }
-  -- the recipe items that teach it, as the table lists them under it
-  for _, r in ipairs(self.craftRows or {}) do
-    if r.recipeItem and r.find == e.find then
-      blocks[#blocks + 1] = recipeItemCard(r, false)
-    end
+  -- the recipe items that teach it, under the crafters
+  for _, r in ipairs(self:CrafterRecipeItems(e)) do
+    blocks[#blocks + 1] = recipeItemCard(r, false)
   end
   return { blocks = blocks }, L["Whisper opens a chat to them with the recipe linked: you send it."]
 end
