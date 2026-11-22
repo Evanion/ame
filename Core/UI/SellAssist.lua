@@ -203,6 +203,12 @@ function Sell:Build(parent)
   local bar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
   W.Skin(bar, W.COLORS.bg or W.COLORS.panel, W.COLORS.border)
   bar:SetHeight(50)
+  -- a 2 px line along the top: the theme's accent, or the vendor tone when a vendor pays more (Sell:Draw)
+  bar.edge = bar:CreateTexture(nil, "OVERLAY")
+  bar.edge:SetHeight(2)
+  bar.edge:SetPoint("TOPLEFT", 1, -1)
+  bar.edge:SetPoint("TOPRIGHT", -1, -1)
+  W.Fill(bar.edge, W.COLORS.accent)
   bar.parent = parent
   Sell.Place(bar)
   bar:EnableMouse(true)
@@ -245,18 +251,20 @@ function Sell:Build(parent)
     fill(Sell.advice and Sell.advice.normal.price, nil, "normal")
   end)
   bar.reset:SetPoint("RIGHT", bar.quick, "LEFT", -6, 0)
-  bar.tag = W.Text(bar, "GameFontNormal")
-  bar.tag:SetPoint("TOPLEFT", 12, -9)
-  bar.tag:SetText("AME")
-  bar.title = W.Text(bar, "GameFontHighlight")
-  bar.title:SetPoint("LEFT", bar.tag, "RIGHT", 12, 0)
+  -- the price, large, and "per unit" small after it (the bar sits under the game's frame: no name tag needed)
+  bar.title = W.Text(bar, "GameFontHighlightLarge")
+  bar.title:SetPoint("TOPLEFT", 12, -8)
   bar.title:SetWordWrap(false)
-  -- confidence: just the bars after the title (what they mean is on hover)
+  bar.unit = W.Text(bar, "GameFontDisableSmall")
+  bar.unit:SetPoint("BOTTOMLEFT", bar.title, "BOTTOMRIGHT", 6, 1)
+  -- confidence: a dim label and the bars, on the right before the buttons (what they mean is on hover)
   bar.confHover = CreateFrame("Frame", nil, bar)
+  bar.confLabel = W.Text(bar.confHover, "GameFontDisableSmall")
+  bar.confLabel:SetPoint("LEFT", 0, 0)
+  bar.confLabel:SetText(L["Confidence"])
   bar.conf = W.Text(bar.confHover, "GameFontHighlightSmall")
-  bar.conf:SetPoint("LEFT", bar.confHover, "LEFT", 0, 0)
-  bar.confHover:SetSize(30, 16)
-  bar.confHover:SetPoint("LEFT", bar.title, "RIGHT", 8, 0)
+  bar.conf:SetPoint("LEFT", bar.confLabel, "RIGHT", 4, 0)
+  bar.confHover:SetSize(math.ceil(bar.confLabel:GetStringWidth() or 60) + 4 + 22, 16)
   bar.confHover:EnableMouse(true)
   ns.Help.Explain(bar.confHover, "confidence")
   -- the reason line: the whole width under the title and the buttons
@@ -309,6 +317,8 @@ function Sell:Draw()
   local bar, advice = self.bar, self.advice
   local pips = W.Confidence(advice and advice.confidence or "low")
   self.chance = nil
+  bar.unit:SetText("")
+  W.Fill(bar.edge, W.COLORS.accent)
   if not advice then
     bar.title:SetText(W.Dim(L["Posting price: not enough data on this item yet."]))
     bar.info:SetText(L["Search for it at the auction house, or run a full scan."])
@@ -338,7 +348,6 @@ function Sell:Draw()
     self.underListing = false
     title = L["Post at %s"]:format(W.Money(choice.price))
   end
-  title = title .. " " .. W.Dim(L["per unit"])
   self.shown = choice.price
   local net = Sell.Net(advice, choice.price)
   local info = ns.ItemCache.Get(self.itemID or 0)
@@ -350,6 +359,7 @@ function Sell:Draw()
   if vendor and vendor > 0 and net < vendor then
     -- the auction house nets less than a vendor: say so; posting anyway is the only (secondary) button
     bar.title:SetText(W.Color("vendor", L["Vendor it: a vendor pays more"]))
+    W.Fill(bar.edge, W.RGB("vendor"))
     bar.info:SetText(
       L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"]:format(
         W.Money(net),
@@ -375,6 +385,7 @@ function Sell:Draw()
       parts[#parts + 1] = W.Color("bad", L["unlikely to sell soon: consider holding"])
     end
     bar.title:SetText(title)
+    bar.unit:SetText(L["per unit"])
     bar.info:SetText(table.concat(parts, "  ·  "))
     -- Quick / Normal / Patient fill their own prices; the extra button only when you clicked a listing: just under it
     self.vendorCase = false
@@ -417,9 +428,11 @@ function Sell:Draw()
   Sell.LayoutButtons(bar)
 end
 
--- buttons sized to their labels, right to left: Market (or Post anyway), Patient, Normal, Quick
+-- buttons sized to their labels, right to left: Market (or Post anyway), Patient, Normal, Quick; the confidence
+-- left of them
 function Sell.LayoutButtons(bar)
   local prev
+  local used = 10 -- the right margin
   for _, b in ipairs({ bar.fill, bar.patient, bar.reset, bar.quick }) do
     b:SetWidth(math.max(60, math.ceil(b.label:GetStringWidth() or 40) + 20))
     b:SetHeight(24)
@@ -430,11 +443,26 @@ function Sell.LayoutButtons(bar)
       else
         b:SetPoint("TOPRIGHT", -10, -5)
       end
+      used = used + (prev and 6 or 0) + b:GetWidth()
       prev = b
     end
   end
-  -- the title stops short of the buttons (it ends in "..." when it must)
-  bar.title:SetPoint("RIGHT", prev or bar, prev and "LEFT" or "RIGHT", prev and -44 or -44, 0)
+  local conf = bar.confHover
+  conf:SetShown((bar.conf:GetText() or "") ~= "")
+  conf:ClearAllPoints()
+  if prev then
+    conf:SetPoint("RIGHT", prev, "LEFT", -12, 0)
+  else
+    conf:SetPoint("TOPRIGHT", -10, -9)
+  end
+  if conf:IsShown() then
+    used = used + 12 + conf:GetWidth()
+  end
+  -- the title stops short of the confidence and the buttons (it ends in "..." when it must)
+  local unitW = (bar.unit:GetText() or "") ~= "" and 6 + (bar.unit:GetStringWidth() or 0) or 0
+  local room = (bar:GetWidth() or 0) - 12 - used - 16 - unitW
+  local need = math.ceil(bar.title:GetStringWidth() or 0)
+  bar.title:SetWidth((room > 0 and need > room) and room or 0) -- 0: as wide as its text
 end
 
 function Sell:Refresh()
@@ -482,7 +510,7 @@ function Sell:Refresh()
     self.hint = W.Hint(
       bar,
       "sellBar",
-      L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."]
+      L["A price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."]
     ) or false
   end
 end

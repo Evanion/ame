@@ -129,6 +129,7 @@ L["A big red candle after a climb: sellers piled in and undercut each other. Che
 L["A few shapes worth knowing:"] = true
 L["A full scan is already running."] = true
 L["A normal price"] = true
+L["A price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."] = true
 L["A recipe item's tooltip (pattern, plans, formula...) says where it comes from: which vendor sells it, where and for how much, or what drops it. AME learns this as you and your guild play - from merchants you open and recipes you loot - and shares it over sync. Until someone has seen it, the tooltip shows the game's own source text for recipes your profession window lists but you haven't learned."] = true
 L["A route, broken down"] = true
 L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] = true
@@ -145,7 +146,6 @@ L["AME listens to the game's own auction house APIs, so every scan and search yo
 L["AME notifications"] = true
 L["AME records the auction house while you use it and turns it into price history, charts, signals and posting prices. There's nothing to set up: open the auction house and run a full scan, and AME records it - with your scanning addon, or, without one, with the Full scan button over the auction house window (or /ame scan). The game allows one full scan every 15 minutes."] = true
 L["AME remembers each listing you post and how fast it sold - or that it expired - and adjusts its estimates for that item. Items you sell often get advice of their own; others borrow from similar items."] = true
-L["AME suggests a price from how fast this item sells, instead of undercutting by 1c. Click a price to put it in the box; you still click Post."] = true
 L["AME's own full scan (the Full scan button, /ame scan) is detailed by default: every listing, once per 15 minutes. Settings, Data can make it fast instead: each item's cheapest listing, any time."] = true
 L["API + database found"] = true
 L["API found, database not readable (no backfill)"] = true

@@ -2900,6 +2900,9 @@ describe("addon in a stubbed client", function()
       _G.AuctionFrameTab1 = nil
       advice = ns.SellAssist.advice
       assert.truthy(bar.title.text:find("Post at"))
+      assert.are.equal("per unit", bar.unit.text) -- small, after the large price
+      assert.is_nil(rawget(bar, "tag")) -- no name tag: the bar sits under the game's frame
+      assert.is_true(bar.confHover:IsShown()) -- the confidence, by the buttons
       assert.truthy(bar.info.text:find("% cut", 1, true))
       assert.truthy(bar.info.text:find("^Just under") or bar.info.text:find("listing"), bar.info.text)
       assert.truthy(bar.conf.text:find("WHITE8x8", 1, true)) -- just the confidence bars
@@ -2944,6 +2947,7 @@ describe("addon in a stubbed client", function()
       env:update(40)
       assert.truthy(bar.title.text:find("Vendor it"))
       assert.truthy(bar.fill.label.text:find("^Post anyway at"))
+      assert.are.equal(ns.Widgets.RGB("vendor")[1], bar.edge._color[1]) -- the top line in the vendor tone
       assert.is_false(bar.quick:IsShown()) -- one button in the vendor case
       assert.truthy(bar.info.text:find("a vendor pays"))
       ns.ItemCache.Get(2589).sellPrice = nil

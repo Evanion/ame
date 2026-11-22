@@ -834,12 +834,18 @@ Help.EXAMPLES = {
   end,
   sellBar = function(parent)
     local f = panel(parent, 50)
-    local tag = W.Text(f, "GameFontNormal")
-    tag:SetPoint("TOPLEFT", 12, -9)
-    tag:SetText("AME")
-    local title = W.Text(f, "GameFontHighlight")
-    title:SetPoint("LEFT", tag, "RIGHT", 12, 0)
-    title:SetText(L["Post at %s"]:format(W.Money(18700)) .. " " .. W.Dim(L["per unit"]) .. "  " .. W.Confidence("high"))
+    -- as the bar draws itself (SellAssist): the accent line on top, the price large, the confidence by the buttons
+    local edge = f:CreateTexture(nil, "OVERLAY")
+    edge:SetHeight(2)
+    edge:SetPoint("TOPLEFT", 1, -1)
+    edge:SetPoint("TOPRIGHT", -1, -1)
+    W.Fill(edge, W.COLORS.accent)
+    local title = W.Text(f, "GameFontHighlightLarge")
+    title:SetPoint("TOPLEFT", 12, -8)
+    title:SetText(L["Post at %s"]:format(W.Money(18700)))
+    local unit = W.Text(f, "GameFontDisableSmall")
+    unit:SetPoint("BOTTOMLEFT", title, "BOTTOMRIGHT", 6, 1)
+    unit:SetText(L["per unit"])
     local info = W.Text(f, "GameFontDisableSmall")
     info:SetPoint("BOTTOMLEFT", 12, 8)
     info:SetPoint("RIGHT", -10, 0)
@@ -852,7 +858,7 @@ Help.EXAMPLES = {
         .. L["you net %s after the %d%% cut"]:format(W.Money(17765), 5)
     )
     local prev
-    for _, b in ipairs({
+    for i, b in ipairs({
       { L["Market %s"]:format(W.Money(16400)) },
       { L["Patient %s"]:format(W.Money(20900)) },
       { L["Normal %s"]:format(W.Money(18700)), true },
@@ -860,6 +866,9 @@ Help.EXAMPLES = {
     }) do
       local btn = W.Button(f, b[1], 80, 22)
       btn:SetWidth(math.ceil(btn.label:GetStringWidth() or 60) + 20)
+      if i == 1 then
+        W.Primary(btn) -- Market, the bar's main action
+      end
       btn:SetSelected(b[2] or false)
       if prev then
         btn:SetPoint("RIGHT", prev, "LEFT", -6, 0)
@@ -868,6 +877,9 @@ Help.EXAMPLES = {
       end
       prev = btn
     end
+    local conf = W.Text(f, "GameFontDisableSmall")
+    conf:SetPoint("RIGHT", prev, "LEFT", -12, 0)
+    conf:SetText(L["Confidence"] .. " " .. W.Confidence("high"))
     return f
   end,
   verdict = function(parent)
