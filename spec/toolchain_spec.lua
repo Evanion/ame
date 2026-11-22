@@ -38,3 +38,83 @@ describe("toolchain", function()
     file:close()
   end)
 end)
+
+-- Guards the UI's shared pieces (docs/plans/ui-components.md): views draw item names, main actions, chat lines and
+-- side menus with the widgets, not by hand. Each rule lists the offending file:line.
+describe("UI rules", function()
+  -- every Lua file under Core/UI the TOC loads, as { path, lines }
+  local function uiFiles()
+    local out = {}
+    for line in io.lines("AzerothMercantileExchange.toc") do
+      line = line:gsub("\r", "")
+      local path = line:match("^Core\\UI\\.+%.lua$") and line:gsub("\\", "/")
+      if path then
+        local lines = {}
+        for code in io.lines(path) do
+          lines[#lines + 1] = code
+        end
+        out[#out + 1] = { path = path, name = path:match("([^/]+)%.lua$"), lines = lines }
+      end
+    end
+    return out
+  end
+  -- file:line for every line (outside the files allowed) that the test matches
+  local function offenders(test, allowed)
+    local bad = {}
+    for _, f in ipairs(uiFiles()) do
+      if not (allowed and allowed[f.name]) then
+        for n, code in ipairs(f.lines) do
+          if not code:match("^%s*%-%-") and test(code) then
+            bad[#bad + 1] = f.path .. ":" .. n
+          end
+        end
+      end
+    end
+    return bad
+  end
+
+  it("finds the UI files", function()
+    assert.is_true(#uiFiles() > 20)
+  end)
+
+  it(
+    "draws no item name as plain coloured text in a view (W.ItemLink, W.LinkText or a DataTable item column)",
+    function()
+      -- Widgets builds the links themselves; a tooltip can't be clicked, so its names are only quality-coloured
+      local bad = offenders(function(code)
+        return code:find("W.QualityText(", 1, true)
+            and (code:find("W.ItemLabel(", 1, true) or code:find("ItemCache.Name(", 1, true))
+            and true
+          or false
+      end, { Widgets = true, Tooltip = true })
+      assert.are.same({}, bad)
+    end
+  )
+
+  it("marks main actions with W.Primary, not a selected button standing in for one", function()
+    assert.are.same(
+      {},
+      offenders(function(code)
+        return code:find("SetSelected(true)", 1, true) ~= nil
+      end, { Widgets = true })
+    )
+  end)
+
+  it("prints chat lines with AME's own prefix (ns.AME.Say), not a hand-coloured one", function()
+    assert.are.same(
+      {},
+      offenders(function(code)
+        return code:find("|cff33ccffAME", 1, true) ~= nil
+      end)
+    )
+  end)
+
+  it("draws side menus with UI.SideList: no hand-made selected lines outside the shared pieces", function()
+    assert.are.same(
+      {},
+      offenders(function(code)
+        return code:find("rowSelected", 1, true) ~= nil
+      end, { Shell = true, DataTable = true, Widgets = true })
+    )
+  end)
+end)
