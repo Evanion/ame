@@ -4918,6 +4918,53 @@ describe("addon in a stubbed client", function()
       assert.are.equal("sharing", ns.UI.settingsView.current)
     end)
 
+    it("/amedev sync says why sharing does or doesn't work, and /amedev send carries it", function()
+      bootSync()
+      fullScan({ { 2589, 1000, 10 } })
+      -- a guildmate whose AME names the market differently: turned down, and the log says why
+      deliver(ns.Sync.EncodeQuery("OtherRealm|Horde"), "GUILD", "Guild Mate")
+      deliver(ns.Sync.EncodeQuery("TestRealm|Horde"), "GUILD", "Other Mate")
+      deliver("1|?|garbage", "GUILD", "Third Mate")
+      local trace = ns.SyncService.trace
+      local why = {}
+      for _, e in ipairs(trace) do
+        if e.dir == "in" then
+          why[e.who] = e.why or "taken"
+        end
+      end
+      assert.truthy(
+        why["Guild Mate"]:find("another market: OtherRealm|Horde (mine: TestRealm)", 1, true),
+        why["Guild Mate"]
+      )
+      assert.are.equal("taken", why["Other Mate"])
+      assert.truthy(why["Third Mate"]:find("not readable", 1, true))
+      -- what we sent is logged too
+      local out = 0
+      for _, e in ipairs(trace) do
+        out = out + (e.dir == "out" and 1 or 0)
+      end
+      assert.truthy(out > 0)
+      -- in chat
+      local printed = {}
+      local realPrint = _G.print
+      _G.print = function(text)
+        printed[#printed + 1] = text
+      end
+      env:slash("AMEDEV", "sync")
+      _G.print = realPrint
+      local all = table.concat(printed, "\n")
+      assert.truthy(all:find("market TestRealm", 1, true), all)
+      assert.truthy(all:find("another market", 1, true), all)
+      -- in the report
+      local report = ns.Dev.Report.Build()
+      assert.are.equal("TestRealm", report.syncDiag.market)
+      assert.are.equal("TestRealm|Horde", report.syncDiag.shard)
+      assert.is_true(report.syncDiag.guildActive)
+      assert.truthy(#report.syncDiag.trace > 0)
+      local back = ns.Dev.Report.Deserialize(ns.Dev.Report.Serialize(report))
+      assert.are.equal("TestRealm", back.syncDiag.market) -- it travels
+    end)
+
     it("tells everyone its version, and says once when someone has a newer one", function()
       local saved = ns.VERSION
       finally(function()

@@ -611,6 +611,7 @@ function Help.Articles()
             guideText(8),
             L["Also: /ame who <item> - who in your guild (or of your characters) can make it.   /ame scan runs a detailed or fast full scan, as Settings, Data says."],
             L["Helping test AME, or is it slowing your game? /amedev on starts measuring what AME costs (and every fight, quietly), until /amedev off. Play a while, then /amedev send: it sends what was measured to AME's developer in the background. /amedev help lists the rest."],
+            L["Not getting prices from your guild? /amedev sync shows what decides it here: whether sharing is on, the market AME thinks you're on, who it has heard from, and why anything that came in was turned down. /amedev send sends that to AME's developer too."],
           },
         },
       },

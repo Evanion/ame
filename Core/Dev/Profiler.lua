@@ -294,8 +294,8 @@ local function sizes()
 end
 
 local HELP = "/amedev on - start measuring what AME costs (and every fight, quietly)  ·  /amedev send - send it to the"
-  .. " developer  ·  /amedev off  ·  /amedev - the summary  ·  /amedev lag [now | last]  ·  /amedev hud  ·"
-  .. "  /amedev sizes  ·  /amedev reset"
+  .. " developer  ·  /amedev off  ·  /amedev - the summary  ·  /amedev sync - why sharing does or doesn't work here"
+  .. "  ·  /amedev lag [now | last]  ·  /amedev hud  ·  /amedev sizes  ·  /amedev reset"
 
 SLASH_AMEDEV1 = "/amedev"
 SlashCmdList.AMEDEV = function(msg)
@@ -323,6 +323,16 @@ SlashCmdList.AMEDEV = function(msg)
     return Dev.Report.Send(rest:match("^(.-)%s*$"))
   elseif cmd == "receive" then
     return Dev.Report.Receive()
+  elseif cmd == "sync" then
+    -- sharing's state here, in a few lines; /amedev send sends it all (with the last messages in and out)
+    local svc = ns.SyncService
+    if not (svc and svc.DiagnosticLines and svc.AME) then
+      return say("sync isn't running")
+    end
+    for _, line in ipairs(svc:DiagnosticLines()) do
+      say(line)
+    end
+    return say("/amedev send sends this, and the last sync messages in and out, to AME's developer")
   elseif cmd == "help" or cmd == "?" then
     return say(HELP)
   end

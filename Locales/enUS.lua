@@ -661,6 +661,7 @@ L["Normal"] = true
 L["Normal %s"] = true
 L["Not enough days yet: the chart fills in with a full scan a day."] = true
 L["Not enough history to judge yet (%d of %d days)"] = true
+L["Not getting prices from your guild? /amedev sync shows what decides it here: whether sharing is on, the market AME thinks you're on, who it has heard from, and why anything that came in was turned down. /amedev send sends that to AME's developer too."] = true
 L["Nothing for what's in your bags; the count is green when you have it all."] = true
 L["Nothing from %s lately"] = true
 L["Nothing from %s · asked again %d of %d"] = true

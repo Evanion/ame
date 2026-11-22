@@ -35,6 +35,35 @@ local function aceTransport()
   }
 end
 
+-- The sync log, for /amedev sync and the report /amedev send whispers (debugging a player who gets nothing): the
+-- last TRACE_MAX messages in and out - what, from or to whom, over what, and for one turned down, why. v2's blocks
+-- (one a second, thousands in a catch-up) are only counted, per player.
+Service.TRACE_MAX = 120
+
+local function traceKind(msg)
+  if type(msg) ~= "string" then
+    return "?"
+  end
+  local proto, kind = msg:match("^(%d)|(%a)")
+  return proto and (proto .. kind) or msg:sub(1, 6)
+end
+
+function Service:Trace(dir, msg, who, distribution, why)
+  local kind = traceKind(msg)
+  if kind == "2B" and not why then
+    self.traceBlocks = self.traceBlocks or {}
+    local k = dir .. ":" .. tostring(who or "guild")
+    self.traceBlocks[k] = (self.traceBlocks[k] or 0) + 1
+    return
+  end
+  local trace = self.trace or {}
+  self.trace = trace
+  trace[#trace + 1] = { t = GetServerTime(), dir = dir, kind = kind, who = who, via = distribution, why = why }
+  if #trace > Service.TRACE_MAX then
+    table.remove(trace, 1)
+  end
+end
+
 -- Whispers to players who logged off: every queued chunk of a scan would bounce with "No player named X is currently
 -- playing" in our chat. The transport remembers whom we whisper; that message for one of them drops the rest of the
 -- queue to them (DropQueued), hides the message (ChatFilter), and pauses whispers to them until they're heard again.
@@ -53,6 +82,7 @@ function Service:WrapTransport(raw)
         end
         self.sentTo[k] = GetTime()
       end
+      self:Trace("out", msg, target, distribution)
       return raw:Send(prefix, msg, distribution, target)
     end,
   }
@@ -524,21 +554,35 @@ function Service:Allowed(m, distribution, sender)
 end
 
 function Service:OnMessage(msg, distribution, sender)
-  if self:IsMine(sender) or not self:Active() then
+  if self:IsMine(sender) then
     return
+  end
+  if not self:Active() then
+    return self:Trace("in", msg, sender, distribution, "sharing is off here")
   end
   if self.gone then
     self.gone[ns.Trust.Key(sender)] = nil -- heard from: back online
   end
   local m = Sync.Decode(msg)
-  if not m or not sameRealm(m.shard) or not self:Allowed(m, distribution, sender) then
-    return
+  if not m then
+    return self:Trace("in", msg, sender, distribution, "not readable (another version?)")
+  elseif not sameRealm(m.shard) then
+    return self:Trace(
+      "in",
+      msg,
+      sender,
+      distribution,
+      ("another market: %s (mine: %s)"):format(tostring(m.shard), tostring(self.AME:MarketRealmName()))
+    )
+  elseif not self:Allowed(m, distribution, sender) then
+    return self:Trace("in", msg, sender, distribution, "not taken over " .. tostring(distribution))
   end
   -- blocked players: by me, or by the guild officers (guild info text); scans relayed from them too
   if self.trust:IsBlocked(sender) or (m.src and self.trust:IsBlocked(m.src)) then
     self.stats.syncBlocked = (self.stats.syncBlocked or 0) + 1
-    return
+    return self:Trace("in", msg, sender, distribution, "blocked")
   end
+  self:Trace("in", msg, sender, distribution)
   self.trust:Heard(sender, GetServerTime(), distribution)
   if m.type == "version" then
     self:HeardVersion(sender, m.version)
@@ -783,4 +827,165 @@ function Service:NextAnnounceIn(now)
     return nil
   end
   return math.max(0, self.nextAnnounceAt - (now or GetServerTime()))
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- diagnostics: everything that decides whether sync works here, for /amedev sync and the report /amedev send
+-- whispers to the developer (a player who gets nothing: is sharing on, in a guild, on the same market, on v2, are the
+-- prefixes registered, who was heard, what came in and why it was turned down)
+
+local function prefixRegistered(prefix)
+  local reg = C_ChatInfo and C_ChatInfo.IsAddonMessagePrefixRegistered
+  if not reg then
+    return nil
+  end
+  local ok, on = pcall(reg, prefix)
+  return ok and on or false
+end
+
+function Service:Diagnostics()
+  local AME = self.AME
+  local now = GetServerTime()
+  local okRules, ruleset = pcall(AME and AME.RulesetFromGameRules or function() end)
+  local d = {
+    version = ns.VERSION,
+    enabled = self.enabled and true or false, -- AceComm loaded
+    guildSetting = ns.Settings:Get("syncGuild") and true or false,
+    trustSetting = ns.Settings:Get("syncTrusted") and true or false,
+    inGuild = IsInGuild and IsInGuild() and true or false,
+    guildActive = self:GuildActive() and true or false,
+    protocol = self:Protocol(),
+    v2 = self.v2 ~= nil,
+    prefixV1 = prefixRegistered(Service.PREFIX),
+    prefixV2 = ns.SyncV2 and prefixRegistered(ns.SyncV2.PREFIX),
+    realm = GetRealmName and GetRealmName(),
+    normalizedRealm = GetNormalizedRealmName and GetNormalizedRealmName(),
+    ruleset = okRules and ruleset or ("error: " .. tostring(ruleset)), -- what names the market on Forever
+    uniqueNames = RegionalUniqueNamesEnabled and RegionalUniqueNamesEnabled() and true or false,
+    market = AME and AME:MarketRealmName(),
+    shard = AME and AME:CurrentShard(),
+    factionShard = AME and AME:FactionShard(),
+    historyLoaded = AME and AME:HistoryLoaded() or false,
+    nextAnnounceIn = self:NextAnnounceIn(now),
+    stats = {
+      announced = self.stats.syncAnnounced,
+      served = self.stats.syncServed,
+      received = self.stats.syncReceived,
+      rejected = self.stats.syncRejected,
+      rejectedWhy = self.stats.rejectedWhy,
+      lastRejection = self.stats.lastSyncRejection,
+      errors = self.stats.syncErrors,
+      lastError = self.stats.lastSyncError,
+      blocked = self.stats.syncBlocked,
+    },
+    v2stats = self.v2 and self.v2.stats or nil,
+    trace = self.trace,
+    blocks = self.traceBlocks,
+    shards = {},
+    peers = {},
+  }
+  -- what's held per auction house: the newest full scan, hours of the last week, days
+  if d.historyLoaded then
+    for shard, data in pairs(AME.history.shards) do
+      local newest, hours, days = 0, 0, 0
+      for _, e in ipairs(data.raw or {}) do
+        if (e.k or "full") == "full" and e.t > newest then
+          newest = e.t
+        end
+      end
+      for _ in pairs(data.hours or {}) do
+        hours = hours + 1
+      end
+      for _ in pairs(data.days or {}) do
+        days = days + 1
+      end
+      d.shards[shard] = { newest = newest > 0 and newest or nil, hours = hours, days = days }
+    end
+  end
+  -- who was heard, on what, running which version; what each last announced over v2
+  for _, p in ipairs(self.trust and self.trust:PeerList() or {}) do
+    d.peers[#d.peers + 1] = {
+      name = p.name,
+      at = p.at,
+      via = p.via,
+      protocol = self:ProtocolOf(p.name),
+      version = self:VersionOf(p.name),
+      blocked = self.trust:IsBlocked(p.name) or nil,
+    }
+  end
+  if self.v2 then
+    d.manifests = {}
+    for sender, shards in pairs(self.v2.manifests or {}) do
+      for shard, e in pairs(shards) do
+        d.manifests[#d.manifests + 1] = { from = sender, shard = shard, at = e.at, scanT = e.m and e.m.scanT }
+      end
+    end
+    local st = self.v2:Status()
+    d.v2now = { sending = st.sending, queued = st.queued, receiving = #st.receiving, sendLeft = st.sendLeft }
+  end
+  return d
+end
+
+-- the same, as a few lines for chat (the tester reads them, or sends them all with /amedev send)
+function Service:DiagnosticLines()
+  local d = self:Diagnostics()
+  local function yes(b)
+    return b and "yes" or "NO"
+  end
+  local lines = {
+    ("AME %s · sync library %s · guild sharing %s (in a guild: %s) · trusted %s · protocol v%d"):format(
+      tostring(d.version),
+      yes(d.enabled),
+      yes(d.guildSetting),
+      yes(d.inGuild),
+      d.trustSetting and "on" or "off",
+      d.protocol
+    ),
+    ("market %s (ruleset %s) · here %s · your faction's %s · realm %s"):format(
+      tostring(d.market),
+      tostring(d.ruleset),
+      tostring(d.shard),
+      tostring(d.factionShard),
+      tostring(d.realm)
+    ),
+    ("prefixes: v1 %s, v2 %s · history loaded %s · next announce in %s s"):format(
+      tostring(d.prefixV1),
+      tostring(d.prefixV2),
+      yes(d.historyLoaded),
+      tostring(d.nextAnnounceIn)
+    ),
+    ("announced %d · served %d · received %d · rejected %d · errors %d%s"):format(
+      d.stats.announced or 0,
+      d.stats.served or 0,
+      d.stats.received or 0,
+      d.stats.rejected or 0,
+      d.stats.errors or 0,
+      d.stats.lastError and (" (" .. tostring(d.stats.lastError) .. ")") or ""
+    ),
+  }
+  local heard = {}
+  for i, p in ipairs(d.peers) do
+    if i <= 6 then
+      heard[#heard + 1] = ("%s (v%s, %s)"):format(
+        tostring(p.name),
+        tostring(p.protocol or "?"),
+        tostring(p.version or "?")
+      )
+    end
+  end
+  lines[#lines + 1] = "heard: " .. (#heard > 0 and table.concat(heard, ", ") or "nobody")
+  -- why things were turned down lately
+  local why = {}
+  for _, e in ipairs(d.trace or {}) do
+    if e.why then
+      why[e.why] = (why[e.why] or 0) + 1
+    end
+  end
+  local parts = {}
+  for reason, n in pairs(why) do
+    parts[#parts + 1] = n .. "x " .. reason
+  end
+  table.sort(parts)
+  lines[#lines + 1] = "turned down lately: " .. (#parts > 0 and table.concat(parts, "; ") or "nothing")
+  return lines
 end

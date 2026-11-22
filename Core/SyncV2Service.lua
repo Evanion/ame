@@ -90,20 +90,25 @@ function Service:InitV2()
 end
 
 function Service:OnV2Message(msg, distribution, sender)
-  -- guild only; on v1 (switched since login) it's ignored until /reload stops its delivery
-  if distribution ~= "GUILD" or not self.v2 or self:Protocol() ~= 2 or not self:GuildActive() then
-    return
-  end
   if self:IsMine(sender) then
     return
+  end
+  -- guild only; on v1 (switched since login) it's ignored until /reload stops its delivery
+  if distribution ~= "GUILD" then
+    return self:Trace("in", msg, sender, distribution, "v2 is guild only")
+  elseif not self.v2 or self:Protocol() ~= 2 then
+    return self:Trace("in", msg, sender, distribution, "on v1 here")
+  elseif not self:GuildActive() then
+    return self:Trace("in", msg, sender, distribution, "guild sharing is off here")
   end
   if self.gone then
     self.gone[ns.Trust.Key(sender)] = nil
   end
   self:HeardProtocol(sender, 2)
   if self.trust:IsBlocked(sender) then
-    return
+    return self:Trace("in", msg, sender, distribution, "blocked")
   end
+  self:Trace("in", msg, sender, distribution)
   self.trust:Heard(sender, GetServerTime(), "GUILD")
   self.v2:OnMessage(msg, sender)
 end

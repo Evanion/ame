@@ -160,6 +160,8 @@ local function rulesetFromGameRules()
   return "PvE"
 end
 
+AME.RulesetFromGameRules = rulesetFromGameRules -- (sync diagnostics show it)
+
 function AME:MarketRealmName()
   local ok, rules = pcall(rulesetFromGameRules)
   return ns.MarketRealm(GetNormalizedRealmName(), ok and rules or nil)

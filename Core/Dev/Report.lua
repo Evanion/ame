@@ -168,6 +168,9 @@ function Report.Build()
     sync = svc and svc.stats,
     syncV2 = svc and svc.v2 and svc.v2.stats,
     protocol = svc and svc.Protocol and svc:Protocol(),
+    -- why sync does or doesn't work here: settings, market, prefixes, who was heard, the last messages in and out
+    -- and why any were turned down (SyncService:Diagnostics)
+    syncDiag = svc and svc.Diagnostics and svc.AME and svc:Diagnostics() or nil,
   }
 end
 
