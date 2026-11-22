@@ -229,6 +229,33 @@ describe("Pricing", function()
     end)
   end)
 
+  it("never expects more sold than the item's units a day: churn seen in scans isn't sales", function()
+    local p = P.NewProfile()
+    p.n, p.demand, p.inflow = 31, 261.6, 16.23 -- scans saw ~6,000 units a day leave (relists, expiries)
+    local busy = { sellRate = 2074, soldPerDay = 602, stPrior = 0.8 }
+    local params = P.Params(p, nil, busy)
+    assert.are.equal(602 / 24, params.demand)
+    -- 300 units ahead don't "sell in 2 h" any more: Normal goes in front of them, Patient waits behind them
+    local book = { prices = { 944, 949, 999, 1000, 1050, 9900 }, qtys = { 154, 100, 9, 16, 20, 29 } }
+    local a = P.Suggest(
+      book,
+      params,
+      {
+        qty = 1,
+        hours = 24,
+        now = MONDAY_NOON,
+        cut = 0.05,
+        deposit = 120,
+        vendor = 200,
+        reference = 971,
+        ceiling = 1942,
+      }
+    )
+    assert.are.equal(943, a.normal.price)
+    assert.is_true(a.patient.price > a.normal.price)
+    assert.is_true(a.patient.hours > a.normal.hours * 10)
+  end)
+
   it("stores a profile compactly and reads it back", function()
     local p = P.NewProfile()
     P.Observe(p, obs(MONDAY_NOON, 100, { 10, 10, 20, 20, 30 }))

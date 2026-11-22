@@ -2917,6 +2917,35 @@ describe("addon in a stubbed client", function()
       assert.are.equal(math.floor(s.market + 0.5), ns.Posting:Suggest(shard, 2589, 5, 24).market.price)
     end)
 
+    it("prices from the listings a search here just found, before they're stored", function()
+      seeded()
+      env:fire("AUCTION_HOUSE_SHOW")
+      local shard = ns.AME:CurrentShard()
+      local before = ns.Posting:Suggest(shard, 2589, 60, 24)
+      -- what the Selling tab shows: the search's listings (two at one price merge into one tier)
+      ns.AHSearch.results[2589] = {
+        at = GetServerTime(),
+        rows = {
+          { price = 90, qty = 100 },
+          { price = 90, qty = 54 },
+          { price = 95, qty = 100 },
+          { price = 9900, qty = 29 },
+        },
+      }
+      finally(function()
+        ns.AHSearch.results[2589] = nil
+      end)
+      local book = ns.Posting.LiveBook(shard, 2589)
+      assert.are.same({ 90, 95, 9900 }, book.prices)
+      assert.are.same({ 154, 100, 29 }, book.qtys)
+      local advice = ns.Posting:Suggest(shard, 2589, 60, 24)
+      assert.are.same(book.prices, advice.book.prices)
+      assert.are_not.same(before.book.prices, advice.book.prices)
+      -- not at the auction house (or a stale search): the stored history again
+      env:fire("AUCTION_HOUSE_CLOSED")
+      assert.is_nil(ns.Posting.LiveBook(shard, 2589))
+    end)
+
     it("learns each item's market from scans, suggests posting prices, and learns from your posts", function()
       seeded()
       local shard = ns.AME:CurrentShard()

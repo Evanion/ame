@@ -229,6 +229,30 @@ function Posting.Ceiling(reference, ...)
   return base * (base < Posting.CHEAP and 2 or 1.5)
 end
 
+-- The listings a search here just found (AHSearch, the auction house you're at), as an order book: what the Selling
+-- and Shopping tabs show. A search's book reaches the history only once it's stored, a moment later - until then the
+-- advice would come from the last scan's rough ladder and disagree with the listings on screen.
+function Posting.LiveBook(shard, key)
+  local search = ns.AHSearch and ns.AHSearch.results and ns.AHSearch.results[key]
+  local AME = ns.AME
+  if not (search and search.at and search.rows and #search.rows > 0) then
+    return nil
+  end
+  if not (AME.ahOpen and shard == AME:CurrentShard() and now() - search.at < Posting.BOOK_AGE) then
+    return nil
+  end
+  local book = { prices = {}, qtys = {}, t = search.at }
+  for _, r in ipairs(search.rows) do
+    local n = #book.prices
+    if n > 0 and book.prices[n] == r.price then
+      book.qtys[n] = book.qtys[n] + (r.qty or 1)
+    else
+      book.prices[n + 1], book.qtys[n + 1] = r.price, r.qty or 1
+    end
+  end
+  return book
+end
+
 -- Everything the model needs for one item at one auction house, and its suggestion.
 --   qty: units you post; hours: listing time; returns advice (see Pricing.Suggest) plus .book, .params, or nil
 function Posting:Suggest(shard, itemID, qty, hours)
@@ -238,7 +262,7 @@ function Posting:Suggest(shard, itemID, qty, hours)
   local p = ns.SellThrough.MergeProfile(self:Profile(shard, itemID), self:SharedOutcomes(shard, itemID))
   local s = summaryFor(shard, itemID)
   local params = ns.Pricing.Params(p, self:Prior(shard, itemID), s)
-  local book = ns.AME:BookFor(shard, itemID, Posting.BOOK_AGE)
+  local book = Posting.LiveBook(shard, itemID) or ns.AME:BookFor(shard, itemID, Posting.BOOK_AGE)
   if not book and p.last and now() - p.last.t < Posting.SCAN_AGE then
     book = ns.Pricing.BookFromObs(p.last)
   end

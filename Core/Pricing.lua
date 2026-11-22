@@ -316,6 +316,13 @@ function Pricing.Params(p, prior, summary)
   local sw = (p.sn or 0) / ((p.sn or 0) + Pricing.SPEED_WEIGHT)
   local speed = sw * (p.speed or 0) + (1 - sw) * (prior.speed or 0)
   demand = demand * exp(speed)
+  -- never more than the units a day every view shows (Quote.UnitsPerDay, saved as soldPerDay): scans see every
+  -- listing that leaves - expired, cancelled and relisted ones too - and a busy item's churn read as thousands sold a
+  -- day, so hundreds of units ahead looked gone in two hours and every price "sold"
+  local shown = summary and summary.soldPerDay
+  if shown and shown > 0 then
+    demand = min(demand, shown / 24)
+  end
   local comp = prior.comp
   if p.n > 0 and p.demand > 0 then
     comp = w * min(p.inflow / p.demand, 3) + (1 - w) * prior.comp
