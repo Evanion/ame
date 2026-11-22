@@ -92,6 +92,115 @@ local function recipeFor(profession, id)
   end
 end
 
+-- Crafting's prices and rules for the faction auction house (index): the market (a fresh search's cheapest listing
+-- over the day's average), vendor prices, the cut and deposit. producers: product -> recipes (chains), optional.
+function UI:CraftingEnv(index, producers)
+  producers = producers or {}
+  local house = ns.AME:CurrentHouse() == "Neutral" and (UnitFactionGroup("player") or "Horde") or ns.AME:CurrentHouse()
+  local cut, hours = ns.Settings:AuctionCut(house), ns.Settings:Get("listingHours")
+  -- Prices: the market index (a day's average), but an item searched in the last hour (you do when posting) is
+  -- priced at its cheapest listing then - what you'd pay, and what you'd have to undercut to sell. The index summary
+  -- itself is never changed: a copy carries the fresh price.
+  local shard = ns.AME:FactionShard()
+  local fresh = {}
+  local function market(id)
+    local s = index.items[id]
+    if fresh[id] == nil then
+      local book = shard and ns.AME:BookFor(shard, id, UI.CRAFT_FRESH_BOOK)
+      local p = book and book.prices and book.prices[1]
+      if p then
+        local copy = {}
+        for k, val in pairs(s or {}) do
+          copy[k] = val
+        end
+        local listed = 0
+        for _, q in ipairs(book.qtys or {}) do
+          listed = listed + q
+        end
+        copy.market, copy.fresh = p, book.t
+        copy.qty = copy.qty or listed
+        fresh[id] = copy
+      else
+        fresh[id] = false
+      end
+    end
+    return fresh[id] or s
+  end
+  return ns.Crafting.New({
+    market = market,
+    vendorBuy = function(id)
+      return ns.CraftingData:VendorPrice(id)
+    end,
+    vendorSell = function(id)
+      return ns.ItemCache.Get(id).sellPrice
+    end,
+    cut = cut,
+    deposit = function(id)
+      local sell = ns.ItemCache.Get(id).sellPrice
+      return sell and ns.Arbitrage.Deposit(sell, house, hours) or 0
+    end,
+    sellable = function(id)
+      local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+      local bind = getInfo and select(14, getInfo(id))
+      return bind ~= 1 -- 1: binds when picked up
+    end,
+    producers = function(id)
+      return producers[id]
+    end,
+    factor = ns.Settings:Get("outlierFactor"),
+  })
+end
+
+-- Make something of an item instead of vendoring it? Recipes your characters know that use it, valued as the
+-- refine page does (Crafting:SellOrRefine: the product sold where it nets most, AH or vendor; other reagents bought).
+-- -> { product, where ("ah" | "vendor"), each (per unit of the item), raw (selling it as is, per unit), crafter }
+-- or nil when no known recipe beats selling it as it is
+UI.CRAFT_INSTEAD_QTY = 100 -- valued over this many (whole crafts; per unit after)
+function UI:CraftInstead(itemID)
+  local index = ns.AME:FactionIndex()
+  if not (index and itemID) then
+    return nil
+  end
+  local recipes, crafters = {}, {}
+  for key, c in pairs(ns.Professions:Characters()) do
+    for profession, p in pairs(c.professions or {}) do
+      if not GATHERING[profession] then
+        for id in pairs(p.learned or {}) do
+          if not crafters[id] then
+            local r = recipeFor(profession, id)
+            local uses = false
+            for _, reagent in ipairs(r and r.reagents or {}) do
+              uses = uses or reagent[1] == itemID
+            end
+            if uses and r.product then
+              recipes[#recipes + 1] = r
+              crafters[id] = key:match("[^:]+$") or key
+            end
+          end
+        end
+      end
+    end
+  end
+  if #recipes == 0 then
+    return nil
+  end
+  local craft = self:CraftingEnv(index)
+  local n = UI.CRAFT_INSTEAD_QTY
+  local r = craft:SellOrRefine(itemID, n, recipes)
+  local best = r.best
+  if not best then
+    return nil
+  end
+  local _, where = craft:NetSale(best.recipe.product)
+  return {
+    product = best.recipe.product,
+    where = where,
+    each = best.net / n,
+    raw = r.raw / n,
+    crafter = crafters[best.recipe.id],
+  }
+end
+
 -- everything the three modes need, for the faction auction house's prices
 function UI:CraftingModel()
   local index = ns.AME:FactionIndex()
@@ -102,8 +211,6 @@ function UI:CraftingModel()
     return nil, "nodata"
   end
   local chars = ns.Professions:Characters()
-  local house = ns.AME:CurrentHouse() == "Neutral" and (UnitFactionGroup("player") or "Horde") or ns.AME:CurrentHouse()
-  local cut, hours = ns.Settings:AuctionCut(house), ns.Settings:Get("listingHours")
   local only = self.craftChar -- nil: every character
 
   -- known recipes, one entry per recipe with every character who knows it; product -> recipes (chains)
@@ -164,57 +271,7 @@ function UI:CraftingModel()
     heldSet[id] = n > 0 or nil
   end
 
-  -- Prices: the market index (a day's average), but an item searched in the last hour (you do when posting) is
-  -- priced at its cheapest listing then - what you'd pay, and what you'd have to undercut to sell. The index summary
-  -- itself is never changed: a copy carries the fresh price.
-  local shard = ns.AME:FactionShard()
-  local fresh = {}
-  local function market(id)
-    local s = index.items[id]
-    if fresh[id] == nil then
-      local book = shard and ns.AME:BookFor(shard, id, UI.CRAFT_FRESH_BOOK)
-      local p = book and book.prices and book.prices[1]
-      if p then
-        local copy = {}
-        for k, val in pairs(s or {}) do
-          copy[k] = val
-        end
-        local listed = 0
-        for _, q in ipairs(book.qtys or {}) do
-          listed = listed + q
-        end
-        copy.market, copy.fresh = p, book.t
-        copy.qty = copy.qty or listed
-        fresh[id] = copy
-      else
-        fresh[id] = false
-      end
-    end
-    return fresh[id] or s
-  end
-  local craft = ns.Crafting.New({
-    market = market,
-    vendorBuy = function(id)
-      return ns.CraftingData:VendorPrice(id)
-    end,
-    vendorSell = function(id)
-      return ns.ItemCache.Get(id).sellPrice
-    end,
-    cut = cut,
-    deposit = function(id)
-      local sell = ns.ItemCache.Get(id).sellPrice
-      return sell and ns.Arbitrage.Deposit(sell, house, hours) or 0
-    end,
-    sellable = function(id)
-      local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-      local bind = getInfo and select(14, getInfo(id))
-      return bind ~= 1 -- 1: binds when picked up
-    end,
-    producers = function(id)
-      return producers[id]
-    end,
-    factor = ns.Settings:Get("outlierFactor"),
-  })
+  local craft = self:CraftingEnv(index, producers)
   return {
     index = index,
     craft = craft,

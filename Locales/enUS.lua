@@ -204,6 +204,8 @@ L["BUY: today's price is unusually low for this item - at least 1.5 standard dev
 L["Balanced"] = true
 L["Best recovery"] = true
 L["Best use"] = true
+L["Better: make %s and sell it - ~%s per item after the cut, instead of %s."] = true
+L["Better: make %s and vendor it - ~%s per item instead of %s."] = true
 L["Biggest fallers"] = true
 L["Biggest risers"] = true
 L["Block"] = true
@@ -484,6 +486,7 @@ L["Lowest listing"] = true
 L["MA %d (%s)"] = true
 L["Made by"] = true
 L["Make"] = true
+L["Make %s first: ~%s per item"] = true
 L["Makes"] = true
 L["Makes %s"] = true
 L["Margin"] = true
@@ -913,6 +916,7 @@ L["What you paid per unit for the units you bought on the auction house (oldest 
 L["What your characters' professions earn at today's prices: top earners, selling materials raw or refined, and recipes on the auction house worth buying. Open each profession once so AME knows your recipes. Needs the AME Crafting Data addon."] = true
 L["What's left to buy"] = true
 L["When"] = true
+L["When one of your characters knows a recipe that makes it into something worth more (silk cloth into silk bandages, say), the item page says so instead: make that first, then vendor or post it."] = true
 L["Where the data comes from"] = true
 L["Where to get a recipe"] = true
 L["While the Item tab is showing, it follows the item you pick at the auction house: a row you click, or a name you type into the search box (the item named exactly that, or the only one listed). Put an item up for sale and AME switches to the Item tab for it, wherever it was (Settings, General: Switch to the Item tab for what you put up for sale)."] = true

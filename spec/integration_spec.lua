@@ -4041,6 +4041,37 @@ describe("addon in a stubbed client", function()
       _G.GetGuildInfoText = nil
     end)
 
+    it("an item to vendor: says when making something of it first pays more (a recipe you know)", function()
+      bootSync()
+      local me = ns.Trading.CharKey()
+      -- First Aid: a bandage from one cloth; the cloth vendors for 1s 50c, the bandage for 3s; neither sells on the AH
+      AME_DB.crafting = {
+        chars = { [me] = { professions = { [129] = { skill = 150, learned = { [7928] = true } } } } },
+        catalog = { [129] = { recipes = { [7928] = { out = 6450, min = 1, r = { { 4306, 1 } } } } } },
+      }
+      ns.ItemCache.Get(4306).sellPrice = 150
+      ns.ItemCache.Get(6450).sellPrice = 300
+      local saved = ns.AME.FactionIndex
+      finally(function()
+        ns.AME.FactionIndex = saved
+      end)
+      ns.AME.FactionIndex = function()
+        return { items = { [4306] = { market = 100, avg30 = 100 } } }
+      end
+      local c = ns.UI:CraftInstead(4306)
+      assert.are.equal(6450, c.product)
+      assert.are.equal("vendor", c.where)
+      assert.are.equal(300, c.each)
+      assert.are.equal(150, c.raw)
+      local _, _, why = ns.UI.Verdict({ market = 100, avg30 = 100 }, { signal = "vendor", craft = c })
+      local text = table.concat(why, " ")
+      assert.truthy(text:find("Better: make", 1, true), text)
+      assert.is_nil(text:find("Vendor it instead", 1, true))
+      -- without the recipe: nothing to suggest
+      AME_DB.crafting.chars[me].professions[129].learned = {}
+      assert.is_nil(ns.UI:CraftInstead(4306))
+    end)
+
     it(
       "who can make it: your characters' recipes go out with sync, guildmates' come in, and the finder searches them",
       function()

@@ -1189,8 +1189,12 @@ function UI:FillItem(_, series, latest, mixed)
   -- the same call as the Market tab (the index knows the vendor price check); else the series' own
   local index = self:ViewIndex()
   local indexed = index and index.items[self.itemID]
+  local signal = indexed and indexed.signal or s.signal
+  -- vendoring it: is making something of it first worth more? (a recipe one of your characters knows)
+  self.craftInstead = signal == "vendor" and self.CraftInstead and self:CraftInstead(self.itemID) or nil
   self:FillVerdict(s, {
-    signal = indexed and indexed.signal or s.signal,
+    signal = signal,
+    craft = self.craftInstead,
     vendorPrice = indexed and indexed.vendorPrice,
     vendorNet = indexed and indexed.vendorNet,
     market = market,
@@ -1203,7 +1207,7 @@ function UI:FillItem(_, series, latest, mixed)
 end
 
 -- The verdict in plain words. Pure: s = the item's summary, ctx = { signal, market, avg, vendorPrice, vendorNet,
--- today }. Returns signal, headline, { sentences }.
+-- today, craft (UI:CraftInstead) }. Returns signal, headline, { sentences }.
 local PHASE_WHY = {
   shortage = L["Supply shrinking, price rising: a shortage."],
   demand = L["Rising on steady supply: strong demand."],
@@ -1284,10 +1288,21 @@ function UI.Verdict(s, ctx)
   else
     why[#why + 1] = L["From %d scans this week."]:format(s.scans7 or 0)
   end
-  if ACTION[signal] then
+  if signal == "vendor" and ctx.craft then
+    why[#why + 1] = UI.CraftInsteadText(ctx.craft)
+  elseif ACTION[signal] then
     why[#why + 1] = ACTION[signal]
   end
   return signal, HEADLINE[signal] or L["No call yet"], why
+end
+
+-- "Better: make Silk Bandage and vendor it (Tyken) - ~2s per item instead of 1s 50c."
+function UI.CraftInsteadText(c)
+  local name = ns.ItemCache.Name(c.product) or ("item:" .. tostring(c.product))
+  local text = c.where == "vendor" and L["Better: make %s and vendor it - ~%s per item instead of %s."]
+    or L["Better: make %s and sell it - ~%s per item after the cut, instead of %s."]
+  local who = c.crafter and (" " .. W.Dim("(" .. c.crafter .. ")")) or ""
+  return text:format(name, W.Money(math.floor(c.each + 0.5)), W.Money(math.floor(c.raw + 0.5))) .. who
 end
 
 function UI:FillVerdict(s, ctx)
@@ -1371,7 +1386,18 @@ function UI:UpdatePostAdvice()
     end
     local info = ns.ItemCache.Get(self.itemID)
     local vendor = info and info.sellPrice
-    if vendor and vendor > 0 and net < vendor then
+    if vendor and vendor > 0 and net < vendor and self.craftInstead then
+      local c = self.craftInstead
+      v.postWarn:SetText(
+        W.Color(
+          "warn",
+          L["Make %s first: ~%s per item"]:format(
+            ns.ItemCache.Name(c.product) or ("item:" .. tostring(c.product)),
+            W.Money(math.floor(c.each + 0.5))
+          )
+        )
+      )
+    elseif vendor and vendor > 0 and net < vendor then
       v.postWarn:SetText(W.Color("bad", L["Vendor it: a vendor pays %s"]:format(W.Money(vendor))))
     elseif advice.hold then
       v.postWarn:SetText(W.Color("bad", L["unlikely to sell soon: consider holding"]))

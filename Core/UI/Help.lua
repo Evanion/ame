@@ -50,6 +50,8 @@ Help.TERMS = {
       .. " "
       .. L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."]
       .. " "
+      .. L["When one of your characters knows a recipe that makes it into something worth more (silk cloth into silk bandages, say), the item page says so instead: make that first, then vendor or post it."]
+      .. " "
       .. L["DE: the enchanting materials it disenchants into are worth more than listing it nets (and than a vendor pays) - disenchant it, or sell it to an enchanter. Worked out from the classic disenchanting rules and today's material prices."],
   },
   confidence = {
