@@ -8,7 +8,7 @@
 --                        cooldown, yellow, grey, src } or nil
 --     an enchant makes no item: product nil, made 1. The open window is recorded into the catalog whenever it
 --     changes, so it's only asked for a recipe the catalog hasn't got yet.
---   Recipes.Recorded(id)         the same, but nil for a recipe only the shipped data knows
+--     recorded = true: one of your characters' windows (or the open one) has it, not only the shipped data
 --   Recipes.Producers(itemID)    { { recipe = id, crafters = { charKey, ... } }, ... }: catalog recipes that make it
 --   Recipes.Teaches(itemID)      what a recipe item teaches (CraftingData:Teaches, its corrections applied)
 --   Recipes.TaughtBy(spell)      the reverse: { { item, rank }, ... } recipe items that teach it
@@ -115,11 +115,6 @@ function Recipes.Get(id)
     c[id] = build(id) or false
   end
   return c[id] or nil
-end
-
-function Recipes.Recorded(id)
-  local r = Recipes.Get(id)
-  return r and r.recorded and r or nil
 end
 
 -- item -> { { recipe, crafters = { charKey, ... } } }: what your characters' windows recorded (built once per change)

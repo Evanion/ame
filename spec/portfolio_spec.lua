@@ -127,9 +127,10 @@ describe("Ledger", function()
 end)
 
 describe("Portfolio", function()
-  local P
+  local P, H
   before_each(function()
-    P = addon.load({ "Core/Init.lua", "Core/Portfolio.lua" }).Portfolio
+    local ns = addon.load({ "Core/Init.lua", "Core/Portfolio.lua" })
+    P, H = ns.Portfolio, ns.Holdings
   end)
 
   local holdings = {
@@ -145,7 +146,7 @@ describe("Portfolio", function()
   }
 
   it("adds up what you own across characters: bags, bank, mailbox, guild banks and auctions", function()
-    local m = P.Merge(holdings, { ["PvP:Guild"] = { tabs = { [1] = { [10] = 3 } } } })
+    local m = H.Map(holdings, "owned", nil, { ["PvP:Guild"] = { tabs = { [1] = { [10] = 3 } } } })
     assert.are.equal(23, m[10].qty)
     assert.are.equal(15, m[10].chars["PvP:Tyken"])
     assert.are.equal(3, m[10].guilds["PvP:Guild"])
@@ -169,7 +170,7 @@ describe("Portfolio", function()
   end)
 
   it("values positions at market, with cost basis and unrealized profit where known", function()
-    local rows, totals = P.Build(P.Merge(holdings), { [10] = { units = 8, unit = 100 } }, items)
+    local rows, totals = P.Build(H.Map(holdings, "owned"), { [10] = { units = 8, unit = 100 } }, items)
     assert.are.equal(2, #rows)
     assert.are.equal(20, rows[1].itemID) -- 4700 beats 20 * 110 = 2200
     local silk = rows[2]
@@ -186,7 +187,7 @@ describe("Portfolio", function()
   end)
 
   it("leaves hidden items out of the positions and totals, and counts them", function()
-    local rows, totals = P.Build(P.Merge(holdings), { [10] = { units = 8, unit = 100 } }, items, { [10] = true })
+    local rows, totals = P.Build(H.Map(holdings, "owned"), { [10] = { units = 8, unit = 100 } }, items, { [10] = true })
     assert.are.equal(1, #rows)
     assert.are.equal(20, rows[1].itemID)
     assert.are.equal(4700, totals.value)

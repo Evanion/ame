@@ -19,18 +19,9 @@ PB.QUEUE_W = 420
 ---------------------------------------------------------------------------------------------------------------------
 -- data
 
--- recipes by ID and what makes an item: Core/Recipes.lua
-PB.Recipe = function(recipeID)
-  return ns.Recipes.Get(recipeID)
-end
-PB.Producers = function(itemID)
-  return ns.Recipes.Producers(itemID)
-end
-
--- prices at your faction's auction house, as every view crafts with (CraftModel.Craft), or nil before there's a
--- market index
-function PB.Craft()
-  return ns.CraftModel.Craft()
+-- recipes by ID and what makes an item: Core/Recipes.lua; prices as every view crafts with: CraftModel.Craft
+local function recipeOf(id)
+  return ns.Recipes.Get(id)
 end
 
 -- one recipe's numbers for count crafts: { cost (each craft, reagents at market), sells (what a craft's items sell
@@ -86,13 +77,13 @@ end
 
 function PB.Plan()
   return ns.CraftQueue.Plan(queue().db, {
-    recipe = PB.Recipe,
-    producers = PB.Producers,
+    recipe = recipeOf,
+    producers = ns.Recipes.Producers,
     held = function(id)
       return ns.Trading.Held(id)
     end,
     me = ns.Trading.CharKey(),
-    craft = PB.Craft(),
+    craft = ns.CraftModel.Craft(),
     vendorBuy = function(id)
       local data = ns.CraftingData
       return data and data.VendorPrice and data:VendorPrice(id)
@@ -235,7 +226,7 @@ local function available(step)
   local info = C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(step.recipe)
   local game = info and info.learned and (info.numAvailable or 0) or 0
   local h = AME_DB and AME_DB.holdings and AME_DB.holdings[ns.Trading.CharKey()]
-  local bags = PB.CraftsFromBags(PB.Recipe(step.recipe), h and h.bags or {})
+  local bags = PB.CraftsFromBags(recipeOf(step.recipe), h and h.bags or {})
   return math.max(game, bags)
 end
 
@@ -301,7 +292,7 @@ local function signed(c)
 end
 
 function PB:SelectedRecipe()
-  return self.selected and PB.Recipe(self.selected)
+  return self.selected and recipeOf(self.selected)
 end
 
 function PB:CreateBar(host)
@@ -366,7 +357,7 @@ function PB:RenderBar()
     return
   end
   local recipe = self:SelectedRecipe()
-  local craft = PB.Craft()
+  local craft = ns.CraftModel.Craft()
   local brand = ""
   bar.search:SetShown(ns.AME.ahOpen and true or false)
   local n = #queue().db.items
@@ -692,7 +683,7 @@ local function stepLines(s)
   if s.part then
     who = who and (who .. W.Dim("  ·  ") .. L["a part"]) or L["a part"]
   end
-  local r = PB.Recipe(s.recipe)
+  local r = recipeOf(s.recipe)
   local list = {}
   for _, reagent in ipairs(r and r.reagents or {}) do
     list[#list + 1] = reagent[2] * (s.count or 1) .. " " .. W.LinkText(reagent[1], nil, redrawQueue)
@@ -916,7 +907,7 @@ local function profitFor(recipeID)
   end
   local v = rowProfit[recipeID]
   if v == nil then
-    local recipe, craft = PB.Recipe(recipeID), PB.Craft()
+    local recipe, craft = recipeOf(recipeID), ns.CraftModel.Craft()
     local e = recipe and recipe.product and craft and craft:Evaluate(recipe)
     v = e and e.profit or false
     rowProfit[recipeID] = v

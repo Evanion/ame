@@ -196,7 +196,7 @@ function UI:CrafterRows()
   end
   local rows = {}
   for _, res in ipairs(crafters:Search(text)) do
-    local r = ns.ProfessionBar and ns.ProfessionBar.Recipe(res.recipe)
+    local r = ns.Recipes.Get(res.recipe)
     local d = not r and ns.CraftingData:Recipe(res.recipe)
     local product = (r and r.product) or (d and d.product)
     for _, c in ipairs(res.who) do

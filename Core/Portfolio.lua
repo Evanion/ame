@@ -10,12 +10,6 @@ local _, ns = ...
 local Portfolio = {}
 ns.Portfolio = Portfolio
 
--- total owned per item across characters and places (Holdings.PLACES.owned: on sale or not):
--- { [itemID] = { qty, chars = { [charKey] = qty }, guilds } }
-function Portfolio.Merge(holdings, guildBanks)
-  return ns.Holdings.Map(holdings, "owned", nil, guildBanks)
-end
-
 -- What's listed on the auction house right now, across characters:
 --   { count, value (asking prices), net (after each house's cut), market (at market price), chars = {...} }
 -- cut(house) gives the seller's cut fraction; items = market summaries

@@ -189,52 +189,16 @@ function Trading:ScanGuildBank(query)
   bank.t = GetServerTime()
 end
 
--- How many of an item your characters on this market have, and where: per character, and each guild bank.
+-- How many of an item your characters on this market have, and where: per character, and each guild bank
+-- (Holdings.Count, every place).
 --   { total, bags, bank, auctions, guildBank, chars = { { name, bags, bank, auctions, me } },
 --     guilds = { { name, qty } } }
 -- holdings / guildBanks / market / me: for specs (default: the saved data, this market, this character)
 function Trading.Held(itemID, holdings, guildBanks, market, me)
-  holdings = holdings or AME_DB.holdings or {}
-  guildBanks = guildBanks or AME_DB.guildBanks or {}
-  market = market or ns.AME:MarketRealmName()
-  me = me or charKey()
-  local out = { total = 0, bags = 0, bank = 0, auctions = 0, mail = 0, guildBank = 0, chars = {}, guilds = {} }
-  local prefix = market .. ":"
-  for key, h in pairs(holdings) do
-    if key:sub(1, #prefix) == prefix then
-      local b, k, a =
-        h.bags and h.bags[itemID] or 0, h.bank and h.bank[itemID] or 0, h.auctions and h.auctions[itemID] or 0
-      local m = h.mail and h.mail[itemID] or 0 -- waiting in the mailbox (won auctions; what the inbox last held)
-      if b + k + a + m > 0 then
-        out.chars[#out.chars + 1] =
-          { name = key:sub(#prefix + 1), bags = b, bank = k, auctions = a, mail = m, me = key == me }
-        out.bags, out.bank, out.auctions, out.mail = out.bags + b, out.bank + k, out.auctions + a, out.mail + m
-      end
-    end
-  end
-  for key, g in pairs(guildBanks) do
-    if key:sub(1, #prefix) == prefix then
-      local n = 0
-      for _, items in pairs(g.tabs or {}) do
-        n = n + (items[itemID] or 0)
-      end
-      if n > 0 then
-        out.guilds[#out.guilds + 1] = { name = key:sub(#prefix + 1), qty = n }
-        out.guildBank = out.guildBank + n
-      end
-    end
-  end
-  table.sort(out.chars, function(x, y)
-    if x.me ~= y.me then
-      return x.me
-    end
-    return x.bags + x.bank + x.auctions > y.bags + y.bank + y.auctions
-  end)
-  table.sort(out.guilds, function(x, y)
-    return x.qty > y.qty
-  end)
-  out.total = out.bags + out.bank + out.auctions + out.mail + out.guildBank
-  return out
+  local prefix = (market or ns.AME:MarketRealmName()) .. ":"
+  return ns.Holdings.Count(holdings or AME_DB.holdings, guildBanks or AME_DB.guildBanks, itemID, function(key)
+    return key:sub(1, #prefix) == prefix
+  end, me or charKey())
 end
 
 -- Won an auction ("You won an auction for Murloc Eye (x40)"): it waits in your mailbox until you take it, so it

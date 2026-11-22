@@ -14,7 +14,7 @@ V.ROWS = 16
 V.PER_RECIPE = 4
 
 local function linkFor(recipeID)
-  local r = ns.ProfessionBar and ns.ProfessionBar.Recipe(recipeID)
+  local r = ns.Recipes.Get(recipeID)
   if r and r.product then
     local link = ns.ItemCache.Link and ns.ItemCache.Link(r.product)
     if link then
@@ -42,7 +42,7 @@ end
 
 -- what a recipe makes (an enchant makes nothing: nil)
 local function productOf(recipeID)
-  local r = ns.ProfessionBar and ns.ProfessionBar.Recipe(recipeID)
+  local r = ns.Recipes.Get(recipeID)
   local d = not r and ns.CraftingData and ns.CraftingData.Recipe and ns.CraftingData:Recipe(recipeID)
   return (r and r.product) or (d and d.product) or nil
 end

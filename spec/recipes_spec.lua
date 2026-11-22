@@ -73,8 +73,8 @@ describe("Recipes", function()
   end)
 
   it("knows a recorded recipe apart from a shipped one, and what makes an item", function()
-    assert.are.equal(1251, ns.Recipes.Recorded(3275).product)
-    assert.is_nil(ns.Recipes.Recorded(7001)) -- shipped only: not recorded
+    assert.is_true(ns.Recipes.Get(3275).recorded)
+    assert.is_nil(ns.Recipes.Get(7001).recorded) -- shipped only: not recorded
     local p = ns.Recipes.Producers(1251)
     assert.are.equal(1, #p)
     assert.are.equal(3275, p[1].recipe)

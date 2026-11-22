@@ -1,6 +1,13 @@
 # Data core: every number computed once, every view reads it
 
-Status: plan (Nov 2026). Nothing here is built yet. It follows a2d5122, which fixed one disagreement (the sales rate
+Status: built (Nov 2026), steps 1-12 below. Left as they were, on purpose: `Crafting:Price` / `SalesPerDay` stay as
+one-line delegates to `Quote.CapPrice` / `Quote.UnitsPerDay` (they are the pure Crafting instance's view of its own
+env, which CraftQueue, Leveling and the profession bar hold instead of a quote); the fresh overlay applies where a
+single item is priced (Crafting, profession bar, recipe tooltips), not the screener tables, as recommended; the
+portfolio counts guild banks, as the "owned" preset has it (worth a look in game); the warband bank waits (B5); a few
+display-only sums stay in views (vs-average, supply trend, stack rounding).
+`spec/toolchain_spec.lua` ("Data core rules") keeps `Settings:AuctionCut`, `Arbitrage.Deposit` and
+`C_Item.GetItemInfo` out of `Core/UI/`. It follows a2d5122, which fixed one disagreement (the sales rate
 corrected for real auction outcomes in some tables but not others) by estimating it once in `Core/Index.lua`
 (`SellThrough.Prior` / `SellThrough.Estimate`). This plan makes that kind of fix the default: one core computes each
 number, the UI formats and draws it, and there is nowhere else to compute it.

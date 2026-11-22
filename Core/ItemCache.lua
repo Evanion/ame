@@ -274,6 +274,24 @@ function C.Get(key)
   return e
 end
 
+-- name, link, quality, icon of an item key straight from the client (nil until it has it cached); a variant has its
+-- own name and link, the rest is its base item's
+function C.Info(key)
+  local itemID = ns.BaseID(key)
+  local getInfo = api("GetItemInfo")
+  if not getInfo then
+    return nil
+  end
+  local name, link, quality, _, _, _, _, _, _, icon = getInfo(itemID)
+  if not icon and C_Item and C_Item.GetItemIconByID then
+    icon = C_Item.GetItemIconByID(itemID)
+  end
+  if name and ns.IsVariant(key) then
+    name, link = C.Name(key) or name, C.Link(key) or link
+  end
+  return name, link, quality, icon
+end
+
 -- name / link straight from the client: nil until it has the item cached (one lookup for every module)
 function C.Name(key)
   if not key then

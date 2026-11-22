@@ -41,6 +41,46 @@ end)
 
 -- Guards the UI's shared pieces (docs/plans/ui-components.md): views draw item names, main actions, chat lines and
 -- side menus with the widgets, not by hand. Each rule lists the offending file:line.
+describe("Data core rules", function()
+  -- file:line of every line (not a comment) in the Core/UI files the TOC loads that has the text
+  local function offenders(pattern)
+    local bad = {}
+    for line in io.lines("AzerothMercantileExchange.toc") do
+      line = line:gsub("\r", "")
+      local path = line:match("^Core\\UI\\.+%.lua$") and line:gsub("\\", "/")
+      if path then
+        local n = 0
+        for code in io.lines(path) do
+          n = n + 1
+          if not code:match("^%s*%-%-") and code:find(pattern, 1, true) then
+            bad[#bad + 1] = path .. ":" .. n
+          end
+        end
+      end
+    end
+    return bad
+  end
+
+  -- the numbers every view shows come from the core (docs/plans/data-core.md): a view that works out a cut, a
+  -- deposit or an item's facts itself is how two screens came to disagree
+  it("reads the UI files", function()
+    assert.is_true(#offenders("ns.Quote.") > 5) -- the views do ask the core
+  end)
+
+  it("works out no auction house cut in a view (Quote.Cut, q.cut, Quote:ListingNet / BestSale / PostNet)", function()
+    assert.are.same({}, offenders("Settings:AuctionCut"))
+  end)
+
+  it("works out no listing deposit in a view (Quote:Deposit, Arbitrage.Find's net)", function()
+    assert.are.same({}, offenders("Arbitrage.Deposit"))
+  end)
+
+  it("reads no item facts from the client in a view (ItemCache.Get / Info)", function()
+    assert.are.same({}, offenders("C_Item.GetItemInfo("))
+    assert.are.same({}, offenders("C_Item and C_Item.GetItemInfo"))
+  end)
+end)
+
 describe("UI rules", function()
   -- every Lua file under Core/UI the TOC loads, as { path, lines }
   local function uiFiles()

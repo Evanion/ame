@@ -210,7 +210,7 @@ local function recipeName(recipeID)
   if spell then
     return spell
   end
-  local r = ns.ProfessionBar and ns.ProfessionBar.Recipe(recipeID)
+  local r = ns.Recipes.Get(recipeID)
   return r and r.product and ns.ItemCache.Name(r.product) or nil
 end
 Crafters.RecipeName = recipeName
@@ -219,7 +219,7 @@ Crafters.RecipeName = recipeName
 local shippedBy -- product itemID -> { recipe spell, ... } from the shipped data (built once it's loaded)
 function Crafters.RecipesFor(itemID)
   local out, seen = {}, {}
-  for _, p in ipairs(ns.ProfessionBar and ns.ProfessionBar.Producers(itemID) or {}) do
+  for _, p in ipairs(ns.Recipes.Producers(itemID)) do
     out[#out + 1], seen[p.recipe] = p.recipe, true
   end
   local data = ns.CraftingData

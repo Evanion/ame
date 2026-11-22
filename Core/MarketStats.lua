@@ -104,10 +104,11 @@ local function slot(t, a, b)
   return tb
 end
 
--- Units a day an item really sells, for turnover and CPI weights: its sell rate, but never more than is listed. The
--- sell rate counts every listing that leaves between full scans - expired and cancelled ones too - and a short
--- observation scales up to a day, so for gear (single listings that mostly expire) it can be far above what sells.
-function MarketStats.SoldPerDay(s)
+-- Units a day an item really sells, for turnover and CPI weights: Quote.UnitsPerDay, its sell rate but never more
+-- than is listed. The sell rate counts every listing that leaves between full scans - expired and cancelled ones
+-- too - and a short observation scales up to a day, so for gear (single listings that mostly expire) it can be far
+-- above what sells.
+local function soldPerDay(s)
   return ns.Quote.UnitsPerDay(s) or 0
 end
 
@@ -160,7 +161,7 @@ function MarketStats:Add(id, raw, clean, s)
   if MarketStats.CPI_CLASSES[cls] and s and s.market then
     local price = cap and min(s.market, cap) or s.market
     weights = { v = price * (s.qty or 0) }
-    local rate = MarketStats.SoldPerDay(s)
+    local rate = soldPerDay(s)
     if rate > 0 then
       weights.t = price * rate
     end
@@ -362,11 +363,7 @@ function MarketStats.Summary(index, period, classOf, hide, factor, moverClass)
         out.sell = out.sell + 1
       end
       if s.sellRate and s.market then
-        local price = s.market
-        if factor and s.avg30 and s.avg30 > 0 then
-          price = min(price, factor * s.avg30)
-        end
-        local t = MarketStats.SoldPerDay(s) * price
+        local t = soldPerDay(s) * ns.Quote.CapPrice(s, factor)
         out.turnover = out.turnover + t
         bump(turnoverBy, (classOf and classOf(id)) or MarketStats.OTHER, t)
       end

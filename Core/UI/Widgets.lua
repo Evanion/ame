@@ -1370,8 +1370,7 @@ function W.SetItemTip(tip, key)
     -- the auction house's item key tooltip is the group's ("may vary in stats"): only when no link with the
     -- suffix's bonus is known
     if tip.SetItemKey and not ns.VariantString(key) then
-      local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-      tip:SetItemKey(itemID, select(4, getInfo(itemID)) or 0, suffix) -- the auction house's own item key
+      tip:SetItemKey(itemID, ns.ItemCache.Get(itemID).level or 0, suffix) -- the auction house's own item key
     else
       tip:SetHyperlink(ns.ItemString(key))
     end
@@ -1380,18 +1379,9 @@ function W.SetItemTip(tip, key)
   end
 end
 
--- name, link, quality, icon of an item key; a variant has its own name and link, the rest is its base item's
+-- name, link, quality, icon of an item key (ItemCache.Info)
 function W.ItemInfo(key)
-  local itemID = ns.BaseID(key)
-  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-  local name, link, quality, _, _, _, _, _, _, icon = getInfo(itemID)
-  if not icon and C_Item and C_Item.GetItemIconByID then
-    icon = C_Item.GetItemIconByID(itemID)
-  end
-  if name and ns.IsVariant(key) then
-    name, link = ns.ItemCache.Name(key) or name, ns.ItemCache.Link(key) or link
-  end
-  return name, link, quality, icon
+  return ns.ItemCache.Info(key)
 end
 
 -- text in an item quality's colour (white without one)

@@ -14,6 +14,9 @@
 --     places: a list of place names (or a preset name); keep(key) -> true to count that character or guild bank
 --   Holdings.Totals(holdings, places, keep, guildBanks) -> { [key] = n }
 --   Holdings.Of(places, scope)    Map over the saved data (AME_DB), in a scope (Keep)
+--   Holdings.Count(holdings, guildBanks, key, keep, me) -> one item, every place: { total, bags, bank, auctions,
+--     mail, guildBank, chars = { { name, bags, bank, auctions, mail, me } } (yours first, then most held),
+--     guilds = { { name, qty } } } - name: the key without its "<market>:"; me: this character's key
 --   Holdings.Reserve(have) -> r   a stock to draw from (have: { [key] = n } or fn(key) -> n):
 --                                 r:Take(key, n) -> taken, r:Left(key) -> what's still there
 local _, ns = ...
@@ -101,6 +104,44 @@ end
 function Holdings.Of(places, scope)
   local db = AME_DB or {}
   return Holdings.Map(db.holdings, places, Holdings.Keep(scope), db.guildBanks)
+end
+
+function Holdings.Count(holdings, guildBanks, key, keep, me)
+  local out = { total = 0, bags = 0, bank = 0, auctions = 0, mail = 0, guildBank = 0, chars = {}, guilds = {} }
+  for char, h in pairs(holdings or {}) do
+    if not keep or keep(char) then
+      local b, k, a = h.bags and h.bags[key] or 0, h.bank and h.bank[key] or 0, h.auctions and h.auctions[key] or 0
+      local m = h.mail and h.mail[key] or 0 -- waiting in the mailbox (won auctions; what the inbox last held)
+      if b + k + a + m > 0 then
+        out.chars[#out.chars + 1] =
+          { name = char:gsub("^[^:]*:", ""), bags = b, bank = k, auctions = a, mail = m, me = char == me }
+        out.bags, out.bank, out.auctions, out.mail = out.bags + b, out.bank + k, out.auctions + a, out.mail + m
+      end
+    end
+  end
+  for gkey, g in pairs(guildBanks or {}) do
+    if not keep or keep(gkey) then
+      local n = 0
+      for _, items in pairs(g.tabs or {}) do
+        n = n + (items[key] or 0)
+      end
+      if n > 0 then
+        out.guilds[#out.guilds + 1] = { name = gkey:gsub("^[^:]*:", ""), qty = n }
+        out.guildBank = out.guildBank + n
+      end
+    end
+  end
+  table.sort(out.chars, function(x, y)
+    if x.me ~= y.me then
+      return x.me
+    end
+    return x.bags + x.bank + x.auctions > y.bags + y.bank + y.auctions
+  end)
+  table.sort(out.guilds, function(x, y)
+    return x.qty > y.qty
+  end)
+  out.total = out.bags + out.bank + out.auctions + out.mail + out.guildBank
+  return out
 end
 
 local Reserve = {}

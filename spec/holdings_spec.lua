@@ -43,4 +43,13 @@ describe("Holdings", function()
     assert.are.equal(4, f:Left(1))
     assert.are.equal(0, f:Take(2, 1))
   end)
+
+  it("counts one item in every place, yours first, with each guild bank", function()
+    local c = H.Count(holdings, guildBanks, 2589, H.Keep("account"), "PvP:Alt")
+    assert.are.equal(173, c.total)
+    assert.are.same({ 21, 5, 40, 99, 8 }, { c.bags, c.bank, c.auctions, c.mail, c.guildBank })
+    assert.are.equal("Alt", c.chars[1].name) -- you first
+    assert.is_true(c.chars[1].me)
+    assert.are.same({ { name = "Guild", qty = 8 } }, c.guilds)
+  end)
 end)
