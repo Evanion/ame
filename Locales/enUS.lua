@@ -293,6 +293,7 @@ L["Colour-blind friendly palette"] = true
 L["Colours"] = true
 L["Columns"] = true
 L["Columns  ·  %d hidden"] = true
+L["Columns picks which columns show, as on the Market tab; the button says how many are hidden, counting the ones a narrow window has no room for."] = true
 L["Columns..."] = true
 L["Commands"] = true
 L["Common+"] = true

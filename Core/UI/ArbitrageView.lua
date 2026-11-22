@@ -1,5 +1,5 @@
 -- Arbitrage tab: items to buy at one auction house and sell at another, after the selling house's cut and deposit.
--- Layout (UI.Slots): toolbar (buy ⇄ sell, minimum profit and margin, data age), the routes table, and a right
+-- Layout (UI.Slots): toolbar (buy ⇄ sell, minimum profit and margin, data age, columns), the routes table, and a right
 -- sidebar for the selected route (price → cut → deposit → net, each side's age, sell rate, Search at the buy house).
 -- Narrow window: the sidebar opens over the table from a Details button.
 local _, ns = ...
@@ -137,6 +137,13 @@ function UI:CreateArbitrageView(parent, contentArea)
     v.details:SetSelected(slots.details)
   end)
   v.details:SetPoint("RIGHT", 0, 0)
+  -- the column chooser, as the Market screener has it (wide window; the compact toolbar has no room for it)
+  v.columns = W.Button(bar, L["Columns"], 116, 20, function(self)
+    ns.DataTable.ColumnMenu(self, v.table, "arbColumns", function()
+      UI:ApplyArbitrageColumns()
+    end)
+  end)
+  v.columns:SetPoint("RIGHT", 0, 0)
 
   -- the list (shared DataTable component)
   v.table = ns.DataTable.New(slots.main, {
@@ -186,11 +193,16 @@ function UI:CreateArbitrageView(parent, contentArea)
   })
   v.headers, v.rows, v.status = v.table.headers, v.table.rows, slots.status
   self:CreateRouteSidebar(v, slots.right)
+  v.table.frame:HookScript("OnSizeChanged", function()
+    v.columns.label:SetText(v.table:ColumnsLabel()) -- columns dropped for room count as hidden
+  end)
+  self:ApplyArbitrageColumns()
 
   function v:SetCompact(on)
     slots:SetCompact(on)
     self.details:SetShown(on)
     self.details:SetSelected(false)
+    self.columns:SetShown(not on)
   end
   v:SetCompact(slots.compact)
 
@@ -205,6 +217,13 @@ function UI:CreateArbitrageView(parent, contentArea)
     end
   end)
   return v
+end
+
+-- the columns switched off in the chooser (Settings "arbColumns"), and the button's count
+function UI:ApplyArbitrageColumns()
+  local v = self.arbView
+  v.table:SetUserHidden(ns.DataTable.ChosenHidden(COLUMNS, "arbColumns"))
+  v.columns.label:SetText(v.table:ColumnsLabel())
 end
 
 ---------------------------------------------------------------------------------------------------------------------

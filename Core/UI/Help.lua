@@ -461,6 +461,7 @@ function Help.Articles()
             L["Select a route to see what it pays after the cut and the deposit, and how fresh each side's price is. Routes paying over 2000% are gold transfers between factions, not trades: they're hidden and counted."],
             H(L["Filters and actions"]),
             L["Swap turns the route around. Minimum profit, margin and data age narrow the list. At the buy auction house, Search (or Shift-clicking a row) searches the item there, which also fills in how many units still pay; Chart opens it on the Item tab."],
+            L["Columns picks which columns show, as on the Market tab; the button says how many are hidden, counting the ones a narrow window has no room for."],
           },
         },
         {
