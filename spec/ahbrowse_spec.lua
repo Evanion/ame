@@ -110,4 +110,32 @@ describe("AHSelling (the Selling tab's bags)", function()
     assert.are.equal("vendor", items[2].where)
     assert.are.equal(4800, items[2].worth)
   end)
+
+  it(
+    "orders the Tip column: list it first (you're at the AH), then make, disenchant, vendor; worth the most first",
+    function()
+      local function order(list)
+        table.sort(list, function(x, y)
+          return S.TipOrder(x) < S.TipOrder(y)
+        end)
+        local out = {}
+        for i, e in ipairs(list) do
+          out[i] = e.name
+        end
+        return out
+      end
+      assert.are.same(
+        { "auction big", "auction small", "make", "de", "vendor big", "vendor small", "no price" },
+        order({
+          { name = "no price", worth = 0 },
+          { name = "auction small", where = "ah", worth = 90 },
+          { name = "vendor small", signal = "vendor", where = "vendor", worth = 10 },
+          { name = "de", signal = "disenchant", where = "ah", worth = 50 },
+          { name = "auction big", where = "ah", worth = 9000 },
+          { name = "vendor big", signal = "vendor", where = "vendor", worth = 500 },
+          { name = "make", signal = "vendor", where = "vendor", craft = {}, worth = 1 },
+        })
+      )
+    end
+  )
 end)

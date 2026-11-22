@@ -35,6 +35,25 @@ function S.Group(slots)
   return out
 end
 
+-- What the Tip column says to do with it: "auction" (list it: you're at the auction house), "craft" (make something
+-- worth more first), "disenchant", "vendor", or nil (no price)
+function S.Tip(e)
+  if e.craft then
+    return "craft"
+  elseif e.signal == "vendor" or e.signal == "disenchant" then
+    return e.signal
+  elseif e.where == "ah" then
+    return "auction"
+  end
+end
+
+-- the Tip column's order: auction first, then make first, disenchant, vendor, then the rest; worth the most first
+-- in each (one number, so the table sorts by it)
+S.TIP_RANK = { auction = 1, craft = 2, disenchant = 3, vendor = 4 }
+function S.TipOrder(e)
+  return (S.TIP_RANK[S.Tip(e) or ""] or 9) * 1e12 - (e.worth or 0)
+end
+
 -- Pure: entries (S.Group) valued and sorted by what all of each is worth, most first
 --   summary(key) -> index summary; worth(key) -> what one unit nets and where ("ah" | "vendor"; Quote:BestSale)
 function S.Rank(entries, summary, worth)
@@ -122,6 +141,7 @@ function S:Refresh()
     if e.signal == "vendor" and ns.UI.CraftInstead then
       e.craft = ns.UI:CraftInstead(e.key)
     end
+    e.tip = S.TipOrder(e)
   end
 end
 
@@ -172,22 +192,23 @@ function S:Create(ah)
           return e.qty > 1 and W.Dim("  " .. W.Count(e.qty)) or ""
         end,
       },
-      -- the hint, a column of its own: make something worth more first (its product a link), disenchant it, vendor it
+      -- the tip, one short word in a narrow column of its own (the item gets the width): list it ("Auction"), make
+      -- something worth more first ("Arbitrate": what to make shows when you pick it), disenchant it, vendor it
       {
         key = "hint",
-        label = "",
-        width = 96,
-        sortKey = false,
-        item = function(e)
-          return e.craft and e.craft.product or nil
-        end,
-        prefix = function()
-          return W.Color("warn", L["make"] .. " ")
-        end,
-        fallback = function(e)
-          if e.signal == "vendor" then
+        label = L["Tip"],
+        width = 52,
+        sortKey = "tip",
+        ascendingFirst = true, -- what to list at the top
+        text = function(e)
+          local tip = S.Tip(e)
+          if tip == "auction" then
+            return L["Auction"]
+          elseif tip == "craft" then
+            return W.Color("warn", L["Arbitrate"])
+          elseif tip == "vendor" then
             return W.Dim(L["vendor"])
-          elseif e.signal == "disenchant" then
+          elseif tip == "disenchant" then
             return W.Color("disenchant", L["DE"])
           end
           return ""
