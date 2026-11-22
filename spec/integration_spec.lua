@@ -2116,6 +2116,18 @@ describe("addon in a stubbed client", function()
         local rows, totals = T.Rows(ns.AME.shopping:Lists()[i].items, AME_DB.holdings, nil, ns.AHSearch.results)
         assert.are.equal(90, rows[1].cheapest)
         assert.are.equal(10 * 90 + 20 * 100, totals.left) -- the 30 climb the listings
+        -- an item a vendor sells is marked, left out of what's left to buy and of Search all
+        local vrows, vtotals = T.Rows(
+          ns.AME.shopping:Lists()[i].items,
+          AME_DB.holdings,
+          nil,
+          ns.AHSearch.results,
+          function(id)
+            return id == 2589 and 50 or nil
+          end
+        )
+        assert.are.equal(50, vrows[1].vendor)
+        assert.are.equal(0, vtotals.left)
         -- buy: the game prices the 30, then a second click buys them
         T.selected = 2589
         T:Render()

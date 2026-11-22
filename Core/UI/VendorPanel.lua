@@ -15,6 +15,14 @@ ns.VendorPanel = V
 V.WIDTH = 380
 V.MAX_ROWS = 10
 
+-- What a vendor charges for one, for items a vendor sells (nil otherwise): the crafting data's vendor prices, and
+-- every vendor you've stood at (recorded as you visit them: AME_DB.vendorItems)
+function V.PriceOf(itemID)
+  local data = ns.CraftingData
+  local p = data and data.VendorPrice and data:VendorPrice(itemID)
+  return p or (AME_DB and AME_DB.vendorItems and AME_DB.vendorItems[itemID]) or nil
+end
+
 -- Pure: what your lists still need, per item: { [key] = units } (lists: { { items = { [key] = { need } } } })
 function V.Needs(lists, holdings)
   -- every list's need added up first, what you hold taken off once (two lists wanting thread share your stock)
@@ -93,6 +101,10 @@ function V.Offers()
       price, stack, available, extended = p, q, a, e
     end
     if id and price and price > 0 and not extended then
+      if AME_DB then -- remembered: a list's vendor items are marked as such on the auction house's Shopping tab
+        AME_DB.vendorItems = AME_DB.vendorItems or {}
+        AME_DB.vendorItems[id] = math.floor(price / math.max(1, stack or 1) + 0.5)
+      end
       out[#out + 1] = {
         index = i,
         key = id,

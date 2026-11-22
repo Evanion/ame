@@ -40,10 +40,13 @@ end
 
 -- Pure: the tab's rows for a list: Shopping.Progress's rows, each with its cheapest listing and how many are on sale
 -- at or under its top price (from AHSearch's results)
-function T.Rows(items, holdings, market, results)
+-- vendorPrice(itemID) (optional): what a vendor charges, for items a vendor sells - those are bought there (the
+-- vendor panel), so they're marked, not searched, and left out of what's left to buy here
+function T.Rows(items, holdings, market, results, vendorPrice)
   local rows, totals = ns.Shopping.Progress(items, holdings, market)
   local left = 0
   for _, r in ipairs(rows) do
+    r.vendor = vendorPrice and vendorPrice(r.itemID) or nil
     local book = results[r.itemID]
     local first = book and book.rows[1]
     r.cheapest = first and first.price
@@ -57,7 +60,7 @@ function T.Rows(items, holdings, market, results)
       end
       r.underTop = n
     end
-    if r.missing > 0 and r.cheapest then
+    if r.missing > 0 and r.cheapest and not r.vendor then
       -- what the rest costs at the cheapest listings (climbing the book)
       local need, cost = r.missing, 0
       for _, l in ipairs(book.rows) do
@@ -360,6 +363,9 @@ local function listColumns()
         label = col.label,
         width = col.width,
         text = function(r)
+          if r.vendor then
+            return "" -- bought from a vendor, not here
+          end
           return r.missing > 0 and W.Money(math.floor((r.buyCost or r.cost or 0) + 0.5)) or ""
         end,
       }
@@ -372,6 +378,9 @@ local function listColumns()
         label = L["Cheapest"],
         width = 76,
         text = function(r)
+          if r.vendor then
+            return W.Dim(L["vendor"] .. " ") .. W.Money(r.vendor)
+          end
           return r.cheapest and W.Money(r.cheapest) or W.Dim(r.searched and L["none"] or "-")
         end,
       }
@@ -459,6 +468,9 @@ function T:Create(ah)
     sort = { key = "missing", ascending = false },
     onClick = pickRow,
     selected = selected,
+    rowAlpha = function(r)
+      return r.vendor and 0.55 or 1 -- a vendor sells it: bought there
+    end,
   })
   p.searchTable = ns.DataTable.New(
     inner,
@@ -744,7 +756,13 @@ function T:TableRows()
     return rows, head, status
   end
   local items, title = self:Items()
-  local rows, totals = T.Rows(items, AME_DB.holdings, index and index.items, ns.AHSearch.results)
+  local rows, totals = T.Rows(
+    items,
+    AME_DB.holdings,
+    index and index.items,
+    ns.AHSearch.results,
+    ns.VendorPanel and ns.VendorPanel.PriceOf
+  )
   self.rowsShown = rows
   local S = ns.AHSearch
   local status
@@ -862,7 +880,7 @@ end
 function T:SearchAll()
   local keys = {}
   for _, r in ipairs(self.rowsShown or {}) do
-    if r.missing > 0 then
+    if r.missing > 0 and not r.vendor then -- a vendor sells it: not searched here
       keys[#keys + 1] = r.itemID
     end
   end
