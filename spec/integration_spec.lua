@@ -2505,6 +2505,24 @@ describe("addon in a stubbed client", function()
         Sel:RenderListings() -- listings in: no "searching..." left over them
         local msg = Sel.panel.listings.message
         assert.is_true(msg == nil or not msg:IsShown())
+        -- a fourth price: the item's market price, as the sell bar has it
+        local marketPick
+        for _, b in ipairs(Sel.panel.picks) do
+          if b.key == "market" then
+            marketPick = b
+          end
+        end
+        assert.is_not_nil(marketPick)
+        -- (this test has no market data for it: prices as Posting:Suggest gives them)
+        Sel.advice = { normal = { price = 100, hours = 2, chance = 0.9 }, market = { price = 95 } }
+        Sel:RenderForm()
+        do
+          assert.is_true(marketPick:IsShown())
+          marketPick.scripts.OnClick(marketPick)
+          assert.are.equal(95, Sel.price)
+          assert.are.equal("market", Sel.picked)
+          assert.truthy(marketPick.label:GetText():find("the market price", 1, true))
+        end
         Sel:Undercut({ price = 90 })
         assert.are.equal(89, Sel.price)
         assert.is_true(Sel:Post())

@@ -271,7 +271,8 @@ function S:Create(ah)
   priceHead:SetPoint("TOPLEFT", 0, -44)
   priceHead:SetText(L["Price each"])
   p.picks = {}
-  for i, key in ipairs({ "quick", "normal", "patient" }) do
+  -- AME's three prices, then the item's market price as it is (Posting:Suggest's advice.market)
+  for i, key in ipairs({ "quick", "normal", "patient", "market" }) do
     local b = W.Button(form, "", S.FORM_W, 24, function()
       S:Pick(key)
     end)
@@ -284,9 +285,11 @@ function S:Create(ah)
     b.key = key
     p.picks[i] = b
   end
+  -- under the picks (RenderForm places it: as many picks as show)
   local inputs = CreateFrame("Frame", nil, form)
-  inputs:SetPoint("TOPLEFT", 0, -150)
+  inputs:SetPoint("TOPLEFT", 0, -178)
   inputs:SetSize(S.FORM_W, 36)
+  p.inputs = inputs
   local qtyLabel = W.Text(inputs, "GameFontDisableSmall")
   qtyLabel:SetPoint("TOPLEFT", 0, 0)
   qtyLabel:SetText(L["Quantity"])
@@ -325,7 +328,7 @@ function S:Create(ah)
   local function line(y)
     local row = CreateFrame("Frame", nil, form)
     row:SetHeight(16)
-    row:SetPoint("TOPLEFT", 0, y)
+    row:SetPoint("TOPLEFT", inputs, "BOTTOMLEFT", 0, y)
     row:SetPoint("RIGHT", 0, 0)
     row.label = W.Text(row, "GameFontDisableSmall")
     row.label:SetPoint("LEFT", 0, 0)
@@ -335,10 +338,10 @@ function S:Create(ah)
     row.value:SetWordWrap(false)
     return row
   end
-  p.depositRow = line(-196)
+  p.depositRow = line(-10)
   p.depositRow.label:SetText(L["Deposit"])
   p.deposit = p.depositRow.value
-  p.netRow = line(-216)
+  p.netRow = line(-30)
   p.net = p.netRow.value
   p.hint = W.Text(form, "GameFontHighlightSmall")
   p.hint:SetPoint("TOPLEFT", p.netRow, "BOTTOMLEFT", 0, -8)
@@ -557,7 +560,7 @@ function S:RenderForm()
   p.itemRate:ClearAllPoints()
   p.itemRate:SetPoint("LEFT", signal and p.signal or p.itemInfo, "RIGHT", 6, 0)
   p.itemRate:SetText(s and s.soldPerDay and L["~%s sold/day"]:format(W.Count(s.soldPerDay)) or "")
-  local labels = { quick = L["Quick"], normal = L["Normal"], patient = L["Patient"] }
+  local labels = { quick = L["Quick"], normal = L["Normal"], patient = L["Patient"], market = L["Market"] }
   -- Quick no cheaper than Normal: one option, so the buttons close up
   local y = 0
   for _, b in ipairs(p.picks) do
@@ -569,10 +572,15 @@ function S:RenderForm()
       y = y + 1
     end
   end
+  p.inputs:ClearAllPoints()
+  p.inputs:SetPoint("TOPLEFT", 0, -60 - y * 28 - 6)
   for _, b in ipairs(p.picks) do
     local c = a and a[b.key]
     if c then
-      local when = c.hours and L["sells in %s"]:format(W.Hours(c.hours)) or L["may not sell"]
+      -- the market price is the item's, as it is: the model doesn't say how fast it sells
+      local when = b.key == "market" and L["the market price"]
+        or c.hours and L["sells in %s"]:format(W.Hours(c.hours))
+        or L["may not sell"]
       b.label:SetText(labels[b.key] .. "  " .. W.Dim(when))
       b.price:SetText(money(c.price))
       b:Enable()
