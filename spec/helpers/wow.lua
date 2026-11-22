@@ -154,6 +154,9 @@ local function newObject(kind)
     SetTextColor = function(self, r, g, b, a)
       self._textColor = { r, g, b, a }
     end,
+    SetTexture = function(self, t)
+      self._texture = t
+    end,
     SetColorTexture = function(self, r, g, b, a)
       self._color = { r, g, b, a }
     end,
@@ -324,7 +327,14 @@ function M.install(opts)
   set("ITEM_QUALITY_COLORS", { [1] = { hex = "|cffffffff" }, [3] = { hex = "|cff0070dd" } })
   set("GameTooltip", newObject("GameTooltip"))
   set("ChatEdit_InsertLink", function() end)
-  set("HandleModifiedItemClick", function() end)
+  -- env.modified = "CHATLINK" (Shift), "DRESSUP" (Ctrl): the modified click the next click counts as
+  set("HandleModifiedItemClick", function(link)
+    env.modifiedLinks = env.modifiedLinks or {}
+    env.modifiedLinks[#env.modifiedLinks + 1] = link
+  end)
+  set("IsModifiedClick", function(kind)
+    return env.modified ~= nil and env.modified == kind
+  end)
   set("IsAltKeyDown", function()
     return env.altDown
   end)

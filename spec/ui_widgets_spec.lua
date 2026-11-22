@@ -66,6 +66,90 @@ describe("frame widgets", function()
     end)
   end)
 
+  describe("item links", function()
+    local shown
+    before_each(function()
+      shown = {}
+      ns.UI = {
+        ShowItem = function(_, key)
+          shown[#shown + 1] = key
+        end,
+      }
+    end)
+
+    it("LinkText is the name as an item hyperlink in its quality colour, with a dim count", function()
+      assert.are.equal("|cffffffff|Hitem:2589|hItem 2589|h|r", W.LinkText(2589))
+      local text = W.LinkText(2589, 20)
+      assert.truthy(text:find("|Hitem:2589|hItem 2589|h", 1, true))
+      assert.truthy(text:find(W.Dim("20"), 1, true))
+      assert.are.equal(W.NONE, W.LinkText(nil))
+    end)
+
+    it("links a variant by its own item string, and finds its key again on a click", function()
+      local key = ns.ItemKey(15211, 1234)
+      local text = W.LinkText(key)
+      local s = text:match("|H(.-)|h")
+      assert.are.equal(ns.ItemString(key), s)
+      assert.are.equal(key, W.LinkKey(s))
+      assert.is_nil(W.LinkKey("command:/ame"))
+    end)
+
+    it("in text: Shift-click links the item in chat, a plain click opens it", function()
+      local f = W.EnableLinks(CreateFrame("Frame", nil, UIParent))
+      env.modified = "CHATLINK"
+      f.scripts.OnHyperlinkClick(f, "item:2589", "Item 2589", "LeftButton")
+      assert.are.same({ "|Hitem:2589|h" }, env.modifiedLinks)
+      assert.are.same({}, shown)
+      env.modified = nil
+      f.scripts.OnHyperlinkClick(f, "item:2589", "Item 2589", "LeftButton")
+      assert.are.same({ 2589 }, shown)
+    end)
+
+    it("in text: hovering shows the item's tooltip; other links are left alone", function()
+      local f = W.EnableLinks(CreateFrame("Frame", nil, UIParent))
+      local tipped
+      local tip = _G.GameTooltip -- the stub's, fresh for each test
+      tip.SetItemByID = function(_, id)
+        tipped = id
+      end
+      f.scripts.OnHyperlinkEnter(f, "item:2589")
+      assert.are.equal(2589, tipped)
+      f.scripts.OnHyperlinkClick(f, "command:/ame", "/ame", "LeftButton")
+      assert.are.same({}, shown)
+    end)
+
+    it("ItemLink draws icon, name, count and confidence, and is as wide as they are", function()
+      local link = W.ItemLink(UIParent, { icon = 14 })
+      link:SetItem(2589, 20, "high")
+      assert.is_true(link:IsShown())
+      assert.are.equal(134400, link.icon._texture)
+      assert.are.equal("|cffffffffItem 2589|r", link.name:GetText())
+      assert.are.equal(W.Dim("20"), link.count:GetText())
+      assert.are.equal(W.Confidence("high"), link.conf:GetText())
+      local nameW = link.name:GetStringWidth()
+      assert.are.equal(14 + W.LINK_GAP + nameW + 4 + link.count:GetStringWidth() + 24, link:GetWidth())
+      link:SetItem(nil)
+      assert.is_false(link:IsShown())
+    end)
+
+    it("ItemLink cuts a long name short to fit maxWidth", function()
+      local link = W.ItemLink(UIParent, { icon = 14, maxWidth = 80 })
+      link:SetItem(2589)
+      assert.are.equal(80, link:GetWidth())
+    end)
+
+    it("ItemLink: Shift-click links it, a plain click opens it", function()
+      local link = W.ItemLink(UIParent)
+      link:SetItem(2589)
+      env.modified = "CHATLINK"
+      link.scripts.OnClick(link, "LeftButton")
+      assert.are.same({ "|Hitem:2589|h" }, env.modifiedLinks)
+      env.modified = nil
+      link.scripts.OnClick(link, "LeftButton")
+      assert.are.same({ 2589 }, shown)
+    end)
+  end)
+
   describe("W.Button", function()
     it("colours its label with opts.color, dimmed while disabled", function()
       local b = W.Button(UIParent, "Buy", 60, 20, nil, { color = "good" })

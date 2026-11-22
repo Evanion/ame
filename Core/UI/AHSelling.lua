@@ -224,15 +224,12 @@ function S:Create(ah)
   formPanel:SetWidth(S.FORM_W + 20)
   p.formPanel = formPanel
   p.form = form
-  p.icon = form:CreateTexture(nil, "ARTWORK")
-  p.icon:SetSize(32, 32)
-  p.icon:SetPoint("TOPLEFT", 0, 0)
-  p.itemName = W.Text(form, "GameFontNormal")
-  p.itemName:SetPoint("TOPLEFT", p.icon, "TOPRIGHT", 8, -1)
-  p.itemName:SetPoint("RIGHT", 0, 0)
-  p.itemName:SetWordWrap(false)
+  -- the item you're posting, as a link (hover: its tooltip; Shift-click: link it in chat), with how many you have
+  p.item = W.ItemLink(form, { icon = 32, font = "GameFontNormal", top = true, maxWidth = S.FORM_W })
+  p.item:SetPoint("TOPLEFT", 0, 0)
+  p.icon, p.itemName = p.item.icon, p.item.name
   p.itemInfo = W.Text(form, "GameFontDisableSmall")
-  p.itemInfo:SetPoint("TOPLEFT", p.itemName, "BOTTOMLEFT", 0, -3)
+  p.itemInfo:SetPoint("TOPLEFT", p.item.name, "BOTTOMLEFT", 0, -3)
   p.itemInfo:SetPoint("RIGHT", 0, 0)
   p.itemInfo:SetWordWrap(false)
   local priceHead = W.Text(form, "GameFontNormalSmall")
@@ -498,8 +495,7 @@ function S:RenderForm()
   if not e then
     return
   end
-  p.icon:SetTexture(e.icon or 134400)
-  p.itemName:SetText(W.QualityText(e.quality, W.ItemLabel(e.key)))
+  p.item:SetItem(e.key, e.qty)
   local s = e.summary
   local info = {}
   if s and s.market then

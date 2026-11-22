@@ -21,7 +21,7 @@ local function shopping()
   return ns.AME.shopping
 end
 
-local name, money = W.ItemLabel, W.Money
+local money = W.Money
 
 -- the list on screen: one of yours, or a recipe's reagents (Search AH from the profession window)
 function T:Items()
@@ -488,8 +488,11 @@ function T:Create(ah)
   detailPanel:SetHeight(T.LISTINGS * 16 + 68)
   detailPanel:Hide()
   p.detail = detailPanel
+  -- the item whose listings these are, as a link, then a note on them
+  p.detailItem = W.ItemLink(detail, { icon = 14, font = "GameFontNormalSmall" })
+  p.detailItem:SetPoint("TOPLEFT", 0, 0)
   p.detailTitle = W.Text(detail, "GameFontNormalSmall")
-  p.detailTitle:SetPoint("TOPLEFT", 0, 0)
+  p.detailTitle:SetPoint("LEFT", p.detailItem, "RIGHT", 0, 0)
   p.listings = {}
   for i = 1, T.LISTINGS do
     local l = CreateFrame("Frame", nil, detail)
@@ -797,7 +800,8 @@ function T:RenderDetail()
     return
   end
   local note = book and (#book.rows > 0 and L["cheapest first"] or L["none listed"]) or L["searching..."]
-  p.detailTitle:SetText(name(key) .. W.Dim("  ·  " .. note))
+  p.detailItem:SetItem(key)
+  p.detailTitle:SetText(W.Dim("  ·  " .. note))
   -- a commodity: the listings the order takes from, highlighted; the last one partly ("20 of 555")
   local pending = ns.AHSearch.pending
   local want = book

@@ -846,6 +846,188 @@ function W.ItemLinkClicked(key)
   end
 end
 
+-- An item drawn as a link: [star] icon, the name in its quality colour, a dim count and confidence bars after it.
+-- The whole of it is one hover and click region: the item's tooltip, and a click does what W.ItemLinkClicked does.
+--   local link = W.ItemLink(parent, {
+--     icon = 14,                        -- icon size; 0 for none
+--     font = "GameFontHighlightSmall",  -- the name's font
+--     star = false,                     -- a watchlist star in front (its own click: the watchlist menu)
+--     top = false,                      -- the name level with the icon's top (a large icon, a line under the name)
+--     maxWidth = nil,                   -- the name is cut short ("...") so the whole link fits this
+--   })
+--   link:SetItem(key, count, confidence)  -- count: a number or text; confidence: "high" / "medium" / "low"
+--   link:SetFont(size, bold)               -- the name's size in px
+--   link:GetWidth()                        -- what it takes, to put the next piece after it
+-- link.name, .icon, .count, .conf are its parts; link.key the item. A name the client hasn't loaded yet shows as
+-- "item:<id>" and fills in by itself (W.ItemNameOrLoad).
+W.LINK_GAP = 6
+function W.ItemLink(parent, opts)
+  opts = opts or {}
+  local f = CreateFrame("Button", nil, parent)
+  local size = opts.icon or 14
+  f.opts, f.key, f.iconSize, f.star = opts, false, size, false
+  f.maxWidth = opts.maxWidth or false
+  f:SetHeight(math.max(size, 16))
+  local x = 0
+  if opts.star then
+    f.star = CreateFrame("Button", nil, f)
+    f.star:SetSize(12, 12)
+    f.star:SetPoint(opts.top and "TOPLEFT" or "LEFT", 0, 0)
+    f.star.tex = f.star:CreateTexture(nil, "ARTWORK")
+    f.star.tex:SetAllPoints()
+    W.SetStar(f.star.tex, false)
+    f.star:SetScript("OnClick", function(self)
+      if f.key and ns.UI and ns.UI.StarClicked then
+        ns.UI:StarClicked(self, f.key)
+      end
+    end)
+    x = 14
+  end
+  f.icon = f:CreateTexture(nil, "ARTWORK")
+  f.icon:SetSize(math.max(size, 1), math.max(size, 1))
+  f.icon:SetPoint(opts.top and "TOPLEFT" or "LEFT", x, 0)
+  f.icon:SetShown(size > 0)
+  f.nameX = size > 0 and x + size + W.LINK_GAP or x
+  f.name = W.Text(f, opts.font or "GameFontHighlightSmall")
+  f.name:SetWordWrap(false)
+  if opts.top then
+    f.name:SetPoint("TOPLEFT", f.nameX, -1)
+  else
+    f.name:SetPoint("LEFT", f.nameX, 0)
+  end
+  f.count = W.Text(f, "GameFontDisableSmall")
+  f.count:SetPoint("LEFT", f.name, "RIGHT", 4, 0)
+  f.conf = W.Text(f, "GameFontHighlightSmall")
+  f.conf:SetPoint("LEFT", f.count, "RIGHT", 4, 0)
+  -- once the client has the name: draw it again
+  f.redraw = function()
+    if f.key then
+      f:SetItem(f.key, f.countValue, f.confidence)
+    end
+  end
+
+  function f:Layout()
+    local countW = (self.count:GetText() or "") ~= "" and 4 + (self.count:GetStringWidth() or 0) or 0
+    local confW = (self.conf:GetText() or "") ~= "" and 4 + 20 or 0
+    local nameW = math.ceil(self.name:GetStringWidth() or 0)
+    local room = self.maxWidth and math.max(20, self.maxWidth - self.nameX - countW - confW)
+    if room and nameW > room then
+      nameW = room
+      self.name:SetWidth(room) -- cut short with "..."
+    else
+      self.name:SetWidth(0) -- as wide as the name
+    end
+    self:SetWidth(math.max(1, self.nameX + nameW + countW + confW))
+  end
+
+  function f:SetItem(key, count, confidence)
+    self.key, self.countValue, self.confidence = key or false, count, confidence
+    if not key then
+      self:Hide()
+      return
+    end
+    local name, _, quality, icon = W.ItemInfo(key)
+    self.name:SetText(name and W.QualityText(quality, name) or W.ItemNameOrLoad(key, self.redraw))
+    self.icon:SetTexture(icon or 134400)
+    local c = type(count) == "number" and W.Thousands(count) or count
+    self.count:SetText(c and c ~= "" and W.Dim(c) or "")
+    self.conf:SetText(confidence and W.Confidence(confidence) or "")
+    if self.star then
+      local watched = ns.AME and ns.AME.watch and ns.AME.watch:Watched(key) or false
+      W.SetStar(self.star.tex, watched)
+    end
+    self:Layout()
+    self:Show()
+  end
+
+  function f:SetMaxWidth(w)
+    self.maxWidth = w or false
+    self:Layout()
+  end
+
+  -- The game's font has no bold weight: bold draws the name 2 px larger, as the game's own headings stand out.
+  function f:SetFont(px, bold)
+    local file, _, flags = self.name:GetFont()
+    if file and px then
+      self.name:SetFont(file, bold and px + 2 or px, flags)
+    end
+    self:Layout()
+  end
+
+  f:SetScript("OnClick", function(self)
+    W.ItemLinkClicked(self.key)
+  end)
+  W.Tooltip(f, function(tip, self)
+    if not self.key then
+      return false
+    end
+    W.SetItemTip(tip, self.key)
+  end)
+  f:Hide()
+  return f
+end
+
+-- Item links inside a line of text. W.LinkText(key, count, redraw) is the item's name as an |Hitem:...|h link in
+-- its quality colour (no brackets: it reads as a name, not a chat message), a dim count after it. A frame that shows
+-- such text needs W.EnableLinks(frame) for the hover and clicks. redraw runs once a name the client hadn't loaded
+-- arrives (the text then says "item:<id>").
+W.linkKeys = {} -- item string -> item key, for the clicks (a random-suffix variant's string isn't its key)
+function W.LinkText(key, count, redraw)
+  if not key then
+    return W.NONE
+  end
+  local name, _, quality = W.ItemInfo(key)
+  if not name then
+    W.ItemNameOrLoad(key, redraw) -- starts watching for it
+  end
+  local s = ns.ItemString(key)
+  W.linkKeys[s] = key
+  local out = W.QualityText(quality, "|H" .. s .. "|h" .. (name or W.ItemLabel(key)) .. "|h")
+  local c = type(count) == "number" and W.Thousands(count) or count
+  if c and c ~= "" then
+    out = out .. " " .. W.Dim(c)
+  end
+  return out
+end
+
+-- the item key behind a hyperlink's "item:..." part (nil for other links)
+function W.LinkKey(link)
+  if type(link) ~= "string" or not link:find("^item:") then
+    return nil
+  end
+  return W.linkKeys[link] or tonumber(link:match("^item:(%d+)"))
+end
+
+-- Switch item links on in a frame's text (its font strings): hovering one shows the item's tooltip, a click does
+-- what W.ItemLinkClicked does. Other links (the Guide's slash commands) are left to the frame's own scripts.
+function W.EnableLinks(frame)
+  if frame.SetHyperlinksEnabled then
+    frame:SetHyperlinksEnabled(true)
+  end
+  frame:HookScript("OnHyperlinkEnter", function(self, link)
+    local key = W.LinkKey(link)
+    if key then
+      GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+      W.SetItemTip(GameTooltip, key)
+      GameTooltip:Show()
+      self.linkTip = true
+    end
+  end)
+  frame:HookScript("OnHyperlinkLeave", function(self)
+    if self.linkTip then
+      self.linkTip = false
+      GameTooltip:Hide()
+    end
+  end)
+  frame:HookScript("OnHyperlinkClick", function(_, link)
+    local key = W.LinkKey(link)
+    if key then
+      W.ItemLinkClicked(key)
+    end
+  end)
+  return frame
+end
+
 -- the game's item tooltip for an item key (a random-suffix variant shows its own stats)
 function W.SetItemTip(tip, key)
   W.NudgeItemName(key)
