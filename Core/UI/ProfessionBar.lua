@@ -320,6 +320,17 @@ function PB:NextStep(plan)
   end)
 end
 
+-- show a recipe in the game's window (the window picks its top recipe when it opens; the queue's next step is
+-- what you're about to craft)
+function PB:ShowRecipe(recipeID)
+  local frame = _G.ProfessionsFrame
+  local page = frame and rawget(frame, "CraftingPage")
+  local info = recipeID and C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(recipeID)
+  if page and page.SelectRecipe and info and info.learned and PB.selected ~= recipeID then
+    pcall(page.SelectRecipe, page, info)
+  end
+end
+
 function PB:CraftNext()
   local plan = PB.Plan()
   local step = self:NextStep(plan)
@@ -342,6 +353,7 @@ function PB:CraftNext()
     print("|cff33ccffAME|r " .. L["open %s to craft %s"]:format(profession or L["its profession"], name(step.item)))
     return
   end
+  self:ShowRecipe(step.recipe) -- the window shows what's being crafted
   if C_TradeSkillUI and C_TradeSkillUI.CraftRecipe then
     C_TradeSkillUI.CraftRecipe(step.recipe, n)
   end
@@ -1025,6 +1037,13 @@ function PB:Attach()
     PB:Refresh()
     if not queue():Empty() then
       PB:ShowQueue(true)
+      -- the window opens on its top recipe: show the queue's next step instead, once its list is in
+      C_Timer.After(0.3, function()
+        local step = PB:NextStep()
+        if step then
+          PB:ShowRecipe(step.recipe)
+        end
+      end)
     end
   end)
   frame:HookScript("OnHide", function()
