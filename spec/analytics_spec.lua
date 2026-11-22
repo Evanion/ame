@@ -103,41 +103,74 @@ describe("Analytics", function()
   end)
 end)
 
-describe("Analytics.Candles", function()
-  local A
+describe("Analytics.Slot", function()
+  local A, DAY
   before_each(function()
     A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
+    DAY = 86400
   end)
 
+  local function days(list)
+    local out = {}
+    for i, p in ipairs(list) do
+      out[i] = { x = (p.day + 0.5) * 86400, market = p.market, min = p.min, high = p.high, qty = p.qty, avg = p.avg }
+    end
+    return out
+  end
   local series = {
-    { day = 100, market = 100, min = 90 },
-    { day = 101, market = 120, min = 110 },
-    { day = 102, market = 110, min = 80 },
-    { day = 103, market = 130, min = 125 },
+    { day = 100, market = 100, min = 90, qty = 5, avg = 100 },
+    { day = 101, market = 120, min = 110, qty = 7, avg = 110 },
+    { day = 102, market = 110, min = 80, qty = 3, avg = 110 },
+    { day = 103, market = 130, min = 125, qty = 9, avg = 115 },
   }
 
   it("makes daily candles: open = previous close, wick down to the cheapest listing", function()
-    local c = A.Candles(series, 1)
+    local c = A.Slot(days(series), DAY)
     assert.are.equal(4, #c.xs)
-    assert.are.equal(100.5 * 86400, c.xs[1])
+    assert.are.equal(100.5 * DAY, c.xs[1])
     assert.are.same({ 100, 100, 120, 110 }, c.open)
     assert.are.same({ 100, 120, 110, 130 }, c.close)
     assert.are.same({ 100, 120, 120, 130 }, c.high)
     assert.are.same({ 90, 100, 80, 110 }, c.low)
   end)
 
-  it("groups several days per candle", function()
-    local c = A.Candles(series, 2) -- days 100-101, 102-103
+  it("merges each value as it means: the last price, supply and average; the lowest listing", function()
+    local c = A.Slot(days(series), 2 * DAY) -- days 100-101, 102-103
     assert.are.equal(2, #c.xs)
-    assert.are.equal(2 * 86400, c.period)
+    assert.are.same({ 101 * DAY, 103 * DAY }, c.xs) -- at each slot's middle
+    assert.are.same({ 100 * DAY, 102 * DAY }, c.from)
     assert.are.same({ 100, 120 }, c.open)
     assert.are.same({ 120, 130 }, c.close)
+    assert.are.same({ 120, 130 }, c.market)
     assert.are.same({ 120, 130 }, c.high)
     assert.are.same({ 90, 80 }, c.low)
+    assert.are.same({ 90, 80 }, c.min)
+    assert.are.same({ 7, 9 }, c.qty)
+    assert.are.same({ 110, 115 }, c.avg)
   end)
 
-  it("handles an empty series", function()
-    assert.are.equal(0, #A.Candles({}, 3).xs)
+  it("reaches the day's recorded high above the body", function()
+    local c =
+      A.Slot(days({ { day = 1, market = 100, min = 90 }, { day = 2, market = 150, min = 140, high = 200 } }), DAY)
+    assert.are.equal(150, c.close[2])
+    assert.are.equal(200, c.high[2]) -- above max(open, close): a visible upper wick
+    assert.are.equal(100, c.high[1]) -- no recorded high: the wick stays at the body
+  end)
+
+  it("skips points without a price, and handles an empty series", function()
+    assert.are.equal(0, #A.Slot({}, DAY).xs)
+    local c = A.Slot({ { x = 10, qty = 4 }, { x = 20, market = 50 } }, DAY)
+    assert.are.equal(1, #c.xs)
+    assert.is_nil(c.qty[1])
+  end)
+
+  it("picks the smallest slot that keeps a span within the target, never below the points' own spacing", function()
+    assert.are.equal(3600, A.SlotSize(2 * DAY, 60, 15 * 60)) -- 48 hour slots
+    assert.are.equal(3 * 3600, A.SlotSize(7 * DAY, 60, 15 * 60)) -- 56
+    assert.are.equal(15 * 60, A.SlotSize(3600, 60, 15 * 60))
+    assert.are.equal(DAY, A.SlotSize(30 * DAY, 60, DAY))
+    assert.are.equal(DAY, A.SlotSize(2 * DAY, 60, DAY)) -- daily history: no smaller than a day
+    assert.are.equal(7 * DAY, A.SlotSize(365 * DAY, 60, DAY))
   end)
 end)
 
@@ -205,19 +238,6 @@ describe("Analytics score vs signal", function()
     local s = A.Summarize({ { day = 1, market = 10 }, { day = 2, market = 20 }, { day = 3, market = 30 } })
     assert.are.equal(20, s.avg3)
     assert.are.equal(20, s.avg14)
-  end)
-end)
-
-describe("Analytics.Candles upper wick", function()
-  it("reaches the day's recorded high above the body", function()
-    local A = require("spec.helpers.addon").load({ "Core/Init.lua", "Core/Analytics.lua" }).Analytics
-    local c = A.Candles({
-      { day = 1, market = 100, min = 90 },
-      { day = 2, market = 150, min = 140, high = 200 },
-    }, 1)
-    assert.are.equal(150, c.close[2])
-    assert.are.equal(200, c.high[2]) -- above max(open, close): a visible upper wick
-    assert.are.equal(100, c.high[1]) -- no recorded high: the wick stays at the body
   end)
 end)
 

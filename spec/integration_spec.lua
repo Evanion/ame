@@ -2684,12 +2684,23 @@ describe("addon in a stubbed client", function()
       two.scripts.OnClick(two)
       drainJobs()
       local market = ns.UI.chart.series.market
-      assert.are.same(times, market.xs) -- one point per scan, at the scan's time
-      -- the 7-day average at every scan, and MA 20 over 20 candles; each switched off and on in the legend
-      assert.are.same(times, ns.UI.chart.series.sma.xs)
+      -- the 12 hours there are scans for (the chart shows no more) in 15-minute slots: each scan in its own, at its
+      -- middle
+      assert.are.equal(900, ns.UI.slotSize)
+      local slots = {}
+      for i, t in ipairs(times) do
+        slots[i] = math.floor(t / 900) * 900 + 450
+      end
+      assert.are.same(slots, market.xs)
+      -- every series on the same slots: the 7-day average, MA 20 (over 20 slots) and supply; each line switched off
+      -- and on in the legend
+      assert.are.same(slots, ns.UI.chart.series.sma.xs)
+      assert.are.same(slots, ns.UI.chart.series.qty.xs)
+      assert.are.same({ unpack(slots, 2) }, ns.UI.chart.series.fast.xs)
       local legendText = ns.UI.itemView.legend.text
       assert.truthy(legendText:find("7-day average", 1, true), legendText)
-      assert.truthy(legendText:find("MA 20 (40 hours)", 1, true), legendText)
+      assert.truthy(legendText:find("MA 20 (5 hours)", 1, true), legendText)
+      assert.truthy(legendText:find("one point per 15 min", 1, true), legendText)
       assert.is_not_nil(ns.UI.chart.series.fast)
       local rows = ns.UI.itemView.legendBox.rows
       local function row(label)
@@ -2706,10 +2717,24 @@ describe("addon in a stubbed client", function()
       assert.is_false(AME_DB.settings.chartLayers.sma) -- remembered
       row("7-day average").scripts.OnClick(row("7-day average"))
       assert.is_not_nil(ns.UI.chart.series.sma)
-      -- intraday candles: 2-hour candles from the scans
+      -- intraday candles: on the same hour slots
       v.style.byKey.candles.scripts.OnClick(v.style.byKey.candles)
-      assert.are.equal(5, #ns.UI.candles.xs)
+      assert.are.same(slots, ns.UI.candles.xs)
+      assert.are.equal(900, ns.UI.candles.period)
+      -- the slots follow the zoom (4 a chart here, so 12 hours make 3-hour slots): zoomed in to 6 hours, 2-hour
+      -- slots, every series merged into them again
+      local target = ns.UI.SLOT_TARGET
+      ns.UI.SLOT_TARGET = 4
+      finally(function()
+        ns.UI.SLOT_TARGET = target
+      end)
+      ns.UI:DrawItemChart()
+      assert.are.equal(3 * 3600, ns.UI.candles.period)
+      ns.UI.chart:SetUserRange(times[1], times[1] + 6 * 3600)
+      assert.are.equal(2 * 3600, ns.UI.slotSize)
       assert.are.equal(2 * 3600, ns.UI.candles.period)
+      assert.are.same(ns.UI.candles.xs, ns.UI.chart.series.qty.xs)
+      ns.UI.SLOT_TARGET = target
       v.style.byKey.line.scripts.OnClick(v.style.byKey.line)
       -- back to daily history
       local thirty = v.rangeButtons[3]

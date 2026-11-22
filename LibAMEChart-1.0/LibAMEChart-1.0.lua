@@ -11,7 +11,7 @@ MIT licensed (see LICENSE in this folder). Part of Azeroth Mercantile Exchange, 
   chart:SetAxisFormatter("price", function(v) return GetCoinTextureString(v) end)
   chart:SetHoverFormatter(function(chart, x, rows) return lines end) -- rows: { [seriesID] = { x, y, index } }
   chart:SetXRange(from, to)      -- optional; defaults to the data's extent
-  chart.callbacks:RegisterCallback(owner, "RangeChanged", fn)   -- after zoom/pan, args: (event, chart, from, to)
+  chart.RegisterCallback(owner, "RangeChanged", fn)   -- after zoom/pan, args: (event, chart, from, to)
 
 Interaction: mouse wheel zooms around the cursor, drag pans, double-click resets, hovering shows a crosshair with
 the nearest point of every series.
@@ -19,11 +19,12 @@ the nearest point of every series.
 Series kinds: "line", "area" (line + translucent fill; trapezoid fill where Texture:SetVertexOffset exists), "bars",
 "points" (dots, no lines: event markers such as trades; they don't stretch the axis or join the hover readout;
 per series: size, and colors = { per-point colour } to colour points individually).
+Per series, hover = false keeps it out of the hover readout (a level such as a reference price, not a reading).
 Points are downsampled with LTTB to about one per 2 px, so large series stay cheap to draw. Regions are pooled and
 reused between redraws.
 ]]
 
-local MAJOR, MINOR = "LibAMEChart-1.0", 5
+local MAJOR, MINOR = "LibAMEChart-1.0", 6
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
 if not lib then
   return
@@ -1052,7 +1053,7 @@ function Chart:UpdateHover()
   local rows, snapX = {}, nil
   for _, id in ipairs(self.order) do
     local s = self.series[id]
-    local i = s.xs and M.Nearest(s.xs, x)
+    local i = s.xs and s.kind ~= "points" and s.hover ~= false and M.Nearest(s.xs, x)
     if i then
       rows[id] = { x = s.xs[i], y = s.ys[i], index = i }
       if not snapX or abs(s.xs[i] - x) < abs(snapX - x) then

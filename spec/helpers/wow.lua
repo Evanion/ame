@@ -319,6 +319,9 @@ function M.install(opts)
     env.reloads = env.reloads + 1
   end)
   set("SlashCmdList", {})
+  set("securecallfunction", function(f, ...) -- CallbackHandler dispatches through it
+    return f(...)
+  end)
   -- real libraries, registered through the real LibStub (like embeds.xml does)
   set("LibStub", nil)
   dofile("Libs/Ace3/LibStub/LibStub.lua")

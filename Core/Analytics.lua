@@ -341,44 +341,84 @@ function Analytics.Phase(series)
   return Analytics.PHASES[dir(price, Analytics.PRICE_MOVE)][dir(supply, Analytics.SUPPLY_MOVE)]
 end
 
--- Candles from the daily/weekly series, grouping periodDays days per candle. The store keeps daily aggregates, not
--- intraday prices, so a candle is: open = previous candle's close (the first candle opens at its first price),
--- close = last market price in the period,
--- high = highest price seen (the recorded daily high, else the highest market price; at least the open),
--- low = cheapest listing seen (the "min" price).
--- Returns { xs, open, high, low, close, period } with xs at the middle of each period (seconds).
--- unit: seconds per "day" step of the series (default a day; 3600 for hourly points built from scans)
-function Analytics.Candles(series, periodDays, unit)
-  local DAY = unit or 86400
-  periodDays = math.max(1, math.floor(periodDays or 1))
-  local out = { xs = {}, open = {}, high = {}, low = {}, close = {}, period = periodDays * DAY }
-  local prevClose
-  local i = 1
-  while i <= #series do
-    local group = math.floor(series[i].day / periodDays)
-    local hi, lo, close, first = -math.huge, math.huge, nil, nil
-    local j = i
-    while j <= #series and math.floor(series[j].day / periodDays) == group do
-      local p = series[j]
-      local m = p.market or p.min
-      if m then
-        first = first or m
-        close = m
-        hi = math.max(hi, m, p.high or 0) -- the day's highest price seen, when recorded
-        lo = math.min(lo, p.min or m, m)
+-- Time slots: the chart's one grid. Every series on a chart is merged into the same slots, so hovering a slot shows
+-- every series' value there. The slot size follows the span on screen (zoom in: smaller slots).
+--   Analytics.SLOT_SIZES                the sizes (seconds) a slot can have, smallest first
+--   Analytics.SlotSize(span, target, minSize) -> the smallest size giving at most `target` slots over `span`
+--   Analytics.Slot(points, size) -> { xs, market, min, qty, avg, open, high, low, close, from, size }
+--     points: { { x, market, min, high, qty, avg }, ... } sorted by x. One slot per slot that has a price, at its
+--     middle (from[i]: where it starts). Merged as each value means: market (the price then), qty (supply then) and
+--     avg (a rolling average at that time) take the slot's last value; min the slot's lowest; candles open at the
+--     previous slot's close, high / low are the extremes of everything in the slot, close its last market price.
+local HOUR = 3600
+Analytics.SLOT_SIZES = {
+  15 * 60,
+  30 * 60,
+  HOUR,
+  2 * HOUR,
+  3 * HOUR,
+  6 * HOUR,
+  12 * HOUR,
+  86400,
+  2 * 86400,
+  3 * 86400,
+  7 * 86400,
+  14 * 86400,
+  30 * 86400,
+  60 * 86400,
+  90 * 86400,
+}
+
+function Analytics.SlotSize(span, target, minSize)
+  target, minSize = target or 60, minSize or 0
+  local sizes = Analytics.SLOT_SIZES
+  for _, slot in ipairs(sizes) do
+    if slot >= minSize and (span or 0) / slot <= target then
+      return slot
+    end
+  end
+  return math.max(sizes[#sizes], minSize)
+end
+
+function Analytics.Slot(points, slot)
+  local out = {
+    xs = {},
+    from = {},
+    market = {},
+    min = {},
+    qty = {},
+    avg = {},
+    open = {},
+    high = {},
+    low = {},
+    close = {},
+    size = slot,
+  }
+  local n, last = 0, nil
+  for _, p in ipairs(points) do
+    local m = p.market or p.min
+    if m then
+      local g = math.floor(p.x / slot)
+      if g ~= last then
+        local open = n > 0 and out.close[n] or m -- the previous slot's close
+        n, last = n + 1, g
+        out.from[n] = g * slot
+        out.xs[n] = (g + 0.5) * slot
+        out.open[n], out.high[n], out.low[n] = open, open, open
       end
-      j = j + 1
+      out.market[n], out.close[n] = m, m
+      if p.qty then
+        out.qty[n] = p.qty
+      end
+      if p.avg then
+        out.avg[n] = p.avg
+      end
+      if p.min then
+        out.min[n] = math.min(out.min[n] or p.min, p.min)
+      end
+      out.high[n] = math.max(out.high[n], m, p.high or 0)
+      out.low[n] = math.min(out.low[n], p.min or m, m)
     end
-    if close then
-      local open = prevClose or first
-      local n = #out.xs + 1
-      out.xs[n] = (group * periodDays + periodDays / 2) * DAY
-      out.open[n], out.close[n] = open, close
-      out.high[n] = math.max(hi, open)
-      out.low[n] = math.min(lo, open, close)
-      prevClose = close
-    end
-    i = j
   end
   return out
 end

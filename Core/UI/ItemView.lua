@@ -10,8 +10,6 @@ local avgDays, contentArea = UI.AvgDays, UI.ContentArea
 -- 2D plots every recent scan, 7D the hourly points (Store:Intraday); the others plot daily history
 local RANGES = { { "2D", 2 }, { "7D", 7 }, { "30D", 30 }, { "90D", 90 }, { "1Y", 365 }, { "All", nil, L["All"] } }
 local INTRADAY = { ["2D"] = true, ["7D"] = true }
--- hours per candle on the intraday ranges (about 24-28 candles)
-local INTRADAY_CANDLE_HOURS = { [2] = 2, [7] = 6 }
 
 ---------------------------------------------------------------------------------------------------------------------
 -- Item view
@@ -190,14 +188,21 @@ function UI:CreateItemView(parent)
     return W.Count(val)
   end)
   chart:SetHoverFormatter(function(_, x, rows)
-    local lines = { W.Color("white", date(UI:ShowingIntraday() and "%a %b %d, %H:%M" or "%a %b %d, %Y", x)) }
+    -- the title: the slot's span (every series' values in it are merged into what follows)
+    local size = UI.slotSize or DAY
+    local from, to = x - size / 2, x + size / 2
+    local title
+    if size < DAY then
+      title = date("%a %b %d, %H:%M", from) .. " - " .. date("%H:%M", to)
+    elseif size == DAY then
+      title = date("%a %b %d, %Y", from)
+    else
+      title = date("%b %d", from) .. " - " .. date("%b %d, %Y", to - DAY)
+    end
+    local lines = { W.Color("white", title) }
     local c = rows.candles and UI.candles
     if c and rows.candles.x == x then
       local i = rows.candles.index
-      if c.period > DAY then
-        lines[1] =
-          W.Color("white", date("%b %d", x - c.period / 2) .. " - " .. date("%b %d, %Y", x + c.period / 2 - DAY))
-      end
       lines[#lines + 1] = { W.Dim(L["Open"]), W.Money(c.open[i]) }
       lines[#lines + 1] = { W.Dim(L["High"]), W.Money(c.high[i]) }
       lines[#lines + 1] = { W.Dim(L["Low (cheapest)"]), W.Money(c.low[i]) }
@@ -224,6 +229,15 @@ function UI:CreateItemView(parent)
     return lines
   end)
   self.chart = chart
+  -- zooming in or out far enough changes the slot size: the series are merged into the new slots
+  if chart.RegisterCallback then
+    chart.RegisterCallback(UI, "RangeChanged", function()
+      local e = UI.slotExtent
+      if UI.series and e and UI:ChartSlotSize(e[1], e[2], e.intraday) ~= UI.slotSize then
+        UI:DrawItemChart()
+      end
+    end)
+  end
   -- legend: a box in the chart's top-left corner, one line per series; out of the way while you hover the plot
   local legend = CreateFrame("Frame", nil, holder, "BackdropTemplate")
   W.Skin(legend, W.COLORS.chart.legendBg, W.COLORS.chart.legendBorder)
@@ -437,8 +451,8 @@ function UI:SetRange(days, key)
   else
     self.chart:SetXRange(nil)
   end
-  if ns.Settings:Get("chartStyle") == "candles" and self.series then
-    self:DrawItemChart() -- candle period depends on the range
+  if self.series then
+    self:DrawItemChart() -- the slot size depends on the range
   end
 end
 
@@ -501,6 +515,12 @@ function UI:LoadIntraday()
   end
   local function show()
     local now = GetServerTime()
+    self.chart.range = nil -- the range first (SetXRange below): the slot size depends on it
+    if self:ShowingIntraday() or self:IntradayPending() then
+      self.chart.range = { now - days * DAY, now + 3600 }
+    elseif days > 2 then
+      self.chart.range = { now - days * DAY, now + DAY }
+    end
     self:DrawItemChart()
     if self:ShowingIntraday() then
       self.chart:SetMessage(nil)
@@ -557,7 +577,6 @@ function UI:LoadIntraday()
   end)
 end
 
--- days per candle so a range shows at most ~60 candles
 -- Your own trades in an item, as dots on its price chart: what you paid / got per unit, when (ledger entries).
 UI.TRADE_COLORS = { buy = W.COLORS.chart.bought, sale = W.COLORS.chart.sold }
 
@@ -577,14 +596,6 @@ local function tradePoints(itemID)
   return #xs > 0 and { xs = xs, ys = ys, colors = colors } or nil
 end
 UI.TradePoints = tradePoints
-
-local function candlePeriod(series, rangeDays)
-  local span = rangeDays
-  if not span and #series > 0 then
-    span = series[#series].day - series[1].day + 1
-  end
-  return math.max(1, math.ceil((span or 1) / 60))
-end
 
 -- A rolling average over `hours` (default 168, a week) at each of xs: every hour before counts once - its scan or
 -- hourly price (the last in that hour), kept for up to UI.CARRY_HOURS when an hour has none, else that day's daily
@@ -636,26 +647,6 @@ function UI.RollingAverage(xs, values, byDay, hours)
   return out
 end
 
--- points grouped into buckets of `size` seconds: one per bucket, at its middle, with the last value in it (xs
--- sorted). size nil: as they are.
-function UI.GroupLast(xs, ys, size)
-  if not size then
-    return xs, ys
-  end
-  local oxs, oys, last = {}, {}, nil
-  for i, x in ipairs(xs) do
-    local g = math.floor(x / size)
-    if ys[i] then
-      if g ~= last then
-        oxs[#oxs + 1] = (g + 0.5) * size
-        last = g
-      end
-      oys[#oxs] = ys[i]
-    end
-  end
-  return oxs, oys
-end
-
 UI.SMA_COLOR = W.COLORS.chart.average
 UI.FAST_COLOR = W.COLORS.chart.fast
 UI.FAST_CANDLES = 20
@@ -680,7 +671,37 @@ end
 UI.VENDOR_LINE_SHARE = 0.33
 UI.VENDOR_COLOR = W.COLORS.chart.vendor
 
--- (Re)draw the item chart in the current style from self.series.
+-- The chart's slot size: from the span on screen (the zoom, else the range, else all the data), clipped to the
+-- points there are. Never smaller than the points' own spacing: 15 minutes for scans, a day for daily history.
+UI.SLOT_TARGET = 60
+function UI:ChartSlotSize(firstX, lastX, intraday)
+  local from, to
+  local r = self.chart and self.chart.range
+  if r then
+    from, to = r[1], r[2]
+  elseif self.rangeDays then
+    to = GetServerTime()
+    from = to - self.rangeDays * DAY
+  end
+  from, to = math.max(from or firstX, firstX), math.min(to or lastX, lastX)
+  return ns.Analytics.SlotSize(to - from, UI.SLOT_TARGET, intraday and 15 * 60 or DAY)
+end
+
+-- a slot's length in words: "15 min", "6 h", "1 day", "3 days"
+function UI.SlotText(size)
+  if size < 3600 then
+    return L["%d min"]:format(size / 60)
+  elseif size < DAY then
+    return L["%d h"]:format(size / 3600)
+  elseif size == DAY then
+    return L["1 day"]
+  end
+  return L["%d days"]:format(math.floor(size / DAY + 0.5))
+end
+
+-- (Re)draw the item chart in the current style from self.series. Every series is merged into one grid of time
+-- slots (Analytics.Slot), so the candles, lines, averages and supply bars all sit at the same x: hovering a slot
+-- shows them all. The slot size follows the zoom (UI:ChartSlotSize); zooming redraws when it changes.
 function UI:DrawItemChart()
   local intraday = self:ShowingIntraday()
   local series, v, chart = intraday and self:IntradayPoints() or self.series, self.itemView, self.chart
@@ -692,36 +713,55 @@ function UI:DrawItemChart()
   end
   local candles = ns.Settings:Get("chartStyle") == "candles"
   v.style:Select(candles and "candles" or "line", true)
-  local xs, market, low, qty, sma = {}, {}, {}, {}, {}
+  -- the points as they are, with the 7-day average at each: by day, each day's average of it and the 6 before; on
+  -- the scan-by-scan ranges (a 7-point average of scans isn't a 7-day average), the average over the 168 hours
+  -- before it (UI.RollingAverage) - each hour moves it by 1/168
+  local xs, market = {}, {}
   for i, p in ipairs(series) do
     xs[i] = p.t or (p.day * DAY + (p.res == "week" and 3.5 * DAY or DAY / 2))
-    market[i], low[i], qty[i] = p.market, p.min, p.qty
+    market[i] = p.market
   end
-  for i = 1, #market do
-    sma[i] = ns.Analytics.SMA(market, math.min(7, i), i)
+  local avg
+  if intraday then
+    local byDay = {}
+    for _, p in ipairs(self.series or {}) do
+      if p.day and p.res ~= "week" then
+        byDay[p.day] = p.market
+      end
+    end
+    avg = UI.RollingAverage(xs, market, byDay)
+  else
+    avg = {}
+    for i = 1, #market do
+      avg[i] = ns.Analytics.SMA(market, math.min(7, i), i)
+    end
   end
+  local points = {}
+  for i, p in ipairs(series) do
+    points[i] = { x = xs[i], market = p.market, min = p.min, high = p.high, qty = p.qty, avg = avg[i] }
+  end
+  local size = self:ChartSlotSize(xs[1], xs[#xs], intraday)
+  local s = ns.Analytics.Slot(points, size)
+  self.slotSize, self.slots, self.slotExtent = size, s, { xs[1], xs[#xs], intraday = intraday }
   local range = chart.range
   chart.range = nil
   chart:ClearSeries()
   local legend = {} -- { color, label } rows, or { note = text }
-  -- supply: one bar per candle (its last reading, like the close), or per hour on the scan-by-scan line
-  local bucket = candles
-      and (intraday and (INTRADAY_CANDLE_HOURS[self.rangeDays] or 2) * 3600 or candlePeriod(series, self.rangeDays) * DAY)
-    or (intraday and 3600)
-  local qxs, qys = UI.GroupLast(xs, qty, bucket)
+  -- a slot's values where it has one (a line skips a slot without)
+  local function present(ys)
+    local oxs, oys = {}, {}
+    for i, x in ipairs(s.xs) do
+      if ys[i] then
+        oxs[#oxs + 1], oys[#oys + 1] = x, ys[i]
+      end
+    end
+    return oxs, oys
+  end
+  -- supply: one bar per slot, its last reading (like the close)
+  local qxs, qys = present(s.qty)
   chart:SetSeries("qty", { xs = qxs, ys = qys, kind = "bars", axis = "volume", color = W.COLORS.chart.supply })
   if candles then
-    local c
-    if intraday then
-      -- candles from the individual scans and hourly points (2 hours each over 2 days, 6 over 7)
-      local hourly = {}
-      for i, p in ipairs(series) do
-        hourly[i] = { day = math.floor(p.t / 3600), market = p.market, min = p.min }
-      end
-      c = ns.Analytics.Candles(hourly, INTRADAY_CANDLE_HOURS[self.rangeDays] or 2, 3600)
-    else
-      c = ns.Analytics.Candles(series, candlePeriod(series, self.rangeDays))
-    end
+    local c = { xs = s.xs, open = s.open, high = s.high, low = s.low, close = s.close, period = size }
     self.candles = c
     chart:SetSeries("candles", {
       kind = "candles",
@@ -743,63 +783,30 @@ function UI:DrawItemChart()
   else
     self.candles = nil
     chart:SetSeries("market", {
-      xs = xs,
-      ys = market,
+      xs = s.xs,
+      ys = s.market,
       kind = "area",
       axis = "price",
       color = W.COLORS.chart.market,
       marker = true,
     })
-    chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = W.COLORS.chart.lowest })
+    local lxs, lys = present(s.min)
+    chart:SetSeries("min", { xs = lxs, ys = lys, kind = "line", axis = "price", color = W.COLORS.chart.lowest })
     legend[#legend + 1] = { W.COLORS.chart.market, L["Market"], kind = "line", key = "market" }
     legend[#legend + 1] = { W.COLORS.chart.lowest, L["Lowest"], kind = "line", key = "min" }
   end
-  -- the 7-day average, up to now. By day: each day's average of it and the 6 before. Today's day point holds
-  -- today so far, so it's drawn at now rather than at today's noon. On the scan-by-scan ranges (a 7-point average
-  -- of scans isn't a 7-day average): at every point, the average over the 168 hours before it (see
-  -- UI.RollingAverage) - each hour moves it by 1/168, and it ends where the last scan is.
-  local smaXs, smaYs = {}, {}
-  local now = GetServerTime()
-  if intraday then
-    local byDay = {}
-    for _, p in ipairs(self.series or {}) do
-      if p.day and p.res ~= "week" then
-        byDay[p.day] = p.market
-      end
-    end
-    local rolled = UI.RollingAverage(xs, market, byDay)
-    for i, x in ipairs(xs) do
-      if rolled[i] then
-        smaXs[#smaXs + 1], smaYs[#smaYs + 1] = x, rolled[i]
-      end
-    end
-  else
-    for i, x in ipairs(xs) do
-      if sma[i] then
-        smaXs[#smaXs + 1], smaYs[#smaYs + 1] = x, sma[i]
-      end
-    end
-    local last = series[#series]
-    if #smaXs > 0 and last and last.day == math.floor(now / DAY) and last.res ~= "week" then
-      smaXs[#smaXs] = math.max(smaXs[#smaXs], now)
-    end
-  end
+  -- the 7-day average: where it stood at the end of each slot
+  local smaXs, smaYs = present(s.avg)
   if #smaXs > 1 then
     legend[#legend + 1] = { UI.SMA_COLOR, L["7-day average"], kind = "line", key = "sma" }
   end
-  -- MA 20, as trading apps draw it: the simple average of the last UI.FAST_CANDLES candles' closes (on the line,
-  -- what those candles would be), so it follows the range - 40 hours on 2D, 5 days on 7D, 20 days on 30D
-  local period = intraday and (INTRADAY_CANDLE_HOURS[self.rangeDays] or 2) * 3600
-    or candlePeriod(series, self.rangeDays) * DAY
-  local cxs, cys = UI.GroupLast(xs, market, period)
+  -- MA 20, as trading apps draw it: the simple average of the last UI.FAST_CANDLES slots' closes, so it follows the
+  -- zoom - 20 hours on hourly slots, 20 days on daily ones
   local fastXs, fastYs = {}, {}
-  for i = 1, #cxs do
-    local n = math.min(UI.FAST_CANDLES, i)
-    if i >= 2 then
-      fastXs[#fastXs + 1], fastYs[#fastYs + 1] = cxs[i], ns.Analytics.SMA(cys, n, i)
-    end
+  for i = 2, #s.xs do
+    fastXs[#fastXs + 1], fastYs[#fastYs + 1] = s.xs[i], ns.Analytics.SMA(s.close, math.min(UI.FAST_CANDLES, i), i)
   end
-  local span = UI.FAST_CANDLES * period
+  local span = UI.FAST_CANDLES * size
   UI.fastLabel = L["MA %d (%s)"]:format(
     UI.FAST_CANDLES,
     span < 3 * DAY and L["%d hours"]:format(span / 3600) or L["%d days"]:format(math.floor(span / DAY + 0.5))
@@ -813,8 +820,8 @@ function UI:DrawItemChart()
   self.vendorLine = nil
   if vendor and vendor > 0 then
     local lowest
-    for i = 1, #xs do
-      for _, y in ipairs({ low[i], market[i] }) do
+    for i = 1, #s.xs do
+      for _, y in ipairs({ s.low[i], s.market[i] }) do
         if y and y > 0 and (not lowest or y < lowest) then
           lowest = y
         end
@@ -823,8 +830,9 @@ function UI:DrawItemChart()
     if lowest and vendor >= lowest * UI.VENDOR_LINE_SHARE then
       self.vendorLine = vendor
       chart:SetSeries("vendor", {
-        xs = { xs[1], math.max(xs[#xs], GetServerTime() + DAY) },
+        xs = { s.xs[1], math.max(s.xs[#s.xs], GetServerTime() + DAY) },
         ys = { vendor, vendor },
+        hover = false, -- a level, not a reading: the hover names it on every slot
         kind = "line",
         axis = "price",
         color = UI.VENDOR_COLOR,
@@ -837,10 +845,9 @@ function UI:DrawItemChart()
     end
   end
   legend[#legend + 1] = { W.COLORS.chart.supply, L["Supply"], kind = "square", key = "qty" }
-  if intraday then
-    legend[#legend + 1] = {
-      note = self.intradayDaily and L["(older days: one point a day)"] or L["(each point is one scan)"],
-    }
+  legend[#legend + 1] = { note = L["(one point per %s)"]:format(UI.SlotText(size)) }
+  if intraday and self.intradayDaily then
+    legend[#legend + 1] = { note = L["(older days: one point a day)"] }
   end
   local trades = tradePoints(self.itemID)
   if trades then
