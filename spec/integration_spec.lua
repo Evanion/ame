@@ -44,10 +44,29 @@ describe("addon in a stubbed client", function()
     drainJobs()
   end
 
+  -- an error AME caught and reported in chat (a view that failed to build, a background pass) fails the test too: it
+  -- would otherwise only show as a chat line, with the rest of the test passing on what did get built
+  local allowedErrors = {}
   after_each(function()
+    local reported = ns and ns.AME and ns.AME.reported or {}
+    local lastError = AME_DB and AME_DB.stats and AME_DB.stats.lastError
+    local unexpected = {}
+    for context in pairs(reported) do
+      if not allowedErrors[context] then
+        unexpected[#unexpected + 1] = context
+      end
+    end
+    allowedErrors = {}
     if env then
       env:restore()
     end
+    if ns and ns.AME then
+      ns.AME.reported = {}
+    end
+    assert(
+      #unexpected == 0,
+      "AME reported an error: " .. table.concat(unexpected, ", ") .. " - " .. tostring(lastError and lastError.error)
+    )
   end)
 
   it("records a full scan into the open auction house's shard and answers /ame item", function()

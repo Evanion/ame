@@ -129,6 +129,13 @@ local function newObject(kind)
     end,
     -- anchors are recorded (the last SetPoint is points[#points]); ClearAllPoints empties them
     SetPoint = function(self, ...)
+      -- SetPoint("TOPLEFT", other, "BOTTOMLEFT", ...) with other still nil (made later): the game anchors to the
+      -- screen instead and the layout breaks ("anchor family connection")
+      -- (a field read off a stub frame before it's set is one of the stub's catch-all functions, not nil)
+      local point, rel, relPoint = ...
+      if select("#", ...) >= 3 and type(relPoint) == "string" and type(rel) ~= "table" and type(rel) ~= "string" then
+        error("SetPoint(" .. tostring(point) .. ") anchored to " .. type(rel) .. ", not a frame", 2)
+      end
       self.points[#self.points + 1] = { ... }
     end,
     ClearAllPoints = function(self)
