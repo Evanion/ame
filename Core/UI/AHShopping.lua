@@ -904,6 +904,39 @@ function T:ShowKeys(keys, title)
   end)
 end
 
+-- one item, from anywhere (Search the AH on AME's pages, a Shift-click): the Shopping tab searches its name and
+-- shows its listings
+function T:SearchItem(key, text)
+  self:Open()
+  self:Search(text or ns.ItemCache.Name(key) or "")
+  self:Select(key)
+end
+
+-- a Shift-clicked item (bags, chat, the AH) while the Shopping tab is up: search for it. Not while you're typing in
+-- chat (that link is for the chat). Returns true when it was taken.
+function T:OnItemLink(link)
+  local p = self.panel
+  if not (link and p and p:IsVisible()) then
+    return false
+  end
+  local chat = _G.ChatEdit_GetActiveWindow and _G.ChatEdit_GetActiveWindow()
+  if chat and not p.search:HasFocus() then
+    return false
+  end
+  local id = ns.ItemCache.Learn(link)
+  if not id then
+    return false
+  end
+  local now = GetTime and GetTime() or 0
+  if self.lastLink == link and now - (self.lastLinkAt or 0) < 0.3 then -- several hooks report the same click
+    return true
+  end
+  self.lastLink, self.lastLinkAt = link, now
+  p.search:ClearFocus()
+  self:SearchItem(id, ns.ItemCache.Name(id) or link:match("%[(.-)%]"))
+  return true
+end
+
 function UI:SearchItems(keys, title)
   if not T.tab then
     return ns.AME:SearchAuctionHouse(keys[1])

@@ -390,6 +390,11 @@ function AME:SearchAuctionHouse(itemID)
   if self:AuctionatorSearch({ itemID }) then
     return true
   end
+  local shop = ns.AHShopping
+  if shop and shop.tab then -- AME's Shopping tab (no Auctionator): search there, not on the game's Buy tab
+    shop:SearchItem(itemID, name)
+    return true
+  end
   local frame = AuctionHouseFrame
   if frame and frame:IsShown() and frame.SearchBar then
     if AuctionHouseFrameDisplayMode and frame.SetDisplayMode then

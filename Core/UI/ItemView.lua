@@ -1462,6 +1462,9 @@ end
 -- Shift-click on an item link anywhere: opens it on the Item tab, or searches for it on the Market tab, when AME is
 -- the obvious target (its box has focus, or no chat box is open). fromInsert: called from a chat-insert hook.
 function UI:OnItemLinkClicked(link, fromInsert)
+  if ns.AHShopping and ns.AHShopping:OnItemLink(link) then -- the auction house's Shopping tab is up: search it
+    return
+  end
   if not (link and self.frame and self.frame:IsShown()) then
     return
   end

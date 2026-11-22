@@ -2178,6 +2178,14 @@ describe("addon in a stubbed client", function()
         assert.are.equal("cloth", AME_DB.recentSearches[1].text)
         T:Search() -- the same search again: still one recent entry
         assert.are.equal(1, #AME_DB.recentSearches)
+        -- Search the AH from AME's pages goes to this tab (not the game's Buy tab), and shows the item's listings
+        assert.is_true(ns.AME:SearchAuctionHouse(2592))
+        assert.are.equal(2592, T.selected)
+        assert.are.equal(ns.ItemCache.Name(2592), T.panel.search:GetText())
+        -- a Shift-clicked item while the tab is up: searched too
+        T.panel:Show()
+        assert.is_true(T:OnItemLink("|cffffffff|Hitem:2589::::::::1:::::::|h[Linen Cloth]|h|r"))
+        assert.are.equal(2589, T.selected)
 
         -- the Selling tab: what in your bags can be listed, worth first; post with the game's own posting
         rawset(_G, "ItemLocation", {
