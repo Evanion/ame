@@ -125,20 +125,7 @@ end
 -- then by cost) and totals { missing = items still short, cost = buying the rest at market, unpriced = items short
 -- with no market price, done = nothing missing }.
 function Shopping.Progress(items, holdings, market)
-  local held = {}
-  for char, h in pairs(holdings or {}) do
-    for _, place in ipairs({ "bags", "bank" }) do
-      for key, qty in pairs(h[place] or {}) do
-        local e = held[key]
-        if not e then
-          e = { qty = 0, chars = {} }
-          held[key] = e
-        end
-        e.qty = e.qty + qty
-        e.chars[char] = (e.chars[char] or 0) + qty
-      end
-    end
-  end
+  local held = ns.Holdings.Map(holdings, "stored")
   local rows, totals = {}, { missing = 0, cost = 0, unpriced = 0, done = true, items = 0 }
   for key, want in pairs(items or {}) do
     local h = held[key]

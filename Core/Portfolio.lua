@@ -11,21 +11,7 @@ ns.Portfolio = Portfolio
 
 -- total held per item across characters and places: { [itemID] = { qty, chars = { [charKey] = qty } } }
 function Portfolio.Merge(holdings)
-  local out = {}
-  for char, h in pairs(holdings or {}) do
-    for _, place in ipairs({ "bags", "bank", "auctions" }) do
-      for itemID, qty in pairs(h[place] or {}) do
-        local e = out[itemID]
-        if not e then
-          e = { qty = 0, chars = {} }
-          out[itemID] = e
-        end
-        e.qty = e.qty + qty
-        e.chars[char] = (e.chars[char] or 0) + qty
-      end
-    end
-  end
-  return out
+  return ns.Holdings.Map(holdings, "listed")
 end
 
 -- What's listed on the auction house right now, across characters:

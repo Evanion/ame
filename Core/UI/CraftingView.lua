@@ -204,16 +204,9 @@ function UI:CraftingModel()
   end
 
   -- what you hold (bags and bank), per item across the characters in view
-  local held = {}
-  for key, h in pairs(ns.Trading:Holdings()) do
-    if not only or key == only then
-      for _, place in ipairs({ "bags", "bank" }) do
-        for id, n in pairs(h[place] or {}) do
-          held[id] = (held[id] or 0) + n
-        end
-      end
-    end
-  end
+  local held = ns.Holdings.Totals(ns.Trading:Holdings(), "stored", only and function(key)
+    return key == only
+  end)
   local heldSet = {}
   for id, n in pairs(held) do
     heldSet[id] = n > 0 or nil
