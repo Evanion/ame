@@ -569,26 +569,130 @@ function W.TipPair(tip, label, value)
   tip:AddDoubleLine(label, value, c[1], c[2], c[3], 1, 1, 1)
 end
 
--- Stat card: a small panel with a dim label over a value (c.label, c.value). opts.term: hover explanation (Help).
-function W.StatCard(parent, label, opts)
+-- KPI card: a headline figure tile (Market Overview, Portfolio, Leveling, Sharing). A dim label, a large value, an
+-- optional change after it, an optional rising / falling bar under it and an optional dim note at the bottom.
+--   local c = W.KpiCard(parent, label, { term = "mxIndex" })
+--   c:Set{ value = "104.2" | copper = 12000, copper2 = 9000, signed = true,
+--          delta = "+0.9%", deltaKind = "up" | "down" | "mute", rise = 1200, fall = 800, note = "..." }
+--   c:SetCompact(on): the narrow-window tile (a smaller value, tighter padding, no note)
+-- copper is drawn with W.BigMoney (W.SignedMoney when signed); copper2 is a second amount after " / " (sold /
+-- bought). deltaKind colours the change: up and down in the palette's gain / loss, mute dim (a count, "/day").
+-- c.label and c.value are font strings; c.value:SetText still works for a value drawn by hand.
+W.KPI_PAD, W.KPI_PAD_COMPACT = 6, 4
+W.KPI_BAR_H = 5
+W.KPI_DELTA = { up = "good", down = "bad", mute = "dim" }
+function W.KpiCard(parent, label, opts)
   local c = CreateFrame("Frame", nil, parent, "BackdropTemplate")
   W.Skin(c, W.COLORS.panel)
   c:SetSize(120, 42)
+  c.compact, c.data = false, {}
   c.label = W.Text(c, "GameFontDisableSmall")
-  c.label:SetPoint("TOPLEFT", 8, -6)
   c.label:SetText(label)
-  c.value = W.Text(c, "GameFontHighlight")
-  c.value:SetPoint("BOTTOMLEFT", 8, 7)
+  c.label:SetWordWrap(false)
+  c.label:SetPoint("RIGHT", -8, 0)
+  c.value = W.Text(c, "GameFontHighlightLarge")
+  c.value:SetWordWrap(false)
+  c.value:SetPoint("TOPLEFT", c.label, "BOTTOMLEFT", 0, -3)
+  c.delta = W.Text(c, "GameFontHighlightSmall")
+  c.delta:SetPoint("BOTTOMLEFT", c.value, "BOTTOMRIGHT", 4, 1)
+  c.delta:SetWordWrap(false)
+  -- the breadth bar: rising on the left, falling on the right, each as wide as its share
+  c.rise = c:CreateTexture(nil, "ARTWORK")
+  c.rise:SetHeight(W.KPI_BAR_H)
+  c.rise:SetPoint("TOPLEFT", c.value, "BOTTOMLEFT", 0, -3)
+  c.fall = c:CreateTexture(nil, "ARTWORK")
+  c.fall:SetHeight(W.KPI_BAR_H)
+  c.fall:SetPoint("LEFT", c.rise, "RIGHT", 0, 0)
+  c.note = W.Text(c, "GameFontDisableSmall")
+  c.note:SetPoint("BOTTOMLEFT", 8, 5)
+  c.note:SetPoint("RIGHT", -8, 0)
+  c.note:SetWordWrap(false)
   c:EnableMouse(true)
   if opts and opts.term and ns.Help then
     ns.Help.Explain(c, opts.term)
   end
+
+  function c:Layout()
+    local pad = self.compact and W.KPI_PAD_COMPACT or W.KPI_PAD
+    self.label:ClearAllPoints()
+    self.label:SetPoint("TOPLEFT", 8, -pad)
+    self.label:SetPoint("RIGHT", -8, 0)
+    self.value:SetFontObject(self.compact and "GameFontHighlight" or "GameFontHighlightLarge")
+    local d = self.data
+    local bar = d.rise and d.fall and (d.rise + d.fall) > 0
+    local width = (self:GetWidth() or 0) - 16
+    if bar and width > 0 then
+      local share = d.rise / (d.rise + d.fall)
+      -- a zero-width texture draws full width, so an empty side is hidden instead
+      self.rise:SetWidth(math.max(1, width * share))
+      self.fall:SetWidth(math.max(1, width * (1 - share)))
+      self.rise:SetShown(share > 0)
+      self.fall:SetShown(share < 1)
+      W.Fill(self.rise, W.COLORS.up)
+      W.Fill(self.fall, W.COLORS.down)
+      if share <= 0 then -- the fall bar starts at the left edge
+        self.fall:ClearAllPoints()
+        self.fall:SetPoint("TOPLEFT", self.value, "BOTTOMLEFT", 0, -3)
+      else
+        self.fall:ClearAllPoints()
+        self.fall:SetPoint("LEFT", self.rise, "RIGHT", 0, 0)
+      end
+    else
+      self.rise:Hide()
+      self.fall:Hide()
+    end
+    self.note:SetShown(not self.compact and (self.note:GetText() or "") ~= "")
+  end
+
+  -- the height the card needs for what it shows (a row of cards takes the tallest)
+  function c:NeededHeight()
+    local pad = self.compact and W.KPI_PAD_COMPACT or W.KPI_PAD
+    local h = 2 * pad + (self.label:GetStringHeight() or 10) + 3 + (self.value:GetStringHeight() or 16)
+    if self.rise:IsShown() or self.fall:IsShown() then
+      h = h + 3 + W.KPI_BAR_H
+    end
+    if self.note:IsShown() then
+      h = h + 3 + (self.note:GetStringHeight() or 10)
+    end
+    return math.ceil(h)
+  end
+
+  function c:Set(t)
+    t = t or {}
+    self.data = t
+    local value
+    if t.copper ~= nil then
+      value = t.signed and W.SignedMoney(t.copper) or W.BigMoney(t.copper)
+      if t.copper2 ~= nil then
+        value = value .. W.Dim(" / ") .. W.BigMoney(t.copper2)
+      end
+    else
+      value = t.value ~= nil and tostring(t.value) or W.NONE
+    end
+    self.value:SetText(value)
+    self.delta:SetText(t.delta or "")
+    local tone = W.RGB(W.KPI_DELTA[t.deltaKind or "mute"] or "dim")
+    self.delta:SetTextColor(tone[1], tone[2], tone[3], 1)
+    self.delta:SetFontObject(t.deltaKind == "mute" and "GameFontDisableSmall" or "GameFontHighlightSmall")
+    self.note:SetText(t.note or "")
+    self:Layout()
+  end
+
+  function c:SetCompact(on)
+    self.compact = on and true or false
+    self:Layout()
+  end
+
+  c:SetScript("OnSizeChanged", function(self)
+    self:Layout()
+  end)
+  c:Layout()
   return c
 end
 
--- A row of stat cards sharing the row's width: defs = { { label, term = "market" }, ... }.
+-- A row of KPI cards sharing the row's width: defs = { { label, term = "market" }, ... }.
 -- opts: height = 42, gap = 6, width = the row's width until it has one (it follows OnSizeChanged).
--- Anchor the returned frame's left and right; its cards are row.cards.
+-- Anchor the returned frame's left and right; its cards are row.cards. row:SetCompact(on) for every card.
 function W.CardRow(parent, defs, opts)
   opts = opts or {}
   local h, gap = opts.height or 42, opts.gap or 6
@@ -596,7 +700,7 @@ function W.CardRow(parent, defs, opts)
   row:SetHeight(h)
   row.cards = {}
   for i, d in ipairs(defs) do
-    local c = W.StatCard(row, d[1], { term = d.term })
+    local c = W.KpiCard(row, d[1], { term = d.term })
     c:SetHeight(h)
     row.cards[i] = c
   end
@@ -610,6 +714,12 @@ function W.CardRow(parent, defs, opts)
       c:SetWidth(w)
       c:ClearAllPoints()
       c:SetPoint("TOPLEFT", (i - 1) * (w + gap), 0)
+      c:Layout()
+    end
+  end
+  function row:SetCompact(on)
+    for _, c in ipairs(self.cards) do
+      c:SetCompact(on)
     end
   end
   row:SetScript("OnSizeChanged", function(_, width)
