@@ -192,3 +192,47 @@ describe("Leveling limits", function()
     assert.are.equal(500, charged)
   end)
 end)
+
+describe("Leveling.Candidates", function()
+  local ns
+  before_each(function()
+    ns = require("spec.helpers.addon").load({
+      "Core/Init.lua",
+      "Core/Professions.lua",
+      "Core/CraftingData.lua",
+      "Core/Recipes.lua",
+      "Core/Leveling.lua",
+    })
+    _G.AME_DB = {}
+    ns.CraftingData:Use({
+      recipes = {
+        [1] = { 197, 10, 1, 60, 80, 2589, 1 }, -- known
+        [2] = { 197, 11, 1, 60, 80, 2589, 1 }, -- a recipe item teaches it, listed today
+        [3] = { 197, 12, 1, 100, 120, 2589, 1 }, -- a trainer's
+        [4] = { 197, 13, 1, 20, 30, 2589, 1 }, -- grey already
+        [5] = { 197, 14, 1, 60, 80, 2589, 1 }, -- its recipe item isn't listed
+      },
+      items = { [900] = { 197, 50, 2 }, [901] = { 197, 75, 5 } },
+    })
+  end)
+  after_each(function()
+    _G.AME_DB = nil
+  end)
+
+  it("lists known recipes, ones a listed recipe item teaches and trainer ones, never grey ones", function()
+    local items = { [900] = { min = 700, qty = 1, day = 10 } }
+    local out = ns.Leveling.Candidates(197, { skill = 40, learned = { [1] = true } }, items, 10)
+    local by = {}
+    for _, c in ipairs(out) do
+      by[c.recipe.id] = c
+    end
+    assert.is_true(by[1].known)
+    assert.are.equal(700, by[2].itemPrice)
+    assert.are.equal(50, by[2].learnAt)
+    assert.are.equal(900, by[2].recipeItem)
+    assert.are.equal(80, by[3].learnAt) -- about 20 before it turns yellow
+    assert.is_true(by[3].estimated)
+    assert.is_nil(by[4])
+    assert.is_nil(by[5])
+  end)
+end)

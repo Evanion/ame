@@ -21,7 +21,7 @@ PB.QUEUE_W = 420
 
 -- recipes by ID and what makes an item: Core/Recipes.lua
 PB.Recipe = function(recipeID)
-  return ns.Recipes.Recorded(recipeID)
+  return ns.Recipes.Get(recipeID)
 end
 PB.Producers = function(itemID)
   return ns.Recipes.Producers(itemID)

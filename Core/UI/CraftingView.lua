@@ -97,11 +97,6 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- the model: recipes your characters know, prices, holdings
 
--- a recipe as Crafting wants it: the recorded catalog first (what the game showed), else the shipped data
-local function recipeFor(profession, id)
-  return ns.Recipes.Get(id, profession)
-end
-
 -- the Crafting model and "craft it instead" live in Core/CraftModel.lua
 function UI:CraftInstead(itemID)
   return ns.CraftModel.Instead(itemID)
@@ -326,9 +321,7 @@ function UI:CraftingModeRows(m)
   local teaches = function(id)
     return ns.CraftingData:Teaches(id)
   end
-  local recipe = function(spell)
-    return recipeFor(nil, spell)
-  end
+  local recipe = ns.Recipes.Get
   local chars = m.chars
   if self.craftChar then
     chars = { [self.craftChar] = m.chars[self.craftChar] }

@@ -34,7 +34,7 @@ function M.Producers()
         for id in pairs(p.learned or {}) do
           if not seen[id] then
             seen[id] = true
-            local r = ns.Recipes.Get(id, profession)
+            local r = ns.Recipes.Get(id)
             if r and r.product then
               producers[r.product] = producers[r.product] or {}
               table.insert(producers[r.product], r)
@@ -73,7 +73,7 @@ function M.Instead(itemID)
       if not GATHERING[profession] then
         for id in pairs(p.learned or {}) do
           if not crafters[id] then
-            local r = ns.Recipes.Get(id, profession)
+            local r = ns.Recipes.Get(id)
             local uses = false
             for _, reagent in ipairs(r and r.reagents or {}) do
               uses = uses or reagent[1] == itemID
@@ -124,7 +124,7 @@ function M.Build(only)
     for profession, p in pairs(c.professions or {}) do
       if not GATHERING[profession] then
         for id in pairs(p.learned or {}) do
-          local r = ns.Recipes.Get(id, profession)
+          local r = ns.Recipes.Get(id)
           if r then
             local e = byRecipe[id]
             if not e then

@@ -16,8 +16,6 @@ local GOALS = {
   { "materials", L["My materials"] },
 }
 local TARGETS = { 75, 150, 225, 300 }
-UI.LEVEL_TRAINER_GUESS = 20 -- trainer recipes without a known level: assume they're trained this far before yellow
-UI.LEVEL_RECIPE_DAYS = 2 -- recipe items seen on the AH within this many days can be bought for the path
 
 local function charName(key)
   return (key or ""):gsub("^[^:]*:", "")
@@ -60,57 +58,9 @@ function UI:LevelingChoices()
   return out
 end
 
--- the candidate recipes for a character's profession: known ones, trainer ones (level estimated), and ones whose
--- recipe item is on the auction house (its price added)
+-- the candidate recipes for a character's profession: Leveling.Candidates
 local function candidates(m, choice)
-  local index = m.index
-  local teachers = {} -- spell -> recipe items that teach it
-  for item, row in pairs(ns.CraftingData.data.items or {}) do
-    for i = 3, #row do
-      teachers[row[i]] = teachers[row[i]] or {}
-      table.insert(teachers[row[i]], { item = item, rank = row[2] })
-    end
-  end
-  local learned = choice.p.learned or {}
-  local recorded = ns.Professions:Catalog(choice.profession) or {}
-  local out = {}
-  for _, id in ipairs(ns.CraftingData:ProfessionRecipes(choice.profession)) do
-    local d = ns.CraftingData:Recipe(id)
-    local rec = recorded[id]
-    local recipe = {
-      id = id,
-      product = rec and rec.out or d.product,
-      made = rec and ((rec.min or 1) + (rec.max or rec.min or 1)) / 2 or d.made,
-      reagents = rec and rec.r or d.reagents,
-      cooldown = ns.CraftingData:Cooldown(id),
-    }
-    local c = { recipe = recipe, yellow = d.yellow, grey = d.grey, known = learned[id] or false }
-    if d.grey > choice.p.skill and #recipe.reagents > 0 then
-      if c.known then
-        out[#out + 1] = c
-      elseif teachers[id] then
-        -- a recipe item: the cheapest one listed lately
-        local best
-        for _, t in ipairs(teachers[id]) do
-          local s = index.items[t.item]
-          local fresh = s and (not index.day or not s.day or index.day - s.day <= UI.LEVEL_RECIPE_DAYS)
-          if fresh and s.min and (s.qty or 0) > 0 and (not best or s.min < best.price) then
-            best = { item = t.item, price = s.min, rank = t.rank }
-          end
-        end
-        if best then
-          c.itemPrice, c.learnAt, c.recipeItem = best.price, best.rank, best.item
-          out[#out + 1] = c
-        end
-      else
-        -- taught by a trainer (no recipe item); the game data has no training level for most
-        c.learnAt = d.yellow <= 50 and 1 or math.max(1, d.yellow - UI.LEVEL_TRAINER_GUESS)
-        c.estimated = true
-        out[#out + 1] = c
-      end
-    end
-  end
-  return out
+  return ns.Leveling.Candidates(choice.profession, choice.p, m.index.items, m.index.day)
 end
 
 -- plans for the selected profession under every goal (the header compares them)

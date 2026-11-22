@@ -568,11 +568,12 @@ function Tooltip.RecipeLines(itemID)
     if i > Tooltip.RECIPE_MAX then
       break
     end
-    local recipe = data:Recipe(spell)
+    local recipe = ns.Recipes.Get(spell) -- its yield as scanned, when one of your characters has
     local product = recipe and recipe.product
     if product then
       local name = Tooltip.Bits({ item = product }) -- in its quality colour
-      local made = (recipe.made or 1) > 1 and (" x" .. recipe.made) or ""
+      local lo, hi = recipe.madeMin or 1, recipe.madeMax or 1
+      local made = hi > 1 and (" x" .. (lo < hi and lo .. "-" .. hi or hi)) or ""
       local price = craft:Price(product)
       rows[#rows + 1] = {
         L["Makes %s"]:format(name .. made),

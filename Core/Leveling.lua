@@ -40,6 +40,47 @@ local function nextCap(cap)
   end
 end
 
+Leveling.RECIPE_DAYS = 2 -- recipe items seen on the AH within this many days can be bought for the path
+
+-- The recipes a path can use for a character's profession (Core/Recipes.lua; the shipped data has the skill colours):
+-- ones it knows, ones a recipe item listed lately teaches (its price added) and trainer ones (level estimated).
+-- p: the character's recorded profession { skill, learned }; items: the market index's items (index.items), day:
+-- the index's day. -> the `recipes` Leveling.Plan takes
+function Leveling.Candidates(profession, p, items, day)
+  local learned = p.learned or {}
+  local ids = ns.CraftingData:ProfessionRecipes(profession)
+  table.sort(ids)
+  local out = {}
+  for _, id in ipairs(ids) do
+    local recipe = ns.Recipes.Get(id)
+    if recipe and recipe.grey and recipe.grey > (p.skill or 0) and #recipe.reagents > 0 then
+      local c = { recipe = recipe, yellow = recipe.yellow, grey = recipe.grey, known = learned[id] or false }
+      local how = not c.known and ns.Recipes.Learnable(id)
+      if c.known then
+        out[#out + 1] = c
+      elseif how.via == "item" then
+        -- a recipe item: the cheapest one listed lately
+        local best
+        for _, t in ipairs(how.items) do
+          local s = items[t.item]
+          local recent = s and (not day or not s.day or day - s.day <= Leveling.RECIPE_DAYS)
+          if recent and s.min and (s.qty or 0) > 0 and (not best or s.min < best.price) then
+            best = { item = t.item, price = s.min, rank = t.rank }
+          end
+        end
+        if best then
+          c.itemPrice, c.learnAt, c.recipeItem = best.price, best.rank, best.item
+          out[#out + 1] = c
+        end
+      else
+        c.learnAt, c.estimated = how.learnAt, true
+        out[#out + 1] = c
+      end
+    end
+  end
+  return out
+end
+
 -- opts:
 --   craft       Crafting instance (reagent costs, what results sell for)
 --   recipes     { { recipe = {id, product, made, reagents}, yellow, grey, learnAt, known, itemPrice, estimated }, ... }
