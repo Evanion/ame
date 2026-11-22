@@ -37,8 +37,8 @@ Help.TERMS = {
     L["What the whole market's daily sales of an item would earn at this recipe's profit: profit per craft times how many sell a day. It's the size of the opportunity, not your income - you'd sell a share of those, after the other sellers, and a recipe with a cooldown (transmutes) only as often as it allows: the sidebar says how often. Use it to compare recipes; a big Market/day with few sellers is the best kind."],
   },
   sellRate = {
-    L["Market sales per day (estimate)"],
-    L["How fast the item moves: units that disappeared between consecutive full scans of this auction house, per day, over the last week. Scans can't tell a sale from a listing that expired or was cancelled, so where you or your guildmates have listed the item, only its sell-through's share counts as sold - an item reposted every day that never sells drops to about 0. Items nobody has listed count the market's share: the sell-through of everything that has been (about 40% until there's enough of it), so treat those as estimates. A cheap item that never sells is a trap; a high number means you can sell a stack quickly. Needs a few full scans on the same day to show."],
+    L["Sells per day (estimate)"],
+    L["How fast the item moves: units that disappeared between consecutive full scans of this auction house, per day, over the last week - never more than are listed now, since nobody can buy more than that today. Scans can't tell a sale from a listing that expired or was cancelled, so where you or your guildmates have listed the item, only its sell-through's share counts as sold - an item reposted every day that never sells drops to about 0. Items nobody has listed count the market's share: the sell-through of everything that has been (about 40% until there's enough of it), so treat those as estimates. A cheap item that never sells is a trap; a high number means you can sell a stack quickly. Needs a few full scans on the same day to show."],
   },
   sellThrough = {
     L["Sell-through"],
@@ -137,7 +137,7 @@ Help.TERMS = {
   },
   pfValue = {
     L["Holdings value"],
-    L["Everything your characters on this realm own - bags, bank, mailbox, guild banks and active auctions - at your faction auction house's market price, except soulbound items (they can't be sold) and items you hid. Items with a sell-through count at what they're really worth: the market price as often as they sell, the vendor's price otherwise. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
+    L["Everything your characters on this realm own - bags, bank, mailbox, guild banks and active auctions - at what selling them nets at your faction's auction house: the market price after the cut and the listing deposit (lost as often as listings fail, by the item's sell-through), or a vendor's price when that's more. Soulbound items (they can't be sold) and items you hid are left out. Bank items and auctions are counted as of the last time you opened the bank / auction house."],
   },
   pfCost = {
     L["Average cost"],
@@ -145,7 +145,7 @@ Help.TERMS = {
   },
   pfUnrealized = {
     L["Unrealized profit"],
-    L["For units you bought on the auction house: what they're worth now at market price minus what you paid. It becomes real profit when you sell."],
+    L["For units you bought on the auction house: what they're worth now (what selling them nets) minus what you paid. It becomes real profit when you sell."],
   },
   pfProfit = {
     L["Realized profit"],

@@ -60,7 +60,7 @@ local COLUMNS = {
       return L["%s of %s"]:format(e.units and W.Count(e.units) or W.Dim("?"), W.Count(e.buyQty))
     end,
   },
-  { key = "sellRate", drop = 2, label = L["Sales/day"], width = 58, format = "rate", term = "arbSellRate" },
+  { key = "soldPerDay", drop = 2, label = L["Sells/day"], width = 58, format = "rate", term = "arbSellRate" },
   {
     key = "age",
     drop = 1,
@@ -359,7 +359,7 @@ function UI:RenderRoute()
     { label = L["Sell-side data"], text = self:SideData(a.sell, e.sellAge), term = "arbAge" },
     {
       label = L["Sales per day there"],
-      text = e.sellRate and ("~" .. W.Count(e.sellRate)) or W.NONE,
+      text = e.soldPerDay and ("~" .. W.Count(e.soldPerDay)) or W.NONE,
       term = "arbSellRate",
     },
     { label = L["Depth"], text = self:DepthText(e), term = "arbDepth" },

@@ -1,15 +1,25 @@
 -- Quote: one answer to "what is this item worth here". A quote is an auction house's price context - its index, the
 -- house whose cut and deposit apply, the outlier cap and the fresh-search overlay - and every price, sales rate and
--- deposit for an item comes from it, so two views can't work one out differently. (Data core, step 4: today's rules,
--- moved here; docs/plans/data-core.md.)
+-- deposit for an item comes from it, so two views can't work one out differently. (Data core, steps 4 and 11;
+-- docs/plans/data-core.md.)
 --
 --   Quote.UnitsPerDay(s)           units a day an item sells: its sell rate, never more than is listed; nil: no rate
+--                                  (saved in the index as s.soldPerDay: what every "Sells/day" shows)
 --   Quote.CapPrice(s, factor)      the market price, capped at factor x the 30-day average; nil: no price
+--   Quote.Net(s, cut, deposit, factor)  what listing one unit nets: the capped price after the cut, less the deposit
+--                                  as often as listings fail (SellThrough.Net); nil: no price (saved as s.net)
 --   Quote.HouseFor()               the house whose cut and deposit apply to your sales: the one you're at, your
 --                                  faction's when you're at the goblin auction house
---   Quote.For(shard, index) -> q   (index: that shard's market index)
+--   Quote.For(shard, index, opts) -> q   (index: that shard's market index; opts.house: whose cut and deposit,
+--                                  default HouseFor(); opts.fresh = false: no fresh-search overlay)
 --   q:Summary(id)                  the index summary, or a copy priced at a fresh search's cheapest listing
 --   q:Price(id), q:SoldPerDay(id), q:Deposit(id)
+--   q:ListingNet(id)               Quote.Net for one unit at this house
+--   q:BestSale(id) -> net, where   the better of the auction house ("ah": ListingNet) and a vendor ("vendor");
+--                                  nil, "unsellable" for a bind-on-pickup item; nil without either
+--   q:Worth(id)                    what one unit you hold is worth: BestSale's net (the portfolio, the Sell tab)
+--   q:Disenchant(id)               gear: { value, outcomes = { { item, name, chance, min, max, price } }, level,
+--                                  classID } with the materials at BestSale (value nil while one has no price)
 --   q:CraftEnv(producers)          the Crafting env (Core/Crafting.lua) on this quote
 local _, ns = ...
 
@@ -39,13 +49,26 @@ function Quote.CapPrice(s, factor)
   return p
 end
 
+function Quote.Net(s, cut, deposit, factor)
+  local p = Quote.CapPrice(s, factor)
+  if not p then
+    return nil
+  end
+  local capped = { market = p, sellThrough = s.sellThrough, stWeight = s.stWeight }
+  if ns.SellThrough then
+    return ns.SellThrough.Net(capped, cut, deposit)
+  end
+  return p * (1 - (cut or 0)) - (deposit or 0)
+end
+
 function Quote.HouseFor()
   local here = ns.AME:CurrentHouse()
   return here == "Neutral" and (UnitFactionGroup("player") or "Horde") or here
 end
 
-function Quote.For(shard, index)
-  local house = Quote.HouseFor()
+function Quote.For(shard, index, opts)
+  opts = opts or {}
+  local house = opts.house or Quote.HouseFor()
   return setmetatable({
     shard = shard,
     index = index,
@@ -54,6 +77,7 @@ function Quote.For(shard, index)
     hours = ns.Settings:Get("listingHours"),
     factor = ns.Settings:Get("outlierFactor"),
     fresh = {},
+    noFresh = opts.fresh == false,
   }, Quote)
 end
 
@@ -62,6 +86,9 @@ end
 -- never changed: a copy carries the fresh price.
 function Quote:Summary(id)
   local s = self.index and self.index.items[id]
+  if self.noFresh then
+    return s
+  end
   if self.fresh[id] == nil then
     local book = self.shard and ns.AME:BookFor(self.shard, id, Quote.FRESH_BOOK)
     local p = book and book.prices and book.prices[1]
@@ -96,6 +123,55 @@ end
 function Quote:Deposit(id)
   local sell = ns.ItemCache.Get(id).sellPrice
   return sell and ns.Arbitrage.Deposit(sell, self.house, self.hours) or 0
+end
+
+function Quote:ListingNet(id)
+  local s = self:Summary(id)
+  return s and Quote.Net(s, self.cut, self:Deposit(id), self.factor)
+end
+
+function Quote:BestSale(id)
+  local info = ns.ItemCache.Get(id)
+  if info.bind == 1 then -- binds when picked up
+    return nil, "unsellable"
+  end
+  local best, where = self:ListingNet(id), nil
+  if best then
+    where = "ah"
+  end
+  local v = info.sellPrice
+  if v and v > 0 and (not best or v > best) then
+    best, where = v, "vendor"
+  end
+  return best, where
+end
+
+function Quote:Worth(id)
+  return (self:BestSale(id))
+end
+
+function Quote:Disenchant(id)
+  local info = ns.ItemCache.Get(id)
+  if not (info.classID == 2 or info.classID == 4) or not ns.Disenchant then
+    return nil
+  end
+  local quality = info.quality
+  local outcomes = quality and quality >= 2 and ns.Disenchant.Outcomes(info.level, quality, info.classID)
+  if not outcomes then
+    return nil
+  end
+  local out, value = { outcomes = {}, level = info.level, classID = info.classID }, 0
+  for i, o in ipairs(outcomes) do
+    local price = self:BestSale(o[1])
+    out.outcomes[i] =
+      { item = o[1], name = ns.ItemCache.Name(o[1]), chance = o[2], min = o[3], max = o[4], price = price }
+    value = value and price and value + price * o[2] * (o[3] + o[4]) / 2 or nil
+  end
+  table.sort(out.outcomes, function(a, b)
+    return a.chance > b.chance
+  end)
+  out.value = value
+  return out
 end
 
 -- producers: product -> recipes that make it (chains), optional

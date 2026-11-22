@@ -40,16 +40,18 @@ function Crafting:Price(itemID)
   return ns.Quote.CapPrice(self.env.market(itemID), self.env.factor)
 end
 
--- what selling one unit nets: on the AH after the cut and deposit, or at a vendor, whichever is more (nil: neither)
+-- what selling one unit nets: on the AH after the cut and deposit (Quote.Net), or at a vendor, whichever is more
+-- (nil: neither). The same rule as Quote:BestSale.
 function Crafting:NetSale(itemID)
   local env = self.env
   if env.sellable and env.sellable(itemID) == false then
     return nil, "unsellable"
   end
   local best, where
-  local p = self:Price(itemID)
-  if p then
-    best, where = p * (1 - (env.cut or 0)) - (env.deposit and env.deposit(itemID) or 0), "ah"
+  local s = env.market(itemID)
+  local net = s and ns.Quote.Net(s, env.cut, env.deposit and env.deposit(itemID) or 0, env.factor)
+  if net then
+    best, where = net, "ah" -- Quote.Net: the deposit lost as often as listings fail
   end
   local v = env.vendorSell and env.vendorSell(itemID)
   if v and v > 0 and (not best or v > best) then

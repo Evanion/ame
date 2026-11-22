@@ -129,6 +129,19 @@ describe("MarketIndex", function()
     assert.are.equal("none", old.items[6].signal)
   end)
 
+  it("saves what every view shows: units sold a day and what listing one nets (save version 7)", function()
+    for d = 1971, 2000 do
+      scan(d, { [5] = 100 })
+    end
+    local index = ns.MarketIndex.Build(store, 2000, 30, nil, nil, nil, function(s)
+      s.soldPerDay, s.net = 2.5, 93
+    end)
+    local back = ns.MarketIndex.Decode(ns.MarketIndex.Encode(index))
+    assert.are.equal(2.5, back.items[5].soldPerDay)
+    assert.are.equal(93, back.items[5].net)
+    assert.are.equal(7, ns.MarketIndex.SAVE_VERSION) -- older saves are shown, then rebuilt with them
+  end)
+
   it("ranks items by opportunity score", function()
     for d = 1971, 2000 do
       scan(d, { [5] = 100 + (d % 2), [6] = (d == 2000) and 60 or 100 + (d % 2), [7] = (d == 2000) and 150 or 100 })

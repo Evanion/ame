@@ -104,7 +104,7 @@ end
 -- bumped when saved indexes gain information (2: vendor prices, 3: what a listing nets for VENDOR items, 4: DE);
 -- older
 -- saves are shown, then rebuilt once
-MarketIndex.SAVE_VERSION = 6 -- 5: sell-through, 6: estimated sales rates
+MarketIndex.SAVE_VERSION = 7 -- 5: sell-through, 6: estimated sales rates, 7: units sold a day and what one nets
 
 MarketIndex.SAVED_FIELDS = {
   { "market", 1 },
@@ -139,6 +139,10 @@ MarketIndex.SAVED_FIELDS = {
   { "churnRate", 1e3 },
   { "stPrior", 1e3 }, -- items without outcomes: the market's share their sales rate was scaled by
   { "value", 1 },
+  -- what every view shows (Quote): units sold a day (the sales rate, never more than is listed), what listing one
+  -- unit nets after the cut and deposit at the capped price
+  { "soldPerDay", 1e3 },
+  { "net", 1 },
 }
 
 local function columnNames()

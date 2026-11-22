@@ -304,7 +304,7 @@ function UI:CreateItemView(parent)
       { label = L["Average"], term = "avg" },
       { label = L["Volatility"], term = "vol30" },
       { label = L["Supply"], term = "qty" },
-      { label = L["Sales per day"], term = "sellRate" },
+      { label = L["Sells per day"], term = "sellRate" },
     },
   })
   for i = 1, 5 do
@@ -1205,7 +1205,11 @@ function UI:FillItem(_, series, latest, mixed)
       },
       { label = L["Volatility"], text = s.vol30 and ("%.1f%%"):format(s.vol30 * 100) or W.NONE, term = "vol30" },
       { label = L["Supply"], text = supply, term = "qty" },
-      { label = L["Sales per day"], text = s.sellRate and ("~" .. W.Count(s.sellRate)) or W.NONE, term = "sellRate" },
+      {
+        label = L["Sells per day"],
+        text = s.soldPerDay and ("~" .. W.Count(s.soldPerDay)) or W.NONE,
+        term = "sellRate",
+      },
     },
   })
   -- subtitle: category · market · pips + scans · last seen
@@ -1319,11 +1323,12 @@ function UI.Verdict(s, ctx)
   if s.phase and PHASE_WHY[s.phase] then
     why[#why + 1] = PHASE_WHY[s.phase]
   end
-  if s.sellRate then
-    if s.sellRate >= 20 then
-      why[#why + 1] = L["Sells fast: ~%s a day."]:format(W.Count(s.sellRate))
-    elseif s.sellRate >= 1 then
-      why[#why + 1] = L["Sells ~%s a day."]:format(W.Count(s.sellRate))
+  local sold = s.soldPerDay
+  if sold then
+    if sold >= 20 then
+      why[#why + 1] = L["Sells fast: ~%s a day."]:format(W.Count(sold))
+    elseif sold >= 1 then
+      why[#why + 1] = L["Sells ~%s a day."]:format(W.Count(sold))
     else
       why[#why + 1] = L["Rarely sells (under 1 a day)."]
     end

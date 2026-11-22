@@ -394,7 +394,7 @@ local COLUMNS = {
         return e.profit and W.SignedMoney(e.profit) or W.Dim("-")
       end,
     },
-    { key = "sellRate", drop = 1, label = L["Sales/day"], width = 60, format = "rate" },
+    { key = "sellRate", drop = 1, label = L["Sells/day"], width = 60, format = "rate" },
     {
       key = "perDay",
       money = true,

@@ -30,7 +30,7 @@ local POSITION_COLS = {
     sortKey = "signalRank",
     ascendingFirst = true,
   },
-  { key = "sellRate", drop = 3, label = L["Sales/day"], width = 58, format = "rate", term = "sellRate" },
+  { key = "soldPerDay", drop = 3, label = L["Sells/day"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "daysToSell",
     drop = 4,
@@ -461,11 +461,16 @@ function UI:RefreshPortfolio()
   for _ in pairs(holdings) do
     self.pfChars = self.pfChars + 1
   end
+  -- what a unit is worth: what selling it nets, after the cut and deposit or at a vendor (Quote:Worth, on the index)
+  local q = index and ns.Quote.For(AME:FactionShard(), index, { fresh = false })
   self.pfRows, self.pfTotals = ns.Portfolio.Build(
     ns.Holdings.Of("owned", scope),
     basis,
     index and index.items or {},
-    AME.watch and AME.watch:Hidden()
+    AME.watch and AME.watch:Hidden(),
+    q and function(id)
+      return q:Worth(id)
+    end
   )
   self.pfListed = ns.Portfolio.Listed(holdings, function(house)
     return ns.Settings:AuctionCut(house)

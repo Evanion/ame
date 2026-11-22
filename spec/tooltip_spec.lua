@@ -83,11 +83,11 @@ describe("Tooltip.Lines", function()
   end)
 
   it("shows the signal with the Shift hint beside it, and says when the goblin AH pays better", function()
-    local buy = setmetatable({ signal = "buy", sellRate = 12 }, { __index = s })
+    local buy = setmetatable({ signal = "buy", soldPerDay = 12 }, { __index = s })
     local t = text(T.Lines(buy, { better = 0.16 }))
     assert.truthy(t:find("BUY = Shift: more", 1, true), t)
     assert.truthy(t:find("~12 sold/day", 1, true), t)
-    buy.sellRate = 2.5
+    buy.soldPerDay = 2.5
     assert.truthy(text(T.Lines(buy, {})):find("~2.5 sold/day", 1, true))
     assert.truthy(t:find("Sells 16% better at the goblin AH, after its cut", 1, true), t)
     local rows = T.Lines(buy, { better = 0.16, house = "Horde AH" })

@@ -3,7 +3,7 @@
 --   holdings = { [charKey] = { bags = { [itemID] = qty }, bank = {...}, auctions = {...}, t = time } }
 --   held     = Holdings.Map of them (Holdings.Of("owned"))
 --   basis    = Ledger:CostBasis()  { [itemID] = { units, unit } }
---   items    = market index items  { [itemID] = { market, signal, sellRate, ... } }
+--   items    = market index items  { [itemID] = { market, signal, soldPerDay, ... } }
 -- Positions without a market price are left out (not tradeable or never seen on the AH).
 local _, ns = ...
 
@@ -38,25 +38,31 @@ function Portfolio.Listed(holdings, cut, items)
   return out
 end
 
--- what one unit is worth: its value when real auction outcomes say how often it sells (SellThrough.Apply), else the
--- market price
-local function worth(s)
-  return s.value or s.market
+-- what one unit is worth, from the index: what selling it nets - listed (s.net: after the cut and the deposit, as
+-- often as listings fail) or at a vendor, whichever is more (Quote:Worth's rule)
+function Portfolio.Worth(s)
+  local n, v = s.net, s.vendorPrice
+  if v and v > 0 and (not n or v > n) then
+    return v
+  end
+  return n
 end
 
 -- positions sorted by value, plus totals { value, cost (of the part with a known cost), unrealized, positions,
 -- hidden, hiddenValue }. held: what you own, as Holdings.Map counts it (Holdings.Of("owned")). hide (optional):
--- items left out (hidden from lists), counted in hidden / hiddenValue.
-function Portfolio.Build(held, basis, items, hide)
+-- items left out (hidden from lists), counted in hidden / hiddenValue. worth(itemID, s) (optional): what one unit is
+-- worth (the view passes Quote:Worth; default Portfolio.Worth)
+function Portfolio.Build(held, basis, items, hide, worthOf)
   local rows = {}
   local totals = { value = 0, cost = 0, unrealized = 0, positions = 0, hidden = 0, hiddenValue = 0 }
   for itemID, h in pairs(held or {}) do
     local s = items and items[itemID]
-    if s and s.market and h.qty > 0 and hide and hide[itemID] then
-      totals.hidden, totals.hiddenValue = totals.hidden + 1, totals.hiddenValue + worth(s) * h.qty
-    elseif s and s.market and h.qty > 0 then
+    local each = s and s.market and (worthOf and worthOf(itemID, s) or (not worthOf and Portfolio.Worth(s))) or nil
+    if each and h.qty > 0 and hide and hide[itemID] then
+      totals.hidden, totals.hiddenValue = totals.hidden + 1, totals.hiddenValue + each * h.qty
+    elseif each and h.qty > 0 then
       local b = basis and basis[itemID]
-      local value = worth(s) * h.qty
+      local value = each * h.qty
       local row = {
         itemID = itemID,
         qty = h.qty,
@@ -65,15 +71,15 @@ function Portfolio.Build(held, basis, items, hide)
         value = value,
         signal = s.signal,
         signalRank = s.signalRank,
-        sellRate = s.sellRate,
-        daysToSell = s.sellRate and s.sellRate > 0 and h.qty / s.sellRate or nil,
+        soldPerDay = s.soldPerDay,
+        daysToSell = s.soldPerDay and s.soldPerDay > 0 and h.qty / s.soldPerDay or nil,
       }
       if b then
         -- cost is known for the units bought on the AH (the rest were looted, crafted...)
         local known = math.min(b.units, h.qty)
         row.unitCost = b.unit
         row.cost = known * b.unit
-        row.unrealized = known * (worth(s) - b.unit)
+        row.unrealized = known * (each - b.unit)
         totals.cost = totals.cost + row.cost
         totals.unrealized = totals.unrealized + row.unrealized
       end

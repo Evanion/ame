@@ -19,7 +19,8 @@ Arbitrage.DEFAULT_CUT = { Alliance = 0.05, Horde = 0.05, Neutral = 0.15 }
 -- buy, sell: market indexes ({ items = { [itemID] = summary } }, summaries have min, market, qty, day)
 -- opts: cut (fraction), minProfit (copper), minMargin (fraction), maxAge (days), today (day number),
 --       maxMargin (fraction, default Arbitrage.MAX_MARGIN; false: no limit), sortKey ("profit" default), ascending
--- returns rows { itemID, buy, sell, fee, profit, margin, buyQty, sellQty, age }, and how many routes were left out
+-- returns rows { itemID, buy, sell, fee, profit, margin, buyQty, sellQty, soldPerDay, age }, and how many routes
+-- were left out
 -- as likely gold transfers
 function Arbitrage.Find(buy, sell, opts)
   opts = opts or {}
@@ -57,7 +58,7 @@ function Arbitrage.Find(buy, sell, opts)
           margin = margin,
           buyQty = b.qty,
           sellQty = s.qty,
-          sellRate = s.sellRate,
+          soldPerDay = s.soldPerDay, -- at the sell house (Quote.UnitsPerDay)
           age = age,
           buyAge = buyAge,
           sellAge = sellAge,

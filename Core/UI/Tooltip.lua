@@ -240,8 +240,8 @@ function Tooltip.Lines(s, opts)
       parts[#parts + 1] = W.Percent(s.market / avg - 1, 0) .. Dim(" " .. L["vs %d-day avg"]:format(days))
     end
     parts[#parts + 1] = Dim(W.Count(s.qty or 0) .. " " .. L["listed"])
-    if s.sellRate then
-      local r = s.sellRate
+    if s.soldPerDay then
+      local r = s.soldPerDay
       local count = r >= 10 and W.Count(r) or (("%.1f"):format(r):gsub("%.0$", ""))
       parts[#parts + 1] = Dim(L["~%s sold/day"]:format(count))
     end

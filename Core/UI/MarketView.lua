@@ -59,7 +59,7 @@ local COLUMNS = {
     optional = true,
   },
   { key = "qty", drop = 3, label = L["Supply"], width = 52, format = "count", term = "qty" },
-  { key = "sellRate", label = L["Sales/day"], width = 58, format = "rate", term = "sellRate" },
+  { key = "soldPerDay", label = L["Sells/day"], width = 58, format = "rate", term = "sellRate" },
   {
     key = "signal",
     label = L["Signal"],

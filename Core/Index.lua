@@ -59,6 +59,7 @@ function AME:BuildIndex(store, shard, job)
   local through = ns.Posting and ns.Posting:SellThroughTotals(shard) or {}
   -- items nobody has listed: only the market's share of the scans' rate counts as sold (SellThrough.Prior)
   local prior = ns.SellThrough.Prior(through)
+  local factor = ns.Settings:Get("outlierFactor")
   local function vendorCheck(s)
     local vendor = ns.ItemCache.Get(s.itemID).sellPrice
     if through[s.itemID] then
@@ -66,6 +67,9 @@ function AME:BuildIndex(store, shard, job)
     else
       ns.SellThrough.Estimate(s, prior)
     end
+    -- the derived numbers every view shows (Quote): units sold a day, what listing one nets
+    s.soldPerDay = ns.Quote.UnitsPerDay(s)
+    s.net = ns.Quote.Net(s, cut, vendor and ns.Arbitrage.Deposit(vendor, house, hours) or 0, factor)
     if vendor and vendor > 0 then
       s.vendorPrice = vendor -- kept with the index (saved at logout), so a restored index has it without the client
       ns.Analytics.VendorCheck(s, vendor, cut, ns.Arbitrage.Deposit(vendor, house, hours))
@@ -83,35 +87,27 @@ function AME:BuildIndex(store, shard, job)
     vendorCheck,
     ns.Settings:Get("marketOverview") and AME.ItemClass or nil
   )
-  AME.DisenchantSignals(index, house, cut, hours, function()
+  AME.DisenchantSignals(index, shard, house, cut, hours, function()
     job:Checkpoint()
   end)
   return index
 end
 
 -- DE: gear worth more disenchanted than listed (Analytics.DisenchantCheck). After the build, so the materials are
--- priced from the same fresh index. Gear the client hasn't cached yet is skipped (checked again next build).
-function AME.DisenchantSignals(index, house, cut, hours, checkpoint)
+-- priced from the same fresh index (Quote:Disenchant, as the tooltip and Leveling value it). Gear the client hasn't
+-- cached yet is skipped (checked again next build).
+function AME.DisenchantSignals(index, shard, house, cut, hours, checkpoint)
   if not ns.Disenchant then
     return
   end
-  local function netSale(mat)
-    local m = index.items[mat]
-    if not (m and m.market) then
-      return nil
-    end
-    local vendor = ns.ItemCache.Get(mat).sellPrice
-    return m.market * (1 - cut) - (vendor and ns.Arbitrage.Deposit(vendor, house, hours) or 0)
-  end
+  local q = ns.Quote.For(shard, index, { house = house, fresh = false })
   local n = 0
   for id, s in pairs(index.items) do
-    local info = ns.ItemCache.Get(id)
-    if (info.classID == 2 or info.classID == 4) and s.market then
-      local quality = info.quality
-      if quality and quality >= 2 then
-        local value = ns.Disenchant.Value(info.level, quality, info.classID, netSale)
-        local vendor = info.sellPrice
-        ns.Analytics.DisenchantCheck(s, value, cut, vendor and ns.Arbitrage.Deposit(vendor, house, hours) or 0)
+    if s.market then
+      local de = q:Disenchant(id)
+      if de then
+        local vendor = ns.ItemCache.Get(id).sellPrice
+        ns.Analytics.DisenchantCheck(s, de.value, cut, vendor and ns.Arbitrage.Deposit(vendor, house, hours) or 0)
       end
     end
     n = n + 1

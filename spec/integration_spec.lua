@@ -2779,7 +2779,7 @@ describe("addon in a stubbed client", function()
       local v = ns.UI.marketView
       local col
       for c, h in ipairs(v.headers) do
-        if h.text.text:find("Sales/day") then
+        if h.text.text:find("Sells/day") then
           col = c
         end
       end
@@ -3124,7 +3124,11 @@ describe("addon in a stubbed client", function()
       v.scripts.OnShow(v)
       local row = ns.UI.pfRows[1]
       assert.are.equal(2589, row.itemID)
-      assert.are.equal(row.market * row.qty, ns.UI.pfTotals.value)
+      -- worth what selling it nets: after the cut and deposit (data core step 11), not the market price
+      assert.are.equal(row.value, ns.UI.pfTotals.value)
+      local q = ns.Quote.For(ns.AME:FactionShard(), ns.AME:FactionIndex(), { fresh = false })
+      assert.are.equal(q:Worth(2589) * row.qty, row.value)
+      assert.truthy(row.value < row.market * row.qty)
       assert.truthy(v.cards[1].value.text ~= "")
       assert.are.equal(2, ns.UI.pfListed.count)
       assert.are.equal(5 * 200 + 300, ns.UI.pfListed.value)

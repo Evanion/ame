@@ -137,8 +137,10 @@ describe("Portfolio", function()
     ["PvP:Alt"] = { bags = { [10] = 5 } },
   }
   local items = {
-    [10] = { market = 120, signal = "hold", sellRate = 40 },
-    [20] = { market = 5000, signal = "sell" },
+    -- net: what listing one nets after the cut and deposit (the index's s.net): what a unit is worth (data core
+    -- step 11: the portfolio values after the cut, as the Sell tab does)
+    [10] = { market = 120, net = 110, signal = "hold", soldPerDay = 40 },
+    [20] = { market = 5000, net = 4700, signal = "sell" },
     -- 30 has no market price: left out
   }
 
@@ -169,25 +171,27 @@ describe("Portfolio", function()
   it("values positions at market, with cost basis and unrealized profit where known", function()
     local rows, totals = P.Build(P.Merge(holdings), { [10] = { units = 8, unit = 100 } }, items)
     assert.are.equal(2, #rows)
-    assert.are.equal(20, rows[1].itemID) -- 5000 beats 20 * 120 = 2400
+    assert.are.equal(20, rows[1].itemID) -- 4700 beats 20 * 110 = 2200
     local silk = rows[2]
-    assert.are.equal(2400, silk.value)
+    assert.are.equal(2200, silk.value)
     assert.are.equal(800, silk.cost) -- 8 units bought at 100
-    assert.are.equal(160, silk.unrealized) -- 8 * (120 - 100)
+    assert.are.equal(80, silk.unrealized) -- 8 * (110 - 100)
     assert.are.equal(0.5, silk.daysToSell) -- 20 held / 40 a day
     assert.are.equal("hold", silk.signal)
     assert.is_nil(rows[1].cost) -- looted: no cost known
-    assert.are.equal(7400, totals.value)
-    assert.are.equal(160, totals.unrealized)
+    assert.are.equal(6900, totals.value)
+    assert.are.equal(80, totals.unrealized)
+    -- a vendor paying more than a listing nets: worth the vendor's price
+    assert.are.equal(130, P.Worth({ market = 120, net = 110, vendorPrice = 130 }))
   end)
 
   it("leaves hidden items out of the positions and totals, and counts them", function()
     local rows, totals = P.Build(P.Merge(holdings), { [10] = { units = 8, unit = 100 } }, items, { [10] = true })
     assert.are.equal(1, #rows)
     assert.are.equal(20, rows[1].itemID)
-    assert.are.equal(5000, totals.value)
+    assert.are.equal(4700, totals.value)
     assert.are.equal(0, totals.unrealized)
     assert.are.equal(1, totals.hidden)
-    assert.are.equal(2400, totals.hiddenValue)
+    assert.are.equal(2200, totals.hiddenValue)
   end)
 end)

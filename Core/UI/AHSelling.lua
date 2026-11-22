@@ -528,7 +528,7 @@ function S:RenderForm()
   end
   p.itemRate:ClearAllPoints()
   p.itemRate:SetPoint("LEFT", signal and p.signal or p.itemInfo, "RIGHT", 6, 0)
-  p.itemRate:SetText(s and s.sellRate and L["~%s sold/day"]:format(W.Count(s.sellRate)) or "")
+  p.itemRate:SetText(s and s.soldPerDay and L["~%s sold/day"]:format(W.Count(s.soldPerDay)) or "")
   local labels = { quick = L["Quick"], normal = L["Normal"], patient = L["Patient"] }
   for _, b in ipairs(p.picks) do
     local c = a and a[b.key]

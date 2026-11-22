@@ -23,3 +23,65 @@ describe("Quote", function()
     assert.is_nil(Q.CapPrice(nil, 4))
   end)
 end)
+
+describe("Quote nets", function()
+  local ns, Q, info
+  before_each(function()
+    ns = addon.load({ "Core/Init.lua", "Core/SellThrough.lua", "Core/Arbitrage.lua", "Core/Disenchant.lua" })
+    Q = ns.Quote
+    info = {}
+    ns.ItemCache = {
+      Get = function(id)
+        return info[id] or {}
+      end,
+      Name = function(id)
+        return "Item " .. id
+      end,
+    }
+  end)
+  local function quote(items)
+    return setmetatable(
+      { index = { items = items }, house = "Horde", cut = 0.05, hours = 24, factor = 4, fresh = {}, noFresh = true },
+      Q
+    )
+  end
+
+  it("nets a listing at the capped price after the cut and the deposit", function()
+    assert.are.equal(95 - 3, Q.Net({ market = 100 }, 0.05, 3, 4))
+    assert.are.equal(400 * 0.95, Q.Net({ market = 1000, avg30 = 100 }, 0.05, 0, 4)) -- a fantasy listing: capped
+    -- with sell-through: the deposit lost only as often as listings fail
+    assert.are.equal(0.5 * 95 - 0.5 * 10, Q.Net({ market = 100, sellThrough = 0.5, stWeight = 1 }, 0.05, 10, 4))
+    assert.is_nil(Q.Net({}, 0.05, 0, 4))
+  end)
+
+  it("sells where it nets most, never a bind-on-pickup item, and values a unit at that", function()
+    info[1] = { sellPrice = 10 } -- deposit 60% of 10 = 6 at 24 hours
+    info[2] = { sellPrice = 200 }
+    info[3] = { bind = 1 }
+    local q = quote({ [1] = { market = 100 }, [2] = { market = 100 }, [3] = { market = 100 } })
+    assert.are.equal(95 - 6, q:ListingNet(1))
+    assert.are.same({ 89, "ah" }, { q:BestSale(1) })
+    assert.are.same({ 200, "vendor" }, { q:BestSale(2) })
+    assert.are.same({ nil, "unsellable" }, { q:BestSale(3) })
+    assert.are.equal(89, q:Worth(1))
+    assert.is_nil(q:BestSale(4)) -- no price, no vendor
+  end)
+
+  it("values a disenchant at what its materials sell for", function()
+    info[50] = { classID = 4, quality = 2, level = 20 } -- green armor
+    local outcomes = ns.Disenchant.Outcomes(20, 2, 4)
+    local items = { [50] = { market = 1 } }
+    for _, o in ipairs(outcomes) do
+      items[o[1]] = { market = 1000 }
+    end
+    local de = quote(items):Disenchant(50)
+    local want = 0
+    for _, o in ipairs(outcomes) do
+      want = want + 950 * o[2] * (o[3] + o[4]) / 2 -- after the cut (no vendor price: no deposit)
+    end
+    assert.near(want, de.value, 1e-6)
+    assert.are.equal(950, de.outcomes[1].price)
+    assert.is_nil(quote({}):Disenchant(50).value) -- a material without a price: no value
+    assert.is_nil(quote(items):Disenchant(1)) -- not gear
+  end)
+end)
