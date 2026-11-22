@@ -272,7 +272,7 @@ L["Clear"] = true
 L["Clear all"] = true
 L["Clear all filters"] = true
 L["Click a category to open it in the screener."] = true
-L["Click a listing to price just under it."] = true
+L["Click a listing to price just under it. The item's chart is in the main window beside the auction house."] = true
 L["Click a row for its best earners on the right. A profession counts once its window has been opened on that character."] = true
 L["Click a row for its breakdown: where each reagent comes from, what selling nets, and how much the market takes."] = true
 L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] = true
@@ -1048,6 +1048,7 @@ L["With your profession window open, adds the reagents of the selected recipe - 
 L["Within its usual range"] = true
 L["Without Auctionator, the auction house window gets a Shopping tab next to Buy, Sell and Auctions. Pick a list on the left and click Search all: AME searches each item in turn, as fast as the game allows, and shows how many you still need, the cheapest listing, how many are on sale at or under your top price, and what the rest costs. Click an item for its listings; Buy asks the game for the price, then Confirm buys it - the game wants a click for each purchase. The list counts down as you buy. Shift-click an item (in your bags, in chat) to search for it there, and Search the AH on AME's pages searches this tab too."] = true
 L["Worth"] = true
+L["Worth: all of it, on the AH after the cut, or at a vendor when that pays more."] = true
 L["You bought"] = true
 L["You get, after the %d%% cut"] = true
 L["You have %s"] = true
@@ -1169,7 +1170,7 @@ L["made in the queue"] = true
 L["mail"] = true
 L["mail %s"] = true
 L["mailbox"] = true
-L["make %s"] = true
+L["make"] = true
 L["make one in the main window or from the craft queue"] = true
 L["making saves %s each"] = true
 L["market"] = true

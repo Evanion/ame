@@ -11,8 +11,8 @@ local W = ns.Widgets
 local S = { offset = 0 }
 ns.AHSelling = S
 
-S.LIST_W = 260
-S.FORM_W = 280
+S.LIST_W = 300
+S.FORM_W = 260 -- the form's controls (its panel is 20 wider)
 
 local money = W.Money
 
@@ -171,18 +171,31 @@ function S:Create(ah)
       {
         key = "name",
         label = L["In your bags"],
-        width = 150,
+        width = 120,
         item = true,
         suffix = function(e)
-          local hint = ""
-          if e.craft then
-            hint = "  " .. W.Color("warn", L["make %s"]:format(ns.ItemCache.Name(e.craft.product) or "?"))
-          elseif e.signal == "vendor" then
-            hint = "  " .. W.Dim(L["vendor"])
+          return e.qty > 1 and W.Dim("  " .. W.Count(e.qty)) or ""
+        end,
+      },
+      -- the hint, a column of its own: make something worth more first (its product a link), disenchant it, vendor it
+      {
+        key = "hint",
+        label = "",
+        width = 96,
+        sortKey = false,
+        item = function(e)
+          return e.craft and e.craft.product or nil
+        end,
+        prefix = function()
+          return W.Color("warn", L["make"] .. " ")
+        end,
+        fallback = function(e)
+          if e.signal == "vendor" then
+            return W.Dim(L["vendor"])
           elseif e.signal == "disenchant" then
-            hint = "  " .. W.Color("warn", L["DE"])
+            return W.Color("disenchant", L["DE"])
           end
-          return (e.qty > 1 and W.Dim("  " .. W.Count(e.qty)) or "") .. hint
+          return ""
         end,
       },
       {
@@ -197,6 +210,7 @@ function S:Create(ah)
     fill = true,
     rows = 12,
     rowHeight = 20,
+    note = L["Worth: all of it, on the AH after the cut, or at a vendor when that pays more."],
     sort = { key = "worth", ascending = false },
     itemMenu = { hide = true }, -- right-click: the item menu as in the AME window, Hide included
     itemID = function(e)
@@ -212,10 +226,6 @@ function S:Create(ah)
       return e.signal == "vendor" and not e.craft and 0.6 or 1
     end,
   })
-  p.empty = W.Text(listInner, "GameFontDisableSmall")
-  p.empty:SetPoint("TOPLEFT", 6, -28)
-  p.empty:SetPoint("RIGHT", -6, 0)
-  p.empty:SetText(L["Nothing in your bags can be listed here."])
 
   -- the form, in a panel of its own
   local formPanel, form = ns.AHShopping.Panel(p, 10)
@@ -228,10 +238,14 @@ function S:Create(ah)
   p.item = W.ItemLink(form, { icon = 32, font = "GameFontNormal", top = true, maxWidth = S.FORM_W })
   p.item:SetPoint("TOPLEFT", 0, 0)
   p.icon, p.itemName = p.item.icon, p.item.name
+  -- under it: the market price, the signal as a badge, how many sell a day
   p.itemInfo = W.Text(form, "GameFontDisableSmall")
   p.itemInfo:SetPoint("TOPLEFT", p.item.name, "BOTTOMLEFT", 0, -3)
-  p.itemInfo:SetPoint("RIGHT", 0, 0)
   p.itemInfo:SetWordWrap(false)
+  p.signal = W.SignalBadge(form)
+  p.signal:SetPoint("LEFT", p.itemInfo, "RIGHT", 6, 0)
+  p.itemRate = W.Text(form, "GameFontDisableSmall")
+  p.itemRate:SetWordWrap(false)
   local priceHead = W.Text(form, "GameFontNormalSmall")
   priceHead:SetPoint("TOPLEFT", 0, -44)
   priceHead:SetText(L["Price each"])
@@ -265,9 +279,10 @@ function S:Create(ah)
       end
     end,
   })
+  p.qty:SetWidth(56)
   p.qty:SetPoint("TOPLEFT", 0, -13)
   local priceLabel = W.Text(inputs, "GameFontDisableSmall")
-  priceLabel:SetPoint("TOPLEFT", 72, 0)
+  priceLabel:SetPoint("TOPLEFT", 64, 0)
   priceLabel:SetText(L["Price each"])
   p.price = W.MoneyInput(inputs, L["gold"], function(copper, user)
     if user then
@@ -275,24 +290,37 @@ function S:Create(ah)
       S:RenderForm()
     end
   end)
-  p.price:SetWidth(100)
-  p.price:SetPoint("TOPLEFT", 72, -13)
+  p.price:SetWidth(90)
+  p.price:SetPoint("TOPLEFT", 64, -13)
   local durLabel = W.Text(inputs, "GameFontDisableSmall")
-  durLabel:SetPoint("TOPLEFT", 186, 0)
+  durLabel:SetPoint("TOPLEFT", 164, 0)
   durLabel:SetText(L["Duration"])
   p.duration = W.Dropdown(inputs, 80, durations(), function(v)
     S.duration = v
     S:Suggest()
   end, { neutral = true, default = self.duration })
-  p.duration:SetPoint("TOPLEFT", 186, -13)
-  p.deposit = W.Text(form, "GameFontHighlightSmall")
-  p.deposit:SetPoint("TOPLEFT", 0, -196)
-  p.deposit:SetPoint("RIGHT", 0, 0)
-  p.net = W.Text(form, "GameFontHighlightSmall")
-  p.net:SetPoint("TOPLEFT", p.deposit, "BOTTOMLEFT", 0, -4)
-  p.net:SetPoint("RIGHT", 0, 0)
+  p.duration:SetPoint("TOPLEFT", 164, -13)
+  -- the deposit and what you get: a label on the left, the money on the right
+  local function line(y)
+    local row = CreateFrame("Frame", nil, form)
+    row:SetHeight(16)
+    row:SetPoint("TOPLEFT", 0, y)
+    row:SetPoint("RIGHT", 0, 0)
+    row.label = W.Text(row, "GameFontDisableSmall")
+    row.label:SetPoint("LEFT", 0, 0)
+    row.value = W.Text(row, "GameFontHighlightSmall", "RIGHT")
+    row.value:SetPoint("RIGHT", 0, 0)
+    row.value:SetPoint("LEFT", row.label, "RIGHT", 6, 0)
+    row.value:SetWordWrap(false)
+    return row
+  end
+  p.depositRow = line(-196)
+  p.depositRow.label:SetText(L["Deposit"])
+  p.deposit = p.depositRow.value
+  p.netRow = line(-216)
+  p.net = p.netRow.value
   p.hint = W.Text(form, "GameFontHighlightSmall")
-  p.hint:SetPoint("TOPLEFT", p.net, "BOTTOMLEFT", 0, -8)
+  p.hint:SetPoint("TOPLEFT", p.netRow, "BOTTOMLEFT", 0, -8)
   p.hint:SetPoint("RIGHT", 0, 0)
   p.post = W.Button(form, L["Post"], S.FORM_W, 28, function()
     S:Post()
@@ -333,17 +361,12 @@ function S:Create(ah)
       },
     },
     fill = true,
-    bottom = 28,
     rows = 10,
     rowHeight = 20,
     onClick = function(r)
       S:Undercut(r)
     end,
   })
-  p.saleNote = W.Text(saleInner, "GameFontDisableSmall")
-  p.saleNote:SetPoint("BOTTOMLEFT", 6, 4)
-  p.saleNote:SetPoint("RIGHT", -6, 0)
-  p.saleNote:SetText(L["Click a listing to price just under it."])
 
   p:HookScript("OnShow", function()
     S:Refresh()
@@ -484,7 +507,7 @@ end
 function S:RenderList()
   local p = self.panel
   local items = self.items or {}
-  p.empty:SetShown(#items == 0)
+  p.bags:SetMessage(#items == 0 and L["Nothing in your bags can be listed here."] or nil)
   p.bags:SetData(items)
   p.bags:Render()
 end
@@ -497,17 +520,15 @@ function S:RenderForm()
   end
   p.item:SetItem(e.key, e.qty)
   local s = e.summary
-  local info = {}
-  if s and s.market then
-    info[#info + 1] = L["market %s"]:format(money(s.market))
+  p.itemInfo:SetText(s and s.market and L["market %s"]:format(money(s.market)) or "")
+  local signal = s and s.signal and s.signal ~= "none" and s.signal or nil
+  p.signal:SetShown(signal ~= nil)
+  if signal then
+    p.signal:SetSignal(signal)
   end
-  if s and s.signal and s.signal ~= "none" then
-    info[#info + 1] = W.Signal(s.signal)
-  end
-  if s and s.sellRate then
-    info[#info + 1] = L["~%s sold/day"]:format(W.Count(s.sellRate))
-  end
-  p.itemInfo:SetText(table.concat(info, W.Dim("  ·  ")))
+  p.itemRate:ClearAllPoints()
+  p.itemRate:SetPoint("LEFT", signal and p.signal or p.itemInfo, "RIGHT", 6, 0)
+  p.itemRate:SetText(s and s.sellRate and L["~%s sold/day"]:format(W.Count(s.sellRate)) or "")
   local labels = { quick = L["Quick"], normal = L["Normal"], patient = L["Patient"] }
   for _, b in ipairs(p.picks) do
     local c = a and a[b.key]
@@ -531,16 +552,11 @@ function S:RenderForm()
   p.duration:SetValue(self.duration)
   local qty = self.qty or 1
   local deposit = self:Deposit()
-  p.deposit:SetText(W.Dim(L["Deposit"] .. "  ") .. (deposit and money(deposit) or W.NONE))
-  if self.price then
-    local c = cut()
-    p.net:SetText(
-      W.Dim(L["You get, after the %d%% cut"]:format(W.CutPct(c)) .. "  ")
-        .. money(self.price * (e.commodity and qty or 1) * (1 - c))
-    )
-  else
-    p.net:SetText("")
-  end
+  p.deposit:SetText(deposit and money(deposit) or W.NONE)
+  local c = cut()
+  p.netRow.label:SetText(L["You get, after the %d%% cut"]:format(W.CutPct(c)))
+  p.netRow:SetShown(self.price ~= nil)
+  p.net:SetText(self.price and money(self.price * (e.commodity and qty or 1) * (1 - c)) or "")
   if e.craft then
     p.hint:SetText(W.Color("warn", ns.UI.CraftInsteadText(e.craft)))
   elseif e.where == "vendor" then
@@ -569,8 +585,14 @@ function S:RenderListings()
     message = L["none listed"]
   end
   p.listings:SetMessage(message)
+  -- the note under the listings, once there are some
+  local listed = book and #book.rows > 0
+  p.listings:SetNote(
+    listed
+        and L["Click a listing to price just under it. The item's chart is in the main window beside the auction house."]
+      or nil
+  )
   p.listings:Render()
-  p.saleNote:SetShown(book ~= nil and #book.rows > 0)
 end
 
 function S:Render()

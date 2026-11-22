@@ -6,7 +6,7 @@
 --   local t = ns.DataTable.New(parent, {
 --     columns = {
 --       { key = "name", label = "Item", width = 190, item = true },        -- icon + quality-coloured name
---         (suffix = function(d) return "  x5" end: text after the name)
+--         (suffix = function(d) return "  x5" end: text after the name; prefix: text before it)
 --       { key = "market", label = "Market", width = 86, format = "money" },
 --       { key = "x", label = function() return "dynamic" end, width = 60, text = function(d) return ... end },
 --       { key = "made", label = "Makes", width = 150, item = function(d) return d.product end },
@@ -714,7 +714,8 @@ local function itemCell(t, iconTex, col, d, itemID)
   iconTex:SetTexture(icon or 134400)
   iconTex:SetShown(itemID ~= nil)
   local fallback = col.fallback and col.fallback(d) or (itemID and ("item:" .. itemID)) or ""
-  return W.QualityText(quality, name or fallback) .. (col.suffix and col.suffix(d) or "")
+  local prefix = itemID and col.prefix and col.prefix(d) or ""
+  return prefix .. W.QualityText(quality, name or fallback) .. (col.suffix and col.suffix(d) or "")
 end
 
 -- a share cell: the bar over its track (full at col.max, 40% by default), in the accent
