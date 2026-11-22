@@ -596,8 +596,6 @@ steps above, each only when the user asks for it:
   - The Craft queue page's To-do table, per-step Buy / ✕ and totals heading.
   - Refine's "Queue the smelt".
   - Leveling's "Queue the steps" and its search.
-- **Profession bar**: sales rate and signal on line 1; "no price" plus the footnote on the recipe list.
-- **Who can make it**: the formula on the AH with its price; the header meta ("recipes from 38 players").
 - **Arbitrage**: a Columns button (hide columns, as the screener does).
 - **AH Shopping**: the Time left column, if the listing data needs more than drawing.
 - **Market Overview**: largest items as "18,400 ×" with "capped from X".

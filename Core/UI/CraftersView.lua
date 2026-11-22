@@ -1,6 +1,8 @@
 -- "Who can make it": a small window to search what your guildmates', trusted players' and your own characters can
--- craft (Crafters): one table of recipes (the product as an item link) with their crafters under them, and a Whisper
--- button per crafter (it opens the chat box to them with the item linked; you send it). Opened with /ame who [text],
+-- craft (Crafters): one table of recipes (the product as an item link), each with the recipe item that teaches it
+-- and its price on the AH, and their crafters under them, with a Whisper button per crafter (it opens the chat box to
+-- them with the item linked; you send it). The header says how many players the recipes came from. Opened with
+-- /ame who [text],
 -- from an item's right-click menu, and Shift on a craftable item's tooltip says who (V.MadeBy, a tooltip section).
 local _, ns = ...
 local L = ns.L
@@ -47,13 +49,17 @@ local function productOf(recipeID)
   return (r and r.product) or (d and d.product) or nil
 end
 
--- Pure: the window's lines for search results: a recipe line, then up to PER_RECIPE crafters under it.
+-- Pure: the window's lines for search results: a recipe line, the recipe items that teach it (the formula, plans,
+-- pattern: Recipes.TaughtBy) with their price on the AH, then up to PER_RECIPE crafters under it.
 -- A crafter line: name, note (your own character), seen (online, when last heard from), skill, and whether Whisper
--- shows (your own characters: log in there instead).
-function V.Lines(results)
+-- shows (your own characters: log in there instead). price(itemID) -> the item's AH price or nil (optional)
+function V.Lines(results, price)
   local lines = {}
   for _, r in ipairs(results) do
     lines[#lines + 1] = { kind = "recipe", text = r.name, n = #r.who, recipe = r.recipe, product = productOf(r.recipe) }
+    for _, t in ipairs(ns.Recipes.TaughtBy(r.recipe)) do
+      lines[#lines + 1] = { kind = "formula", item = t.item, recipe = r.recipe, price = price and price(t.item) }
+    end
     for k, c in ipairs(r.who) do
       if k > V.PER_RECIPE then
         lines[#lines + 1] = { kind = "more", text = L["+%d more"]:format(#r.who - V.PER_RECIPE) }
@@ -92,6 +98,16 @@ local COLUMNS = {
     width = 180,
     item = true,
     sortKey = false,
+    -- a recipe item: what it costs on the AH after its link
+    suffix = function(l)
+      if l.kind ~= "formula" then
+        return ""
+      end
+      if l.price then
+        return W.Dim("  ·  " .. L["on the AH for"] .. " ") .. W.Money(l.price)
+      end
+      return W.Dim("  ·  " .. L["not on the AH"])
+    end,
     fallback = function(l)
       if l.kind == "recipe" then
         return W.Color("gold", l.text)
@@ -110,6 +126,8 @@ local COLUMNS = {
     text = function(l)
       if l.kind == "recipe" then
         return W.Dim(L["%d can make it"]:format(l.n))
+      elseif l.kind == "formula" then
+        return W.Dim(L["recipe item"])
       end
       return W.Dim(l.seen or "")
     end,
@@ -139,7 +157,37 @@ local COLUMNS = {
   },
 }
 
-V.WIDTH, V.HEIGHT = 460, 440
+-- a line's item: a recipe's product, or the recipe item itself (nil for crafters and enchants)
+function V.ItemOf(l)
+  if l.kind == "recipe" then
+    return l.product
+  elseif l.kind == "formula" then
+    return l.item
+  end
+  return nil
+end
+
+-- Pure: the header's meta, from how many players the recipes came from ("" before any arrived)
+function V.Meta(players)
+  if not players or players == 0 then
+    return ""
+  end
+  return L["recipes from %d players · guild and trusted"]:format(players)
+end
+
+-- an item's price on your faction's auction house (the market index), or nil before there's one
+local function ahPrice()
+  local index = ns.AME and ns.AME:FactionIndex()
+  if not index then
+    return nil
+  end
+  local q = ns.Quote.For(ns.AME:FactionShard(), index)
+  return function(itemID)
+    return q:Price(itemID)
+  end
+end
+
+V.WIDTH, V.HEIGHT = 520, 460
 
 function V:Create()
   local f = CreateFrame("Frame", "AMECraftersFrame", UIParent, "BackdropTemplate")
@@ -158,6 +206,8 @@ function V:Create()
   local title = W.Text(f, "GameFontNormal")
   title:SetPoint("TOPLEFT", 12, -10)
   title:SetText(L["Who can make it"])
+  f.meta = W.Text(f, "GameFontDisableSmall", "RIGHT")
+  f.meta:SetPoint("TOPRIGHT", -30, -12)
   W.CloseButton(f, function()
     f:Hide()
   end):SetPoint("TOPRIGHT", -4, -4)
@@ -184,13 +234,12 @@ function V:Create()
     rows = 14,
     rowHeight = 20,
     note = L["Whisper opens the chat box to them with the item linked; you press Enter. Online first, then by when they were last heard from."],
-    itemID = function(l)
-      return l.kind == "recipe" and l.product or nil
-    end,
+    itemID = V.ItemOf,
     itemMenu = {},
     onClick = function(l)
-      if l.kind == "recipe" and l.product then
-        UI:ShowItem(l.product)
+      local item = V.ItemOf(l)
+      if item then
+        UI:ShowItem(item)
       end
     end,
   })
@@ -207,7 +256,8 @@ function V:Render()
   end
   local crafters = ns.Crafters.Shared()
   local results = crafters and crafters:Search(f.box:GetText()) or {}
-  local lines = V.Lines(results)
+  f.meta:SetText(V.Meta(crafters and crafters:Players()))
+  local lines = V.Lines(results, ahPrice())
   f.lines = lines
   f.table:SetData(lines)
   f.table:Render()
@@ -221,6 +271,9 @@ end
 
 function V:Open(text)
   local f = self.frame or self:Create()
+  if ns.CraftingData and ns.CraftingData.Load then
+    ns.CraftingData:Load() -- the recipe items that teach each recipe (the formula row)
+  end
   f:Show()
   f.box:SetText(text or "")
   if not text or text == "" then

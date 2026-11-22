@@ -6,6 +6,7 @@
 --
 -- Crafters.Encode / Decode are the message body (pure); Crafters.New(db) keeps what arrived. Who knows a recipe:
 -- Crafters:Who(recipeID, mine) -> { { name, owner, skill, t, mine, online } } (yours first, then online, then latest).
+-- Crafters:Players(): how many players (senders) the recipes came from.
 local _, ns = ...
 local Codec = ns.Codec
 
@@ -132,6 +133,18 @@ function Crafters:Who(recipeID, mine, online)
     return a.name < b.name
   end)
   return out
+end
+
+-- how many players the recipes came from: the senders (one player's characters count once)
+function Crafters:Players()
+  local owners, n = {}, 0
+  for name, c in pairs(self.db) do
+    local who = c.owner or name
+    if not owners[who] then
+      owners[who], n = true, n + 1
+    end
+  end
+  return n
 end
 
 -- every recipe anyone in the list knows: { [recipeID] = true }
