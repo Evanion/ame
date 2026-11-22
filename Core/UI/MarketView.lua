@@ -846,6 +846,9 @@ function UI:CreateMarketView(parent)
     self.mode:SetPoint("LEFT", bar, "LEFT", 0, 0)
     self.modeDrop:ClearAllPoints()
     self.modeDrop:SetPoint("LEFT", bar, "LEFT", 0, 0)
+    if self.shopMode then -- a shopping list is shown: the screener's controls stay out of its way at any width
+      UI:ScreenerControls(false)
+    end
   end
   v:SetCompact(slots.compact)
   -- Lay the toolbar out again when the screener is shown, and once more on the next frame: anchors set before the

@@ -1511,6 +1511,13 @@ describe("addon in a stubbed client", function()
       assert.is_true(v.shop:IsShown())
       assert.is_false(v.table.frame:IsShown())
       assert.is_false(v.search:IsShown())
+      assert.is_false(v.signalsShort:IsShown()) -- the narrow window's filters give way too
+      assert.is_false(v.more:IsShown())
+      assert.truthy(v.shop.heading.subtitle.text:find("rename, share or delete", 1, true))
+      v:SetCompact(true) -- the window narrowed while the list is shown: the screener's controls stay away
+      assert.is_false(v.signalsShort:IsShown())
+      assert.is_false(v.search:IsShown())
+      v:SetCompact(false)
       local rows = ns.UI.shopRows
       assert.are.equal(2589, rows[1].itemID)
       assert.are.equal(7, rows[1].missing)
@@ -1544,6 +1551,8 @@ describe("addon in a stubbed client", function()
       assert.is_false(v.shop:IsShown())
       assert.is_true(v.table.frame:IsShown())
       assert.is_true(v.search:IsShown())
+      assert.is_true(v.signals:IsShown()) -- each as the window's width has it
+      assert.is_false(v.signalsShort:IsShown())
     end)
 
     it("right-click menu on a row: hide an item, find it under Hidden, unhide it", function()

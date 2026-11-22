@@ -35,10 +35,6 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- the panel
 
-local function rowMoney(v)
-  return v and W.Money(v) or W.Dim("-")
-end
-
 local COLS = {
   { key = "name", label = L["Item"], width = 220, item = true, ascendingFirst = true },
   { key = "need", label = L["Need"], width = 54, format = "count" },
@@ -62,8 +58,9 @@ local COLS = {
     key = "market",
     label = L["Market"],
     width = 90,
+    money = true, -- exported as gold
     text = function(r)
-      local m = rowMoney(r.market)
+      local m = W.Money(r.market, true)
       if r.cheap then
         m = m .. " " .. W.Color("good", "*") -- at or under your top price
       end
@@ -75,16 +72,15 @@ local COLS = {
     label = L["Top price"],
     width = 86,
     drop = 2,
-    text = function(r)
-      return rowMoney(r.max)
-    end,
+    format = "money",
   },
   {
     key = "cost",
     label = L["Cost"],
     width = 96,
-    text = function(r)
-      return r.missing > 0 and rowMoney(r.cost) or ""
+    money = true,
+    text = function(r) -- nothing left to buy: nothing to pay
+      return r.missing > 0 and W.Money(r.cost, true) or W.NONE
     end,
   },
 }
@@ -96,9 +92,10 @@ function UI:CreateShoppingPanel(v)
   p:SetAllPoints()
   p:Hide()
   v.shop = p
-  p.title = W.Text(p, "GameFontNormal")
-  p.title:SetPoint("TOPLEFT", 0, -3)
-  p.title:SetWordWrap(false)
+  -- the list's name, and a dim reminder of where its own menu is
+  p.heading = W.PageHeading(p)
+  p.heading:SetPoint("TOPLEFT", 0, -2)
+  p.title = p.heading.title
   p.search = W.Button(p, L["Search the AH"], 110, 20, function()
     UI:SearchShoppingList()
   end)
@@ -118,7 +115,7 @@ function UI:CreateShoppingPanel(v)
       L["With your profession window open, adds the reagents of the selected recipe - as many times as you'll craft it."]
     )
   end)
-  p.title:SetPoint("RIGHT", p.reagents, "LEFT", -10, 0)
+  p.heading:SetPoint("RIGHT", p.reagents, "LEFT", -10, 0)
   p.table = ns.DataTable.New(p, {
     columns = COLS,
     rows = 14,
@@ -128,42 +125,66 @@ function UI:CreateShoppingPanel(v)
       return r.itemID
     end,
     sort = { key = "missing", ascending = false },
+    note = L["Hover a row for which characters hold it. Right-click an item to change the quantity, set a top price or remove it."],
     itemMenu = {
       extra = function(key)
         return UI:ShoppingItemEntries(key)
       end,
     },
+    -- which characters hold it, as a section of the item's tooltip
     tooltip = function(tip, r)
-      local any = false
-      for char, qty in pairs(r.chars or {}) do
-        if not any then
-          tip:AddLine(" ")
-          tip:AddLine(L["Held by"])
-          any = true
-        end
-        W.TipPair(tip, (char:gsub("^[^:]*:", "")), qty)
+      local chars = {}
+      for char in pairs(r.chars or {}) do
+        chars[#chars + 1] = char
       end
+      if #chars == 0 then
+        return
+      end
+      table.sort(chars)
+      local rows = {}
+      for i, char in ipairs(chars) do
+        rows[i] = { label = (char:gsub("^[^:]*:", "")), cells = { W.Thousands(r.chars[char]) } }
+      end
+      tip:AddLine(" ")
+      ns.Tooltip.AddRows(tip, { { section = { heading = L["Held by"], rows = rows } } })
     end,
   })
 end
 
--- show / hide the screener's own controls while a shopping list is shown
--- (each control comes back as it was: the compact layout hides some of them)
-local function screenerControls(v, on)
-  if v.shopMode == not on then
+-- The screener's own controls (search, filters, the table) give way to a shopping list: every one of them, the
+-- narrow window's short signal filter and More included. The category dropdown stays, since it picks the list.
+-- Back to the screener, each comes back as the window's width has it.
+local SCREENER_CONTROLS = {
+  "search",
+  "quality",
+  "minBox",
+  "maxBox",
+  "views",
+  "columns",
+  "signals",
+  "signalsShort",
+  "more",
+  "filtersLabel",
+  "chips",
+}
+function UI:ScreenerControls(on)
+  local v = self.marketView
+  if on then
+    if v.shopMode then
+      v.shopMode = false
+      for _, key in ipairs({ "search", "quality", "chips" }) do -- the rest follow the width (SetCompact)
+        v[key]:Show()
+      end
+      v.table.frame:Show()
+      v:SetCompact(v.slots.compact)
+    end
     return
   end
-  v.shopMode = not on
-  local controls =
-    { v.search, v.quality, v.minBox, v.maxBox, v.views, v.columns, v.signals, v.filtersLabel, v.chips, v.table.frame }
-  for _, f in ipairs(controls) do
-    if on then
-      f:SetShown(f.shownBeforeShop ~= false)
-    else
-      f.shownBeforeShop = f:IsShown()
-      f:Hide()
-    end
+  v.shopMode = true
+  for _, key in ipairs(SCREENER_CONTROLS) do
+    v[key]:Hide()
   end
+  v.table.frame:Hide()
 end
 
 function UI:RenderShopping()
@@ -172,15 +193,19 @@ function UI:RenderShopping()
   local p = v.shop
   if not sel then
     p:Hide()
-    screenerControls(v, true)
+    self:ScreenerControls(true)
     return false
   end
-  screenerControls(v, false)
+  self:ScreenerControls(false)
   p:Show()
   local index = ns.AME:FactionIndex()
   local rows, totals = ns.Shopping.Progress(sel.list.items, ns.Trading:Holdings(), index and index.items or {})
   self.shopRows, self.shopTotals = rows, totals
-  p.title:SetText(sel.list.name .. (sel.guild and W.Dim("  (" .. tostring(sel.list.owner) .. ")") or ""))
+  p.heading:Set(
+    sel.list.name .. (sel.guild and W.Dim("  (" .. tostring(sel.list.owner) .. ")") or ""),
+    sel.own and L["right-click the list in the sidebar to rename, share or delete it"]
+      or L["right-click the list in the sidebar to copy it"]
+  )
   p.reagents:SetShown(sel.own ~= nil)
   p.table:SetData(rows)
   p.table:Render()
@@ -215,7 +240,7 @@ end
 -- search the open auction house for what's still needed (Auctionator's shopping search when it's there)
 function UI:SearchShoppingList()
   if not ns.AME.ahOpen then
-    print("|cff33ccffAME|r " .. L["open the auction house first"])
+    ns.AME.Say(L["open the auction house first"])
     return
   end
   local keys = {}
@@ -251,6 +276,9 @@ local function recipeApi()
       name = function(i)
         return (GetCraftInfo(i))
       end,
+      product = function(i) -- what it makes (an enchant makes no item)
+        return GetCraftItemLink and ns.ItemIDFrom(GetCraftItemLink(i) or "")
+      end,
     }
   end
   if GetTradeSkillSelectionIndex and GetTradeSkillNumReagents then
@@ -264,6 +292,9 @@ local function recipeApi()
       name = function(i)
         return (GetTradeSkillInfo(i))
       end,
+      product = function(i)
+        return GetTradeSkillItemLink and ns.ItemIDFrom(GetTradeSkillItemLink(i) or "")
+      end,
     }
   end
   return nil
@@ -272,17 +303,25 @@ end
 function UI:AddRecipeReagents(listIndex)
   local sel = self:ShoppingSelected()
   listIndex = listIndex or (sel and sel.own)
-  local ok, recipe = pcall(ns.Shopping.Recipe, recipeApi())
+  local api = recipeApi()
+  local ok, recipe = pcall(ns.Shopping.Recipe, api)
+  local product
+  if ok and recipe and api.product then
+    local got, key = pcall(api.product, api.selected())
+    product = got and key or nil
+  end
   -- the modern profession window (WoW Forever, retail): the recipe picked in it
   local picked = ns.ProfessionBar and ns.ProfessionBar:SelectedRecipe()
   if (not (ok and recipe)) and picked and #picked.reagents > 0 then
     ok, recipe = true, { name = ns.ItemCache.Name(picked.product), reagents = picked.reagents }
+    product = picked.product
   end
   if not (ok and recipe) then
-    print("|cff33ccffAME|r " .. L["open your profession window and select a recipe first"])
+    ns.AME.Say(L["open your profession window and select a recipe first"])
     return
   end
-  W.Prompt("AME_SHOP_CRAFT", L["How many %s will you craft?"]:format(recipe.name or "?"), function(text)
+  local what = product and W.LinkText(product) or recipe.name or "?"
+  W.Prompt("AME_SHOP_CRAFT", L["How many %s will you craft?"]:format(what), function(text)
     local times = math.floor(tonumber(text) or 1)
     if times < 1 then
       return
@@ -295,6 +334,42 @@ function UI:AddRecipeReagents(listIndex)
       shopping():AddItem(i, r[1], r[2] * times)
     end
     UI:ShoppingChanged(i)
+  end)
+  UI.PromptLinks("AME_SHOP_CRAFT")
+end
+
+-- The game's popup shows the item's name as a link: its tooltip on hover, Shift-click links it. The popup frames are
+-- the game's own, shared by every popup, so the hover and clicks only act while one of AME's is shown.
+function UI.PromptLinks(id)
+  local dialog = StaticPopup_FindVisible and StaticPopup_FindVisible(id)
+  if not dialog or dialog.ameLinks then
+    return
+  end
+  dialog.ameLinks = true
+  if dialog.SetHyperlinksEnabled then
+    dialog:SetHyperlinksEnabled(true)
+  end
+  local function ours(self)
+    return type(self.which) == "string" and self.which:find("^AME_") ~= nil
+  end
+  dialog:HookScript("OnHyperlinkEnter", function(self, link)
+    local key = ours(self) and W.LinkKey(link)
+    if key then
+      GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+      W.SetItemTip(GameTooltip, key)
+      GameTooltip:Show()
+    end
+  end)
+  dialog:HookScript("OnHyperlinkLeave", function(self)
+    if ours(self) then
+      GameTooltip:Hide()
+    end
+  end)
+  dialog:HookScript("OnHyperlinkClick", function(self, link)
+    local key = ours(self) and W.LinkKey(link)
+    if key then
+      W.ItemLinkClicked(key)
+    end
   end)
 end
 
@@ -322,7 +397,7 @@ function UI:PromptNewShoppingList(key)
     local i, why = shopping():AddList(name)
     if not i then
       if why then
-        print("|cff33ccffAME|r " .. why)
+        ns.AME.Say("%s", why)
       end
       return
     end
@@ -420,6 +495,7 @@ function UI:ShoppingListMenu(anchor, i)
     return
   end
   W.Menu(anchor, {
+    { text = W.Color("gold", l.name), disabled = true }, -- which list, as the design heads it
     {
       text = L["Add reagents"],
       func = function()
@@ -446,6 +522,7 @@ function UI:ShoppingListMenu(anchor, i)
         UI:ShoppingChanged()
       end,
     },
+    { separator = true },
     {
       text = W.Color("bad", L["Delete"]),
       func = function()

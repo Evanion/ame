@@ -58,7 +58,7 @@ read_globals = {
   -- professions (shopping lists: a recipe's reagents)
   "CraftFrame", "GetCraftSelectionIndex", "GetCraftNumReagents", "GetCraftReagentItemLink", "GetCraftReagentInfo",
   "GetCraftInfo", "GetTradeSkillSelectionIndex", "GetTradeSkillNumReagents", "GetTradeSkillReagentItemLink",
-  "GetTradeSkillReagentInfo", "GetTradeSkillInfo", "StaticPopup_FindVisible",
+  "GetTradeSkillReagentInfo", "GetTradeSkillInfo", "StaticPopup_FindVisible", "GetTradeSkillItemLink", "GetCraftItemLink",
   -- optional integrations
   "Auctionator", "LibStub",
 }
