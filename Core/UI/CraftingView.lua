@@ -89,29 +89,7 @@ end
 
 -- a recipe as Crafting wants it: the recorded catalog first (what the game showed), else the shipped data
 local function recipeFor(profession, id)
-  local recorded = ns.Professions:Catalog(profession)
-  local r = recorded and recorded[id]
-  if r then
-    return {
-      id = id,
-      profession = profession,
-      product = r.out,
-      made = ((r.min or 1) + (r.max or r.min or 1)) / 2,
-      reagents = r.r or {},
-      cooldown = ns.CraftingData:Cooldown(id),
-    }
-  end
-  local d = ns.CraftingData:Recipe(id)
-  if d then
-    return {
-      id = id,
-      profession = d.profession,
-      product = d.product,
-      made = d.made,
-      reagents = d.reagents,
-      cooldown = ns.CraftingData:Cooldown(id),
-    }
-  end
+  return ns.Recipes.Get(id, profession)
 end
 
 -- Crafting's prices and rules for the faction auction house (index): its quote (Core/Quote.lua: the market with a

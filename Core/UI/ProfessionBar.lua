@@ -19,82 +19,12 @@ PB.QUEUE_W = 420
 ---------------------------------------------------------------------------------------------------------------------
 -- data
 
--- a recipe as Crafting and CraftQueue take it: { id, product, made, reagents = { {itemID, n}, ... } }
-local function shape(id, r)
-  if not r then
-    return nil
-  end
-  local reagents = {}
-  for _, g in ipairs(r.r or {}) do
-    reagents[#reagents + 1] = { g[1], g[2] }
-  end
-  return { id = id, product = r.out, made = ((r.min or 1) + (r.max or r.min or 1)) / 2, reagents = reagents }
+-- recipes by ID and what makes an item: Core/Recipes.lua
+PB.Recipe = function(recipeID)
+  return ns.Recipes.Recorded(recipeID)
 end
-
--- a recipe by ID: from the open profession window, else as one of your characters' windows recorded it
-local recipeCache = {}
-function PB.Recipe(recipeID)
-  if not recipeID then
-    return nil
-  end
-  local live = C_TradeSkillUI and ns.Professions.Recipe(C_TradeSkillUI, recipeID)
-  if live and live.out then
-    local r = shape(recipeID, live)
-    recipeCache[recipeID] = r
-    return r
-  end
-  if recipeCache[recipeID] then
-    return recipeCache[recipeID]
-  end
-  for _, c in pairs(AME_DB and AME_DB.crafting and AME_DB.crafting.catalog or {}) do
-    local r = c.recipes and c.recipes[recipeID]
-    if r then
-      recipeCache[recipeID] = shape(recipeID, r)
-      return recipeCache[recipeID]
-    end
-  end
-  return nil
-end
-
--- item -> { { recipe, crafters = { charKey, ... } } }: what your characters' windows recorded (built once per change)
-local producers, producersKey
-local function producerMap()
-  local db = AME_DB and AME_DB.crafting or {}
-  local key = 0
-  for _, c in pairs(db.catalog or {}) do
-    key = key + (c.at or 0)
-  end
-  for _, ch in pairs(db.chars or {}) do
-    for _, p in pairs(ch.professions or {}) do
-      key = key + (p.at or 0)
-    end
-  end
-  if producers and producersKey == key then
-    return producers
-  end
-  producers, producersKey = {}, key
-  for skillLine, c in pairs(db.catalog or {}) do
-    for id, r in pairs(c.recipes or {}) do
-      if r.out then
-        local crafters = {}
-        for charKey, ch in pairs(db.chars or {}) do
-          local p = ch.professions and ch.professions[skillLine]
-          if p and p.learned and p.learned[id] then
-            crafters[#crafters + 1] = charKey
-          end
-        end
-        table.sort(crafters)
-        local list = producers[r.out] or {}
-        producers[r.out] = list
-        list[#list + 1] = { recipe = id, crafters = crafters }
-      end
-    end
-  end
-  return producers
-end
-
-function PB.Producers(itemID)
-  return producerMap()[itemID] or {}
+PB.Producers = function(itemID)
+  return ns.Recipes.Producers(itemID)
 end
 
 -- prices at your faction's auction house (what Crafting values with), or nil before there's a market index
