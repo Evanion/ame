@@ -202,6 +202,37 @@ function Professions:RecordSpellbook()
   chars[key].spellbook = Professions.Spellbook(_G.GetProfessions, _G.GetProfessionInfo)
 end
 
+-- A recipe learned (from a recipe item, say) with no profession window open, which Record can't read: marked as
+-- learned for its profession (the one whose recorded catalog has it, else the crafting data's)
+function Professions:Learned(recipeID)
+  recipeID = plain(recipeID)
+  local db = AME_DB.crafting
+  local char = db and db.chars and db.chars[ns.Trading.CharKey()]
+  if not (type(recipeID) == "number" and char and char.professions) then
+    return
+  end
+  local skillLine
+  for line, c in pairs(db.catalog or {}) do
+    if c.recipes and c.recipes[recipeID] then
+      skillLine = line
+    end
+  end
+  if not skillLine and ns.CraftingData and ns.CraftingData.data then
+    local r = ns.CraftingData:Recipe(recipeID)
+    skillLine = r and r.profession
+  end
+  local p = skillLine and char.professions[skillLine]
+  if not p then
+    return
+  end
+  p.learned = p.learned or {}
+  p.learned[recipeID] = true
+  self.changed = true
+  if self.onChange then
+    self.onChange(skillLine)
+  end
+end
+
 -- Listen for profession windows (and skill changes). Reading waits for the burst of events to settle.
 function Professions:Start()
   if self.frame or not C_TradeSkillUI then
@@ -219,10 +250,13 @@ function Professions:Start()
   }) do
     pcall(f.RegisterEvent, f, e) -- tolerate events a client flavour doesn't have
   end
-  f:SetScript("OnEvent", function(_, event)
+  f:SetScript("OnEvent", function(_, event, arg)
     if event == "SKILL_LINES_CHANGED" then
       Professions:RecordSpellbook()
       return
+    end
+    if event == "NEW_RECIPE_LEARNED" then
+      Professions:Learned(arg) -- then read the window too, when one is open
     end
     if pending then
       return

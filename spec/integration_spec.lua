@@ -1135,6 +1135,11 @@ describe("addon in a stubbed client", function()
         local list = ns.AME.shopping:Lists()[#ns.AME.shopping:Lists()]
         assert.are.equal("First Aid to 75", list.name)
         assert.truthy(list.items[2589].need > 0)
+        -- a recipe learned with no profession window open (from a recipe item): marked as known for its profession
+        AME_DB.crafting.catalog[129].recipes[3276] = { out = 2581, min = 1, max = 1, r = { { 2589, 2 } } }
+        ns.Professions:Learned(3276)
+        assert.is_true(AME_DB.crafting.chars[key].professions[129].learned[3276])
+        ns.Professions:Learned(424242) -- a recipe of no recorded profession: nothing to mark
         _G.AME_CraftingData = nil
       end)
 

@@ -512,7 +512,12 @@ function UI:CraftingModeRows(m)
   if self.craftChar then
     chars = { [self.craftChar] = m.chars[self.craftChar] }
   end
-  local rows = m.craft:RecipesToBuy(listings, teaches, recipe, chars)
+  -- the character you're on: the game itself says what it knows (a recipe learned since its window last opened)
+  local me = ns.Trading.CharKey()
+  local function knows(key, spell)
+    return key == me and _G.IsPlayerSpell and _G.IsPlayerSpell(spell) or false
+  end
+  local rows = m.craft:RecipesToBuy(listings, teaches, recipe, chars, knows)
   -- who else already makes it: your guild and trusted players (Crafters); the toolbar's toggle keeps only the gaps
   local shared = ns.Crafters and ns.Crafters.Shared()
   local out = {}

@@ -253,7 +253,8 @@ end
 -- chars: { [charKey] = { professions = { [profession] = { skill, learned = { [spellID] = true } } } } }.
 -- -> { { item, price, spell, recipe, eval, learners = { { char, skill, ready } }, payback (days) }, ... } best first:
 -- learnable now before needing skill, then by payback. Recipes nobody could learn are left out; known ones too.
-function Crafting:RecipesToBuy(listings, teaches, recipe, chars)
+-- knows(charKey, spellID) -> true: the game says that character knows it (optional; recorded data can lag behind)
+function Crafting:RecipesToBuy(listings, teaches, recipe, chars, knows)
   local out = {}
   for _, l in ipairs(listings) do
     local t = teaches(l.item)
@@ -263,7 +264,7 @@ function Crafting:RecipesToBuy(listings, teaches, recipe, chars)
       for key, c in pairs(chars or {}) do
         local p = c.professions and c.professions[t.profession]
         if p then
-          if p.learned and p.learned[spell] then
+          if (p.learned and p.learned[spell]) or (knows and knows(key, spell)) then
             known = true
           else
             learners[#learners + 1] = { char = key, skill = p.skill or 0, ready = (p.skill or 0) >= (t.rank or 0) }

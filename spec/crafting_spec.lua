@@ -140,6 +140,12 @@ describe("Crafting", function()
     -- a recipe one of your characters already knows isn't recommended
     chars["PvP:Alt"].professions[171].learned[2] = true
     assert.are.equal(0, #c:RecipesToBuy({ { item = 900, price = 120000 } }, teaches, recipe, chars))
+    -- nor one the game says a character knows, though its recorded profession hasn't caught up
+    chars["PvP:Alt"].professions[171].learned[2] = nil
+    local function knows(key, spell)
+      return key == "PvP:Alt" and spell == 2
+    end
+    assert.are.equal(0, #c:RecipesToBuy({ { item = 900, price = 120000 } }, teaches, recipe, chars, knows))
   end)
 end)
 
