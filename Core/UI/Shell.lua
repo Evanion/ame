@@ -720,6 +720,17 @@ function UI.Slots(v, opts)
     self:Layout()
   end
 
+  -- a bar's height changed (a header of cards that is shorter in a narrow window)
+  function s:SetBarHeight(frame, h)
+    for _, b in ipairs(bars) do
+      if b.frame == frame then
+        b.h = h
+        frame:SetHeight(h)
+      end
+    end
+    self:Layout()
+  end
+
   function s:SetCompact(on)
     self.compact = on and true or false
     self.details = false

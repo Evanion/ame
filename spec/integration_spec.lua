@@ -1261,6 +1261,14 @@ describe("addon in a stubbed client", function()
         -- the period changes the cards' comparison
         ov.period:Select(1)
         assert.are.equal(1, ns.UI.ovPeriod)
+        assert.are.equal("1 day", ov.sectorTable.headers[4].text.text) -- the categories' change, named by the period
+        assert.is_nil(ov.sectorTable.headers[1].text.text:find("|c", 1, true)) -- a plain header, not hand-coloured
+        -- narrow: smaller cards, Breadth gives way, the chart over the categories
+        ov:SetCompact(true)
+        assert.is_false(ov.cards[6]:IsShown())
+        assert.is_true(ov.mode:IsShown())
+        ov:SetCompact(false)
+        assert.is_true(ov.cards[6]:IsShown())
         -- a category opens the screener filtered to it
         local row = ov.sectorRows[1]
         assert.is_true(row:IsShown())

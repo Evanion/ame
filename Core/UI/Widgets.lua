@@ -18,6 +18,10 @@ W.COLORS = {
   rowHover = { 1, 1, 1, 0.08 }, -- list, menu and sidebar rows under the mouse
   rowSelected = { 0.2, 0.8, 1, 0.2 }, -- the picked row (accent; follows the theme)
   selected = { 0.2, 0.8, 1, 0.18 },
+  -- chart lines by what they show (data colours: they don't follow the theme)
+  chart = {
+    market = { 0.3, 0.85, 0.78, 1 }, -- the market price, and the Overview's index
+  },
 }
 
 -- Text colours by role ("RRGGBB"), and helpers for |c escapes (defined in Init.lua so chat lines can use them too)
@@ -750,22 +754,39 @@ function W.CardRow(parent, defs, opts)
     c:SetHeight(h)
     row.cards[i] = c
   end
+  -- the shown cards share the width (a narrow window can leave one out: card:Hide(), then row:Relayout())
   local function layout(width)
     if type(width) ~= "number" or width <= 0 then
       return
     end
-    local n = #row.cards
+    local shown = {}
+    for _, c in ipairs(row.cards) do
+      if c:IsShown() then
+        shown[#shown + 1] = c
+      end
+    end
+    local n = math.max(1, #shown)
     local w = (width - gap * (n - 1)) / n
-    for i, c in ipairs(row.cards) do
+    for i, c in ipairs(shown) do
       c:SetWidth(w)
       c:ClearAllPoints()
       c:SetPoint("TOPLEFT", (i - 1) * (w + gap), 0)
       c:Layout()
     end
   end
+  function row:Relayout()
+    layout(self:GetWidth())
+  end
   function row:SetCompact(on)
     for _, c in ipairs(self.cards) do
       c:SetCompact(on)
+    end
+  end
+  -- taller cards have room for the rising / falling bar and the note
+  function row:SetCardHeight(height)
+    self:SetHeight(height)
+    for _, c in ipairs(self.cards) do
+      c:SetHeight(height)
     end
   end
   row:SetScript("OnSizeChanged", function(_, width)

@@ -704,6 +704,12 @@ local function itemCell(t, iconTex, col, d, itemID)
   local name, _, quality, icon = W.ItemInfo(itemID or 0)
   if itemID and not name then
     t:RenderWhenLoaded(itemID)
+    -- the load callback doesn't always come (WoW Forever): also look again until the name arrives, and when the
+    -- row is hovered
+    t.redraw = t.redraw or function()
+      t:Render()
+    end
+    W.ItemNameOrLoad(itemID, t.redraw)
   end
   iconTex:SetTexture(icon or 134400)
   iconTex:SetShown(itemID ~= nil)

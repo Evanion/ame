@@ -9,11 +9,13 @@ local W = ns.Widgets
 local UI = ns.UI
 local DAY = ns.DAY
 
-local ROW_H = 16
+local ROW_H = 18 -- the lists' rows: denser than the screener's, so the lists fit under the chart
 local RIGHT_W = 400
 local LARGEST_ROWS = 3
-local MOVER_ROWS = 5
-local CATEGORY_ROWS = 12
+-- The chart keeps its height; the lists under it take what's left, more rows in a taller window. Narrow windows
+-- have a shorter chart over the categories.
+local CHART_H, CHART_H_COMPACT = 200, 130
+local KPI_H, KPI_H_COMPACT = 62, 42 -- tall enough for a card's breadth bar and note; compact cards have neither
 
 UI.MARKET_MODES = {
   { "screener", L["Screener"] },
@@ -24,6 +26,10 @@ local PERIODS = {
   { 7, L["7 days"] },
   { 30, L["30 days"] },
 }
+-- the period's name ("7 days"), the heading of what changed over it
+local function periodText(p)
+  return PERIODS[(p == 1 and 1) or (p == 30 and 3) or 2][2]
+end
 local CHARTS = {
   { "index", L["Market index"] },
   { "cpi", L["CPI"] },
@@ -118,92 +124,57 @@ function UI:ShowMarketCategory(classID)
   self:RefreshMarket(true)
 end
 
-local function panel(parent)
-  local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-  W.Skin(f, W.COLORS.panel)
-  return f
+-- A panel with a gold heading and a dim note after it ("Categories", "by listed value"); its content goes in
+-- panel.body, under the heading.
+local function headed(parent, title, note)
+  local p = W.Panel(parent)
+  p.head = W.PageHeading(p)
+  p.head:SetPoint("TOPLEFT", 8, -5)
+  p.head:SetPoint("RIGHT", -8, 0)
+  p.head:Set(title, note)
+  p.body = CreateFrame("Frame", nil, p)
+  p.body:SetPoint("TOPLEFT", 6, -24)
+  p.body:SetPoint("BOTTOMRIGHT", -6, 4)
+  return p
 end
 
-local function heading(parent, text, note)
-  local h = W.Text(parent, "GameFontNormal")
-  h:SetPoint("TOPLEFT", 8, -6)
-  h:SetText(text)
-  if note then
-    local n = W.Text(parent, "GameFontDisableSmall")
-    n:SetPoint("LEFT", h, "RIGHT", 6, 0)
-    n:SetText(note)
-    h.note = n
+-- the summary's change field for the picked period
+local function changeKey()
+  return UI.ovPeriod == 1 and "change1" or UI.ovPeriod == 30 and "change30" or "change7"
+end
+
+-- a change as the cards show it: the signed percent (the card colours it) and which way it went
+local function delta(x)
+  if not x then
+    return nil, "mute"
   end
-  return h
+  return ("%+.1f%%"):format(x * 100), x > 0.0005 and "up" or x < -0.0005 and "down" or "mute"
 end
 
--- A fixed list of rows under a heading: cols = { { width, justify }, ... } after the first (which takes the rest).
--- rows[i].cells[k] are font strings; rows[i].data is what the row shows (onClick(data), tooltip(tip, data)).
-local function rowList(parent, count, cols, top, opts)
-  opts = opts or {}
-  local rows = {}
-  for i = 1, count do
-    local r = CreateFrame("Button", nil, parent)
-    r:SetHeight(ROW_H)
-    r:SetPoint("TOPLEFT", 6, top - (i - 1) * ROW_H)
-    r:SetPoint("RIGHT", -6, 0)
-    local hl = r:CreateTexture(nil, "HIGHLIGHT")
-    hl:SetAllPoints(r)
-    W.Fill(hl, W.COLORS.rowHover)
-    r.cells = {}
-    local right = -4
-    for k = #cols, 1, -1 do
-      local c = cols[k]
-      local fs = W.Text(r, c.font or "GameFontHighlightSmall", c.justify or "RIGHT")
-      fs:SetWidth(c.width)
-      fs:SetPoint("RIGHT", right, 0)
-      right = right - c.width - 6
-      r.cells[k + 1] = fs
-    end
-    local name = W.Text(r, "GameFontHighlightSmall", "LEFT")
-    name:SetPoint("LEFT", 4, 0)
-    name:SetPoint("RIGHT", right, 0)
-    W.Truncated(name)
-    r.cells[1] = name
-    if opts.bar then -- a share bar in the column it names
-      r.bar = r:CreateTexture(nil, "ARTWORK")
-      r.bar:SetHeight(7)
-      r.bar:SetPoint("LEFT", r.cells[opts.bar], "LEFT", 0, 0)
-      W.Fill(r.bar, W.COLORS.accent)
-    end
-    r:SetScript("OnClick", function(self)
-      if self.data and opts.onClick then
-        opts.onClick(self.data)
-      end
-    end)
-    if opts.tooltip then
-      W.Tooltip(r, function(tip, self)
-        if not self.data then
-          return false
-        end
-        return opts.tooltip(tip, self.data)
-      end)
-    end
-    r:Hide()
-    rows[i] = r
-  end
-  return rows
-end
-
--- an item's name; one the client hasn't loaded yet is asked for, and the overview redraws once it arrives
-local function redrawOverview()
-  UI:RenderOverview()
-end
-local function itemName(key)
-  return W.ItemNameOrLoad(key, redrawOverview)
-end
-
-local function changeText(x)
-  return x and W.Percent(x) or W.Dim("-")
-end
-
-local function itemTip(tip, s)
-  W.SetItemTip(tip, s.itemID or s.id)
+-- Risers or fallers: a list without a header row, as tall as its panel. Click an item for its chart.
+local function moverTable(parent)
+  return ns.DataTable.New(parent, {
+    bare = true,
+    fill = true,
+    rows = 5,
+    rowHeight = ROW_H,
+    columns = {
+      { key = "name", label = L["Item"], width = 120, item = true },
+      { key = "market", label = L["Market"], width = 70, format = "money" },
+      {
+        key = "change",
+        label = L["Change"],
+        width = 52,
+        text = function(s)
+          return W.Percent(s[changeKey()])
+        end,
+      },
+    },
+    itemID = function(s)
+      return s.itemID
+    end,
+    itemMenu = {},
+  })
 end
 
 function UI:CreateMarketOverview(area)
@@ -212,7 +183,7 @@ function UI:CreateMarketOverview(area)
   v:Hide()
   self.overviewView = v
   self.ovPeriod, self.ovChart = 7, "index"
-  local slots = UI.Slots(v, { toolbar = 22, header = 42, headerBelow = true, status = true })
+  local slots = UI.Slots(v, { toolbar = 22, header = KPI_H, headerBelow = true, status = true })
   v.slots = slots
   local bar = slots.toolbar
 
@@ -247,7 +218,7 @@ function UI:CreateMarketOverview(area)
   end, { neutral = true, default = false })
   v.moverClass:SetPoint("LEFT", v.moversLabel, "RIGHT", 6, 0)
 
-  -- the stat cards
+  -- the headline figures
   v.cardRow = W.CardRow(slots.header, {
     { L["Market index"], term = "mxIndex" },
     { L["CPI"], term = "mxCpi" },
@@ -255,28 +226,49 @@ function UI:CreateMarketOverview(area)
     { L["Turnover (estimate)"], term = "mxTurnover" },
     { L["Auctions"], term = "mxAuctions" },
     { L["Breadth"], term = "mxBreadth" },
-  }, { width = UI.WIDTH - 20 })
+  }, { width = UI.WIDTH - 20, height = KPI_H })
   v.cardRow:SetPoint("TOPLEFT", 0, 0)
   v.cardRow:SetPoint("RIGHT", 0, 0)
   v.cards = v.cardRow.cards
 
   local main = slots.main
-  -- right column: categories, the largest items
+  -- right column: categories (as tall as there's room for), the largest items under them
   v.right = CreateFrame("Frame", nil, main)
   v.right:SetPoint("TOPRIGHT", 0, 0)
   v.right:SetPoint("BOTTOMRIGHT", 0, 0)
   v.right:SetWidth(RIGHT_W)
-  v.largest = panel(v.right)
+  v.largest = headed(v.right, L["Largest by value"], L["what the total leans on"])
   v.largest:SetPoint("BOTTOMLEFT", 0, 0)
   v.largest:SetPoint("BOTTOMRIGHT", 0, 0)
   v.largest:SetHeight(28 + LARGEST_ROWS * ROW_H)
-  heading(v.largest, L["Largest by value"], L["what the total leans on"])
-  v.largestRows = rowList(v.largest, LARGEST_ROWS, { { width = 120 }, { width = 110 } }, -24, {
-    onClick = function(t)
-      UI:ShowItem(t.id)
+  v.largestTable = ns.DataTable.New(v.largest.body, {
+    bare = true,
+    rows = LARGEST_ROWS,
+    rowHeight = ROW_H,
+    columns = {
+      { key = "name", label = L["Item"], width = 120, item = true },
+      {
+        key = "qty",
+        label = L["Listed"],
+        width = 120,
+        text = function(t)
+          return W.Count(t.qty) .. " x " .. W.Money(t.price, true)
+        end,
+      },
+      {
+        key = "value",
+        label = L["Value"],
+        width = 110,
+        text = function(t)
+          return W.BigMoney(t.value, 10000) .. (t.raw and W.Dim(" " .. L["capped"]) or "")
+        end,
+      },
+    },
+    itemID = function(t)
+      return t.id
     end,
+    itemMenu = {},
     tooltip = function(tip, t)
-      W.SetItemTip(tip, t.id)
       tip:AddLine(" ")
       if t.raw then
         tip:AddLine(
@@ -295,26 +287,54 @@ function UI:CreateMarketOverview(area)
       end
     end,
   })
+  v.largestRows = v.largestTable.rows
 
-  v.sectors = panel(v.right)
+  v.sectors = headed(v.right, L["Categories"], L["by listed value"])
   v.sectors:SetPoint("TOPLEFT", 0, 0)
   v.sectors:SetPoint("TOPRIGHT", 0, 0)
   v.sectors:SetPoint("BOTTOM", v.largest, "TOP", 0, UI.SLOT_GAP)
-  heading(v.sectors, L["Categories"], L["by listed value"])
-  local SECTOR_COLS = {
-    { width = 64 }, -- value
-    { width = 76 }, -- share: a bar on the left, the % on the right
-    { width = 46 }, -- change
-    { width = 64 }, -- turnover
-  }
-  v.sectorHead = rowList(v.sectors, 1, SECTOR_COLS, -24)[1]
-  v.sectorHead:EnableMouse(false)
-  for k, text in ipairs({ L["Category"], L["Value"], L["Share"], L["Change"], L["Turnover"] }) do
-    v.sectorHead.cells[k]:SetText(W.Color("gold", text))
-  end
-  v.sectorHead:Show()
-  v.sectorRows = rowList(v.sectors, CATEGORY_ROWS, SECTOR_COLS, -24 - ROW_H - 2, {
-    bar = 3,
+  v.sectorTable = ns.DataTable.New(v.sectors.body, {
+    fill = true,
+    rows = 8,
+    rowHeight = ROW_H,
+    flex = "name",
+    note = L["Click a category to open it in the screener."],
+    columns = {
+      {
+        key = "name",
+        label = L["Category"],
+        width = 90,
+        align = "LEFT",
+        text = function(c)
+          return c.name
+        end,
+      },
+      {
+        key = "value",
+        label = L["Value"],
+        width = 64,
+        text = function(c)
+          return W.BigMoney(c.value, 10000)
+        end,
+      },
+      { key = "share", label = L["Share"], width = 100, format = "share" },
+      { -- the change over the period picked on the toolbar, named after it
+        key = "change",
+        label = function()
+          return periodText(UI.ovPeriod)
+        end,
+        width = 52,
+        format = "pct",
+      },
+      {
+        key = "turnover",
+        label = L["Turnover"],
+        width = 64,
+        text = function(c)
+          return c.turnover and ("~" .. W.BigMoney(c.turnover, 10000)) or W.NONE
+        end,
+      },
+    },
     onClick = function(c)
       if c.classID ~= ns.MarketStats.OTHER then
         UI:ShowMarketCategory(c.classID)
@@ -328,37 +348,30 @@ function UI:CreateMarketOverview(area)
       end
     end,
   })
+  v.sectorRows = v.sectorTable.rows
 
-  -- left: the chart, risers and fallers
+  -- left: the chart, risers and fallers under it
   v.left = CreateFrame("Frame", nil, main)
   v.left:SetPoint("TOPLEFT", 0, 0)
   v.left:SetPoint("BOTTOMRIGHT", v.right, "BOTTOMLEFT", -UI.SLOT_GAP, 0)
-  local moversH = 28 + MOVER_ROWS * ROW_H
+  v.chartPanel = W.Panel(v.left)
+  v.chartPanel:SetPoint("TOPLEFT", 0, 0)
+  v.chartPanel:SetPoint("TOPRIGHT", 0, 0)
+  v.chartPanel:SetHeight(CHART_H)
   v.movers = CreateFrame("Frame", nil, v.left)
-  v.movers:SetPoint("BOTTOMLEFT", 0, 0)
+  v.movers:SetPoint("TOPLEFT", v.chartPanel, "BOTTOMLEFT", 0, -UI.SLOT_GAP)
   v.movers:SetPoint("BOTTOMRIGHT", 0, 0)
-  v.movers:SetHeight(moversH)
-  v.risers, v.fallers = panel(v.movers), panel(v.movers)
+  v.risers = headed(v.movers, L["Biggest risers"], "")
+  v.fallers = headed(v.movers, L["Biggest fallers"], "")
   v.risers:SetPoint("TOPLEFT", 0, 0)
   v.risers:SetPoint("BOTTOMRIGHT", v.movers, "BOTTOM", -UI.SLOT_GAP / 2, 0)
   v.fallers:SetPoint("TOPRIGHT", 0, 0)
   v.fallers:SetPoint("BOTTOMLEFT", v.movers, "BOTTOM", UI.SLOT_GAP / 2, 0)
-  v.risersHead = heading(v.risers, L["Biggest risers"], "")
-  v.fallersHead = heading(v.fallers, L["Biggest fallers"], "")
-  local moverOpts = {
-    onClick = function(s)
-      UI:ShowItem(s.itemID)
-    end,
-    tooltip = itemTip,
-  }
-  v.riserRows = rowList(v.risers, MOVER_ROWS, { { width = 70 }, { width = 52 } }, -24, moverOpts)
-  v.fallerRows = rowList(v.fallers, MOVER_ROWS, { { width = 70 }, { width = 52 } }, -24, moverOpts)
+  v.risersHead, v.fallersHead = v.risers.head, v.fallers.head
+  v.riserTable, v.fallerTable = moverTable(v.risers.body), moverTable(v.fallers.body)
+  v.riserRows, v.fallerRows = v.riserTable.rows, v.fallerTable.rows
 
-  v.chartPanel = panel(v.left)
-  v.chartPanel:SetPoint("TOPLEFT", 0, 0)
-  v.chartPanel:SetPoint("TOPRIGHT", 0, 0)
-  v.chartPanel:SetPoint("BOTTOM", v.movers, "TOP", 0, UI.SLOT_GAP)
-  v.chartHead = heading(v.chartPanel, L["Last 30 days"])
+  v.chartHead = W.Heading(v.chartPanel, L["Last 30 days"], 8, -6)
   v.chartModes = W.Segmented(v.chartPanel, CHARTS, {
     minWidth = 48,
     height = 18,
@@ -402,26 +415,32 @@ function UI:CreateMarketOverview(area)
   v.message:SetPoint("RIGHT", -20, 0)
   v.message:SetJustifyH("CENTER")
 
+  -- Narrow, as the compact design has it: the Screener | Overview buttons stay, the period becomes a dropdown,
+  -- the cards are smaller and Breadth gives way, and the chart sits over the categories in one column (risers,
+  -- fallers and the largest items are left out).
   function v:SetCompact(on)
     slots:SetCompact(on)
-    self.mode:SetShown(not on)
-    self.modeDrop:SetShown(on)
+    slots:SetBarHeight(slots.header, on and KPI_H_COMPACT or KPI_H)
+    self.cardRow:SetCardHeight(on and KPI_H_COMPACT or KPI_H)
+    self.cardRow:SetCompact(on)
+    self.cards[6]:SetShown(not on)
+    self.cardRow:Relayout()
+    self.modeDrop:Hide()
+    self.mode:Show()
     self.period:SetShown(not on)
     self.periodLabel:SetShown(not on)
     self.periodDrop:SetShown(on)
-    self.moversLabel:SetShown(not on) -- narrow windows leave risers and fallers out
+    self.moversLabel:SetShown(not on)
     self.moverClass:SetShown(not on)
-    -- narrow: the chart over the categories, one column
     self.movers:SetShown(not on)
     self.largest:SetShown(not on)
     self.right:ClearAllPoints()
     self.left:ClearAllPoints()
-    self.chartPanel:ClearAllPoints()
     if on then
       self.left:SetPoint("TOPLEFT", 0, 0)
       self.left:SetPoint("TOPRIGHT", 0, 0)
-      self.left:SetHeight(130)
-      self.chartPanel:SetAllPoints(self.left)
+      self.left:SetHeight(CHART_H_COMPACT)
+      self.chartPanel:SetHeight(CHART_H_COMPACT)
       self.right:SetPoint("TOPLEFT", self.left, "BOTTOMLEFT", 0, -UI.SLOT_GAP)
       self.right:SetPoint("BOTTOMRIGHT", 0, 0)
       self.sectors:SetPoint("BOTTOM", self.right, "BOTTOM", 0, 0)
@@ -431,9 +450,7 @@ function UI:CreateMarketOverview(area)
       self.right:SetWidth(RIGHT_W)
       self.left:SetPoint("TOPLEFT", 0, 0)
       self.left:SetPoint("BOTTOMRIGHT", self.right, "BOTTOMLEFT", -UI.SLOT_GAP, 0)
-      self.chartPanel:SetPoint("TOPLEFT", 0, 0)
-      self.chartPanel:SetPoint("TOPRIGHT", 0, 0)
-      self.chartPanel:SetPoint("BOTTOM", self.movers, "TOP", 0, UI.SLOT_GAP)
+      self.chartPanel:SetHeight(CHART_H)
       self.sectors:SetPoint("BOTTOM", self.largest, "TOP", 0, UI.SLOT_GAP)
     end
     -- last: anchor the mode switch again (laying out the rows re-anchors the toolbar; see MarketView)
@@ -504,10 +521,6 @@ function UI:RefreshOverview()
   self:RenderOverview()
 end
 
-local function setCard(card, value, delta)
-  card.value:SetText(value .. (delta and ("  " .. W.Percent(delta)) or ""))
-end
-
 function UI:RenderOverview()
   local v = self.overviewView
   if not (v and v:IsShown()) then
@@ -537,38 +550,67 @@ function UI:RenderOverview()
     return
   end
 
+  -- the cards: the figure, its change over the period (coloured by the card) and a note on what it counts
   local c = v.cards
-  setCard(c[1], o.level and ("%.1f"):format(o.level) or W.NONE, o.levelChange)
-  setCard(c[2], o.cpi and ("%.1f"):format(o.cpi) or W.NONE, o.cpiChange)
-  setCard(c[3], W.BigMoney(o.value), o.valueChange)
-  c[4].value:SetText("~" .. W.BigMoney(o.turnover) .. W.Dim(L["/day"]))
-  setCard(c[5], W.Thousands(o.auctions), o.auctionsChange)
-  local moved = o.up + o.down
-  c[6].value:SetText(
-    moved > 0 and (("%d%%"):format(math.floor(100 * o.up / moved + 0.5)) .. W.Dim(" " .. L["rising"])) or W.NONE
+  local function set(card, value, change, note)
+    local text, kind = delta(change)
+    card:Set({ value = value, delta = text, deltaKind = kind, note = note })
+  end
+  set(
+    c[1],
+    o.level and ("%.1f"):format(o.level) or W.NONE,
+    o.levelChange,
+    L["%s steadily listed items · 30 days ago = 100"]:format(W.Thousands(o.basket or 0))
   )
+  set(
+    c[2],
+    o.cpi and ("%.1f"):format(o.cpi) or W.NONE,
+    o.cpiChange,
+    o.cpiWeights == "turnover" and L["weighted by spending"] or L["weighted by listed value"]
+  )
+  local factor = ns.Settings:Get("outlierFactor")
+  set(
+    c[3],
+    W.BigMoney(o.value),
+    o.valueChange,
+    (factor and factor > 1) and L["each price capped at %dx its 30-day average"]:format(factor) or nil
+  )
+  c[4]:Set({
+    value = "~" .. W.BigMoney(o.turnover),
+    delta = L["/day"],
+    deltaKind = "mute",
+    note = L["units sold a day x price"],
+  })
+  set(
+    c[5],
+    W.Thousands(o.auctions),
+    o.auctionsChange,
+    L["%s items · %s units"]:format(W.Thousands(o.items or 0), W.Count(o.units or 0))
+  )
+  local moved = o.up + o.down
+  c[6]:Set({
+    value = moved > 0 and ("%d%%"):format(math.floor(100 * o.up / moved + 0.5)) or W.NONE,
+    delta = moved > 0 and L["rising"] or nil,
+    deltaKind = "mute",
+    rise = o.up,
+    fall = o.down,
+    note = L["%s up · %s down · %s Buy · %s Sell"]:format(
+      W.Thousands(o.up),
+      W.Thousands(o.down),
+      W.Thousands(o.buy or 0),
+      W.Thousands(o.sell or 0)
+    ),
+  })
 
   -- movers
-  local periodText = PERIODS[(self.ovPeriod == 1 and 1) or (self.ovPeriod == 30 and 3) or 2][2]
   local scope = self.ovMoverClass and ns.ItemCache.ClassName(self.ovMoverClass) or L["steadily listed items"]
-  for _, h in ipairs({ v.risersHead, v.fallersHead }) do
-    h.note:SetText(("%s, %s"):format(periodText, scope))
-  end
-  local key = self.ovPeriod == 1 and "change1" or self.ovPeriod == 30 and "change30" or "change7"
-  local function fill(rows, list)
-    for i, r in ipairs(rows) do
-      local s = list[i]
-      r.data = s
-      r:SetShown(s and true or false)
-      if s then
-        r.cells[1]:SetText(itemName(s.itemID))
-        r.cells[2]:SetText(W.Money(s.market, true))
-        r.cells[3]:SetText(W.Percent(s[key]))
-      end
-    end
-  end
-  fill(v.riserRows, o.risers)
-  fill(v.fallerRows, o.fallers)
+  local note = ("%s, %s"):format(periodText(self.ovPeriod), scope)
+  v.risersHead:Set(L["Biggest risers"], note)
+  v.fallersHead:Set(L["Biggest fallers"], note)
+  v.riserTable:SetData(o.risers)
+  v.riserTable:Render()
+  v.fallerTable:SetData(o.fallers)
+  v.fallerTable:Render()
 
   -- the movers' category choice: the categories listed now
   local choices = { { false, L["All categories"] } }
@@ -580,34 +622,18 @@ function UI:RenderOverview()
   v.moverClass:SetOptions(choices)
   v.moverClass:SetValue(self.ovMoverClass or false)
 
-  -- categories
-  local top = o.sectors[1] and o.sectors[1].share or 1
-  for i, r in ipairs(v.sectorRows) do
-    local sct = o.sectors[i]
-    r.data = sct
-    r:SetShown(sct and true or false)
-    if sct then
-      sct.name = sct.classID == ns.MarketStats.OTHER and L["Other"] or ns.ItemCache.ClassName(sct.classID)
-      r.cells[1]:SetText(W.Color("gold", sct.name))
-      r.cells[2]:SetText(W.BigMoney(sct.value, 10000))
-      r.cells[3]:SetText(("%d%%"):format(math.floor(sct.share * 100 + 0.5)))
-      r.bar:SetWidth(math.max(1, 40 * sct.share / math.max(top, 0.01)))
-      r.cells[4]:SetText(changeText(sct.change))
-      r.cells[5]:SetText(sct.turnover and ("~" .. W.BigMoney(sct.turnover, 10000)) or W.Dim("-"))
-    end
+  -- categories: the share bars are full at the biggest category's share
+  for _, sct in ipairs(o.sectors) do
+    sct.name = sct.classID == ns.MarketStats.OTHER and L["Other"] or ns.ItemCache.ClassName(sct.classID)
   end
+  local t = v.sectorTable
+  t.opts.columns[3].max = math.max(o.sectors[1] and o.sectors[1].share or 1, 0.01)
+  t:SetData(o.sectors)
+  t:Render()
 
   -- largest items
-  for i, r in ipairs(v.largestRows) do
-    local t = o.top[i]
-    r.data = t
-    r:SetShown(t and true or false)
-    if t then
-      r.cells[1]:SetText(itemName(t.id))
-      r.cells[2]:SetText(W.Count(t.qty) .. " x " .. W.Money(t.price, true))
-      r.cells[3]:SetText(W.BigMoney(t.value, 10000) .. (t.raw and W.Dim(" " .. L["capped"]) or ""))
-    end
-  end
+  v.largestTable:SetData(o.top)
+  v.largestTable:Render()
 
   self:RenderOverviewChart()
   local parts = {
@@ -652,5 +678,5 @@ function UI:RenderOverviewChart()
     return
   end
   chart:SetMessage(nil)
-  chart:SetSeries("y", { xs = xs, ys = ys, kind = "area", color = { 0.3, 0.85, 0.78, 1 }, marker = true })
+  chart:SetSeries("y", { xs = xs, ys = ys, kind = "area", color = W.COLORS.chart.market, marker = true })
 end
