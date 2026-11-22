@@ -390,7 +390,8 @@ local COLUMNS = {
     {
       key = "perDay",
       money = true,
-      label = L["Gold/day"],
+      label = L["Market/day"], -- the whole market's daily profit: you'd earn a share of it, not all of it
+      term = "marketDay",
       width = 72,
       text = function(e)
         return e.perDay and W.Money(e.perDay, true) or W.Dim("-")
@@ -460,7 +461,8 @@ local COLUMNS = {
     {
       key = "perDay",
       money = true,
-      label = L["Earns/day"],
+      label = L["Market/day"],
+      term = "marketDay",
       width = 72,
       text = function(r)
         return r.perDay and W.Money(r.perDay, true) or W.Dim("-")
@@ -837,7 +839,7 @@ function UI:RenderCraftingDetailRows()
     lines[#lines + 1] = { L["Sells for, after cut"], ev.revenue and W.Money(ev.revenue, true) or W.Dim("-") }
     lines[#lines + 1] = { L["Profit per craft"], ev.profit and W.SignedMoney(ev.profit) or W.Dim("-") }
     lines[#lines + 1] = { L["Sells a day"], ev.sellRate and W.Rate(ev.sellRate) or W.Dim("-") }
-    lines[#lines + 1] = { L["Gold a day"], ev.perDay and W.Money(ev.perDay, true) or W.Dim("-") }
+    lines[#lines + 1] = { L["Market a day"], ev.perDay and W.Money(ev.perDay, true) or W.Dim("-") }
     local why = ev.why == "unsellable" and L["Can't be sold: it binds when made."]
       or ev.why == "unpriced" and L["Missing a price: scan the auction house (or it's never listed)."]
       or ev.why == "enchant" and L["Enchants make no item to sell; valued later."]
@@ -886,8 +888,8 @@ function UI:RenderCraftingDetailRows()
     local ev = e.eval
     lines[#lines + 1] = { L["Cost per craft"], ev.cost and W.Money(ev.cost, true) or W.Dim("-") }
     lines[#lines + 1] = { L["Profit per craft"], ev.profit and W.SignedMoney(ev.profit) or W.Dim("-") }
-    lines[#lines + 1] = { L["Earns a day"], ev.perDay and W.Money(ev.perDay, true) or W.Dim("-") }
-    lines[#lines + 1] = { L["Pays back"], days(e.payback) }
+    lines[#lines + 1] = { L["Market a day"], ev.perDay and W.Money(ev.perDay, true) or W.Dim("-") }
+    lines[#lines + 1] = { L["Pays back, at best"], days(e.payback) }
     for _, l in ipairs(e.learners) do
       lines[#lines + 1] = {
         charName(l.char),
