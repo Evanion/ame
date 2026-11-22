@@ -755,7 +755,7 @@ describe("addon in a stubbed client", function()
       assert.are.equal(ns.AME.JOB_BUDGET, ns.AME.jobs.budgetMs)
     end)
 
-    it("can open AME together with the auction house, and close it with it", function()
+    it("can open AME together with the auction house; it stays open after it only if it was open before", function()
       seeded()
       env:fire("AUCTION_HOUSE_CLOSED")
       env:fire("AUCTION_HOUSE_SHOW") -- off by default
@@ -765,14 +765,15 @@ describe("addon in a stubbed client", function()
       env:fire("AUCTION_HOUSE_SHOW")
       assert.is_true(ns.UI.frame:IsShown())
       env:fire("AUCTION_HOUSE_CLOSED")
-      assert.is_true(ns.UI.frame:IsShown()) -- stays open unless closing is chosen too
-      ns.UI.frame:Hide()
-      ns.Settings:Set("closeWithAH", true)
+      assert.is_false(ns.UI.frame:IsShown()) -- the AH opened it: it closes with it
+      -- opened by hand at the auction house: closes with it too
+      ns.Settings:Set("openWithAH", false)
       env:fire("AUCTION_HOUSE_SHOW")
+      ns.UI:Toggle()
       assert.is_true(ns.UI.frame:IsShown())
       env:fire("AUCTION_HOUSE_CLOSED")
       assert.is_false(ns.UI.frame:IsShown())
-      -- opened by hand: stays open when the AH closes
+      -- open before the auction house: stays open
       ns.UI:Toggle()
       env:fire("AUCTION_HOUSE_SHOW")
       env:fire("AUCTION_HOUSE_CLOSED")
@@ -2035,9 +2036,11 @@ describe("addon in a stubbed client", function()
       drainJobs()
       assert.truthy(ns.UI.itemView.sub.text:find("Horde AH", 1, true))
       -- the auction house you're at is always offered, even before its first scan
-      env:fire("AUCTION_HOUSE_CLOSED")
+      env:fire("AUCTION_HOUSE_CLOSED") -- opened at the auction house: the window closes with it
+      assert.is_false(ns.UI.frame:IsShown())
       env.npcFaction = "Alliance"
       env:fire("AUCTION_HOUSE_SHOW")
+      ns.UI:Toggle()
       ns.UI:ShowTab("market")
       assert.are.equal("Alliance", ns.UI:ViewHouse())
       assert.truthy(ns.UI.marketView.table.message.text:find("No price history for the Alliance AH"))

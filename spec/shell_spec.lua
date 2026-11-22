@@ -218,8 +218,8 @@ describe("shell widgets", function()
       local card = newCard({
         { check = "Open with the auction house", key = "openWithAH" },
         {
-          check = "...and close with it",
-          key = "closeWithAH",
+          check = "Colour-blind palette",
+          key = "colorBlind",
           indent = true,
           onChange = function(on)
             changed = on
@@ -233,7 +233,7 @@ describe("shell widgets", function()
       assert.is_false(close.checked)
       assert.are.equal(UI.SETTINGS_INDENT, close.points[1][2]) -- set in under the one above
       close.scripts.OnClick(close)
-      assert.is_true(ns.Settings:Get("closeWithAH"))
+      assert.is_true(ns.Settings:Get("colorBlind"))
       assert.is_true(changed)
       open.scripts.OnClick(open)
       assert.is_false(ns.Settings:Get("openWithAH"))

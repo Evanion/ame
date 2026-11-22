@@ -493,7 +493,7 @@ end
 -- A Settings card (the Settings and Sharing pages): a gold heading, then rows in order.
 --   local card = UI.SettingsCard(stack, "Window", {
 --     { check = "Open with the auction house", key = "openWithAH", onChange = fn },
---     { check = "…and close with it", key = "closeWithAH", indent = true },
+--     { check = "Colour-blind palette", key = "colorBlind", indent = true },
 --     { check = "Show minimap button", onChange = fn },                   -- no key: not a setting of its own
 --     { field = "Scale", note = "(70-120%)", dropdown = { width, options, onSelect } },
 --     { field = "Protocol", control = function(row) return frame end },   -- any control, right-aligned

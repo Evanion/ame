@@ -153,7 +153,6 @@ function UI:CreateSettingsView(parent, contentArea)
       end,
     },
     { check = L["Open with the auction house"], key = "openWithAH" },
-    { check = L["…and close with it"], key = "closeWithAH", indent = true },
     { check = L["Switch to the Item tab for what you put up for sale"], key = "sellSwitchesTab" },
     field(L["Colours"], 110, themes, function(value)
       ns.Settings:Set("theme", value)
@@ -174,7 +173,7 @@ function UI:CreateSettingsView(parent, contentArea)
       end,
     },
   }, 0)
-  v.scale, v.theme, v.colorBlind, v.minimap = ctl[1], ctl[6], ctl[7], ctl[8]
+  v.scale, v.theme, v.colorBlind, v.minimap = ctl[1], ctl[5], ctl[6], ctl[7]
   _, ctl = card("general", L["Market overview"], {
     {
       check = L["Show the Market overview"],

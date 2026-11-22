@@ -618,10 +618,16 @@ end
 
 function UI:Toggle(itemID)
   self:Create()
+  local opening = not self.frame:IsShown()
+  if opening then
+    -- the auction house may have changed while the window was closed: its houses and colours
+    self:RefreshViewOptions()
+    self:ApplyTheme()
+  end
   if itemID then
     self.frame:Show()
     self:ShowItem(itemID)
-  elseif self.frame:IsShown() then
+  elseif not opening then
     self.frame:Hide()
   else
     self.frame:Show()

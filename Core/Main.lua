@@ -667,12 +667,16 @@ end
 
 function handlers.AUCTION_HOUSE_SHOW()
   AME.ahOpen = true
+  -- the window stays open after the auction house closes only when it was open before it opened
+  AME.openBeforeAH = ns.UI and ns.UI.frame and ns.UI.frame:IsShown() or false
   hookSellSlots()
   C_Timer.After(0.5, hookSellSlots) -- the game's window may load after this event reaches AME
   AME.house = UnitFactionGroup("npc") or "Neutral"
   AME_DB.lastHouse = AME.house
+  if ns.UI then
+    ns.UI.viewHouse = nil -- follow the auction house you're at (also when the window opens later)
+  end
   if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
-    ns.UI.viewHouse = nil -- follow the auction house you're at
     ns.UI:ViewChanged()
     ns.UI:ApplyTheme()
   end
@@ -685,7 +689,6 @@ function handlers.AUCTION_HOUSE_SHOW()
   end)
   if ns.Settings:Get("openWithAH") and ns.UI and not (ns.UI.frame and ns.UI.frame:IsShown()) then
     ns.UI:Toggle()
-    AME.openedWithAH = true -- it may close with the AH (closeWithAH)
   end
   if AME:LoadHistory() then
     AME:Backfill(false)
@@ -776,12 +779,11 @@ end
 
 function handlers.AUCTION_HOUSE_CLOSED()
   AME.ahOpen = false
-  if AME.openedWithAH then
-    AME.openedWithAH = false
-    if ns.Settings:Get("closeWithAH") and ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
-      ns.UI.frame:Hide()
-    end
+  -- opened while at the auction house (with it, or by hand): it closes with it
+  if not AME.openBeforeAH and ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
+    ns.UI.frame:Hide()
   end
+  AME.openBeforeAH = nil
   if ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
     ns.UI:ApplyPlacement() -- back to where it sits without the auction house
   end

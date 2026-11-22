@@ -1323,4 +1323,3 @@ L["yours"] = true
 L["~%d days"] = true
 L["~%dh"] = true
 L["~%s sold/day"] = true
-L["…and close with it"] = true
