@@ -154,7 +154,7 @@ PB.Queue = queue
 
 local function heldTotal(itemID)
   local h = ns.Trading.Held(itemID)
-  return h.bags + h.bank + h.guildBank -- what's on the auction house is for sale, not at hand
+  return h.bags + h.bank + (h.mail or 0) + h.guildBank -- what's on the auction house is for sale, not at hand
 end
 
 function PB.Plan()
@@ -446,6 +446,9 @@ local SOURCE = {
   bank = function()
     return L["bank"]
   end,
+  mail = function()
+    return L["mailbox"]
+  end,
   alt = function(s)
     return L["%s's bags or bank"]:format(s.char or "?")
   end,
@@ -472,6 +475,8 @@ function PB.TodoText(t, me)
     return L["Buy %s from a vendor"]:format(what)
   elseif t.kind == "bank" then
     return L["Take %s from the bank"]:format(what)
+  elseif t.kind == "mail" then
+    return L["Take %s from the mailbox"]:format(what)
   elseif t.kind == "alt" then
     return L["Get %s from %s"]:format(what, t.char or "?")
   elseif t.kind == "guild" then

@@ -27,10 +27,10 @@ ns.CraftQueue = CraftQueue
 CraftQueue.MAX_DEPTH = 3 -- parts of parts of parts (ore -> bar -> part -> item)
 
 local function heldBy(held, me)
-  local out = { carried = 0, bank = 0, alts = {}, guilds = {} }
+  local out = { carried = 0, bank = 0, mail = 0, alts = {}, guilds = {} }
   for _, c in ipairs(held and held.chars or {}) do
     if c.me or c.key == me then
-      out.carried, out.bank = c.bags or 0, c.bank or 0
+      out.carried, out.bank, out.mail = c.bags or 0, c.bank or 0, c.mail or 0
     elseif (c.bags or 0) + (c.bank or 0) > 0 then
       out.alts[#out.alts + 1] = { char = c.name, qty = (c.bags or 0) + (c.bank or 0) }
     end
@@ -131,7 +131,7 @@ function CraftQueue.Plan(queue, env)
       mats[itemID] = m
       plan.materials[#plan.materials + 1] = m
       local held = heldBy(env.held and env.held(itemID), env.me)
-      local list = { { "carried", held.carried }, { "bank", held.bank } }
+      local list = { { "carried", held.carried }, { "bank", held.bank }, { "mail", held.mail } }
       for _, a in ipairs(held.alts) do
         list[#list + 1] = { "alt", a.qty, a.char }
       end
@@ -244,7 +244,7 @@ function CraftQueue.Plan(queue, env)
   end
   for _, m in ipairs(plan.materials) do
     for _, src in ipairs(m.sources) do
-      if src.kind == "alt" or src.kind == "guild" or src.kind == "bank" then
+      if src.kind == "alt" or src.kind == "guild" or src.kind == "bank" or src.kind == "mail" then
         plan.todo[#plan.todo + 1] = { kind = src.kind, item = m.item, qty = src.qty, char = src.char }
       end
     end

@@ -56,6 +56,9 @@ local function places(p)
   if (p.bank or 0) > 0 then
     out[#out + 1] = L["bank %s"]:format(W.Count(p.bank))
   end
+  if (p.mail or 0) > 0 then
+    out[#out + 1] = L["mail %s"]:format(W.Count(p.mail))
+  end
   if (p.auctions or 0) > 0 then
     out[#out + 1] = L["on AH %s"]:format(W.Count(p.auctions))
   end

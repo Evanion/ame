@@ -2126,6 +2126,9 @@ describe("addon in a stubbed client", function()
         env:fire("COMMODITY_PURCHASE_SUCCEEDED")
         assert.is_true(ns.AHSearch.last.ok)
         assert.are.equal(2589, sent[2]) -- searched again: what's left of it now
+        -- bought (it goes to the mailbox): the list counts it off - all 30, so the row is gone and nothing to rebuy
+        assert.is_nil(ns.AME.shopping:Lists()[i].items[2589])
+        assert.is_nil(T.selected)
 
         -- search by name and filters: the game's browse query, rows with AME's view, filtered by price here
         local queries = {}

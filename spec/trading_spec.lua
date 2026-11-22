@@ -60,3 +60,20 @@ describe("Trading.BankBags", function()
     assert.are.same({ -1, 5, 6, 7, 8, 9, 10, 11 }, Trading.BankBags({ Bank = -1 })) -- classic: no reagent bag
   end)
 end)
+
+describe("Trading.WonFrom", function()
+  local Trading
+  before_each(function()
+    Trading = addon.load({ "Core/Init.lua", "Core/Trading.lua" }).Trading
+  end)
+
+  it("reads a won auction's item and count from the game's message", function()
+    local name, n = Trading.WonFrom("You won an auction for Murloc Eye (x40)", "You won an auction for %s")
+    assert.are.equal("Murloc Eye", name)
+    assert.are.equal(40, n)
+    name, n = Trading.WonFrom("You won an auction for Mirah's Song", "You won an auction for %s")
+    assert.are.equal("Mirah's Song", name)
+    assert.are.equal(1, n)
+    assert.is_nil(Trading.WonFrom("Your auction of Silk has expired.", "You won an auction for %s"))
+  end)
+end)

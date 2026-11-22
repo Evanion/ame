@@ -99,6 +99,34 @@ function T.PriceJump(total, expected, warnPct)
   return up * 100 > warnPct and up or nil
 end
 
+-- Bought from the Shopping tab: the list on screen needs that many fewer (gone at none). What you buy goes to your
+-- mailbox, and the lists count bags and bank, so without this the list still asked for all of it - and offered to
+-- buy it again.
+function T:Bought(key, qty)
+  if not (key and qty and qty > 0) or self.mode ~= "list" then
+    return
+  end
+  local items, i = self:Items(), (not self.temp) and (self.list or 1) or nil
+  local e = items[key]
+  if not e then
+    return
+  end
+  local left = (e.need or 0) - qty
+  if i then
+    shopping():SetItem(i, key, left)
+  elseif left > 0 then
+    e.need = left
+  else
+    items[key] = nil
+  end
+  if left <= 0 and self.selected == key then
+    self:Select(nil) -- nothing left to buy of it: no Buy button to click again
+  else
+    self.panel.qty:SetText(left > 0 and tostring(left) or "")
+    self:Render()
+  end
+end
+
 -- recent searches (AME_DB.recentSearches, newest first): the same text and filters again moves to the top
 local function sameFilters(a, b)
   for _, k in ipairs({ "category", "minLevel", "maxLevel", "minItemLevel", "maxItemLevel", "quality", "maxPrice" }) do
@@ -513,6 +541,9 @@ function T:Create(ah)
   p.note = W.Text(detail, "GameFontDisableSmall")
   p.note:SetPoint("RIGHT", p.buy, "LEFT", -10, 0)
 
+  ns.AHSearch.onBought = function(key, qty)
+    T:Bought(key, qty)
+  end
   -- a list added or changed anywhere (the craft queue, the AME window): shown at once, once per frame
   shopping().onChange = function()
     if T.renderPending or not C_Timer then

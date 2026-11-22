@@ -723,6 +723,7 @@ end
 
 function handlers.MAIL_INBOX_UPDATE()
   ns.Trading:ScanMail()
+  ns.Trading:ScanMailItems() -- what's waiting there now (won auctions taken out leave it)
 end
 
 function handlers.BAG_UPDATE_DELAYED()

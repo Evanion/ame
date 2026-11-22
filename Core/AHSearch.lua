@@ -208,6 +208,9 @@ local function finished(ok)
   if p then
     S.last = { key = p.key, qty = p.qty, ok = ok }
     if ok then
+      if S.onBought then
+        S.onBought(p.key, p.qty) -- the list it was bought for counts it off
+      end
       S:Start({ p.key }) -- what's left of it now
     end
   end

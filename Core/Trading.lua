@@ -198,15 +198,17 @@ function Trading.Held(itemID, holdings, guildBanks, market, me)
   guildBanks = guildBanks or AME_DB.guildBanks or {}
   market = market or ns.AME:MarketRealmName()
   me = me or charKey()
-  local out = { total = 0, bags = 0, bank = 0, auctions = 0, guildBank = 0, chars = {}, guilds = {} }
+  local out = { total = 0, bags = 0, bank = 0, auctions = 0, mail = 0, guildBank = 0, chars = {}, guilds = {} }
   local prefix = market .. ":"
   for key, h in pairs(holdings) do
     if key:sub(1, #prefix) == prefix then
       local b, k, a =
         h.bags and h.bags[itemID] or 0, h.bank and h.bank[itemID] or 0, h.auctions and h.auctions[itemID] or 0
-      if b + k + a > 0 then
-        out.chars[#out.chars + 1] = { name = key:sub(#prefix + 1), bags = b, bank = k, auctions = a, me = key == me }
-        out.bags, out.bank, out.auctions = out.bags + b, out.bank + k, out.auctions + a
+      local m = h.mail and h.mail[itemID] or 0 -- waiting in the mailbox (won auctions; what the inbox last held)
+      if b + k + a + m > 0 then
+        out.chars[#out.chars + 1] =
+          { name = key:sub(#prefix + 1), bags = b, bank = k, auctions = a, mail = m, me = key == me }
+        out.bags, out.bank, out.auctions, out.mail = out.bags + b, out.bank + k, out.auctions + a, out.mail + m
       end
     end
   end
@@ -231,8 +233,49 @@ function Trading.Held(itemID, holdings, guildBanks, market, me)
   table.sort(out.guilds, function(x, y)
     return x.qty > y.qty
   end)
-  out.total = out.bags + out.bank + out.auctions + out.guildBank
+  out.total = out.bags + out.bank + out.auctions + out.mail + out.guildBank
   return out
+end
+
+-- Won an auction ("You won an auction for Murloc Eye (x40)"): it waits in your mailbox until you take it, so it
+-- counts as yours there (the craft queue, the tooltip). Reading the inbox replaces this with what's really in it.
+-- Pure: the message -> item name, count, or nil
+function Trading.WonFrom(msg, fmt)
+  local p = Trading.Pattern(fmt, "You won an auction for %s")
+  local what = msg:match(p)
+  if not what then
+    return nil
+  end
+  local name, n = what:match("^(.-) %(x(%d+)%)$")
+  return name or what, tonumber(n) or 1
+end
+
+function Trading:OnWon(name, n)
+  local id = Trading.NameResolver()(name)
+  if not id then
+    return
+  end
+  local h = mine()
+  h.mail = h.mail or {}
+  h.mail[id] = (h.mail[id] or 0) + n
+end
+
+-- what the inbox holds, attachment by attachment (when it's open and read)
+function Trading:ScanMailItems()
+  local getItem, n = _G.GetInboxItem, GetInboxNumItems and GetInboxNumItems() or 0
+  if not getItem then
+    return
+  end
+  local items = {}
+  for i = 1, n do
+    for a = 1, (_G.ATTACHMENTS_MAX_RECEIVE or 16) do
+      local _, itemID, _, count = getItem(i, a)
+      if itemID then
+        items[itemID] = (items[itemID] or 0) + (count or 1)
+      end
+    end
+  end
+  mine().mail = items
 end
 
 -- your active auctions (C_AuctionHouse owned auctions; sold ones wait in the mail)
@@ -334,6 +377,10 @@ function Trading:OnSystemMessage(msg)
   end
   self.soldPattern = self.soldPattern or pattern(ERR_AUCTION_SOLD_S, "A buyer has been found for your auction of %s.")
   self.expiredPattern = self.expiredPattern or pattern(ERR_AUCTION_EXPIRED_S, "Your auction of %s has expired.")
+  local wonName, wonCount = Trading.WonFrom(msg, ERR_AUCTION_WON_S)
+  if wonName then
+    self:OnWon(wonName, wonCount)
+  end
   local sold = msg:match(self.soldPattern)
   local expired = not sold and msg:match(self.expiredPattern)
   if (sold or expired) and ns.Posting then
