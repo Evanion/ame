@@ -514,7 +514,26 @@ function W.Chips(parent, onClearAll)
   local row = CreateFrame("Frame", nil, parent)
   row:SetHeight(20)
   row.pool = {}
-  row.clear = W.Button(row, L["Clear all"], 64, 18, onClearAll)
+  -- "Clear all" is an action written as text (the link colour), so it doesn't read as one more chip
+  row.clear = CreateFrame("Button", nil, row)
+  row.clear:SetHeight(18)
+  row.clear.label = W.Text(row.clear, "GameFontHighlightSmall")
+  row.clear.label:SetPoint("LEFT", 0, 0)
+  row.clear.label:SetText(L["Clear all"])
+  local link, white = W.RGB("link"), W.RGB("white")
+  row.clear.label:SetTextColor(link[1], link[2], link[3], 1)
+  row.clear:SetWidth(math.ceil(row.clear.label:GetStringWidth() or 50) + 4)
+  row.clear:SetScript("OnEnter", function(self)
+    self.label:SetTextColor(white[1], white[2], white[3], 1)
+  end)
+  row.clear:SetScript("OnLeave", function(self)
+    self.label:SetTextColor(link[1], link[2], link[3], 1)
+  end)
+  row.clear:SetScript("OnClick", function()
+    if onClearAll then
+      onClearAll()
+    end
+  end)
   function row:Set(list)
     local x = 0
     for i, chip in ipairs(list) do
@@ -1819,7 +1838,9 @@ function W.StarInline(size)
   return ("|T%s:%d:%d|t"):format(W.STAR, size, size)
 end
 
--- Shared popup menu: W.Menu(anchor, entries); entry = { text, checked = bool?, func = fn, disabled = bool? }.
+-- Shared popup menu: W.Menu(anchor, entries); entry = { text, checked = bool?, func = fn, disabled = bool? },
+-- { separator = true }, { text, submenu = true, func } (a ▸ mark: it opens more choices), or { item = key }: the item
+-- the menu is about, as a link (icon, quality colour, its tooltip; a click opens it, Shift-click links it).
 -- One menu frame for the whole addon; closes on a pick or a click elsewhere.
 local menu
 -- opts.refresh: update a menu already open on this anchor instead of toggling it (live suggestions)
@@ -1880,7 +1901,28 @@ function W.Menu(anchor, entries, opts)
       it.arrow:SetSize(10, 10)
       it.arrow:SetPoint("RIGHT", -4, 0)
       it.arrow:SetVertexColor(0.6, 0.62, 0.66, 1)
+      -- an item's name heading the menu is a link like any other: its tooltip on hover
+      it:SetScript("OnEnter", function(self)
+        if self.itemKey then
+          GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+          W.SetItemTip(GameTooltip, self.itemKey)
+          GameTooltip:Show()
+        end
+      end)
+      it:SetScript("OnLeave", function(self)
+        if self.itemKey then
+          GameTooltip:Hide()
+        end
+      end)
       menu.items[i] = it
+    end
+    -- { item = key }: the item's icon and name in its quality colour; a click does what a click on its link does
+    it.itemKey = e.item or false
+    local text = e.text
+    if e.item then
+      local name, _, quality, icon = W.ItemInfo(e.item)
+      text = ("|T%s:14:14:0:0|t "):format(tostring(icon or 134400))
+        .. W.QualityText(quality, name or W.ItemLabel(e.item))
     end
     -- { separator = true } is a line between groups; { text, submenu = true } opens more choices (its func)
     local sep = e.separator == true
@@ -1892,7 +1934,7 @@ function W.Menu(anchor, entries, opts)
     it.rule:SetShown(sep)
     it.hl:SetShown(not sep)
     it:EnableMouse(not sep)
-    it.text:SetText(sep and "" or e.text)
+    it.text:SetText(sep and "" or text)
     it.text:SetTextColor(e.disabled and 0.5 or 1, e.disabled and 0.5 or 1, e.disabled and 0.5 or 1)
     it.check:SetShown(not sep and e.checked == true)
     it.arrow:SetShown(not sep and e.submenu == true)
@@ -1901,12 +1943,19 @@ function W.Menu(anchor, entries, opts)
         return
       end
       menu:Hide()
-      if e.func and not e.disabled then
+      if e.item and not e.func then
+        W.ItemLinkClicked(e.item)
+      elseif e.func and not e.disabled then
         e.func()
       end
     end)
     it:Show()
     width = math.max(width, (it.text:GetStringWidth() or 0) + 34 + (e.submenu and 14 or 0))
+    if e.item then -- no check mark to leave room for: the icon starts at the edge
+      it.text:SetPoint("LEFT", 6, 0)
+    else
+      it.text:SetPoint("LEFT", 20, 0)
+    end
   end
   for i = #entries + 1, #menu.items do
     menu.items[i]:Hide()

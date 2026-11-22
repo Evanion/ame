@@ -374,6 +374,7 @@ function Help.Articles()
             L["Views saves the filters you use often and brings them back in one click. Columns picks which columns show; the button says how many are hidden."],
             H(L["Shift-clicks"]),
             L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."],
+            L["Every item name in AME is a link: with a chat box open, Shift-click one to put its link in chat, as you would from your bags. Faded rows have data older than three days; hover a row for the reasons behind its signal."],
             H(L["The item menu"]),
             L["Right-click any item in a list - Market, Arbitrage or Portfolio - for what you can do with it: open its chart, search the auction house for it (while the auction house is open), add it to a watchlist, set a price alert, or put its link in the chat box."],
             H(L["Hiding items"]),

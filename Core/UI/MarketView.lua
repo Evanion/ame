@@ -68,9 +68,7 @@ local COLUMNS = {
     term = "signal",
     sortKey = "signalRank",
     ascendingFirst = true,
-    text = function(s)
-      return W.SignalGlyph(s.signal)
-    end,
+    format = "signal", -- a badge: the tinted pill reads at a glance down the column
   },
   { key = "score", drop = 2, label = L["Score"], width = 50, term = "score" },
   {
@@ -103,7 +101,6 @@ local COLUMNS = {
 }
 UI.MARKET_COLUMNS = COLUMNS
 local SIDEBAR_W = UI.SIDEBAR_W
-local CAT_H = 19
 local QUALITIES = {
   { nil, L["Any quality"] },
   { 1, L["Common+"] },
@@ -160,6 +157,15 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- categories: "All items", watchlists, classes in AH order, the selected class's subclasses indented
 
+-- how many items a list has (its items are keys)
+local function size(items)
+  local n = 0
+  for _ in pairs(items or {}) do
+    n = n + 1
+  end
+  return n
+end
+
 -- the sidebar entries for the current index and filters
 function UI:CategoryEntries()
   local q = self.mq
@@ -173,9 +179,13 @@ function UI:CategoryEntries()
     end
     shown = shown - hiddenHere
   end
+  -- the sidebar's lines (UI.SideList): header entries are its headings, the rest its lines
   local entries = { { all = true, label = L["All items"], count = shown } }
+  local function heading(text)
+    entries[#entries + 1] = { header = true, heading = text, label = text }
+  end
   if watch then
-    entries[#entries + 1] = { header = true, label = W.Dim(L["Watchlists"]), count = "" }
+    heading(L["Watchlists"])
     for i, l in ipairs(watch:Lists()) do
       entries[#entries + 1] = {
         list = i,
@@ -184,30 +194,29 @@ function UI:CategoryEntries()
         count = watch:Count(i),
       }
     end
-    entries[#entries + 1] = { newList = true, label = W.Dim("+ " .. L["New list"]), count = "" }
+    entries[#entries + 1] = { newList = true, label = "+ " .. L["New list"], kind = "link" }
     if watch:HiddenCount() > 0 then -- items you hid (right-click a row): shown here so they can be unhidden
-      entries[#entries + 1] = { hidden = true, label = W.Dim(L["Hidden"]), name = L["Hidden"], count = hiddenHere }
+      entries[#entries + 1] =
+        { hidden = true, label = L["Hidden"], kind = "dim", name = L["Hidden"], count = hiddenHere }
     end
     local guild = watch:GuildLists()
     if #guild > 0 then
-      entries[#entries + 1] = { header = true, label = W.Dim(L["Guild watchlists"]), count = "" }
+      heading(L["Guild watchlists"])
       for _, g in ipairs(guild) do
-        local n = 0
-        for _ in pairs(g.items) do
-          n = n + 1
-        end
         entries[#entries + 1] = {
           guild = g.key,
-          label = "   " .. g.name .. " " .. W.Dim("(" .. g.owner .. ")"),
+          label = g.name,
+          note = g.owner,
+          indent = 1,
           name = g.name,
-          count = n,
+          count = size(g.items),
         }
       end
     end
   end
   local shop = ns.AME.shopping
   if shop then
-    entries[#entries + 1] = { header = true, label = W.Dim(L["Shopping lists"]), count = "" }
+    heading(L["Shopping lists"])
     local index = ns.AME:FactionIndex()
     local holdings = ns.Trading:Holdings()
     for i, l in ipairs(shop:Lists()) do
@@ -216,20 +225,23 @@ function UI:CategoryEntries()
         shop = i,
         label = l.name .. (l.shared and " " .. W.Color("brand", L["shared"]) or ""),
         name = l.name,
-        count = totals.done and W.Color("good", L["done"]) or totals.missing,
+        count = totals.done and L["done"] or totals.missing,
+        kind = totals.done and "done" or nil,
       }
     end
-    entries[#entries + 1] = { newShop = true, label = W.Dim("+ " .. L["New shopping list"]), count = "" }
+    entries[#entries + 1] = { newShop = true, label = "+ " .. L["New shopping list"], kind = "link" }
     for _, g in ipairs(shop:GuildLists()) do
       entries[#entries + 1] = {
         shopGuild = g.key,
-        label = "   " .. g.name .. " " .. W.Dim("(" .. g.owner .. ")"),
+        label = g.name,
+        note = g.owner,
+        indent = 1,
         name = g.name,
-        count = "",
+        count = size(g.items),
       }
     end
   end
-  entries[#entries + 1] = { header = true, label = W.Dim(L["Categories"]), count = "" }
+  heading(L["Categories"])
   for _, c in ipairs(self.categories or {}) do
     entries[#entries + 1] = { classID = c.classID, label = ns.ItemCache.ClassName(c.classID), count = c.count }
     if q.classID == c.classID then
@@ -237,7 +249,9 @@ function UI:CategoryEntries()
         entries[#entries + 1] = {
           classID = c.classID,
           subClassID = s.subClassID,
-          label = "   " .. ns.ItemCache.SubClassName(c.classID, s.subClassID),
+          label = ns.ItemCache.SubClassName(c.classID, s.subClassID),
+          kind = "dim",
+          indent = 1,
           count = s.count,
         }
       end
@@ -324,54 +338,13 @@ function UI:SelectCategory(e, button, anchor)
 end
 
 function UI:CreateCategories(v, side)
-  side.pane:Hide() -- the list pages itself (it can be long: every subclass)
-  side.lines = {}
-  local function line(i)
-    local b = CreateFrame("Button", nil, side)
-    b:SetHeight(CAT_H)
-    b:SetPoint("TOPLEFT", 4, -4 - (i - 1) * CAT_H)
-    b:SetPoint("RIGHT", -4, 0)
-    b.sel = b:CreateTexture(nil, "BACKGROUND")
-    b.sel:SetAllPoints()
-    W.Fill(b.sel, W.COLORS.rowSelected)
-    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
-    b.hl:SetAllPoints()
-    W.Fill(b.hl, W.COLORS.rowHover)
-    b.text = W.Text(b, "GameFontHighlightSmall")
-    b.text:SetPoint("LEFT", 6, 0)
-    b.text:SetPoint("RIGHT", -34, 0)
-    b.text:SetWordWrap(false)
-    b.count = W.Text(b, "GameFontDisableSmall", "RIGHT")
-    b.count:SetPoint("RIGHT", -4, 0)
-    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    b:SetScript("OnClick", function(self, button)
-      if self.entry then
-        UI:SelectCategory(self.entry, button, self)
-      end
-    end)
-    side.lines[i] = b
-    return b
-  end
-  side.rows = 22
-  for i = 1, side.rows do
-    line(i)
-  end
-  -- as many lines as the sidebar's height holds
-  side:SetScript("OnSizeChanged", function(_, _, h)
-    local n = math.max(1, math.floor(((h or 0) - 8) / CAT_H))
-    for i = #side.lines + 1, n do
-      line(i)
-    end
-    side.rows = n
-    if UI.index then
-      UI:RenderCategories()
-    end
-  end)
-  side:EnableMouseWheel(true)
-  side:SetScript("OnMouseWheel", function(_, delta)
-    UI.catOffset = math.max(0, (UI.catOffset or 0) - delta * 2)
-    UI:RenderCategories()
-  end)
+  -- the shared side menu: it pages itself with the wheel (the list can be long: every subclass)
+  v.sideList = UI.SideList(side, {
+    rows = 22,
+    onClick = function(e, button, line)
+      UI:SelectCategory(e, button, line)
+    end,
+  })
   v.side = side
 end
 
@@ -403,22 +376,10 @@ function UI:RenderCategories()
   local v = self.marketView
   local q = self.mq
   local entries = self:CategoryEntries()
-  local side = v.side
-  local rows = side.rows or #side.lines
-  self.catOffset = math.min(self.catOffset or 0, math.max(0, #entries - rows))
-  for i, b in ipairs(side.lines) do
-    local e = i <= rows and entries[(self.catOffset or 0) + i] or nil
-    b.entry = e
-    if e then
-      b:Show()
-      b.sel:SetShown(selected(q, e))
-      b.text:SetText(e.label)
-      b.text:SetFontObject(e.subClassID and "GameFontHighlightSmall" or "GameFontNormalSmall")
-      b.count:SetText(type(e.count) == "number" and W.Thousands(e.count) or e.count)
-    else
-      b:Hide()
-    end
+  for _, e in ipairs(entries) do
+    e.selected = selected(q, e)
   end
+  v.sideList:SetEntries(entries)
   -- the compact dropdown: lists and classes (subclasses from the sidebar when wide)
   local options, current = {}, 1
   for _, e in ipairs(entries) do
@@ -814,6 +775,9 @@ function UI:CreateMarketView(parent)
       end
     end,
     status = true, -- counts under the table; where the data comes from goes in the window's footer
+    note = L["Faded rows: data older than %d days. Hover a row for the reasons behind its signal."]:format(
+      UI.STALE_DAYS
+    ),
   })
   v.table = ns.DataTable.New(main, opts)
   v.headers, v.rows, v.bar, v.status = v.table.headers, v.table.rows, v.table.bar, slots.status

@@ -907,12 +907,12 @@ describe("addon in a stubbed client", function()
         ns.UI:ShowTab("market")
         local t = ns.UI.marketView.table
         -- the table grew while no size event reached it (hidden behind another tab, window closed): the next draw
-        -- notices and fits
-        t.frame:SetHeight(20 + 30 * t.rowH)
+        -- notices and fits (the note under the rows keeps its own space)
+        t.frame:SetHeight(20 + 30 * t.rowH + t:NoteSpace())
         t:Render()
         assert.are.equal(30, t.visible)
         assert.is_true(#t.rows >= 30)
-        t.frame:SetHeight(20 + 5 * t.rowH)
+        t.frame:SetHeight(20 + 5 * t.rowH + t:NoteSpace())
         t.frame.scripts.OnShow(t.frame)
         assert.are.equal(5, t.visible)
         assert.is_false(t.rows[6]:IsShown())
@@ -1455,6 +1455,12 @@ describe("addon in a stubbed client", function()
         end
       end
       assert.are.equal(7, classLine.entry.classID)
+      -- "+ New list" is an action written as text (the link colour)
+      for _, line in ipairs(v.side.lines) do
+        if line.entry and line.entry.newList then
+          assert.are.equal("link", line.entry.kind)
+        end
+      end
       classLine.scripts.OnClick(classLine)
       assert.are.equal(2, #ns.UI.list)
       -- sorting by the Item header keeps the category's items (it used to filter everything out)
@@ -1514,6 +1520,13 @@ describe("addon in a stubbed client", function()
       local all = table.concat(labels, "|")
       assert.truthy(all:find("Add to shopping list...", 1, true), all)
       assert.truthy(all:find("Set quantity...", 1, true), all)
+      -- the menu is headed by the item, as a link with its tooltip; groups are set apart by separators
+      assert.are.equal(2589, ns.Widgets.menu.items[1].itemKey)
+      local seps = 0
+      for _, it in ipairs(ns.Widgets.menu.items) do
+        seps = seps + ((it:IsShown() and it.rule:IsShown()) and 1 or 0)
+      end
+      assert.is_true(seps >= 2)
       -- covered: done
       AME_DB.holdings["TestRealm:Altchar"].bags[2589] = 12
       ns.UI:RenderMarket()

@@ -52,9 +52,9 @@ end
 function UI:ItemMenu(anchor, key, opts)
   opts = opts or {}
   local watch = ns.AME.watch
-  local name, _, quality = W.ItemInfo(key)
+  -- grouped as the design has them: the item (a link), looking at it, keeping track of it, sharing or hiding it
   local entries = {
-    { text = W.QualityText(quality, name or ns.ItemString(key)), disabled = true },
+    { item = key },
     {
       text = L["Open chart"],
       func = function()
@@ -70,6 +70,7 @@ function UI:ItemMenu(anchor, key, opts)
       end,
     }
   end
+  entries[#entries + 1] = { separator = true }
   if #watch:Lists() == 1 then
     local on = watch:Has(1, key)
     entries[#entries + 1] = {
@@ -82,6 +83,7 @@ function UI:ItemMenu(anchor, key, opts)
   else
     entries[#entries + 1] = {
       text = L["Watchlists..."],
+      submenu = true,
       func = function()
         UI:WatchMenu(anchor, key)
       end,
@@ -89,6 +91,7 @@ function UI:ItemMenu(anchor, key, opts)
   end
   entries[#entries + 1] = {
     text = L["Add to shopping list..."],
+    submenu = true,
     func = function()
       UI:ShoppingAddMenu(anchor, key)
     end,
@@ -109,6 +112,7 @@ function UI:ItemMenu(anchor, key, opts)
       end
     end,
   }
+  entries[#entries + 1] = { separator = true }
   entries[#entries + 1] = {
     text = L["Link in chat"],
     func = function()
@@ -200,6 +204,7 @@ function UI:ListMenu(anchor, i)
         UI:WatchChanged()
       end,
     },
+    { separator = true }, -- deleting apart from the rest, as in the design
     {
       text = L["Delete list..."],
       disabled = #watch:Lists() <= 1,

@@ -564,10 +564,7 @@ function UI:ApplyTheme()
   end
   local mv = self.marketView
   if mv then
-    for _, line in ipairs(mv.side.lines) do
-      W.Fill(line.sel, W.COLORS.rowSelected)
-    end
-    self:RenderMarket()
+    self:RenderMarket() -- the sidebar's selection re-tints itself (UI.SideList)
   end
 end
 
