@@ -237,23 +237,36 @@ describe("Pricing", function()
     assert.are.equal(602 / 24, params.demand)
     -- 300 units ahead don't "sell in 2 h" any more: Normal goes in front of them, Patient waits behind them
     local book = { prices = { 944, 949, 999, 1000, 1050, 9900 }, qtys = { 154, 100, 9, 16, 20, 29 } }
-    local a = P.Suggest(
-      book,
-      params,
-      {
-        qty = 1,
-        hours = 24,
-        now = MONDAY_NOON,
-        cut = 0.05,
-        deposit = 120,
-        vendor = 200,
-        reference = 971,
-        ceiling = 1942,
-      }
-    )
+    local a = P.Suggest(book, params, {
+      qty = 1,
+      hours = 24,
+      now = MONDAY_NOON,
+      cut = 0.05,
+      deposit = 120,
+      vendor = 200,
+      reference = 971,
+      ceiling = 1942,
+    })
     assert.are.equal(943, a.normal.price)
     assert.is_true(a.patient.price > a.normal.price)
     assert.is_true(a.patient.hours > a.normal.hours * 10)
+  end)
+
+  it("Quick doesn't go under a price nobody is ahead of: it wouldn't sell any faster", function()
+    -- 60 units, more than sell in 4 hours at any price: in front of the cheapest listing is as quick as it gets
+    local book = { prices = { 942, 944, 949, 9900 }, qtys = { 5, 124, 150, 29 } }
+    local a = P.Suggest(book, flat(25, 3, 0.5), {
+      qty = 60,
+      hours = 24,
+      now = MONDAY_NOON,
+      cut = 0.05,
+      deposit = 7200,
+      vendor = 200,
+      reference = 972,
+      ceiling = 1944,
+    })
+    assert.are.equal(941, a.normal.price)
+    assert.are.equal(941, a.quick.price) -- not the usual price's 0.9 (8s 75c)
   end)
 
   it("stores a profile compactly and reads it back", function()

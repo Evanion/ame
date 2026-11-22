@@ -479,11 +479,23 @@ function Pricing.Suggest(book, params, opts)
       normal = r
     end
   end
-  local quick, patient = rows[1], normal
+  -- Quick: the highest price (not above Normal) that sells within QUICK_HOURS surely. When none does - more units
+  -- than sell in that time, whatever the price - the price that gives the best chance, highest first: going under
+  -- a price with nobody ahead of it doesn't sell any faster, it only gives money away.
+  local quick, patient = nil, normal
+  local best
   for _, r in ipairs(rows) do
-    if r.quickChance >= Pricing.QUICK_CHANCE and r.price <= normal.price then
-      quick = r
+    if r.price <= normal.price then
+      if r.quickChance >= Pricing.QUICK_CHANCE then
+        quick = r
+      end
+      if not best or r.quickChance >= best.quickChance then
+        best = r
+      end
     end
+  end
+  quick = quick or best or rows[1]
+  for _, r in ipairs(rows) do
     if r.chance >= Pricing.PATIENT_CHANCE and r.price > patient.price then
       patient = r
     end
