@@ -167,6 +167,84 @@ describe("Tooltip.Lines", function()
   )
 end)
 
+describe("Tooltip sections", function()
+  local wow = require("spec.helpers.wow")
+  local env, ns, T, W
+  before_each(function()
+    env = wow.install()
+    ns = addon.load({ "Core/Init.lua", "Core/ItemCache.lua", "Core/UI/Widgets.lua", "Core/UI/Tooltip.lua" })
+    T, W = ns.Tooltip, ns.Widgets
+  end)
+  after_each(function()
+    env:restore()
+  end)
+
+  local function plain(text)
+    return (tostring(text or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+  end
+
+  it("a section's heading carries its column heads, and its rows fill the columns left to right", function()
+    local rows = T.SectionRows({
+      heading = "Yours",
+      note = "43 on 3 characters",
+      columns = { "bags", "bank" },
+      rows = {
+        { label = "Mainchar", cells = { 12, false } },
+        { label = "Bankalt", note = "(alt)", cells = { "8", "8" } },
+      },
+    })
+    assert.are.equal("YOURS  ·  43 on 3 characters", plain(rows[1][1]))
+    assert.are.equal("bank", plain(rows[1][2])) -- the right column's head
+    assert.are.equal("bags", plain(rows[1][3])) -- the middle column's head
+    assert.are.equal(W.Money(12), rows[2][3]) -- a number is copper
+    assert.are.equal("·", plain(rows[2][2])) -- an empty cell
+    assert.are.equal("Bankalt (alt)", plain(rows[3][1]))
+  end)
+
+  it("draws an item bit as its name in its quality colour, with a dim count", function()
+    local left = T.Bits({ { item = 3, count = 4 }, { text = "x", dim = true } })
+    assert.truthy(left:find(ITEM_QUALITY_COLORS[1].hex .. "Item 3", 1, true), left)
+    assert.truthy(left:find(W.Dim("4"), 1, true), left)
+    assert.is_nil(left:find("|H", 1, true)) -- tooltips can't be clicked: a name, not a link
+  end)
+
+  it("draws money, warn, confidence and signal bits", function()
+    assert.are.equal(W.SignedMoney(-500, { full = true }), T.Bits({ copper = -500, signed = true }))
+    assert.are.equal(
+      W.WARN_ICON .. " " .. W.Color("warn", "old"),
+      T.Bits({ { icon = "warn" }, { text = "old", color = "warn" } })
+    )
+    assert.are.equal(W.Confidence("high"), T.Bits({ bars = "high" }))
+    assert.are.equal(W.SignalText("buy"), T.Bits({ signal = "buy" }))
+  end)
+
+  it("Tooltip.Lines puts sections after the signal; detail ones only with Shift", function()
+    local s = { market = 100, signal = "buy", qty = 1 }
+    local sections = {
+      { heading = "Recipe", rows = { { label = "Makes", cells = { 500 } } } },
+      { heading = "Made by", detail = true, lines = { "Tyken" } },
+    }
+    local rows = T.Lines(s, { house = "Horde AH", sections = sections })
+    local texts = {}
+    for i, r in ipairs(rows) do
+      texts[i] = plain(r[1])
+    end
+    local signalAt, recipeAt
+    for i, t in ipairs(texts) do
+      signalAt = signalAt or (t:find("BUY", 1, true) and i)
+      recipeAt = recipeAt or (t == "RECIPE" and i)
+    end
+    assert.truthy(signalAt and recipeAt and recipeAt > signalAt, table.concat(texts, " / "))
+    assert.is_nil(table.concat(texts, " / "):find("MADE BY", 1, true))
+    rows = T.Lines(s, { house = "Horde AH", sections = sections, detail = true })
+    local all = {}
+    for i, r in ipairs(rows) do
+      all[i] = plain(r[1])
+    end
+    assert.truthy(table.concat(all, " / "):find("MADE BY", 1, true))
+  end)
+end)
+
 describe("Tooltip.AddRows", function()
   local T
   before_each(function()
@@ -258,5 +336,16 @@ describe("Tooltip.AddRows", function()
     assert.is_false(tip.made[1].shown)
     assert.are.equal("55g 98s   2,407g", _G.FakeTipTextRight1.text)
     assert.is_nil(tip.minWidth)
+  end)
+
+  it("draws a { section = ... } row as its heading and rows", function()
+    local tip = fakeTip()
+    T.AddRows(
+      tip,
+      { { "Last full scan", "Nov 20" }, { section = { heading = "Top buy signals", lines = { "Item" } } } }
+    )
+    assert.are.equal(3, tip.n)
+    assert.truthy(_G.FakeTipTextLeft2.text:find("TOP BUY SIGNALS", 1, true))
+    assert.are.equal("Item", _G.FakeTipTextLeft3.text)
   end)
 end)

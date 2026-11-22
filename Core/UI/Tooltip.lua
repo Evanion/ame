@@ -44,6 +44,118 @@ local function section(rows, title, note)
   rows[#rows + 1] = { W.Color("dim", title) .. (note and Dim("  ·  " .. note) or "") }
 end
 
+-- Bits: the pieces a tooltip cell is written in, turned into the line's text. A cell is a string, a number (copper,
+-- drawn as money), nil (nothing), or a bit or a list of bits, joined by spaces:
+--   { text = "...", dim = true, color = "good" }   text, dim or in a colour (a text role or "RRGGBB")
+--   { copper = 1200, signed = true }               money (signed: + / - in the gain / loss colour, every unit)
+--   { item = key, count = 4 }                      an item's name in its quality colour (tooltips can't be clicked),
+--                                                  a dim count after it
+--   { icon = "warn" }                              the warning icon
+--   { bars = "high" | "medium" | "low" }           confidence bars (W.Confidence)
+--   { signal = "buy" }                             the signal's icon and word in its tone (W.SignalText)
+local function bit(b)
+  if b.copper ~= nil then
+    return b.signed and signed(b.copper) or money(b.copper)
+  elseif b.item ~= nil then
+    local name, _, quality = W.ItemInfo(b.item)
+    local out = name and W.QualityText(quality, name) or W.ItemLabel(b.item)
+    local c = type(b.count) == "number" and W.Thousands(b.count) or b.count
+    if c and c ~= "" then
+      out = out .. " " .. Dim(c)
+    end
+    return out
+  elseif b.icon == "warn" then
+    return W.WARN_ICON
+  elseif b.bars ~= nil then
+    return W.Confidence(b.bars)
+  elseif b.signal ~= nil then
+    return W.SignalText(b.signal)
+  end
+  local text = tostring(b.text or "")
+  if b.dim then
+    return Dim(text)
+  elseif b.color then
+    return W.Color(b.color, text)
+  end
+  return text
+end
+
+function Tooltip.Bits(v)
+  if v == nil then
+    return nil
+  end
+  local kind = type(v)
+  if kind == "string" then
+    return v
+  elseif kind == "number" then
+    return money(v)
+  elseif v[1] == nil and next(v) ~= nil then -- one bit
+    return bit(v)
+  end
+  local out = {}
+  for _, b in ipairs(v) do
+    out[#out + 1] = Tooltip.Bits(b)
+  end
+  return table.concat(out, " ")
+end
+
+-- A section of the block: its heading (W.TipSectionText), then its rows.
+--   sec = { heading, note, columns = { "each", "your 43" },        -- heads over the value columns, left to right
+--           rows = { { label = bits, note = "dim text", cells = { bits, bits } } | { left, right, middle } },
+--             (a cell that is false is empty: a dim "·")
+--           lines = { bits, ... } }                                -- plain lines (after the rows)
+-- A row with two cells puts the first in the middle column and the second on the right, as the block's own price
+-- rows do. -> rows ({ left, right, middle } of text), for Tooltip.AddRows
+local function cell(v)
+  if v == false then
+    return Dim("·") -- an empty cell
+  end
+  return Tooltip.Bits(v) or Dim("·")
+end
+
+function Tooltip.SectionRows(sec)
+  local rows = {}
+  local cols = sec.columns or {}
+  local head = W.TipSectionText(sec.heading, sec.note)
+  if #cols >= 2 then
+    rows[1] = { head, Dim(cols[2]), Dim(cols[1]) }
+  elseif #cols == 1 then
+    rows[1] = { head, Dim(cols[1]) }
+  else
+    rows[1] = { head }
+  end
+  for _, r in ipairs(sec.rows or {}) do
+    if r.cells or r.label then
+      local left = Tooltip.Bits(r.label) or ""
+      if r.note then
+        left = left .. " " .. Dim(r.note)
+      end
+      local cells = r.cells or {}
+      if #cells >= 2 then
+        rows[#rows + 1] = { left, cell(cells[2]), cell(cells[1]) }
+      else
+        rows[#rows + 1] = { left, cells[1] ~= nil and cell(cells[1]) or nil }
+      end
+    else
+      rows[#rows + 1] = { Tooltip.Bits(r[1]) or "", Tooltip.Bits(r[2]), Tooltip.Bits(r[3]) }
+    end
+  end
+  for _, l in ipairs(sec.lines or {}) do
+    rows[#rows + 1] = { Tooltip.Bits(l) or "" }
+  end
+  return rows
+end
+
+local function addSections(rows, sections, detail)
+  for _, sec in ipairs(sections or {}) do
+    if detail or not sec.detail then
+      for _, r in ipairs(Tooltip.SectionRows(sec)) do
+        rows[#rows + 1] = r
+      end
+    end
+  end
+end
+
 -- "bags 12 · bank 10 · on AH 5": the places that hold some
 local function places(p)
   local out = {}
@@ -72,7 +184,8 @@ end
 --         held (Trading.Held), vendor (sell price each), basis ({ units, unit }: your average cost),
 --         de = { value, outcomes = { { name, chance, min, max, price } } } (gear),
 --         houses = { { label, market, net, cut, mine } } (every AH with a price; mine = yours),
---         better (the goblin AH pays this fraction more, after its cut)
+--         better (the goblin AH pays this fraction more, after its cut),
+--         sections = { sec, ... } (Tooltip.SectionRows; after the signal, sec.detail = true ones only with Shift)
 -- returns { { left, right }, ... } (a row with only left is a plain line)
 function Tooltip.Lines(s, opts)
   opts = opts or {}
@@ -163,6 +276,8 @@ function Tooltip.Lines(s, opts)
   elseif not opts.detail then
     rows[#rows + 1] = { Dim(L["Hold Shift for more AME data"]) .. goblin }
   end
+  -- the caller's sections (Tooltip.SectionRows) come after the signal; detail = true ones only with Shift
+  addSections(rows, opts.sections, opts.detail)
   if not opts.detail then
     return rows
   end
@@ -495,12 +610,23 @@ local function middles(tooltip)
   return m
 end
 
--- rows (Tooltip.Lines) onto a game tooltip
+-- rows (Tooltip.Lines) onto a game tooltip. A row may also be { section = sec } (Tooltip.SectionRows), so a
+-- tooltip built by hand (the minimap button, Portfolio) draws its sections the same way.
 function Tooltip.AddRows(tooltip, rows)
   local name = tooltip.GetName and tooltip:GetName()
   local columns = name and tooltip.CreateFontString and tooltip.NumLines
   local placed = {}
+  local flat = {}
   for _, r in ipairs(rows) do
+    if r.section then
+      for _, sr in ipairs(Tooltip.SectionRows(r.section)) do
+        flat[#flat + 1] = sr
+      end
+    else
+      flat[#flat + 1] = r
+    end
+  end
+  for _, r in ipairs(flat) do
     if r[3] and not columns then
       W.TipPair(tooltip, r[1], r[3] .. "   " .. (r[2] or "")) -- no font strings to add: both on the right
     elseif r[2] or r[3] then

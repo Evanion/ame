@@ -573,6 +573,23 @@ function W.TipPair(tip, label, value)
   tip:AddDoubleLine(label, value, c[1], c[2], c[3], 1, 1, 1)
 end
 
+-- A section heading in a tooltip ("DISENCHANTS INTO · 3 outcomes"): capitals in a quiet grey, the note dim after it.
+-- The game's tooltip lines share one font, so capitals stand in for the design's small caps.
+W.TIP_SECTION = "7f8594"
+function W.TipSectionText(heading, note)
+  local out = "|cff" .. W.TIP_SECTION .. tostring(heading or ""):upper() .. "|r"
+  if note and note ~= "" then
+    out = out .. W.Dim("  ·  " .. note)
+  end
+  return out
+end
+function W.TipSection(tip, heading, note)
+  tip:AddLine(W.TipSectionText(heading, note))
+end
+
+-- an inline warning icon (the amber "!" of notices), sized to a tooltip or table line
+W.WARN_ICON = "|TInterface\\DialogFrame\\UI-Dialog-Icon-AlertNew:12:12:0:0|t"
+
 -- KPI card: a headline figure tile (Market Overview, Portfolio, Leveling, Sharing). A dim label, a large value, an
 -- optional change after it, an optional rising / falling bar under it and an optional dim note at the bottom.
 --   local c = W.KpiCard(parent, label, { term = "mxIndex" })
