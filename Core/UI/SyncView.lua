@@ -1,5 +1,5 @@
--- Sharing (shown in the Settings tab): how fresh each auction house's data is, then Guild sharing, Trusted players,
--- Blocked.
+-- Sharing (shown in the Settings tab): how fresh each auction house's data is (a KPI card each), then Guild sharing,
+-- Trusted players, Blocked (UI.SettingsCard).
 local _, ns = ...
 local L = ns.L
 
@@ -54,7 +54,7 @@ function UI:CreateSyncSection(v, host)
   v.pane = host.pane
   v.statusLine = host.status
   self.syncView = v
-  -- freshness per auction house - the age large, then the source
+  -- freshness per auction house: a KPI card each - the house, the age large, then the source as its note
   local defs = {}
   for k, house in ipairs(self:SyncHouses()) do
     defs[k] = { ns.HOUSE_LABEL[house] or house }
@@ -63,13 +63,7 @@ function UI:CreateSyncSection(v, host)
   cards:SetPoint("TOPLEFT", 0, 0)
   cards:SetPoint("RIGHT", 0, 0)
   for _, c in ipairs(cards.cards) do
-    c.value:SetFontObject("GameFontHighlightLarge")
-    c.value:ClearAllPoints()
-    c.value:SetPoint("TOPLEFT", c.label, "BOTTOMLEFT", 0, -3)
-    c.sub = W.Text(c, "GameFontDisableSmall")
-    c.sub:SetPoint("BOTTOMLEFT", 8, 6)
-    c.sub:SetPoint("RIGHT", -8, 0)
-    c.sub:SetWordWrap(false)
+    c.sub = c.note -- the source line (the card's note)
   end
   v.fresh = cards.cards
 
@@ -96,13 +90,13 @@ function UI:CreateSyncSection(v, host)
       UI:RefreshSync()
     end
   end
+  -- a list of players in a card: { list = W.RowList opts }, its rows truncating at LIST_W
+  local function list(rows, rowHeight, opts)
+    opts.rows, opts.rowHeight, opts.width = rows, rowHeight, LIST_W
+    return { list = opts }
+  end
   local lists = {}
-  local function list(st, rows, rowHeight, opts)
-    local holder = st:Row(rowHeight, 4)
-    opts.rows, opts.rowHeight, opts.width, opts.fill = rows, rowHeight, LIST_W, true
-    local l = W.RowList(holder, opts)
-    l:SetPoint("TOPLEFT")
-    l:SetPoint("RIGHT", holder, "RIGHT", 0, 0)
+  local function keep(l, holder)
     l.holder = holder
     lists[#lists + 1] = l
     return l
@@ -113,18 +107,78 @@ function UI:CreateSyncSection(v, host)
       l.holder:SetHeight(math.max(1, l:GetHeight() or 1))
     end
   end
-  local function sublabel(st, text)
-    local t = st:Text("GameFontDisableSmall", 10)
-    t:SetText(text)
-    return t
-  end
 
-  -- Guild sharing: the switch, one line of activity, the players heard from
-  local st = stack:Card(0).stack
-  st:Heading(L["Guild sharing"], 0)
-  local row = st:Row(20, 6)
+  -- Guild sharing: the switch (Sync now beside it), recipes, the protocol, one line of activity, the players heard
+  -- from
+  local guild = UI.SettingsCard(stack, L["Guild sharing"], {
+    { check = L["Share full scans with my guild"], key = "syncGuild" },
+    { check = L["Share what my characters can craft (who can make it)"], key = "shareRecipes" },
+    {
+      field = L["Sync protocol"],
+      control = function(row)
+        -- v2 (the guild at once, hourly prices for a week) or v1 (lighter)
+        return W.Dropdown(row, 230, {
+          { 2, L["v2: the whole guild at once"] },
+          { 1, L["v1: lighter (if sync slows your game)"] },
+        }, function(p)
+          if p == svc:Protocol() then
+            return
+          end
+          ns.Settings:Set("syncProtocol", p)
+          svc:InitV2()
+          v.syncStatus:SetText(
+            p == 1 and L["Switched to v1. /reload to stop receiving v2 traffic altogether."] or L["Switched to v2."]
+          )
+          UI:RefreshSync()
+        end, { neutral = true, default = 2 })
+      end,
+    },
+    { text = "" },
+    { text = "" },
+    { text = L["Players heard from"] },
+    { text = "" },
+    list(MAX_PEERS_ALL, 20, {
+      buttons = {
+        {
+          key = "block",
+          label = L["Block"],
+          width = 50,
+          onClick = act("Block"),
+          shown = function(p)
+            return not svc.trust:IsBlocked(p.name)
+          end,
+        },
+      },
+      state = true,
+      empty = L["No one yet."],
+    }),
+    {
+      buttons = {
+        {
+          L["Show all"],
+          function()
+            v.peersExpanded = not v.peersExpanded
+            UI:RefreshSync()
+          end,
+          width = 90,
+        },
+      },
+    },
+  }, { gap = 0 })
+  local c = guild.controls
+  v.guild, v.recipes, v.protocol = c[1], c[2], c[3]
+  ns.Help.Explain(v.protocol, "syncProtocol")
+  v.syncStatus, v.activity = c[4], c[5]
+  -- a big guild: a summary line, the few heard from last, and Show all (by name) for the rest
+  v.peerSummary = c[7]
+  v.peerSummary:SetFontObject("GameFontHighlightSmall")
+  v.peerList = keep(c[8], guild.rowFrames[8])
+  v.peers = v.peerList.rows
+  v.peersMoreRow = c[9]
+  v.peersMore = c[9].buttons[1]
+  v.peersExpanded = false
   -- Sync now: announce ours, and ask everyone to announce theirs (missing scans arrive in a minute or two)
-  local syncNow = W.Button(row, L["Sync now"], 90, 20, function()
+  local syncNow = W.Button(guild.rowFrames[1], L["Sync now"], 90, 20, function()
     local ok, why = svc:SyncNow()
     v.syncStatus:SetText(
       ok and L["Asked your guild and trusted players for their latest scans: they arrive over the next minutes."]
@@ -135,70 +189,10 @@ function UI:CreateSyncSection(v, host)
   syncNow:SetWidth(math.ceil(syncNow.label:GetStringWidth() or 60) + 16)
   syncNow:SetPoint("RIGHT", 0, 0)
   v.syncNow = syncNow
-  v.guild = W.SettingCheck(row, L["Share full scans with my guild"], "syncGuild", 0, -1)
-  row = st:Row(18, 6)
-  v.recipes = W.SettingCheck(row, L["Share what my characters can craft (who can make it)"], "shareRecipes", 0, -1)
-  -- the protocol: v2 (the guild at once, hourly prices for a week) or v1 (lighter)
-  row = st:Row(20, 6)
-  local protoLabel = W.Text(row, "GameFontHighlightSmall")
-  protoLabel:SetPoint("LEFT", 0, 0)
-  protoLabel:SetText(L["Sync protocol"])
-  v.protocol = W.Dropdown(row, 230, {
-    { 2, L["v2: the whole guild at once"] },
-    { 1, L["v1: lighter (if sync slows your game)"] },
-  }, function(p)
-    if p == svc:Protocol() then
-      return
-    end
-    ns.Settings:Set("syncProtocol", p)
-    svc:InitV2()
-    v.syncStatus:SetText(
-      p == 1 and L["Switched to v1. /reload to stop receiving v2 traffic altogether."] or L["Switched to v2."]
-    )
-    UI:RefreshSync()
-  end, { neutral = true, default = 2 })
-  v.protocol:SetPoint("LEFT", protoLabel, "RIGHT", 8, 0)
-  ns.Help.Explain(v.protocol, "syncProtocol")
-  v.syncStatus = st:Text("GameFontDisableSmall", 4)
-  v.activity = st:Text("GameFontDisableSmall", 6)
-  v.activity:SetSpacing(2)
-  sublabel(st, L["Players heard from"])
-  -- a big guild: a summary line, the few heard from last, and Show all (by name) for the rest
-  v.peerSummary = st:Text("GameFontHighlightSmall", 2)
-  v.peerList = list(st, MAX_PEERS_ALL, 20, {
-    buttons = {
-      {
-        key = "block",
-        label = L["Block"],
-        width = 50,
-        onClick = act("Block"),
-        shown = function(p)
-          return not svc.trust:IsBlocked(p.name)
-        end,
-      },
-    },
-    state = true,
-    empty = L["No one yet."],
-  })
-  v.peers = v.peerList.rows
-  row = st:Row(18, 2)
-  v.peersMore = W.Button(row, L["Show all"], 90, 18, function()
-    v.peersExpanded = not v.peersExpanded
-    UI:RefreshSync()
-  end)
-  v.peersMore:SetPoint("LEFT", 0, 0)
-  v.peersMoreRow = row
-  v.peersExpanded = false
 
   -- Trusted players: intro, the switch, ask by name, the list, then requests
-  st = stack:Card().stack
-  st:Heading(L["Trusted players"], 0)
-  local intro = st:Text("GameFontDisableSmall", 4)
-  intro:SetText(L["Swap scans with friends, or your own characters on other accounts."])
-  row = st:Row(18, 6)
-  v.trusted = W.SettingCheck(row, L["Share with trusted players"], "syncTrusted", 0, -1)
-  local input
   local function add()
+    local input = v.input
     local e, why = svc:AddTrusted(input:GetText())
     if e then
       input:SetText("")
@@ -209,44 +203,52 @@ function UI:CreateSyncSection(v, host)
     input:ClearFocus()
     UI:RefreshSync()
   end
-  row = st:Row(22, 8)
-  local addButton = W.Button(row, L["Ask to share"], 90, 20, add)
-  addButton:SetWidth(math.ceil(addButton.label:GetStringWidth() or 70) + 16)
-  addButton:SetPoint("RIGHT", 0, 0)
-  input = W.Input(row, { width = 160, hint = L["Character name"], onEnter = add })
-  input:SetPoint("LEFT", 0, 0)
-  input:SetPoint("RIGHT", addButton, "LEFT", -6, 0)
-  v.input = input
-  v.addStatus = st:Text("GameFontDisableSmall", 4)
-  v.trustedList = list(st, MAX_TRUSTED, 22, {
-    buttons = { { key = "remove", close = true, onClick = act("RemoveTrusted") } },
-    state = true,
-    empty = L["Nobody yet. Add a friend above - they need AME too, and must approve."],
-    more = L["+ %d more"],
+  local trusted = UI.SettingsCard(stack, L["Trusted players"], {
+    { text = L["Swap scans with friends, or your own characters on other accounts."] },
+    { check = L["Share with trusted players"], key = "syncTrusted" },
+    { input = L["Character name"], button = L["Ask to share"], onClick = add },
+    { text = "" },
+    list(MAX_TRUSTED, 22, {
+      buttons = { { key = "remove", close = true, onClick = act("RemoveTrusted") } },
+      state = true,
+      empty = L["Nobody yet. Add a friend above - they need AME too, and must approve."],
+      more = L["+ %d more"],
+    }),
+    { text = L["Requests"] },
+    list(MAX_PENDING, 22, {
+      buttons = {
+        { key = "approve", label = L["Approve"], width = 64, onClick = act("Approve") },
+        { key = "decline", label = L["Decline"], width = 64, onClick = act("Decline") },
+        { key = "block", label = L["Block"], width = 50, onClick = act("Block") },
+      },
+      empty = L["No requests."],
+    }),
   })
+  c = trusted.controls
+  v.trusted = c[2]
+  v.input = c[3]
+  v.input.button:SetWidth(math.ceil(v.input.button.label:GetStringWidth() or 70) + 16)
+  v.addStatus = c[4]
+  v.trustedList = keep(c[5], trusted.rowFrames[5])
   v.trustedRows = v.trustedList.rows
-  v.pendingHead = sublabel(st, L["Requests"])
-  v.pendingList = list(st, MAX_PENDING, 22, {
-    buttons = {
-      { key = "approve", label = L["Approve"], width = 64, onClick = act("Approve") },
-      { key = "decline", label = L["Decline"], width = 64, onClick = act("Decline") },
-      { key = "block", label = L["Block"], width = 50, onClick = act("Block") },
-    },
-    empty = L["No requests."],
-  })
+  v.pendingHead = c[6]
+  v.pendingList = keep(c[7], trusted.rowFrames[7])
   v.pending = v.pendingList.rows
 
   -- Blocked: what it does, the list, the last rejected scan
-  st = stack:Card().stack
-  st:Heading(L["Blocked"], 0)
-  v.guildBlocked = st:Text("GameFontDisableSmall", 4)
-  v.guildBlocked:SetSpacing(2)
-  v.blockedList = list(st, MAX_BLOCKED, 20, {
-    buttons = { { key = "unblock", label = L["Unblock"], width = 60, onClick = act("Unblock") } },
-    empty = L["You haven't blocked anyone."],
+  local blocked = UI.SettingsCard(stack, L["Blocked"], {
+    { text = "" },
+    list(MAX_BLOCKED, 20, {
+      buttons = { { key = "unblock", label = L["Unblock"], width = 60, onClick = act("Unblock") } },
+      empty = L["You haven't blocked anyone."],
+    }),
+    { text = "" },
   })
+  c = blocked.controls
+  v.guildBlocked = c[1]
+  v.blockedList = keep(c[2], blocked.rowFrames[2])
   v.blocked = v.blockedList.rows
-  v.lastRejected = st:Text("GameFontDisableSmall", 8)
+  v.lastRejected = c[3]
 
   v:SetScript("OnShow", function()
     UI:RefreshSync()
@@ -272,16 +274,14 @@ function UI:RefreshSync()
     if f.t then
       local days = (now - f.t) / ns.DAY
       local role = days < 1 and "good" or days < 3 and "warn" or "dim"
-      card.value:SetText(W.Color(role, L["%s old"]:format(W.Age(f.t, now))))
       local who = (not f.src or f.src == me) and L["you"] or f.src
       local sub = L["Full scan by %s"]:format(who)
       if f.items then
         sub = sub .. W.SEP .. L["%s items"]:format(W.Thousands(f.items))
       end
-      card.sub:SetText(sub)
+      card:Set({ value = W.Color(role, L["%s old"]:format(W.Age(f.t, now))), note = sub })
     else
-      card.value:SetText(W.Dim(L["No data"]))
-      card.sub:SetText(L["No full scan yet: scan there, or trust someone who does"])
+      card:Set({ value = W.Dim(L["No data"]), note = L["No full scan yet: scan there, or trust someone who does"] })
     end
   end
   v.statusLine:SetText(

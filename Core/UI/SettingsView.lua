@@ -1,5 +1,5 @@
--- Settings tab: a sidebar of sections (like the Guide) and the chosen section's cards over the whole width, in
--- columns on wide windows.
+-- Settings tab: a side menu of sections (UI.SideList, like the Guide) and the chosen section's cards (UI.SettingsCard)
+-- over the whole width, in columns on wide windows.
 -- Sections: General (window, notifications), Tooltips & charts, Selling, Sharing (guild and trusted players, built
 -- by SyncView), Data. Narrow windows pick the section from a dropdown instead of the sidebar.
 local _, ns = ...
@@ -53,34 +53,26 @@ function UI:CreateSettingsView(parent, contentArea)
   self.settingsView = v
   local checks = {}
   v.checks = checks
-  v.sections, v.links = {}, {}
+  v.sections = {}
   v.current = "general"
   slots.status:SetText(L["Settings are saved per account"])
   local sections = UI.SettingsSections()
 
-  -- sidebar: the sections (narrow windows: a dropdown on the toolbar)
-  local list = slots.left.content
+  -- sidebar: the sections, a side menu (narrow windows: a dropdown on the toolbar)
+  v.nav = UI.SideList(slots.left, {
+    rows = #sections,
+    onClick = function(e)
+      UI:ShowSettingsSection(e.key)
+    end,
+  })
+  function v:RenderNav()
+    local entries = {}
+    for k, sec in ipairs(sections) do
+      entries[k] = { label = sec[2], key = sec[1], selected = sec[1] == self.current }
+    end
+    self.nav:SetEntries(entries)
+  end
   for k, sec in ipairs(sections) do
-    local b = CreateFrame("Button", nil, list)
-    b:SetHeight(20)
-    b:SetPoint("TOPLEFT", 4, -8 - (k - 1) * 22)
-    b:SetPoint("RIGHT", list, "RIGHT", -4, 0)
-    b.sel = b:CreateTexture(nil, "BACKGROUND")
-    b.sel:SetAllPoints()
-    W.Fill(b.sel, W.COLORS.rowSelected)
-    b.sel:SetShown(k == 1)
-    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
-    b.hl:SetAllPoints()
-    W.Fill(b.hl, W.COLORS.rowHover)
-    b.text = W.Text(b, "GameFontHighlightSmall")
-    b.text:SetPoint("LEFT", 8, 0)
-    b.text:SetPoint("RIGHT", -4, 0)
-    b.text:SetWordWrap(false)
-    b.text:SetText(sec[2])
-    b:SetScript("OnClick", function()
-      UI:ShowSettingsSection(sec[1])
-    end)
-    v.links[sec[1]] = b
     -- each section: a frame in the scroll pane holding a column of cards
     local frame = CreateFrame("Frame", nil, v)
     frame:SetPoint("TOPLEFT", 0, 0)
@@ -88,6 +80,7 @@ function UI:CreateSettingsView(parent, contentArea)
     frame:SetShown(k == 1)
     v.sections[sec[1]] = { frame = frame, stack = UI.Stack(frame, 0) }
   end
+  v:RenderNav()
   v.pick = W.Dropdown(slots.toolbar, 180, sections, function(key)
     if key then
       UI:ShowSettingsSection(key)
@@ -108,9 +101,6 @@ function UI:CreateSettingsView(parent, contentArea)
     local sec = self.sections[self.current]
     local w = math.max(200, self:GetWidth() or 200)
     sec.frame:SetWidth(w)
-    if self.current == "data" and self.FlowActions then
-      self:FlowActions(w - 16)
-    end
     local h = sec.measure and sec.measure(w)
       or sec.stack:Flow(w, UI.SETTINGS_COLUMN, UI.SETTINGS_GAP, UI.SETTINGS_COLUMNS)
     sec.frame:SetHeight(math.max(1, h))
@@ -125,260 +115,221 @@ function UI:CreateSettingsView(parent, contentArea)
     v:LayoutColumns()
   end)
 
-  -- a card: its heading, then rows
-  local function card(section, title, gap)
-    local c = v.sections[section].stack:Card(gap or UI.SETTINGS_GAP)
-    c.stack:Heading(title, 0)
-    return c, c.stack
+  -- a card of setting rows (UI.SettingsCard); its setting checks join v.checks
+  local function card(section, title, rows, gap)
+    local c = UI.SettingsCard(v.sections[section].stack, title, rows, { gap = gap or UI.SETTINGS_GAP })
+    for _, check in ipairs(c.checks) do
+      checks[#checks + 1] = check
+    end
+    return c, c.controls
   end
-  local function check(st, label, key, onChange, indent)
-    local row = st:Row(18, 6)
-    local c = W.SettingCheck(row, label, key, indent or 0, -1, onChange)
-    checks[#checks + 1] = c
-    return c, row
-  end
-  -- "label ... control": the label on the left, the control right-aligned
-  local function dropdown(st, label, width, options, onSelect, note)
-    local row = st:Row(22, 6)
-    local dd = W.Dropdown(row, width, options, onSelect, { neutral = true })
-    dd:SetPoint("RIGHT", 0, 0)
-    local text = W.Text(row, "GameFontHighlightSmall")
-    text:SetPoint("LEFT", 0, 0)
-    text:SetPoint("RIGHT", dd, "LEFT", -6, 0)
-    text:SetText(note and (label .. "  " .. W.Dim(note)) or label)
-    text:SetWordWrap(false)
-    return dd, row
-  end
-  local function paragraph(st, text)
-    local p = st:Text("GameFontDisableSmall", 4)
-    p:SetSpacing(2)
-    p:SetText(text)
-    return p
+  local function field(label, width, options, onSelect, note)
+    return { field = label, note = note, dropdown = { width, options, onSelect } }
   end
 
   -- General: the window, notifications
-  local _, st = card("general", L["Window"], 0)
   local scales = {}
   for pct = 70, 120, 10 do
     scales[#scales + 1] = { pct / 100, ("%d%%"):format(pct) }
   end
-  v.scale = dropdown(st, L["Scale"], 80, scales, function(value)
-    ns.Settings:Set("windowScale", value)
-    UI:ApplyPlacement()
-  end, "(70-120%)")
-  check(st, L["Dock next to the auction house when there's room"], "dockToAH", function()
-    if UI.frame and UI.frame:IsShown() then
-      UI:ApplyPlacement()
-    end
-  end)
-  check(st, L["Open with the auction house"], "openWithAH")
-  check(st, L["...and close with it"], "closeWithAH", nil, 20)
-  check(st, L["Switch to the Item tab for what you put up for sale"], "sellSwitchesTab")
   local themes = {
     { "auto", L["Follow market"] },
     { "Horde", L["Horde red"] },
     { "Alliance", L["Alliance blue"] },
     { "Neutral", L["Goblin gold"] },
   }
-  v.theme = dropdown(st, L["Colours"], 110, themes, function(value)
-    ns.Settings:Set("theme", value)
-    UI:ApplyTheme()
-  end)
-  v.colorBlind = check(st, L["Colour-blind friendly palette"], "colorBlind", function()
-    W.ApplyPalette()
-    UI:PaletteChanged()
-  end)
-  local minimapRow = st:Row(18, 6)
-  v.minimap = W.Check(minimapRow, L["Show minimap button"], function(on)
-    ns.Launcher:SetMinimap(on)
-  end)
-  v.minimap:SetPoint("TOPLEFT", 0, -1)
-  _, st = card("general", L["Market overview"])
-  v.overviewCheck = check(st, L["Show the Market overview"], "marketOverview", function(on)
-    UI:MarketOverviewChanged(on)
-  end)
-  paragraph(
-    st,
-    L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."]
-  )
-  _, st = card("general", L["Notifications"])
-  check(st, L["Announce recorded full scans"], "announceScans")
-  check(st, L["Sound when an alert fires"], "alertSound")
+  local _, ctl = card("general", L["Window"], {
+    field(L["Scale"], 80, scales, function(value)
+      ns.Settings:Set("windowScale", value)
+      UI:ApplyPlacement()
+    end, "(70-120%)"),
+    {
+      check = L["Dock next to the auction house when there's room"],
+      key = "dockToAH",
+      onChange = function()
+        if UI.frame and UI.frame:IsShown() then
+          UI:ApplyPlacement()
+        end
+      end,
+    },
+    { check = L["Open with the auction house"], key = "openWithAH" },
+    { check = L["…and close with it"], key = "closeWithAH", indent = true },
+    { check = L["Switch to the Item tab for what you put up for sale"], key = "sellSwitchesTab" },
+    field(L["Colours"], 110, themes, function(value)
+      ns.Settings:Set("theme", value)
+      UI:ApplyTheme()
+    end),
+    {
+      check = L["Colour-blind friendly palette"],
+      key = "colorBlind",
+      onChange = function()
+        W.ApplyPalette()
+        UI:PaletteChanged()
+      end,
+    },
+    {
+      check = L["Show minimap button"],
+      onChange = function(on)
+        ns.Launcher:SetMinimap(on)
+      end,
+    },
+  }, 0)
+  v.scale, v.theme, v.colorBlind, v.minimap = ctl[1], ctl[6], ctl[7], ctl[8]
+  _, ctl = card("general", L["Market overview"], {
+    {
+      check = L["Show the Market overview"],
+      key = "marketOverview",
+      onChange = function(on)
+        UI:MarketOverviewChanged(on)
+      end,
+    },
+    {
+      text = L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."],
+    },
+  })
+  v.overviewCheck = ctl[1]
+  card("general", L["Notifications"], {
+    { check = L["Announce recorded full scans"], key = "announceScans" },
+    { check = L["Sound when an alert fires"], key = "alertSound" },
+  })
 
   -- Tooltips & charts
-  _, st = card("display", L["Tooltips"], 0)
-  local tooltipCheck = check(st, L["Show AME prices in item tooltips"], "tooltip")
-  table.remove(checks)
-  table.insert(checks, 1, tooltipCheck) -- checks[1]: the tooltip switch
   local avgs = {
     { 3, L["%d days"]:format(3) },
     { 7, L["%d days"]:format(7) },
     { 14, L["%d days"]:format(14) },
     { 30, L["%d days"]:format(30) },
   }
-  v.avgDays = dropdown(st, L["Average period"], 90, avgs, function(value)
-    -- one period everywhere: tooltips, the screener's average column and the item page
-    ns.Settings:Set("tooltipAvgDays", value)
-    local q = UI.mq
-    if q and q.sortKey and q.sortKey:match("^avg%d+$") then
-      q.sortKey = "avg" .. value
+  _, ctl = card("display", L["Tooltips"], {
+    { check = L["Show prices in item tooltips"], key = "tooltip" },
+    field(L["Average period"], 90, avgs, function(value)
+      -- one period everywhere: tooltips, the screener's average column and the item page
+      ns.Settings:Set("tooltipAvgDays", value)
+      local q = UI.mq
+      if q and q.sortKey and q.sortKey:match("^avg%d+$") then
+        q.sortKey = "avg" .. value
+      end
+      UI.list = nil
+    end),
+    { check = L["Always show details (otherwise hold Shift)"], key = "tooltipDetail" },
+  }, 0)
+  v.avgDays = ctl[2]
+  for i, c in ipairs(checks) do
+    if c.key == "tooltip" then
+      table.remove(checks, i)
+      table.insert(checks, 1, c) -- checks[1]: the tooltip switch
+      break
     end
-    UI.list = nil
-  end)
-  check(st, L["Always show details (otherwise hold Shift)"], "tooltipDetail")
-  _, st = card("display", L["Charts"])
+  end
   local styles = { { "line", L["Line"] }, { "candles", L["Candles"] } }
-  v.style = dropdown(st, L["Style"], 100, styles, function(value)
-    ns.Settings:Set("chartStyle", value)
-    if UI.series then
-      UI:DrawItemChart()
-    end
-  end)
   local clicks = {
     { "none", L["Off"] },
     { "alt", L["Alt-click"] },
     { "altshift", L["Alt+Shift-click"] },
     { "ctrlalt", L["Ctrl+Alt-click"] },
   }
-  v.click = dropdown(st, L["Open charts with"], 110, clicks, function(value)
-    ns.Settings:Set("clickModifier", value)
-  end)
-  paragraph(
-    st,
-    L["Off by default: loot addons use modified clicks. Without one, Shift-click an item while AME shows its Item tab."]
-  )
+  _, ctl = card("display", L["Charts"], {
+    field(L["Style"], 100, styles, function(value)
+      ns.Settings:Set("chartStyle", value)
+      if UI.series then
+        UI:DrawItemChart()
+      end
+    end),
+    field(L["Open charts with"], 110, clicks, function(value)
+      ns.Settings:Set("clickModifier", value)
+    end),
+    {
+      text = L["Off by default: loot addons use modified clicks. Without one, Shift-click an item while AME shows its Item tab."],
+    },
+  })
+  v.style, v.click = ctl[1], ctl[2]
 
-  -- Selling
   -- items hidden from the lists (right-click a row to hide one)
-  _, st = card("display", L["Hidden items"])
-  v.hiddenText = paragraph(st, "")
-  local hiddenRow = st:Row(22, 8)
-  v.hiddenShow = W.Button(hiddenRow, L["Show them"], 100, 22, function()
-    UI:ShowHidden()
-  end)
-  v.hiddenShow:SetPoint("LEFT")
-  v.hiddenUnhide = W.Button(hiddenRow, L["Unhide all"], 100, 22, function()
-    UI:UnhideAll()
-    UI:RefreshSettings()
-  end)
-  v.hiddenUnhide:SetPoint("LEFT", v.hiddenShow, "RIGHT", 6, 0)
+  _, ctl = card("display", L["Hidden items"], {
+    { text = "" },
+    {
+      buttons = {
+        {
+          L["Show them"],
+          function()
+            UI:ShowHidden()
+          end,
+          width = 100,
+        },
+        {
+          L["Unhide all"],
+          function()
+            UI:UnhideAll()
+            UI:RefreshSettings()
+          end,
+          width = 100,
+        },
+      },
+    },
+  })
+  v.hiddenText, v.hiddenShow, v.hiddenUnhide = ctl[1], ctl[2].buttons[1], ctl[2].buttons[2]
 
-  _, st = card("selling", L["Selling"], 0)
-  local function cutInput(key, label)
-    local row = st:Row(22, 6)
-    local pct = W.Text(row, "GameFontHighlightSmall")
-    pct:SetPoint("RIGHT", 0, 0)
-    pct:SetText("%")
-    local input = W.Input(row, {
-      width = 44,
-      numeric = true,
-      onChange = function(_, n, user)
-        if user and n and n <= 100 then
-          ns.Settings:Set(key, n)
-          ns.AME:InvalidateIndexLater(nil, 2) -- VENDOR signals depend on the cut (rebuilt once typing settles)
-        end
+  -- Selling: the cuts (a percent box, right-aligned like every field), the listing length
+  local function cut(key, label)
+    return {
+      field = label,
+      control = function(row)
+        local box = CreateFrame("Frame", nil, row)
+        box:SetSize(60, 22)
+        local pct = W.Text(box, "GameFontHighlightSmall")
+        pct:SetPoint("RIGHT", 0, 0)
+        pct:SetText("%")
+        local input = W.Input(box, {
+          width = 44,
+          numeric = true,
+          onChange = function(_, n, user)
+            if user and n and n <= 100 then
+              ns.Settings:Set(key, n)
+              ns.AME:InvalidateIndexLater(nil, 2) -- VENDOR signals depend on the cut (rebuilt once typing settles)
+            end
+          end,
+        })
+        input:SetPoint("RIGHT", pct, "LEFT", -4, 0)
+        input.key = key
+        box.input = input
+        return box
       end,
-    })
-    input:SetPoint("RIGHT", pct, "LEFT", -4, 0)
-    local text = W.Text(row, "GameFontHighlightSmall")
-    text:SetPoint("LEFT", 0, 0)
-    text:SetText(label)
-    input.key = key
-    return input
+    }
   end
-  v.cutFaction = cutInput("cutFaction", L["Faction AH cut"])
-  v.cutNeutral = cutInput("cutNeutral", L["Goblin AH cut"])
   local hours = {
     { 2, L["%d h"]:format(2) },
     { 8, L["%d h"]:format(8) },
     { 24, L["%d h"]:format(24) },
   }
-  v.hours = dropdown(st, L["Listing length"], 80, hours, function(value)
-    ns.Settings:Set("listingHours", value)
-    ns.AME:InvalidateIndex() -- VENDOR signals depend on the deposit
-    if UI.RenderArbitrage then
-      UI:RenderArbitrage()
-    end
-  end)
+  _, ctl = card("selling", L["Selling"], {
+    cut("cutFaction", L["Faction AH cut"]),
+    cut("cutNeutral", L["Goblin AH cut"]),
+    field(L["Listing length"], 80, hours, function(value)
+      ns.Settings:Set("listingHours", value)
+      ns.AME:InvalidateIndex() -- VENDOR signals depend on the deposit
+      if UI.RenderArbitrage then
+        UI:RenderArbitrage()
+      end
+    end),
+  }, 0)
+  v.cutFaction, v.cutNeutral, v.hours = ctl[1].input, ctl[2].input, ctl[3]
 
-  -- Data
-  _, st = card("selling", L["Buying"])
   local warns = { { 0, L["Off"] } }
   for _, pct in ipairs({ 5, 10, 20, 50 }) do
     warns[#warns + 1] = { pct, L["%d%% over"]:format(pct) }
   end
-  v.buyWarn = dropdown(st, L["Warn when the price goes up"], 90, warns, function(value)
-    ns.Settings:Set("buyWarnPct", value)
-  end)
-  paragraph(
-    st,
-    L["Buying in bulk on the Shopping tab: when the game's price for the order is this much over what the listings showed, AME says so and the button reads Confirm anyway."]
-  )
+  _, ctl = card("selling", L["Buying"], {
+    field(L["Warn when the price goes up"], 90, warns, function(value)
+      ns.Settings:Set("buyWarnPct", value)
+    end),
+    {
+      text = L["Buying in bulk on the Shopping tab: when the game's price for the order is this much over what the listings showed, AME says so and the button reads Confirm anyway."],
+    },
+  })
+  v.buyWarn = ctl[1]
 
-  _, st = card("data", L["Data"], 0)
-  v.scanMode = dropdown(st, L["Full scans"], 170, {
-    { "detailed", L["Detailed: every listing"] },
-    { "fast", L["Fast: cheapest per item"] },
-  }, function(value)
-    ns.Settings:Set("scanMode", value)
-    if ns.ScanButton then
-      ns.ScanButton:Refresh()
-    end
-  end)
-  paragraph(
-    st,
-    L["Detailed reads every listing - the most accurate prices - and the game allows one every 15 minutes. Fast reads only each item's cheapest listing, any time; its market prices come from how far above the cheapest each item usually sells, learned from detailed scans and searches. For the Full scan button and /ame scan."]
-  )
-  v.storage = st:Text("GameFontDisableSmall", 6)
-  v.storage:SetSpacing(2)
-  -- the data actions in a row, sized to their labels (wrapping when narrow); what each does is on its tooltip
-  local actions = st:Row(22, 8)
-  v.actionsRow = actions
-  local buttons = {}
-  for _, a in ipairs({
-    {
-      L["Import from Auctionator"],
-      L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."],
-      function()
-        ns.AME:Backfill(true)
-      end,
-    },
-    {
-      L["Rebuild market data"],
-      L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."],
-      function()
-        ns.AME:RebuildIndex()
-      end,
-    },
-    {
-      L["Run self-test"],
-      L["Checks every part of AME and offers a reload so the results are saved."],
-      function()
-        ns.SelfTest.Run(ns.AME)
-      end,
-    },
-  }) do
-    local b = W.Button(actions, a[1], 80, 22, a[3])
-    b:SetWidth(math.ceil(b.label:GetStringWidth() or 60) + 16)
-    buttons[#buttons + 1] = b
-    W.Tooltip(b, function(tip)
-      W.TipText(tip, a[1], a[2])
-    end)
-  end
-  -- left to right, onto a new line when the next button doesn't fit the card
-  function v:FlowActions(width)
-    local x, y = 0, 0
-    for _, b in ipairs(buttons) do
-      local bw = b:GetWidth() or 80
-      if x > 0 and x + bw > width then
-        x, y = 0, y - 28
-      end
-      b:ClearAllPoints()
-      b:SetPoint("TOPLEFT", actions, "TOPLEFT", x, y)
-      x = x + bw + 6
-    end
-    actions:SetHeight(22 - y)
-  end
+  -- Data: full scans, what AME holds, the data actions (wrapping when narrow; what each does is on its tooltip), the
+  -- outlier filter
   local factors = {
     { false, L["Off"] },
     { 3, L["%dx off usual"]:format(3) },
@@ -386,15 +337,64 @@ function UI:CreateSettingsView(parent, contentArea)
     { 6, L["%dx off usual"]:format(6) },
     { 10, L["%dx off usual"]:format(10) },
   }
-  local outlierRow
-  v.outliers, outlierRow = dropdown(st, L["Ignore outrageous prices"], 110, factors, function(value)
-    ns.Settings:Set("outlierFactor", value)
-    ns.AME:InvalidateIndex()
-    ns.AME:RebuildIndex()
-    if UI.itemID and UI.current == "item" then
-      UI:ShowItem(UI.itemID)
-    end
-  end)
+  local function action(label, tip, fn)
+    return { label, fn, tip = { label, tip } }
+  end
+  local dataCard
+  dataCard, ctl = card("data", L["Data"], {
+    field(L["Full scans"], 170, {
+      { "detailed", L["Detailed: every listing"] },
+      { "fast", L["Fast: cheapest per item"] },
+    }, function(value)
+      ns.Settings:Set("scanMode", value)
+      if ns.ScanButton then
+        ns.ScanButton:Refresh()
+      end
+    end),
+    {
+      text = L["Detailed reads every listing - the most accurate prices - and the game allows one every 15 minutes. Fast reads only each item's cheapest listing, any time; its market prices come from how far above the cheapest each item usually sells, learned from detailed scans and searches. For the Full scan button and /ame scan."],
+    },
+    { text = "" },
+    {
+      buttons = {
+        action(
+          L["Import from Auctionator"],
+          L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."],
+          function()
+            ns.AME:Backfill(true)
+          end
+        ),
+        action(
+          L["Rebuild market data"],
+          L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."],
+          function()
+            ns.AME:RebuildIndex()
+          end
+        ),
+        action(
+          L["Run self-test"],
+          L["Checks every part of AME and offers a reload so the results are saved."],
+          function()
+            ns.SelfTest.Run(ns.AME)
+          end
+        ),
+      },
+    },
+    field(L["Ignore outrageous prices"], 110, factors, function(value)
+      ns.Settings:Set("outlierFactor", value)
+      ns.AME:InvalidateIndex()
+      ns.AME:RebuildIndex()
+      if UI.itemID and UI.current == "item" then
+        UI:ShowItem(UI.itemID)
+      end
+    end),
+  }, 0)
+  v.scanMode, v.storage, v.actionsRow, v.outliers = ctl[1], ctl[3], ctl[4], ctl[5]
+  -- the data actions onto as many lines as the card's width needs
+  function v:FlowActions(width)
+    self.actionsRow:Fit(width)
+  end
+  local outlierRow = dataCard.rowFrames[5]
   outlierRow:EnableMouse(true)
   W.Tooltip(outlierRow, function(tip)
     W.TipText(
@@ -442,8 +442,8 @@ function UI:ShowSettingsSection(key)
   v.current = key
   for k, sec in pairs(v.sections) do
     sec.frame:SetShown(k == key)
-    v.links[k].sel:SetShown(k == key)
   end
+  v:RenderNav()
   v.pick:SetValue(key)
   v.title:SetText(v.names[key])
   v.pane:SetScroll(0)

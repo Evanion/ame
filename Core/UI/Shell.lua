@@ -492,13 +492,15 @@ end
 -- A Settings card (the Settings and Sharing pages): a gold heading, then rows in order.
 --   local card = UI.SettingsCard(stack, "Window", {
 --     { check = "Open with the auction house", key = "openWithAH", onChange = fn },
---     { check = "...and close with it", key = "closeWithAH", indent = true },
+--     { check = "…and close with it", key = "closeWithAH", indent = true },
+--     { check = "Show minimap button", onChange = fn },                   -- no key: not a setting of its own
 --     { field = "Scale", note = "(70-120%)", dropdown = { width, options, onSelect } },
 --     { field = "Protocol", control = function(row) return frame end },   -- any control, right-aligned
 --     { text = "A dim explanatory paragraph." },
 --     { input = "Player name", button = "Add", onClick = function(text, box) end },
 --     { list = { W.RowList opts } },                                          -- player rows
---     { buttons = { { "Export", onClick, width = 90, primary = true }, ... } }, -- wrapping to the width
+--     { buttons = { { "Export", onClick, width = 90, primary = true, tip = { title, text } }, ... } },
+--       -- wrapping to the width; a button with no width is as wide as its label
 --   }, { gap = 10 })
 -- Every row's control is card.controls[i] (the check, dropdown, paragraph, box, list or the button row);
 -- card.checks are the setting checks, and card:Refresh() ticks them from ns.Settings.
@@ -506,7 +508,13 @@ UI.SETTINGS_INDENT = 20
 local function settingsRow(st, r)
   if r.check then
     local row = st:Row(18, 6)
-    local c = W.SettingCheck(row, r.check, r.key, r.indent and UI.SETTINGS_INDENT or 0, -1, r.onChange)
+    local x = r.indent and UI.SETTINGS_INDENT or 0
+    if not r.key then -- not a setting of its own (the minimap button's): onChange(on) does the work
+      local c = W.Check(row, r.check, r.onChange)
+      c:SetPoint("TOPLEFT", x, -1)
+      return c, row
+    end
+    local c = W.SettingCheck(row, r.check, r.key, x, -1, r.onChange)
     return c, row
   elseif r.field then
     local row = st:Row(22, 6)
@@ -568,8 +576,16 @@ local function settingsRow(st, r)
     row.buttons = {}
     for i, d in ipairs(r.buttons) do
       local b = W.Button(row, d[1], d.width or 90, 22, d[2])
+      if not d.width and b.label then -- as wide as its label
+        b:SetWidth(math.ceil(b.label:GetStringWidth() or 74) + 16)
+      end
       if d.primary then
         W.Primary(b)
+      end
+      if d.tip then -- { title, text }: what it does, on hover
+        W.Tooltip(b, function(tip)
+          W.TipText(tip, d.tip[1], d.tip[2])
+        end)
       end
       row.buttons[i] = b
     end
@@ -602,7 +618,7 @@ function UI.SettingsCard(stack, title, rows, opts)
   for i, r in ipairs(rows) do
     local control, frame = settingsRow(st, r)
     card.controls[i], card.rowFrames[i] = control, frame
-    if r.check then
+    if r.check and r.key then
       card.checks[#card.checks + 1] = control
     end
   end
