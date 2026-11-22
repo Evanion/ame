@@ -13,8 +13,6 @@ local UI = ns.UI
 local T = {}
 ns.AHShopping = T
 
-T.ROWS = 12
-T.ROW_H = 18
 T.LISTINGS = 5
 T.RECENT = 6 -- recent searches kept
 T.SIDE_W = 200
@@ -118,12 +116,6 @@ local function cell(parent, width, justify)
   fs:SetWordWrap(false)
   return fs
 end
-
-local COLS = { 50, 50, 90, 100, 70 }
-local HEADS = {
-  list = { L["need"], L["have"], L["cheapest"], L["at or under top"], L["vs market"] },
-  search = { L["ilvl"], L["for sale"], L["cheapest"], L["vs market"], L["signal"] },
-}
 
 -- a small labelled control in the filters (y: the row's top)
 local function labeled(parent, text, control, x, y)
@@ -247,6 +239,121 @@ function T:CreateFilters(main)
   p.usable:SetPoint("TOPLEFT", 380, row2 - 15)
 end
 
+-- the sidebar, styled like the Market tab's: plain lines on a panel, headings, the picked line filled, counts right
+T.LINE_H = 20
+
+local function sideLine(side, i)
+  local b = CreateFrame("Button", nil, side)
+  b:SetHeight(T.LINE_H)
+  b:SetPoint("TOPLEFT", 4, -4 - (i - 1) * T.LINE_H)
+  b:SetPoint("RIGHT", -4, 0)
+  b.sel = b:CreateTexture(nil, "BACKGROUND")
+  b.sel:SetAllPoints()
+  W.Fill(b.sel, W.COLORS.rowSelected)
+  b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+  b.hl:SetAllPoints()
+  W.Fill(b.hl, W.COLORS.rowHover)
+  b.text = W.Text(b, "GameFontHighlightSmall")
+  b.text:SetPoint("LEFT", 6, 0)
+  b.text:SetPoint("RIGHT", -40, 0)
+  b.text:SetWordWrap(false)
+  b.count = W.Text(b, "GameFontDisableSmall", "RIGHT")
+  b.count:SetPoint("RIGHT", -4, 0)
+  b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  b:SetScript("OnClick", function(self, button)
+    if self.entry and self.entry.click then
+      self.entry.click(button)
+    end
+  end)
+  return b
+end
+
+-- the item tables, made like the Market screener's (ns.DataTable): icon, quality colour, tooltip, striped rows
+local function pct(v)
+  return v and W.Percent(v, 0) or W.Dim("·")
+end
+
+local function tableOpts(columns)
+  return {
+    columns = columns,
+    fill = true,
+    rows = 8,
+    rowHeight = 20,
+    itemID = function(d)
+      return d.itemID
+    end,
+    onClick = function(d)
+      T:Select(d.itemID)
+    end,
+    selected = function(d)
+      return d.itemID == T.selected
+    end,
+    rowAlpha = function(d)
+      return d.missing == 0 and 0.55 or 1
+    end,
+  }
+end
+
+local LIST_COLUMNS = {
+  { key = "name", label = L["Item"], width = 150, item = true },
+  { key = "need", label = L["need"], width = 40, format = "count" },
+  { key = "held", label = L["have"], width = 40, format = "count" },
+  {
+    key = "cheapest",
+    label = L["cheapest"],
+    width = 76,
+    text = function(d)
+      return d.cheapest and W.Money(d.cheapest, true) or W.Dim(d.searched and L["none"] or "·")
+    end,
+  },
+  {
+    key = "underTop",
+    label = L["at or under top"],
+    width = 84,
+    text = function(d)
+      return d.underTop and W.Count(d.underTop) or W.Dim("·")
+    end,
+  },
+  {
+    key = "vs",
+    label = L["vs market"],
+    width = 60,
+    text = function(d)
+      return d.cheapest and d.market and pct(d.cheapest / d.market - 1) or W.Dim("·")
+    end,
+  },
+}
+
+local SEARCH_COLUMNS = {
+  { key = "name", label = L["Item"], width = 150, item = true },
+  {
+    key = "ilvl",
+    label = L["ilvl"],
+    width = 34,
+    text = function(d)
+      return d.ilvl and d.ilvl > 0 and tostring(d.ilvl) or W.Dim("·")
+    end,
+  },
+  { key = "qty", label = L["for sale"], width = 50, format = "count" },
+  { key = "cheapest", label = L["cheapest"], width = 76, format = "money" },
+  {
+    key = "vs",
+    label = L["vs market"],
+    width = 60,
+    text = function(d)
+      return d.vs and pct(d.vs) or W.Dim(L["new"])
+    end,
+  },
+  {
+    key = "signal",
+    label = L["signal"],
+    width = 56,
+    text = function(d)
+      return d.signal and d.signal ~= "none" and W.Signal(d.signal) or W.Dim("·")
+    end,
+  },
+}
+
 function T:Create(ah)
   local p = CreateFrame("Frame", nil, ah, "BackdropTemplate")
   W.Skin(p, W.COLORS.bg) -- the main window's discreet border
@@ -256,23 +363,28 @@ function T:Create(ah)
   self.panel = p
   self.filters = self.filters or {}
   self.mode = self.mode or "list"
-  self.offset = 0
+  self.sideOffset = 0
 
-  -- recent searches and the lists
-  p.lists, p.recents = {}, {}
-  local side = CreateFrame("Frame", nil, p)
-  side:SetPoint("TOPLEFT", 8, -8)
-  side:SetPoint("BOTTOMLEFT", 8, 8)
-  side:SetWidth(T.SIDE_W - 10)
+  -- the sidebar: recent searches, then the lists
+  local side = CreateFrame("Frame", nil, p, "BackdropTemplate")
+  W.Skin(side, W.COLORS.panel)
+  side:SetPoint("TOPLEFT", 0, 0)
+  side:SetPoint("BOTTOMLEFT", 0, 0)
+  side:SetWidth(T.SIDE_W)
+  side.lines = {}
+  for i = 1, 24 do
+    side.lines[i] = sideLine(side, i)
+  end
+  side:EnableMouseWheel(true)
+  side:SetScript("OnMouseWheel", function(_, delta)
+    T.sideOffset = math.max(0, (T.sideOffset or 0) - delta * 2)
+    T:RenderSide()
+  end)
   p.side = side
-  p.recentHead = W.Text(side, "GameFontNormalSmall")
-  p.recentHead:SetText(L["Recent searches"])
-  p.listHead = W.Text(side, "GameFontNormalSmall")
-  p.listHead:SetText(L["Shopping lists"])
 
-  -- search row, filters, then the table
+  -- search row, filters, the title row, then the table
   local main = CreateFrame("Frame", nil, p)
-  main:SetPoint("TOPLEFT", side, "TOPRIGHT", 10, 0)
+  main:SetPoint("TOPLEFT", side, "TOPRIGHT", 10, -8)
   main:SetPoint("BOTTOMRIGHT", -8, 8)
   p.main = main
   p.search = W.Input(main, {
@@ -297,8 +409,7 @@ function T:Create(ah)
   self:CreateFilters(main)
 
   local top = CreateFrame("Frame", nil, main)
-  top:SetHeight(20)
-  top:SetPoint("RIGHT", 0, 0)
+  top:SetHeight(22)
   p.top = top
   p.title = W.Text(top, "GameFontNormal")
   p.title:SetPoint("LEFT", 0, 0)
@@ -308,53 +419,12 @@ function T:Create(ah)
     T:SearchAll()
   end)
   p.searchAll:SetPoint("RIGHT", 0, 0)
-  local header = CreateFrame("Frame", nil, main)
-  header:SetHeight(16)
-  header:SetPoint("TOPLEFT", top, "BOTTOMLEFT", 0, -4)
-  header:SetPoint("RIGHT", 0, 0)
-  p.heads = {}
-  local x = 0
-  for k = #COLS, 1, -1 do
-    local fs = cell(header, COLS[k])
-    fs:SetPoint("RIGHT", -x, 0)
-    p.heads[k] = fs
-    x = x + COLS[k] + 8
-  end
-  p.header = header
-  p.rows = {}
-  for i = 1, T.ROWS do
-    local r = CreateFrame("Button", nil, main)
-    r:SetHeight(T.ROW_H)
-    r:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -(i - 1) * T.ROW_H)
-    r:SetPoint("RIGHT", 0, 0)
-    r.sel = r:CreateTexture(nil, "BACKGROUND")
-    r.sel:SetAllPoints()
-    W.Fill(r.sel, W.COLORS.rowSelected)
-    r.hl = r:CreateTexture(nil, "HIGHLIGHT")
-    r.hl:SetAllPoints()
-    W.Fill(r.hl, W.COLORS.rowHover)
-    r.name = W.Text(r, "GameFontHighlightSmall")
-    r.name:SetPoint("LEFT", 4, 0)
-    r.name:SetPoint("RIGHT", -(x + 4), 0)
-    r.name:SetWordWrap(false)
-    r.cells = {}
-    local cx = 0
-    for k = #COLS, 1, -1 do
-      local fs = cell(r, COLS[k])
-      fs:SetPoint("RIGHT", -cx, 0)
-      r.cells[k] = fs
-      cx = cx + COLS[k] + 8
-    end
-    r:SetScript("OnClick", function(self)
-      T:Select(self.itemID)
-    end)
-    r:Hide() -- until Render fills it
-    p.rows[i] = r
-  end
-  main:EnableMouseWheel(true)
-  main:SetScript("OnMouseWheel", function(_, delta)
-    T:Scroll(-delta * 3)
-  end)
+
+  -- the table's box: under the title row, down to the listings (or the bottom)
+  local box = CreateFrame("Frame", nil, main)
+  p.tableBox = box
+  p.listTable = ns.DataTable.New(box, tableOpts(LIST_COLUMNS))
+  p.searchTable = ns.DataTable.New(box, tableOpts(SEARCH_COLUMNS))
 
   -- the selected item's listings, and buying
   local detail = CreateFrame("Frame", nil, main)
@@ -363,6 +433,11 @@ function T:Create(ah)
   detail:SetHeight(T.LISTINGS * 16 + 52)
   detail:Hide()
   p.detail = detail
+  local line = detail:CreateTexture(nil, "BACKGROUND")
+  line:SetPoint("TOPLEFT", 0, 6)
+  line:SetPoint("TOPRIGHT", 0, 6)
+  line:SetHeight(1)
+  W.Fill(line, W.COLORS.border)
   p.detailTitle = W.Text(detail, "GameFontNormalSmall")
   p.detailTitle:SetPoint("TOPLEFT", 0, 0)
   p.listings = {}
@@ -371,17 +446,23 @@ function T:Create(ah)
     l:SetHeight(16)
     l:SetPoint("TOPLEFT", 0, -16 - (i - 1) * 16)
     l:SetPoint("RIGHT", 0, 0)
+    l.bg = l:CreateTexture(nil, "BACKGROUND")
+    l.bg:SetAllPoints()
+    l.bg:SetColorTexture(1, 1, 1, i % 2 == 0 and 0.025 or 0)
     l.price = cell(l, 110)
     l.price:SetPoint("LEFT", 0, 0)
     l.qty = cell(l, 70)
     l.qty:SetPoint("LEFT", l.price, "RIGHT", 8, 0)
+    l.mine = W.Text(l, "GameFontHighlightSmall")
+    l.mine:SetPoint("LEFT", l.qty, "RIGHT", 10, 0)
     l.buy = W.Button(l, L["Buy"], 50, 16)
-    l.buy:SetPoint("LEFT", l.qty, "RIGHT", 12, 0)
+    l.buy:SetPoint("RIGHT", 0, 0)
     p.listings[i] = l
   end
   local buyLabel = W.Text(detail, "GameFontDisableSmall")
   buyLabel:SetPoint("BOTTOMLEFT", 0, 6)
   buyLabel:SetText(L["Buy"])
+  p.buyLabel = buyLabel
   p.qty = W.Input(detail, { numeric = true, width = 50 })
   p.qty:SetPoint("LEFT", buyLabel, "RIGHT", 6, 0)
   p.buyText = W.Text(detail, "GameFontHighlightSmall")
@@ -413,12 +494,20 @@ function T:Create(ah)
   return p
 end
 
--- the title row sits under the search row, and under the filters when they're open
+-- the title row under the search row (and under the filters when they're open); the table down to the listings
 function T:Layout()
   local p = self.panel
   p.top:ClearAllPoints()
   p.top:SetPoint("TOPLEFT", p.main, "TOPLEFT", 0, p.filters:IsShown() and -(32 + T.FILTERS_H) or -30)
   p.top:SetPoint("RIGHT", p.main, "RIGHT", 0, 0)
+  p.tableBox:ClearAllPoints()
+  p.tableBox:SetPoint("TOPLEFT", p.top, "BOTTOMLEFT", 0, -4)
+  p.tableBox:SetPoint("RIGHT", p.main, "RIGHT", 0, 0)
+  if p.detail:IsShown() then
+    p.tableBox:SetPoint("BOTTOM", p.detail, "TOP", 0, 12)
+  else
+    p.tableBox:SetPoint("BOTTOM", p.main, "BOTTOM", 0, 0)
+  end
   self:RenderFiltersButton()
   self:Render()
 end
@@ -430,31 +519,25 @@ function T:RenderFiltersButton()
   p.filterButton:SetSelected(p.filters:IsShown())
 end
 
--- how many rows fit between the header and the listings (all of them before the frame has a size)
-function T:VisibleRows()
-  local p = self.panel
-  local h = p.main:GetHeight() or 0
-  local headerTop = (p.filters:IsShown() and (32 + T.FILTERS_H) or 30) + 20 + 4 + 16
-  local detail = p.detail:IsShown() and (p.detail:GetHeight() + 6) or 0
-  if h <= 0 then
-    return T.ROWS
-  end
-  return math.max(1, math.min(T.ROWS, math.floor((h - headerTop - detail) / T.ROW_H)))
-end
-
-function T:Scroll(by)
-  self.offset = math.max(0, (self.offset or 0) + by)
-  self:Render()
-end
-
+-- an item clicked: its listings (searched when they aren't in yet), and the AME window beside the auction house
+-- shows it, as it does for a search
 function T:Select(key)
   self.selected = key
-  if self.mode == "search" and key and not ns.AHSearch.results[key] then
+  if key and not ns.AHSearch.results[key] then
     ns.AHSearch:Start({ key }, function()
       T:Render()
     end)
   end
-  self:Render()
+  if key and ns.UI.FollowAuctionItem then
+    ns.UI:FollowAuctionItem(key)
+  end
+  local shown = self.panel.detail:IsShown()
+  self.panel.detail:SetShown(key ~= nil)
+  if shown ~= (key ~= nil) then
+    self:Layout()
+  else
+    self:Render()
+  end
 end
 
 -- search by the box and the filters; remembered among the recent searches
@@ -468,12 +551,12 @@ function T:Search(text, f)
   if f then
     self:ShowFilters()
   end
-  self.mode, self.temp, self.selected, self.offset = "search", nil, nil, 0
+  self.mode, self.temp = "search", nil
   T.Remember(recent(), text, self.filters)
   ns.AHBrowse:Search(text, self.filters, function()
     T:Render()
   end)
-  self:Render()
+  self:Select(nil)
 end
 
 -- put a recent search's filters back in the controls
@@ -495,34 +578,17 @@ function T:ShowFilters()
   self:RenderFiltersButton()
 end
 
--- the side: recent searches, then the lists
-function T:RenderSide()
-  local p = self.panel
-  local y = 0
-  p.recentHead:ClearAllPoints()
-  p.recentHead:SetPoint("TOPLEFT", p.side, "TOPLEFT", 0, y)
-  y = y - 16
+-- the sidebar's lines: { header } or { label, count, selected, click(button) }
+function T:SideEntries()
+  local out = {}
+  out[#out + 1] = { header = L["Recent searches"] }
   local searches = recent()
-  for i = 1, T.RECENT do
-    local b = p.recents[i]
-    local s = searches[i]
-    if not b then
-      b = W.Button(p.side, "", T.SIDE_W - 14, 20)
-      b.label:ClearAllPoints()
-      b.label:SetPoint("LEFT", 6, 0)
-      b.label:SetPoint("RIGHT", -6, 0)
-      b.label:SetJustifyH("LEFT")
-      b.label:SetWordWrap(false)
-      b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-      p.recents[i] = b
-    end
-    if s then
-      local head, note = ns.AHBrowse.Label(s.text, s.f, _G.AuctionCategories)
-      b:SetText(head .. (note ~= "" and W.Dim("  · " .. note) or ""))
-      b:ClearAllPoints()
-      b:SetPoint("TOPLEFT", p.side, "TOPLEFT", 0, y)
-      b:SetSelected(self.mode == "search" and i == 1)
-      b:SetScript("OnClick", function(_, button)
+  for i, s in ipairs(searches) do
+    local head, note = ns.AHBrowse.Label(s.text, s.f, _G.AuctionCategories)
+    out[#out + 1] = {
+      label = head .. (note ~= "" and W.Dim("  " .. note) or ""),
+      selected = self.mode == "search" and i == 1,
+      click = function(button)
         if button == "RightButton" then
           table.remove(searches, i)
           T:Render()
@@ -533,96 +599,78 @@ function T:RenderSide()
           copy[k] = v
         end
         T:Search(s.text, copy)
-      end)
+      end,
+    }
+  end
+  if #searches == 0 then
+    out[#out + 1] = { label = W.Dim(L["none yet"]) }
+  end
+  out[#out + 1] = { header = L["Shopping lists"] }
+  local function pick(index)
+    return function()
+      if index then
+        T.temp, T.list = nil, index
+      end
+      T.mode = "list"
+      ns.AHBrowse:Stop()
+      T:Select(nil)
+    end
+  end
+  if self.temp then
+    out[#out + 1] = { label = self.temp.name, selected = self.mode == "list", click = pick(nil) }
+  end
+  for i, l in ipairs(shopping():Lists()) do
+    out[#out + 1] = {
+      label = l.name,
+      count = shopping():Count(i),
+      selected = self.mode == "list" and not self.temp and i == (self.list or 1),
+      click = pick(i),
+    }
+  end
+  if #shopping():Lists() == 0 and not self.temp then
+    out[#out + 1] = { label = W.Dim(L["make one in the AME window or from the craft queue"]) }
+  end
+  return out
+end
+
+function T:RenderSide()
+  local side = self.panel.side
+  local entries = self:SideEntries()
+  local h = side:GetHeight() or 0
+  local rows = h > 0 and math.min(#side.lines, math.floor((h - 8) / T.LINE_H)) or #side.lines
+  self.sideOffset = math.max(0, math.min(self.sideOffset or 0, #entries - rows))
+  for i, b in ipairs(side.lines) do
+    local e = i <= rows and entries[i + self.sideOffset]
+    b.entry = e or nil
+    if e then
+      b.text:SetFontObject(e.header and "GameFontDisableSmall" or "GameFontNormalSmall")
+      b.text:SetText(e.header or e.label)
+      b.count:SetText(e.count and tostring(e.count) or "")
+      b.sel:SetShown(e.selected or false)
+      b.hl:SetShown(e.click ~= nil)
       b:Show()
-      y = y - 22
     else
       b:Hide()
     end
   end
-  if #searches == 0 then
-    y = y - 4
-  end
-  y = y - 10
-  p.listHead:ClearAllPoints()
-  p.listHead:SetPoint("TOPLEFT", p.side, "TOPLEFT", 0, y)
-  y = y - 16
-  local entries = {}
-  if self.temp then
-    entries[#entries + 1] = { name = self.temp.name, temp = true }
-  end
-  for i, l in ipairs(shopping():Lists()) do
-    entries[#entries + 1] = { name = l.name, index = i }
-  end
-  for i, e in ipairs(entries) do
-    local b = p.lists[i]
-    if not b then
-      b = W.Button(p.side, "", T.SIDE_W - 14, 20)
-      p.lists[i] = b
-    end
-    b:ClearAllPoints()
-    b:SetPoint("TOPLEFT", p.side, "TOPLEFT", 0, y)
-    b:SetText(e.name)
-    b:SetSelected(
-      self.mode == "list" and ((e.temp and self.temp ~= nil) or (not self.temp and e.index == (self.list or 1)))
-    )
-    b:SetScript("OnClick", function()
-      if not e.temp then
-        T.temp, T.list = nil, e.index
-      end
-      T.mode, T.selected, T.offset = "list", nil, 0
-      ns.AHBrowse:Stop()
-      T:Render()
-    end)
-    b:Show()
-    y = y - 22
-  end
-  for i = #entries + 1, #p.lists do
-    p.lists[i]:Hide()
-  end
 end
 
--- the table's rows for the mode: { itemID, name, cells = { 5 texts } }, title, status
+-- the table's rows for the mode, its title and status
 function T:TableRows()
   local index = ns.AME:FactionIndex()
   if self.mode == "search" then
     local B = ns.AHBrowse
     local rows = B.Rows(B.results, self.filters, index and index.items)
-    local out = {}
-    for i, r in ipairs(rows) do
-      out[i] = {
-        itemID = r.key,
-        name = name(r.key),
-        cells = {
-          r.ilvl and tostring(r.ilvl) or W.Dim("·"),
-          W.Count(r.qty),
-          money(r.cheapest),
-          r.vs and W.Percent(r.vs, 0) or W.Dim(L["new"]),
-          r.signal and r.signal ~= "none" and W.Signal(r.signal) or W.Dim("·"),
-        },
-      }
+    for _, r in ipairs(rows) do
+      r.itemID = r.key
     end
     local head = B.Label(B.text or self.panel.search:GetText(), self.filters, _G.AuctionCategories)
-    local status = B.active and L["searching..."] or L["%d found"]:format(#out)
-    return out, head, status
+    local status = B.active and L["searching..."] or L["%d found"]:format(#rows)
+    return rows, head, status
   end
   local items, title = self:Items()
   local rows, totals = T.Rows(items, AME_DB.holdings, index and index.items, ns.AHSearch.results)
   self.rowsShown = rows
-  local out = {}
-  for i, row in ipairs(rows) do
-    out[i] = {
-      itemID = row.itemID,
-      name = name(row.itemID) .. (row.missing == 0 and W.Dim("  " .. L["(enough)"]) or ""),
-      cells = {
-        W.Count(row.need),
-        W.Count(row.held),
-        row.cheapest and money(row.cheapest) or W.Dim(row.searched and L["none"] or "·"),
-        row.underTop and W.Count(row.underTop) or W.Dim("·"),
-        row.cheapest and row.market and W.Percent(row.cheapest / row.market - 1, 0) or W.Dim("·"),
-      },
-    }
-  end
   local S = ns.AHSearch
   local status
   if S:Busy() then
@@ -630,7 +678,7 @@ function T:TableRows()
   else
     status = W.Dim(L["left to buy"] .. " ") .. money(totals.left)
   end
-  return out, title or L["no shopping lists yet"], status
+  return rows, title or L["no shopping lists yet"], status
 end
 
 function T:Render()
@@ -643,26 +691,14 @@ function T:Render()
   p.title:SetText(title)
   p.status:SetText(status)
   p.searchAll:SetShown(self.mode == "list")
-  for k, fs in ipairs(p.heads) do
-    fs:SetText(W.Dim(HEADS[self.mode][k]))
+  local shown, other = p.listTable, p.searchTable
+  if self.mode == "search" then
+    shown, other = p.searchTable, p.listTable
   end
-  p.detail:SetShown(self.selected ~= nil)
-  local visible = self:VisibleRows()
-  self.offset = math.max(0, math.min(self.offset or 0, #rows - visible))
-  for i, r in ipairs(p.rows) do
-    local row = i <= visible and rows[i + self.offset]
-    r.itemID = row and row.itemID
-    if row then
-      r.name:SetText(row.name)
-      for k = 1, #COLS do
-        r.cells[k]:SetText(row.cells[k])
-      end
-      r.sel:SetShown(row.itemID == self.selected)
-      r:Show()
-    else
-      r:Hide()
-    end
-  end
+  other:SetShown(false)
+  shown:SetShown(true)
+  shown:SetData(rows)
+  shown:Render()
   self:RenderDetail()
 end
 
@@ -670,17 +706,17 @@ function T:RenderDetail()
   local p = self.panel
   local key = self.selected
   local book = key and ns.AHSearch.results[key]
-  p.detail:SetShown(key ~= nil)
   if not key then
     return
   end
-  local note = book and L["cheapest first"] or L["searching..."]
+  local note = book and (#book.rows > 0 and L["cheapest first"] or L["none listed"]) or L["searching..."]
   p.detailTitle:SetText(name(key) .. W.Dim("  ·  " .. note))
   for i, l in ipairs(p.listings) do
     local row = book and book.rows[i]
     if row then
       l.price:SetText(money(row.price))
       l.qty:SetText(W.Count(row.qty))
+      l.mine:SetText(row.mine and W.Color("brand", L["yours"]) or "")
       l.buy:SetShown(not book.commodity)
       l.buy:SetScript("OnClick", function()
         ns.AHSearch:Buy(key, row.qty, row)
@@ -693,6 +729,7 @@ function T:RenderDetail()
   local pending = ns.AHSearch.pending
   local commodity = book and book.commodity
   p.qty:SetShown(commodity or false)
+  p.buyLabel:SetShown(commodity or false)
   if pending and pending.key == key and not pending.sent then
     p.buy:SetText(L["Confirm"])
     p.buyText:SetText(
@@ -739,7 +776,7 @@ function T:ShowKeys(keys, title)
     items[k] = { need = 1 }
   end
   self.temp = { name = title or L["Search"], items = items }
-  self.mode, self.selected, self.offset = "list", nil, 0
+  self.mode, self.selected = "list", nil
   self:Open()
   ns.AHSearch:Start(keys, function()
     T:Render()
@@ -780,7 +817,10 @@ local function addTab(ah, key, label, panel)
   tab.displayMode = mode
   tab:SetText(label)
   tab:SetPoint("LEFT", last, "RIGHT", -15, 0)
-  -- the template sizes a tab when it shows; this one showed (with the window already open) before it had its label
+  -- the template sizes a tab when it shows; this one showed (with the window already open) before it had its label:
+  -- sized now, and again next frame and whenever the window opens (the font may not measure until it's drawn)
+  T.ownTabs = T.ownTabs or {}
+  T.ownTabs[#T.ownTabs + 1] = tab
   if _G.PanelTemplates_TabResize and rawget(tab, "Text") then
     pcall(
       _G.PanelTemplates_TabResize,
@@ -827,6 +867,30 @@ function T:Attach()
   if sell then
     local sp = sell:Create(ah)
     sell.tab, sell.displayMode = addTab(ah, "AMESelling", L["Selling"], sp)
+  end
+  local function resize()
+    for _, t in ipairs(T.ownTabs or {}) do
+      if _G.PanelTemplates_TabResize and rawget(t, "Text") then
+        pcall(
+          _G.PanelTemplates_TabResize,
+          t,
+          rawget(ah, "tabPadding"),
+          nil,
+          rawget(ah, "minTabWidth"),
+          rawget(ah, "maxTabWidth")
+        )
+      end
+    end
+  end
+  if C_Timer then
+    C_Timer.After(0, resize)
+  end
+  if ah.HookScript then
+    ah:HookScript("OnShow", function()
+      if C_Timer then
+        C_Timer.After(0, resize)
+      end
+    end)
   end
   -- each tab's title on the window, as the game's own tabs have theirs; a search running for the Shopping tab stops
   -- when you go elsewhere

@@ -102,6 +102,9 @@ step = function()
   if a.IsThrottledMessageSystemReady and not a.IsThrottledMessageSystemReady() then
     table.insert(S.queue, 1, key) -- the game says when it's ready (AUCTION_HOUSE_THROTTLED_SYSTEM_READY)
     S.waiting = true
+    C_Timer.After(1, function() -- ... and if it doesn't, try again in a second
+      S:OnReady()
+    end)
     return
   end
   S.current = key
