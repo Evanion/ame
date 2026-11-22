@@ -1981,6 +1981,7 @@ describe("addon in a stubbed client", function()
               reagentSlotSchematics = {
                 { reagentType = 1, quantityRequired = 6, reagents = { { itemID = 3860 } } },
                 { reagentType = 1, quantityRequired = 4, reagents = { { itemID = 4338 } } },
+                { reagentType = 1, quantityRequired = 2, reagents = { { itemID = 2880 } } }, -- a vendor's flux
               },
             }
           end
@@ -2003,17 +2004,18 @@ describe("addon in a stubbed client", function()
         rawset(_G, "ProfessionsRecipeListRecipeMixin", nil)
       end)
       AME_DB.holdings[ns.Trading.CharKey()] = { bags = { [3860] = 4, [4338] = 20 } }
+      ns.CraftingData.data = { vendor = { [2880] = 100 }, recipes = {}, items = {} } -- a vendor sells flux for 1s
       env:fire("ADDON_LOADED", "Blizzard_Professions")
       local PB = ns.ProfessionBar
       assert.is_not_nil(PB.bar)
       ns.Professions:Record() -- the window is recorded: who knows what
-      -- picking a recipe: cost (6 bars + 4 cloth = 9s), sells for 19s after the 5% cut, profit 10s
+      -- picking a recipe: cost (6 bars + 4 cloth + 2 flux = 11s), sells for 19s after the 5% cut, profit 8s
       page:SelectRecipe({ recipeID = 100 })
       assert.are.equal(100, PB.selected)
       local line = PB.bar.line:GetText():gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
-      assert.truthy(line:find("Cost to craft 9s", 1, true), line)
+      assert.truthy(line:find("Cost to craft 11s", 1, true), line)
       assert.truthy(line:find("Sells for 19s", 1, true), line)
-      assert.truthy(line:find("Profit +10s", 1, true), line)
+      assert.truthy(line:find("Profit +8s", 1, true), line)
       local batch = PB.bar.batch:GetText():gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
       assert.truthy(batch:find("to buy 2s 40c", 1, true), batch) -- 2 bars short
       -- a row in the recipe list gets its profit
@@ -2024,7 +2026,7 @@ describe("addon in a stubbed client", function()
         end,
       })
       local fs = rawget(rowFrame, "ameProfit")
-      assert.truthy(fs:GetText():find("10s"), fs:GetText())
+      assert.truthy(fs:GetText():find("8s"), fs:GetText())
       -- queue it: the plan buys the 2 missing bars, then crafts
       PB.bar.queue.scripts.OnClick(PB.bar.queue)
       assert.are.same({ { recipe = 100, count = 1 } }, AME_DB.craftQueue.items)
@@ -2040,6 +2042,7 @@ describe("addon in a stubbed client", function()
         end
       end
       assert.are.equal(6, list.items[3860].need) -- the whole need: the list counts down from what you hold
+      assert.are.equal(2, list.items[2880].need) -- a vendor's reagent too: the vendor panel buys it
       -- craft next, and the finished craft counts off the queue
       PB.panel.next.scripts.OnClick(PB.panel.next)
       assert.are.same({ { 100, 1 } }, crafted)

@@ -217,12 +217,17 @@ function PB:QueueToShopping()
   for key in pairs(shop:Lists()[i].items) do
     shop:SetItem(i, key, 0)
   end
-  -- the list counts down from what you hold, so it asks for the whole need of what has to be bought
+  -- what has to be bought, on the AH or from a vendor (the vendor panel buys those): the list counts down from what
+  -- you hold, so it asks for the whole need of it
   for _, m in ipairs(plan.materials) do
+    local buy = 0
     for _, src in ipairs(m.sources) do
-      if src.kind == "ah" then
-        shop:SetItem(i, m.item, src.qty + heldTotal(m.item))
+      if src.kind == "ah" or src.kind == "vendor" then
+        buy = buy + src.qty
       end
+    end
+    if buy > 0 then
+      shop:SetItem(i, m.item, buy + heldTotal(m.item))
     end
   end
   if ns.UI.ShoppingChanged then
