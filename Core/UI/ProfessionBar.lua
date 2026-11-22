@@ -361,6 +361,7 @@ function PB:CreateBar(host)
     end
   end)
   bar.queue:SetPoint("BOTTOMLEFT", 10, 8)
+  W.Primary(bar.queue)
   bar.shop = W.Button(bar, L["Add to shopping list"], 150, 22)
   bar.shop:SetScript("OnClick", function(b)
     PB:RecipeToShopping(PB:SelectedRecipe(), PB.count or 1, b)
@@ -449,41 +450,42 @@ local SOURCE = {
   end,
 }
 
--- Pure: the queue as lines of text, for the panel: { { text, kind, step / material } }
-function PB.QueueLines(plan)
-  local lines = {}
-  local function add(text, kind, ref)
-    lines[#lines + 1] = { text = text, kind = kind, ref = ref }
-  end
-  add(W.Dim(L["In order"]), "head")
-  for k, s in ipairs(plan.steps) do
-    local who = ""
-    if s.crafter and not s.mine then
-      who = W.Color("warn", "  " .. L["on %s"]:format(charName(s.crafter)))
-    elseif not s.crafter then
-      who = W.Color("bad", "  " .. L["nobody of yours knows it"])
+-- Pure: a to-do line (plan.todo) in words. me: this character's key
+function PB.TodoText(t, me)
+  local what = ("%d %s"):format(t.qty or 0, name(t.item))
+  if t.kind == "buy" then
+    return L["Buy %s"]:format(what) .. (t.cost and W.Dim("  " .. money(t.cost)) or "")
+  elseif t.kind == "vendor" then
+    return L["Buy %s from a vendor"]:format(what)
+  elseif t.kind == "bank" then
+    return L["Take %s from your bank"]:format(what)
+  elseif t.kind == "alt" then
+    return L["Get %s from %s"]:format(what, t.char or "?")
+  elseif t.kind == "guild" then
+    return L["Take %s from the <%s> guild bank"]:format(what, t.char or "?")
+  elseif t.kind == "craft" then
+    if t.char and t.char ~= me then
+      return L["On %s: craft %s"]:format(charName(t.char), what)
     end
-    local tail = s.profit and ("  " .. signed(s.profit)) or (s.part and W.Dim("  " .. L["a part"]) or "")
-    add(("%d.  %s x%d"):format(k, name(s.item), s.made or s.count) .. who .. tail, "step", s)
+    return L["Craft %s"]:format(what)
   end
-  add(W.Dim(L["Materials"]) .. W.Dim("  ·  " .. L["need, and its source"]), "head")
-  for _, m in ipairs(plan.materials) do
-    local parts = {}
-    for _, src in ipairs(m.sources) do
-      local where = SOURCE[src.kind] and SOURCE[src.kind](src) or src.kind
-      local text = ("%d %s"):format(src.qty, where)
-      if src.kind == "ah" then
-        text = W.Color("warn", text .. (src.cost and (" " .. money(src.cost)) or ""))
-      end
-      parts[#parts + 1] = text
+  return nil -- already in your bags: nothing to do
+end
+
+-- a material's sources in words: "3 your bags, 5 buy on the AH 5g 10s"
+function PB.SourcesText(m)
+  local parts = {}
+  for _, src in ipairs(m.sources) do
+    local where = SOURCE[src.kind] and SOURCE[src.kind](src) or src.kind
+    local text = ("%d %s"):format(src.qty, where)
+    if src.kind == "ah" then
+      text = W.Color("warn", text .. (src.cost and (" " .. money(src.cost)) or ""))
+    elseif src.kind == "carried" then
+      text = W.Color("good", text)
     end
-    add(("%s x%d  ·  "):format(name(m.item), m.need) .. table.concat(parts, W.Dim(", ")), "material", m)
+    parts[#parts + 1] = text
   end
-  add(
-    W.Dim(L["Profit"] .. " ") .. signed(plan.profit) .. W.Dim("   " .. L["to buy"] .. " ") .. money(plan.toBuy),
-    "total"
-  )
-  return lines
+  return table.concat(parts, W.Dim(", "))
 end
 
 -- beside the profession window, clear of whatever sticks out of its right edge (its side tabs, other addons' buttons)
@@ -502,6 +504,9 @@ function PB.PlaceQueue(p, host)
   p:SetPoint("BOTTOMLEFT", host, "BOTTOMRIGHT", edge + 4, 0)
 end
 
+-- The panel, as the design draws it: the title and totals; then, scrolling, the steps in order (a card each: Make /
+-- Buy for a part, remove for what you queued), the materials and where each comes from, and the to-do list; the
+-- buttons at the bottom (Craft next is the main one).
 function PB:CreateQueue(host)
   local p = CreateFrame("Frame", nil, host, "BackdropTemplate")
   W.Skin(p, W.COLORS.bg)
@@ -518,11 +523,23 @@ function PB:CreateQueue(host)
   p.close:SetScript("OnClick", function()
     PB:ShowQueue(false)
   end)
-  p.rows = {}
+  p.totals = W.Text(p, "GameFontDisableSmall", "RIGHT")
+  p.totals:SetPoint("TOPRIGHT", -28, -12)
+  local body = CreateFrame("Frame", nil, p)
+  body:SetPoint("TOPLEFT", 10, -32)
+  body:SetPoint("BOTTOMRIGHT", -10, 40)
+  p.pane = W.ScrollPane(body)
+  p.content = p.pane.content
+  p.heads, p.cards, p.mats, p.todos = {}, {}, {}, {}
+  p.empty = W.Text(p.content, "GameFontDisableSmall")
+  p.empty:SetPoint("TOPLEFT", 0, 0)
+  p.empty:SetPoint("RIGHT", 0, 0)
+  p.empty:SetText(L["Nothing queued. Pick a recipe and click Queue under the profession window."])
   p.next = W.Button(p, L["Craft next"], 110, 22, function()
     PB:CraftNext()
   end)
   p.next:SetPoint("BOTTOMLEFT", 10, 10)
+  W.Primary(p.next)
   p.shop = W.Button(p, L["Missing to shopping list"], 160, 22, function()
     PB:QueueToShopping()
   end)
@@ -537,22 +554,73 @@ function PB:CreateQueue(host)
   return p
 end
 
-local function row(p, i)
-  local r = p.rows[i]
+-- pooled pieces of the scrolling body
+local function head(p, i)
+  local h = p.heads[i]
+  if not h then
+    h = W.Text(p.content, "GameFontDisableSmall")
+    p.heads[i] = h
+  end
+  return h
+end
+
+local function card(p, i)
+  local c = p.cards[i]
+  if c then
+    return c
+  end
+  c = CreateFrame("Frame", nil, p.content, "BackdropTemplate")
+  W.Skin(c, W.COLORS.panel)
+  c.num = W.Text(c, "GameFontDisableSmall", "RIGHT")
+  c.num:SetWidth(14)
+  c.num:SetPoint("TOPLEFT", 6, -6)
+  c.text = W.Text(c, "GameFontHighlightSmall")
+  c.text:SetPoint("TOPLEFT", c.num, "TOPRIGHT", 8, 0)
+  c.text:SetPoint("RIGHT", -100, 0)
+  c.text:SetWordWrap(false)
+  c.sub = W.Text(c, "GameFontDisableSmall")
+  c.sub:SetPoint("TOPLEFT", c.text, "BOTTOMLEFT", 0, -3)
+  c.sub:SetPoint("RIGHT", -8, 0)
+  c.sub:SetWordWrap(false)
+  c.make = W.Button(c, L["Make"], 42, 18)
+  c.buy = W.Button(c, L["Buy"], 42, 18)
+  c.buy:SetPoint("TOPRIGHT", -6, -4)
+  c.make:SetPoint("RIGHT", c.buy, "LEFT", -2, 0)
+  c.profit = W.Text(c, "GameFontHighlightSmall", "RIGHT")
+  c.profit:SetPoint("TOPRIGHT", -28, -6)
+  c.remove = W.Button(c, "x", 18, 18)
+  c.remove:SetPoint("TOPRIGHT", -6, -4)
+  p.cards[i] = c
+  return c
+end
+
+local function line(pool, parent, i, cols)
+  local r = pool[i]
   if r then
     return r
   end
-  r = CreateFrame("Frame", nil, p)
+  r = CreateFrame("Frame", nil, parent)
   r:SetHeight(18)
   r.text = W.Text(r, "GameFontHighlightSmall")
-  r.text:SetPoint("LEFT", 0, 0)
-  r.text:SetPoint("RIGHT", -70, 0)
   r.text:SetWordWrap(false)
-  r.toggle = W.Button(r, "", 42, 16)
-  r.toggle:SetPoint("RIGHT", -20, 0)
-  r.remove = W.Button(r, "x", 16, 16)
-  r.remove:SetPoint("RIGHT", 0, 0)
-  p.rows[i] = r
+  if cols then
+    r.need = W.Text(r, "GameFontHighlightSmall", "RIGHT")
+    r.need:SetWidth(30)
+    r.need:SetPoint("LEFT", 110, 0)
+    r.text:SetPoint("LEFT", 0, 0)
+    r.text:SetWidth(104)
+    r.make = W.Button(r, L["Make"], 42, 16) -- a part you chose to buy: make it again
+    r.make:SetPoint("RIGHT", 0, 0)
+    r.make:Hide()
+    r.src = W.Text(r, "GameFontHighlightSmall")
+    r.src:SetPoint("LEFT", r.need, "RIGHT", 10, 0)
+    r.src:SetPoint("RIGHT", r.make, "LEFT", -4, 0)
+    r.src:SetWordWrap(false)
+  else
+    r.text:SetPoint("LEFT", 0, 0)
+    r.text:SetPoint("RIGHT", 0, 0)
+  end
+  pool[i] = r
   return r
 end
 
@@ -561,44 +629,136 @@ function PB:RenderQueue()
   if not (p and p:IsShown()) then
     return
   end
-  local lines = PB.QueueLines(PB.Plan())
-  local y = -34
-  for i, line in ipairs(lines) do
-    local r = row(p, i)
-    r:ClearAllPoints()
-    r:SetPoint("TOPLEFT", 10, y)
-    r:SetPoint("RIGHT", -10, 0)
-    r.text:SetText(line.text)
-    r.text:SetFontObject(line.kind == "head" and "GameFontNormalSmall" or "GameFontHighlightSmall")
-    -- a part: make it or buy it; a queued item: remove it
-    local s = line.kind == "step" and line.ref
-    local m = line.kind == "material" and line.ref
-    r.toggle:SetShown((s and s.part) or (m and m.part and m.choice == "buy") or false)
-    r.remove:SetShown(s and not s.part or false)
-    if s and s.part then
-      r.toggle:SetText(L["Buy"])
-      r.toggle:SetScript("OnClick", function()
+  local plan = PB.Plan()
+  local me = ns.Trading and ns.Trading.CharKey and ns.Trading.CharKey()
+  p.totals:SetText(
+    #plan.steps > 0
+        and (W.Dim(L["profit"] .. " ") .. signed(plan.profit) .. W.Dim("  ·  " .. L["to buy"] .. " ") .. money(
+          plan.toBuy
+        ))
+      or ""
+  )
+  p.empty:SetShown(#plan.steps == 0)
+  local y, heads = 0, 0
+  local function heading(text)
+    heads = heads + 1
+    local h = head(p, heads)
+    h:ClearAllPoints()
+    h:SetPoint("TOPLEFT", p.content, "TOPLEFT", 0, -y)
+    h:SetText(text:upper())
+    h:Show()
+    y = y + 16
+  end
+  -- the steps, in order
+  if #plan.steps > 0 then
+    heading(L["In order"])
+  end
+  for k, s in ipairs(plan.steps) do
+    local c = card(p, k)
+    c:ClearAllPoints()
+    c:SetPoint("TOPLEFT", p.content, "TOPLEFT", 0, -y)
+    c:SetPoint("RIGHT", p.content, "RIGHT", 0, 0)
+    c.num:SetText(tostring(k))
+    local itemName = select(1, W.ItemInfo(s.item))
+    local quality = select(3, W.ItemInfo(s.item))
+    c.text:SetText(("%d "):format(s.made or s.count) .. W.QualityText(quality, itemName or name(s.item)))
+    local sub
+    if s.crafter and not s.mine then
+      sub = W.Color("warn", L["on %s"]:format(charName(s.crafter)))
+    elseif not s.crafter then
+      sub = W.Color("bad", L["nobody of yours knows it"])
+    elseif s.part then
+      sub = L["a part"]
+    end
+    c.sub:SetText(sub or "")
+    c:SetHeight(sub and 38 or 26)
+    -- a part: make it or buy it (the plan's choice); what you queued: its profit, and remove it
+    c.make:SetShown(s.part or false)
+    c.buy:SetShown(s.part or false)
+    c.profit:SetShown(not s.part)
+    c.remove:SetShown(not s.part)
+    if s.part then
+      local buying = s.choice == "buy"
+      c.make:SetSelected(not buying)
+      c.buy:SetSelected(buying)
+      c.make:SetScript("OnClick", function()
+        queue():SetChoice(s.item, "make")
+        PB:Refresh()
+      end)
+      c.buy:SetScript("OnClick", function()
         queue():SetChoice(s.item, "buy")
         PB:Refresh()
       end)
-    elseif m and m.part then
-      r.toggle:SetText(L["Make"])
-      r.toggle:SetScript("OnClick", function()
-        queue():SetChoice(m.item, "make")
+    else
+      c.profit:SetText(s.profit and signed(s.profit) or "")
+      c.remove:SetScript("OnClick", function()
+        queue():Remove(s.recipe)
         PB:Refresh()
       end)
     end
-    r.remove:SetScript("OnClick", function()
-      if s then
-        queue():Remove(s.recipe)
-        PB:Refresh()
-      end
+    c:Show()
+    y = y + (sub and 38 or 26) + 4
+  end
+  for k = #plan.steps + 1, #p.cards do
+    p.cards[k]:Hide()
+  end
+  -- materials: what's needed and where it comes from
+  if #plan.materials > 0 then
+    y = y + 6
+    heading(L["Materials"])
+  end
+  for k, m in ipairs(plan.materials) do
+    local r = line(p.mats, p.content, k, true)
+    r:ClearAllPoints()
+    r:SetPoint("TOPLEFT", p.content, "TOPLEFT", 0, -y)
+    r:SetPoint("RIGHT", p.content, "RIGHT", 0, 0)
+    local itemName, _, quality = W.ItemInfo(m.item)
+    r.text:SetText(W.QualityText(quality, itemName or name(m.item)))
+    r.need:SetText(W.Count(m.need))
+    r.src:SetText(PB.SourcesText(m))
+    local back = m.part and m.choice == "buy" or false
+    r.make:SetShown(back)
+    r.src:SetPoint("RIGHT", back and r.make or r, back and "LEFT" or "RIGHT", back and -4 or 0, 0)
+    r.make:SetScript("OnClick", function()
+      queue():SetChoice(m.item, "make")
+      PB:Refresh()
     end)
     r:Show()
-    y = y - (line.kind == "head" and 22 or 18)
+    y = y + 18
   end
-  for i = #lines + 1, #p.rows do
-    p.rows[i]:Hide()
+  for k = #plan.materials + 1, #p.mats do
+    p.mats[k]:Hide()
+  end
+  -- what to do, in order
+  local todo = {}
+  for _, t in ipairs(plan.todo or {}) do
+    local text = PB.TodoText(t, me)
+    if text then
+      todo[#todo + 1] = text
+    end
+  end
+  if #todo > 0 then
+    y = y + 6
+    heading(L["To do"])
+  end
+  for k, text in ipairs(todo) do
+    local r = line(p.todos, p.content, k)
+    r:ClearAllPoints()
+    r:SetPoint("TOPLEFT", p.content, "TOPLEFT", 0, -y)
+    r:SetPoint("RIGHT", p.content, "RIGHT", 0, 0)
+    r.text:SetText(W.Dim(k .. ".") .. "  " .. text)
+    r:Show()
+    y = y + 18
+  end
+  for k = #todo + 1, #p.todos do
+    p.todos[k]:Hide()
+  end
+  for k = heads + 1, #p.heads do
+    p.heads[k]:Hide()
+  end
+  p.content:SetHeight(math.max(1, y))
+  if p.pane.Measure then
+    p.pane:Measure()
   end
   p.next:SetEnabled(not queue():Empty())
 end

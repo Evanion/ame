@@ -185,6 +185,13 @@ function W.Button(parent, label, width, height, onClick, opts)
   return b
 end
 
+-- the main action of a panel (Post, Buy, Queue, Craft next): filled with the theme's accent, as the designs show
+function W.Primary(b)
+  b.primary = true
+  b:SetSelected(true)
+  return b
+end
+
 -- A row of buttons where one is selected (tabs, ranges, filters, modes).
 --   W.Segmented(parent, { { key, label }, ... }, {
 --     height = 20, gap = 4,

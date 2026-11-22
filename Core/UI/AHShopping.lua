@@ -117,6 +117,17 @@ local function cell(parent, width, justify)
   return fs
 end
 
+-- a panel like the main window's (its colour, the discreet border) and the frame inside it, inset by pad
+local function makePanel(parent, pad)
+  local outer = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+  W.Skin(outer, W.COLORS.panel)
+  local inner = CreateFrame("Frame", nil, outer)
+  inner:SetPoint("TOPLEFT", pad, -pad)
+  inner:SetPoint("BOTTOMRIGHT", -pad, pad)
+  return outer, inner
+end
+T.Panel = makePanel
+
 -- a small labelled control in the filters (y: the row's top)
 local function labeled(parent, text, control, x, y)
   local label = W.Text(parent, "GameFontDisableSmall")
@@ -126,7 +137,7 @@ local function labeled(parent, text, control, x, y)
   return control
 end
 
-T.FILTERS_H = 76 -- two rows
+T.FILTERS_H = 92 -- two rows, in a panel
 
 -- the subcategory choices under a top category ({ path, name })
 local function subOptions(top)
@@ -144,12 +155,12 @@ end
 -- name and usable. (Two dropdowns for the category: the game's whole tree is too long for one menu.)
 function T:CreateFilters(main)
   local p = self.panel
-  local box = CreateFrame("Frame", nil, main)
-  box:SetPoint("TOPLEFT", 0, -28)
-  box:SetPoint("RIGHT", 0, 0)
-  box:SetHeight(T.FILTERS_H)
-  box:Hide()
-  p.filters = box
+  local outer, box = makePanel(main, 8)
+  outer:SetPoint("TOPLEFT", 0, -28)
+  outer:SetPoint("RIGHT", 0, 0)
+  outer:SetHeight(T.FILTERS_H)
+  outer:Hide()
+  p.filters = outer
   local f = self.filters
   local function changed()
     T:RenderFiltersButton()
@@ -268,91 +279,45 @@ local function sideLine(side, i)
   return b
 end
 
--- the item tables, made like the Market screener's (ns.DataTable): icon, quality colour, tooltip, striped rows
-local function pct(v)
-  return v and W.Percent(v, 0) or W.Dim("·")
+-- The tables are the AME window's own: search results are the Market screener's (UI.ScreenerOpts: its columns,
+-- star, confidence, signal reasons), a list is the Market tab's shopping list (UI.SHOPPING_COLUMNS) with the
+-- cheapest listing beside the market price. Only a click does something else here: the item's listings below.
+local function pickRow(d)
+  T:Select(d.itemID)
+end
+local function selected(d)
+  return d.itemID == T.selected
 end
 
-local function tableOpts(columns)
-  return {
-    columns = columns,
-    fill = true,
-    rows = 8,
-    rowHeight = 20,
-    itemID = function(d)
-      return d.itemID
-    end,
-    onClick = function(d)
-      T:Select(d.itemID)
-    end,
-    selected = function(d)
-      return d.itemID == T.selected
-    end,
-    rowAlpha = function(d)
-      return d.missing == 0 and 0.55 or 1
-    end,
-  }
+-- a list's columns: the Market tab's, the cheapest listing after the market price, the cost at the listings
+local function listColumns()
+  local out = {}
+  for _, col in ipairs(UI.SHOPPING_COLUMNS or {}) do
+    if col.key == "cost" then
+      out[#out + 1] = {
+        key = "cost",
+        label = col.label,
+        width = col.width,
+        text = function(r)
+          return r.missing > 0 and W.Money(math.floor((r.buyCost or r.cost or 0) + 0.5)) or ""
+        end,
+      }
+    else
+      out[#out + 1] = col
+    end
+    if col.key == "market" then
+      out[#out + 1] = {
+        key = "cheapest",
+        label = L["Cheapest"],
+        width = 80,
+        text = function(r)
+          return r.cheapest and W.Money(r.cheapest) or W.Dim(r.searched and L["none"] or "-")
+        end,
+      }
+    end
+  end
+  return out
 end
-
-local LIST_COLUMNS = {
-  { key = "name", label = L["Item"], width = 150, item = true },
-  { key = "need", label = L["need"], width = 40, format = "count" },
-  { key = "held", label = L["have"], width = 40, format = "count" },
-  {
-    key = "cheapest",
-    label = L["cheapest"],
-    width = 76,
-    text = function(d)
-      return d.cheapest and W.Money(d.cheapest, true) or W.Dim(d.searched and L["none"] or "·")
-    end,
-  },
-  {
-    key = "underTop",
-    label = L["at or under top"],
-    width = 84,
-    text = function(d)
-      return d.underTop and W.Count(d.underTop) or W.Dim("·")
-    end,
-  },
-  {
-    key = "vs",
-    label = L["vs market"],
-    width = 60,
-    text = function(d)
-      return d.cheapest and d.market and pct(d.cheapest / d.market - 1) or W.Dim("·")
-    end,
-  },
-}
-
-local SEARCH_COLUMNS = {
-  { key = "name", label = L["Item"], width = 150, item = true },
-  {
-    key = "ilvl",
-    label = L["ilvl"],
-    width = 34,
-    text = function(d)
-      return d.ilvl and d.ilvl > 0 and tostring(d.ilvl) or W.Dim("·")
-    end,
-  },
-  { key = "qty", label = L["for sale"], width = 50, format = "count" },
-  { key = "cheapest", label = L["cheapest"], width = 76, format = "money" },
-  {
-    key = "vs",
-    label = L["vs market"],
-    width = 60,
-    text = function(d)
-      return d.vs and pct(d.vs) or W.Dim(L["new"])
-    end,
-  },
-  {
-    key = "signal",
-    label = L["signal"],
-    width = 56,
-    text = function(d)
-      return d.signal and d.signal ~= "none" and W.Signal(d.signal) or W.Dim("·")
-    end,
-  },
-}
 
 function T:Create(ah)
   local p = CreateFrame("Frame", nil, ah, "BackdropTemplate")
@@ -420,24 +385,42 @@ function T:Create(ah)
   end)
   p.searchAll:SetPoint("RIGHT", 0, 0)
 
-  -- the table's box: under the title row, down to the listings (or the bottom)
-  local box = CreateFrame("Frame", nil, main)
+  -- the table's panel: under the title row, down to the listings (or the bottom)
+  local box, inner = makePanel(main, 4)
   p.tableBox = box
-  p.listTable = ns.DataTable.New(box, tableOpts(LIST_COLUMNS))
-  p.searchTable = ns.DataTable.New(box, tableOpts(SEARCH_COLUMNS))
+  p.listTable = ns.DataTable.New(inner, {
+    columns = listColumns(),
+    fill = true,
+    rows = 8,
+    itemID = function(r)
+      return r.itemID
+    end,
+    sort = { key = "missing", ascending = false },
+    onClick = pickRow,
+    selected = selected,
+  })
+  p.searchTable = ns.DataTable.New(
+    inner,
+    UI.ScreenerOpts({
+      fill = true,
+      rows = 8,
+      sort = { key = "min", ascending = true },
+      onClick = pickRow,
+      selected = selected,
+    })
+  )
+  -- the screener's columns as you chose them for the Market tab, and the cheapest listing (what you'd pay now)
+  local hidden = UI.MarketHiddenColumns and UI:MarketHiddenColumns() or {}
+  hidden.min = nil
+  p.searchTable:SetUserHidden(hidden)
 
   -- the selected item's listings, and buying
-  local detail = CreateFrame("Frame", nil, main)
-  detail:SetPoint("BOTTOMLEFT", 0, 0)
-  detail:SetPoint("RIGHT", 0, 0)
-  detail:SetHeight(T.LISTINGS * 16 + 52)
-  detail:Hide()
-  p.detail = detail
-  local line = detail:CreateTexture(nil, "BACKGROUND")
-  line:SetPoint("TOPLEFT", 0, 6)
-  line:SetPoint("TOPRIGHT", 0, 6)
-  line:SetHeight(1)
-  W.Fill(line, W.COLORS.border)
+  local detailPanel, detail = makePanel(main, 8)
+  detailPanel:SetPoint("BOTTOMLEFT", 0, 0)
+  detailPanel:SetPoint("RIGHT", 0, 0)
+  detailPanel:SetHeight(T.LISTINGS * 16 + 68)
+  detailPanel:Hide()
+  p.detail = detailPanel
   p.detailTitle = W.Text(detail, "GameFontNormalSmall")
   p.detailTitle:SetPoint("TOPLEFT", 0, 0)
   p.listings = {}
@@ -476,6 +459,7 @@ function T:Create(ah)
     end
   end)
   p.buy:SetPoint("BOTTOMRIGHT", 0, 2)
+  W.Primary(p.buy)
   p.note = W.Text(detail, "GameFontDisableSmall")
   p.note:SetPoint("RIGHT", p.buy, "LEFT", -10, 0)
 
@@ -504,7 +488,7 @@ function T:Layout()
   p.tableBox:SetPoint("TOPLEFT", p.top, "BOTTOMLEFT", 0, -4)
   p.tableBox:SetPoint("RIGHT", p.main, "RIGHT", 0, 0)
   if p.detail:IsShown() then
-    p.tableBox:SetPoint("BOTTOM", p.detail, "TOP", 0, 12)
+    p.tableBox:SetPoint("BOTTOM", p.detail, "TOP", 0, 8)
   else
     p.tableBox:SetPoint("BOTTOM", p.main, "BOTTOM", 0, 0)
   end
@@ -660,9 +644,19 @@ function T:TableRows()
   local index = ns.AME:FactionIndex()
   if self.mode == "search" then
     local B = ns.AHBrowse
-    local rows = B.Rows(B.results, self.filters, index and index.items)
-    for _, r in ipairs(rows) do
-      r.itemID = r.key
+    local found = B.Rows(B.results, self.filters, index and index.items)
+    -- the screener's rows: each item's summary, with what's on sale now (its cheapest listing and how many)
+    local avgKey = "avg" .. (ns.Settings:Get("tooltipAvgDays") or 7)
+    local rows = {}
+    for i, r in ipairs(found) do
+      local s = index and index.items[r.key] or {}
+      local avg = s[avgKey] or s.avg7
+      rows[i] = setmetatable({
+        itemID = r.key,
+        min = r.cheapest,
+        qty = r.qty,
+        vsAvg = s.market and avg and avg > 0 and s.market / avg - 1 or nil,
+      }, { __index = s })
     end
     local head = B.Label(B.text or self.panel.search:GetText(), self.filters, _G.AuctionCategories)
     local status = B.active and L["searching..."] or L["%d found"]:format(#rows)

@@ -89,6 +89,8 @@ local COLS = {
   },
 }
 
+UI.SHOPPING_COLUMNS = COLS -- the auction house's Shopping tab shows lists with these too
+
 function UI:CreateShoppingPanel(v)
   local p = CreateFrame("Frame", nil, v.main)
   p:SetAllPoints()

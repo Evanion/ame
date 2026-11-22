@@ -11,10 +11,7 @@ local W = ns.Widgets
 local S = { offset = 0 }
 ns.AHSelling = S
 
-S.ROWS = 14
-S.ROW_H = 22
-S.LISTINGS = 10
-S.LIST_W = 250
+S.LIST_W = 260
 S.FORM_W = 280
 
 local function money(c)
@@ -157,71 +154,68 @@ function S:Create(ah)
   self.panel = p
   self.duration = defaultDuration()
 
-  -- your bags
-  local list = CreateFrame("Frame", nil, p)
-  list:SetPoint("TOPLEFT", 8, -8)
-  list:SetPoint("BOTTOMLEFT", 8, 8)
+  -- your bags: the main window's item table (icon, quality colour, tooltip), worth the most first
+  local list, listInner = ns.AHShopping.Panel(p, 4)
+  list:SetPoint("TOPLEFT", 0, 0)
+  list:SetPoint("BOTTOMLEFT", 0, 0)
   list:SetWidth(S.LIST_W)
   p.list = list
-  local head = W.Text(list, "GameFontNormalSmall")
-  head:SetPoint("TOPLEFT", 0, 0)
-  head:SetText(L["Your bags: can be listed"])
-  p.empty = W.Text(list, "GameFontDisableSmall")
-  p.empty:SetPoint("TOPLEFT", 0, -22)
-  p.empty:SetPoint("RIGHT", 0, 0)
+  p.bags = ns.DataTable.New(listInner, {
+    columns = {
+      {
+        key = "name",
+        label = L["In your bags"],
+        width = 150,
+        item = true,
+        suffix = function(e)
+          local hint = ""
+          if e.craft then
+            hint = "  " .. W.Color("warn", L["make %s"]:format(ns.ItemCache.Name(e.craft.product) or "?"))
+          elseif e.signal == "vendor" then
+            hint = "  " .. W.Dim(L["vendor"])
+          elseif e.signal == "disenchant" then
+            hint = "  " .. W.Color("warn", L["DE"])
+          end
+          return (e.qty > 1 and W.Dim("  " .. W.Count(e.qty)) or "") .. hint
+        end,
+      },
+      {
+        key = "worth",
+        label = L["Worth"],
+        width = 64,
+        text = function(e)
+          return e.worth > 0 and W.Money(math.floor(e.worth + 0.5), true) or W.Dim("·")
+        end,
+      },
+    },
+    fill = true,
+    rows = 12,
+    rowHeight = 20,
+    sort = { key = "worth", ascending = false },
+    itemID = function(e)
+      return e.key
+    end,
+    onClick = function(e)
+      S:Select(e)
+    end,
+    selected = function(e)
+      return S.entry ~= nil and S.entry.key == e.key
+    end,
+    rowAlpha = function(e)
+      return e.signal == "vendor" and not e.craft and 0.6 or 1
+    end,
+  })
+  p.empty = W.Text(listInner, "GameFontDisableSmall")
+  p.empty:SetPoint("TOPLEFT", 6, -28)
+  p.empty:SetPoint("RIGHT", -6, 0)
   p.empty:SetText(L["Nothing in your bags can be listed here."])
-  p.rows = {}
-  for i = 1, S.ROWS do
-    local r = CreateFrame("Button", nil, list)
-    r:SetHeight(S.ROW_H)
-    r:SetPoint("TOPLEFT", 0, -16 - (i - 1) * S.ROW_H)
-    r:SetPoint("RIGHT", 0, 0)
-    r.sel = r:CreateTexture(nil, "BACKGROUND")
-    r.sel:SetAllPoints()
-    W.Fill(r.sel, W.COLORS.rowSelected)
-    r.hl = r:CreateTexture(nil, "HIGHLIGHT")
-    r.hl:SetAllPoints()
-    W.Fill(r.hl, W.COLORS.rowHover)
-    r.icon = r:CreateTexture(nil, "ARTWORK")
-    r.icon:SetSize(18, 18)
-    r.icon:SetPoint("LEFT", 2, 0)
-    r.count = W.Text(r, "NumberFontNormalSmall", "RIGHT")
-    r.count:SetPoint("BOTTOMRIGHT", r.icon, "BOTTOMRIGHT", 2, -1)
-    r.worth = W.Text(r, "GameFontHighlightSmall", "RIGHT")
-    r.worth:SetPoint("RIGHT", -4, 0)
-    r.name = W.Text(r, "GameFontHighlightSmall")
-    r.name:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
-    r.name:SetPoint("RIGHT", r.worth, "LEFT", -6, 0)
-    r.name:SetWordWrap(false)
-    r:SetScript("OnClick", function(self)
-      S:Select(self.entry)
-    end)
-    r:SetScript("OnEnter", function(self)
-      if self.entry and self.entry.link and GameTooltip then
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetHyperlink(self.entry.link)
-        GameTooltip:Show()
-      end
-    end)
-    r:SetScript("OnLeave", function()
-      if GameTooltip then
-        GameTooltip:Hide()
-      end
-    end)
-    r:Hide()
-    p.rows[i] = r
-  end
-  list:EnableMouseWheel(true)
-  list:SetScript("OnMouseWheel", function(_, delta)
-    S.offset = math.max(0, (S.offset or 0) - delta * 3)
-    S:Render()
-  end)
 
-  -- the form
-  local form = CreateFrame("Frame", nil, p)
-  form:SetPoint("TOPLEFT", list, "TOPRIGHT", 12, 0)
-  form:SetPoint("BOTTOMLEFT", list, "BOTTOMRIGHT", 12, 0)
-  form:SetWidth(S.FORM_W)
+  -- the form, in a panel of its own
+  local formPanel, form = ns.AHShopping.Panel(p, 10)
+  formPanel:SetPoint("TOPLEFT", list, "TOPRIGHT", 10, 0)
+  formPanel:SetPoint("BOTTOMLEFT", list, "BOTTOMRIGHT", 10, 0)
+  formPanel:SetWidth(S.FORM_W + 20)
+  p.formPanel = formPanel
   p.form = form
   p.icon = form:CreateTexture(nil, "ARTWORK")
   p.icon:SetSize(32, 32)
@@ -300,44 +294,51 @@ function S:Create(ah)
     S:Post()
   end)
   p.post:SetPoint("BOTTOMLEFT", 0, 0)
+  W.Primary(p.post)
   p.result = W.Text(form, "GameFontDisableSmall")
   p.result:SetPoint("BOTTOMLEFT", p.post, "TOPLEFT", 0, 6)
   p.result:SetPoint("RIGHT", 0, 0)
 
-  -- on sale now
-  local sale = CreateFrame("Frame", nil, p)
-  sale:SetPoint("TOPLEFT", form, "TOPRIGHT", 12, 0)
-  sale:SetPoint("BOTTOMRIGHT", -8, 8)
+  -- on sale now: a table like the others, yours marked; a click prices just under a listing
+  local sale, saleInner = ns.AHShopping.Panel(p, 4)
+  sale:SetPoint("TOPLEFT", formPanel, "TOPRIGHT", 10, 0)
+  sale:SetPoint("BOTTOMRIGHT", 0, 0)
   p.sale = sale
-  p.saleHead = W.Text(sale, "GameFontNormalSmall")
-  p.saleHead:SetPoint("TOPLEFT", 0, 0)
-  p.saleHead:SetText(L["On sale now, cheapest first"])
-  p.listings = {}
-  for i = 1, S.LISTINGS do
-    local l = CreateFrame("Button", nil, sale)
-    l:SetHeight(18)
-    l:SetPoint("TOPLEFT", 0, -18 - (i - 1) * 18)
-    l:SetPoint("RIGHT", 0, 0)
-    l.hl = l:CreateTexture(nil, "HIGHLIGHT")
-    l.hl:SetAllPoints()
-    W.Fill(l.hl, W.COLORS.rowHover)
-    l.price = W.Text(l, "GameFontHighlightSmall", "RIGHT")
-    l.price:SetWidth(100)
-    l.price:SetPoint("LEFT", 0, 0)
-    l.qty = W.Text(l, "GameFontHighlightSmall", "RIGHT")
-    l.qty:SetWidth(60)
-    l.qty:SetPoint("LEFT", l.price, "RIGHT", 8, 0)
-    l.mine = W.Text(l, "GameFontHighlightSmall")
-    l.mine:SetPoint("LEFT", l.qty, "RIGHT", 10, 0)
-    l:SetScript("OnClick", function(self)
-      S:Undercut(self.row)
-    end)
-    l:Hide()
-    p.listings[i] = l
-  end
-  p.saleNote = W.Text(sale, "GameFontDisableSmall")
-  p.saleNote:SetPoint("TOPLEFT", 0, -18 - S.LISTINGS * 18 - 6)
-  p.saleNote:SetPoint("RIGHT", 0, 0)
+  p.listings = ns.DataTable.New(saleInner, {
+    columns = {
+      {
+        key = "price",
+        label = L["On sale now"],
+        width = 90,
+        align = "LEFT",
+        sortKey = false,
+        text = function(r)
+          return money(r.price)
+        end,
+      },
+      { key = "qty", label = L["Qty"], width = 44, format = "count", sortKey = false },
+      {
+        key = "mine",
+        label = "",
+        width = 40,
+        align = "LEFT",
+        sortKey = false,
+        text = function(r)
+          return r.mine and W.Color("gold", L["yours"]) or ""
+        end,
+      },
+    },
+    fill = true,
+    bottom = 28,
+    rows = 10,
+    rowHeight = 20,
+    onClick = function(r)
+      S:Undercut(r)
+    end,
+  })
+  p.saleNote = W.Text(saleInner, "GameFontDisableSmall")
+  p.saleNote:SetPoint("BOTTOMLEFT", 6, 4)
+  p.saleNote:SetPoint("RIGHT", -6, 0)
   p.saleNote:SetText(L["Click a listing to price just under it."])
 
   p:HookScript("OnShow", function()
@@ -467,31 +468,8 @@ function S:RenderList()
   local p = self.panel
   local items = self.items or {}
   p.empty:SetShown(#items == 0)
-  self.offset = math.max(0, math.min(self.offset or 0, #items - S.ROWS))
-  for i, r in ipairs(p.rows) do
-    local e = items[i + self.offset]
-    r.entry = e
-    if e then
-      r.icon:SetTexture(e.icon or 134400)
-      r.count:SetText(e.qty > 1 and tostring(e.qty) or "")
-      local itemName = W.QualityText(e.quality, ns.ItemCache.Name(e.key) or ("item:" .. e.key))
-      local hint = ""
-      if e.craft then
-        hint = "  " .. W.Color("warn", L["make %s"]:format(ns.ItemCache.Name(e.craft.product) or "?"))
-      elseif e.signal == "vendor" then
-        hint = "  " .. W.Dim(L["vendor"])
-      elseif e.signal == "disenchant" then
-        hint = "  " .. W.Color("warn", L["DE"])
-      end
-      r.name:SetText(itemName .. hint)
-      r.worth:SetText(e.worth > 0 and W.Money(math.floor(e.worth + 0.5), true) or W.Dim("·"))
-      r.sel:SetShown(self.entry ~= nil and self.entry.key == e.key)
-      r:SetAlpha(e.signal == "vendor" and not e.craft and 0.6 or 1)
-      r:Show()
-    else
-      r:Hide()
-    end
-  end
+  p.bags:SetData(items)
+  p.bags:Render()
 end
 
 function S:RenderForm()
@@ -564,21 +542,12 @@ end
 function S:RenderListings()
   local p, e = self.panel, self.entry
   local book = e and ns.AHSearch.results[e.key]
-  p.saleHead:SetText(
-    e and (book and L["On sale now, cheapest first"] or L["searching..."]) or W.Dim(L["Pick an item on the left."])
+  p.listings:SetData(book and book.rows or {})
+  p.listings:SetMessage(
+    e and (book and (#book.rows == 0 and L["none listed"] or nil) or L["searching..."])
+      or L["Pick an item on the left."]
   )
-  for i, l in ipairs(p.listings) do
-    local row = book and book.rows[i]
-    l.row = row
-    if row then
-      l.price:SetText(money(row.price))
-      l.qty:SetText(W.Count(row.qty))
-      l.mine:SetText(row.mine and W.Color("brand", L["yours"]) or "")
-      l:Show()
-    else
-      l:Hide()
-    end
-  end
+  p.listings:Render()
   p.saleNote:SetShown(book ~= nil and #book.rows > 0)
 end
 

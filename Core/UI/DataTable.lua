@@ -6,6 +6,7 @@
 --   local t = ns.DataTable.New(parent, {
 --     columns = {
 --       { key = "name", label = "Item", width = 190, item = true },        -- icon + quality-coloured name
+--         (suffix = function(d) return "  x5" end: text after the name)
 --       { key = "market", label = "Market", width = 86, format = "money" },
 --       { key = "x", label = function() return "dynamic" end, width = 60, text = function(d) return ... end },
 --     },
@@ -512,7 +513,7 @@ local function itemCell(t, row, col, d, itemID)
   row.icon:SetTexture(icon or 134400)
   row.icon:SetShown(itemID ~= nil)
   local fallback = col.fallback and col.fallback(d) or (itemID and ("item:" .. itemID)) or ""
-  return W.QualityText(quality, name or fallback)
+  return W.QualityText(quality, name or fallback) .. (col.suffix and col.suffix(d) or "")
 end
 
 function DataTable:Render()

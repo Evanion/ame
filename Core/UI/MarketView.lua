@@ -435,6 +435,41 @@ function UI:RenderCategories()
 end
 
 ---------------------------------------------------------------------------------------------------------------------
+-- The screener's table, as the Market tab shows it: its columns, the watchlist star, confidence bars, faded stale
+-- rows, the item menu and the signal's reasons on hover. Other lists of market items (the auction house's Shopping
+-- tab) use the same, with their own click, sort and size: extra = those options.
+function UI.ScreenerOpts(extra)
+  local opts = {
+    columns = COLUMNS,
+    itemID = function(s)
+      return s.itemID
+    end,
+    itemMenu = { hide = true },
+    star = true,
+    confidence = function(s)
+      return ns.Analytics.Confidence(s, UI.index and UI.index.day)
+    end,
+    rowAlpha = function(s)
+      local today = UI.index and UI.index.day
+      return (today and s.day and today - s.day > UI.STALE_DAYS) and 0.5 or 1
+    end,
+    tooltip = function(tip, s)
+      tip:AddLine(" ")
+      tip:AddLine(W.Signal(s.signal) .. "  " .. W.Dim(L["why:"]))
+      for _, line in ipairs(UI.SignalReasons(s, UI.index and UI.index.day)) do
+        tip:AddLine(line, 0.85, 0.85, 0.85, true)
+      end
+      if ns.AME.ahOpen then
+        tip:AddLine(L["Shift-click to search the auction house"], 0.6, 0.6, 0.6)
+      end
+    end,
+  }
+  for k, v in pairs(extra or {}) do
+    opts[k] = v
+  end
+  return opts
+end
+
 -- columns and saved views
 
 -- the columns switched off: defaults (optional ones) overridden by the chooser (Settings "marketColumns")
@@ -758,24 +793,11 @@ function UI:CreateMarketView(parent)
     v:PlaceSignals()
   end)
 
-  -- the list (shared DataTable component)
-  v.table = ns.DataTable.New(main, {
-    columns = COLUMNS,
+  -- the list (shared DataTable component, set up as everywhere the screener's rows show: UI.ScreenerOpts)
+  local opts = UI.ScreenerOpts({
     rows = 17,
     fill = true, -- rows fill the tab down to the status line
     top = 0,
-    itemID = function(s)
-      return s.itemID
-    end,
-    itemMenu = { hide = true },
-    star = true,
-    confidence = function(s)
-      return ns.Analytics.Confidence(s, UI.index and UI.index.day)
-    end,
-    rowAlpha = function(s)
-      local today = UI.index and UI.index.day
-      return (today and s.day and today - s.day > UI.STALE_DAYS) and 0.5 or 1
-    end,
     sort = { key = UI.mq.sortKey, ascending = UI.mq.ascending },
     onSort = function(key, ascending)
       UI.mq.sortKey, UI.mq.ascending = key, ascending
@@ -796,18 +818,9 @@ function UI:CreateMarketView(parent)
         UI:ShowItem(s.itemID)
       end
     end,
-    tooltip = function(tip, s)
-      tip:AddLine(" ")
-      tip:AddLine(W.Signal(s.signal) .. "  " .. W.Dim(L["why:"]))
-      for _, line in ipairs(UI.SignalReasons(s, UI.index and UI.index.day)) do
-        tip:AddLine(line, 0.85, 0.85, 0.85, true)
-      end
-      if ns.AME.ahOpen then
-        tip:AddLine(L["Shift-click to search the auction house"], 0.6, 0.6, 0.6)
-      end
-    end,
     status = true, -- counts under the table; where the data comes from goes in the window's footer
   })
+  v.table = ns.DataTable.New(main, opts)
   v.headers, v.rows, v.bar, v.status = v.table.headers, v.table.rows, v.table.bar, slots.status
   self:CreateShoppingPanel(v) -- a shopping list, shown instead of the table
   v.counts = v.table.status
