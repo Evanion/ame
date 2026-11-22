@@ -23,6 +23,11 @@ UI.ITEM_SIDEBAR = UI.SIDE_PANEL_W
 UI.ITEM_SUMMARY_H = 28 -- the compact layout's summary bar under the chart
 UI.CONFIDENCE_WORD = { high = L["high"], medium = L["medium"], low = L["low"] }
 
+-- a small up or down triangle in a text role's colour, before a change (the game's font has no triangle glyphs)
+local function arrow(up, tone)
+  return W.SignalIcon(up and "buy" or "sell", 9, ns.HEX[tone]) .. " "
+end
+
 -- Where the item's prices come from (the footer): the newest full scan of the market and who ran it, and a later
 -- search of the item.
 function UI:PriceSource(latest)
@@ -151,19 +156,24 @@ function UI:CreateItemView(parent)
   sumBar:SetPoint("BOTTOMLEFT", 0, 0)
   sumBar:SetPoint("BOTTOMRIGHT", 0, 0)
   v.summaryBar = sumBar
-  v.details = W.Button(sumBar, L["Details"], 70, 20, function()
+  v.details = W.Button(sumBar, L["Details"] .. W.ARROW_DOWN, 76, 20, function()
     slots:ToggleDetails()
     v.details:SetSelected(slots.details)
   end)
   v.details:SetPoint("RIGHT", -4, 0)
-  v.summary = W.Text(sumBar, "GameFontHighlightSmall")
-  v.summary:SetPoint("LEFT", 10, 0)
-  v.summary:SetPoint("RIGHT", v.details, "LEFT", -8, 0)
-  v.summary:SetWordWrap(false)
+  -- the pieces, left to right: the market price and its change, the signal's badge, what to post at
+  v.summaryMarket = W.Text(sumBar, "GameFontHighlightSmall")
+  v.summaryMarket:SetPoint("LEFT", 10, 0)
+  v.summaryMarket:SetWordWrap(false)
+  v.summaryBadge = W.SignalBadge(sumBar)
+  v.summaryBadge:SetPoint("LEFT", v.summaryMarket, "RIGHT", 12, 0)
+  v.summaryPost = W.Text(sumBar, "GameFontHighlightSmall")
+  v.summaryPost:SetPoint("RIGHT", v.details, "LEFT", -8, 0)
+  v.summaryPost:SetWordWrap(false)
 
   -- main: the chart fills it
   local holder = CreateFrame("Frame", nil, slots.main, "BackdropTemplate")
-  W.Skin(holder, { 0.07, 0.08, 0.1, 1 }, W.COLORS.border)
+  W.Skin(holder, W.COLORS.chart.bg, W.COLORS.border)
   W.InnerGlow(holder)
   holder:SetPoint("TOPLEFT", 0, -(22 + UI.SLOT_GAP)) -- under the chart's controls
   holder:SetPoint("BOTTOMRIGHT") -- above the summary bar when narrow (SetCompact)
@@ -216,7 +226,7 @@ function UI:CreateItemView(parent)
   self.chart = chart
   -- legend: a box in the chart's top-left corner, one line per series; out of the way while you hover the plot
   local legend = CreateFrame("Frame", nil, holder, "BackdropTemplate")
-  W.Skin(legend, { 0.06, 0.07, 0.09, 0.85 }, { 1, 1, 1, 0.08 })
+  W.Skin(legend, W.COLORS.chart.legendBg, W.COLORS.chart.legendBorder)
   legend:SetPoint("TOPLEFT", 10, -10)
   legend:SetFrameLevel(chart.frame:GetFrameLevel() + 3)
   legend:EnableMouse(true)
@@ -227,7 +237,7 @@ function UI:CreateItemView(parent)
   legend.rows = {}
   v.legendBox = legend
   -- narrow: the legend folds into a small "Legend" button in the corner (the chart is small); click to open it
-  v.legendToggle = W.Button(holder, L["Legend"], 64, 18, function()
+  v.legendToggle = W.Button(holder, L["Legend"] .. W.ARROW_RIGHT, 72, 18, function()
     v.legendOpen = not v.legendOpen
     v:ShowLegend()
   end)
@@ -238,6 +248,7 @@ function UI:CreateItemView(parent)
     local has = self.legend:GetText() ~= nil and self.legend:GetText() ~= ""
     local compact = slots.compact
     self.legendToggle:SetShown(compact and has and not hovering)
+    self.legendToggle:SetText(L["Legend"] .. (self.legendOpen and W.ARROW_DOWN or W.ARROW_RIGHT))
     self.legendBox:ClearAllPoints()
     if compact then
       self.legendBox:SetPoint("TOPLEFT", self.legendToggle, "BOTTOMLEFT", 0, -4)
@@ -261,53 +272,64 @@ function UI:CreateItemView(parent)
   v.hint:SetAlpha(0.6)
 
   -- right sidebar: a column of cards - the call and why, market price, key numbers, posting price, watch and alerts.
-  -- v.cards keeps the old card order (label / value): market, lowest, average, 7d change, volatility, supply, signal
+  -- v.cards are the label / value rows in the old card order: market, lowest, average, volatility, supply, sales
   local col = UI.Stack(side.content, 0)
   local cards = {}
   -- the call: "Verdict ... + BUY", a headline, and why in plain words
   local callCard = col:Card(0)
+  W.EnableLinks(callCard) -- "make X and sell it" names the item as a link
   local st = callCard.stack
   v.callRow = st:Pair(L["Verdict"], "signal")
   v.call = v.callRow.value
   v.callHead = st:Text("GameFontHighlight", 4)
   v.callWhy = st:Text("GameFontHighlightSmall", 6)
   v.callWhy:SetSpacing(3)
-  -- market price, with the signal and phase beside the label
+  -- market price: now (large), against its average, the confidence under it; the signal's badge and the market's
+  -- phase at the top right
   local marketCard = col:Card()
-  st = marketCard.stack
-  cards[7] = st:Pair(L["Market price"], "signal")
-  cards[1] = { label = cards[7].label, value = st:Text("GameFontHighlightLarge", 2) }
-  v.change = st:Text("GameFontHighlightSmall", 2)
-  v.confidence = st:Text("GameFontDisableSmall", 4)
+  v.marketCard = marketCard
+  marketCard:SetContent({ subtitle = L["Market price"], rows = { { label = L["Now"], big = true }, {} } })
+  v.phase = W.Text(marketCard, "GameFontDisableSmall", "RIGHT")
+  v.phase:SetPoint("TOPRIGHT", -8, -8)
+  v.badge = W.SignalBadge(marketCard)
+  v.badge:EnableMouse(true)
+  ns.Help.Explain(v.badge, "signal")
+  cards[1] = marketCard.rows[1]
   -- key numbers
-  st = col:Card().stack
-  cards[2] = st:Pair(L["Lowest listing"], "min")
-  cards[3] = st:Pair(L["Average"], "avg")
-  cards[4] = st:Pair(L["Volatility"], "vol30")
-  cards[5] = st:Pair(L["Supply"], "qty")
-  cards[6] = st:Pair(L["Sales per day"], "sellRate")
+  local statsCard = col:Card()
+  v.statsCard = statsCard
+  statsCard:SetContent({
+    rows = {
+      { label = L["Lowest listing"], term = "min" },
+      { label = L["Average"], term = "avg" },
+      { label = L["Volatility"], term = "vol30" },
+      { label = L["Supply"], term = "qty" },
+      { label = L["Sales per day"], term = "sellRate" },
+    },
+  })
+  for i = 1, 5 do
+    cards[i + 1] = statsCard.rows[i]
+  end
   v.cards = cards
-  -- posting price (Pricing / Posting): "Post at (24 h listing) ... N ahead", Normal large, then Quick / Patient
-  st = col:Card().stack
-  v.postHeadRow = st:Pair(L["Post at"], "posting")
-  v.postHead = v.postHeadRow.label
-  v.post = st:Pair(L["Normal"], "posting", 4)
-  v.post:SetHeight(20)
-  v.post.label:SetFontObject("GameFontHighlight")
-  v.post.value:SetFontObject("GameFontHighlight")
-  v.post.text = v.post.value
-  v.postNet = st:Text("GameFontDisableSmall", 2)
-  v.postNet:SetJustifyH("RIGHT")
-  v.postQuick = st:Pair(L["Quick"], "posting", 4)
-  v.postQuick.label:SetFontObject("GameFontHighlightSmall")
-  v.postPatient = st:Pair(L["Patient"], "posting")
-  v.postPatient.label:SetFontObject("GameFontHighlightSmall")
-  v.postAlt = st:Text("GameFontHighlightSmall", 4)
-  v.postWarn = st:Text("GameFontHighlightSmall", 4)
+  -- posting price (Pricing / Posting): "Post at (24 h listing) ... N ahead", Normal large, what you net, then
+  -- Quick / Patient; a warning or a word on the book under them
+  local postCard = col:Card()
+  W.EnableLinks(postCard) -- "Make X first" names the item as a link
+  postCard:SetContent({
+    rows = {
+      { label = L["Post at"], term = "posting" },
+      { label = L["Normal"], big = true, term = "posting" },
+      {},
+      { label = L["Quick"], term = "posting" },
+      { label = L["Patient"], term = "posting" },
+    },
+  })
+  v.post = postCard
+  v.postHead, v.postNet = postCard.rows[1].label, postCard.rows[3].label
   -- watch and alerts
   st = col:Card().stack
   local watchRow = st:Row(22)
-  v.watch = W.Button(watchRow, L["Watch"], 100, 22, function(self)
+  v.watch = W.Button(watchRow, L["Watch"] .. W.ARROW_DOWN, 100, 22, function(self)
     UI:WatchMenu(self, UI.itemID)
   end, { icon = 14 })
   v.watch:SetPoint("LEFT")
@@ -537,7 +559,7 @@ end
 
 -- days per candle so a range shows at most ~60 candles
 -- Your own trades in an item, as dots on its price chart: what you paid / got per unit, when (ledger entries).
-UI.TRADE_COLORS = { buy = { 0.35, 0.65, 1, 1 }, sale = { 1, 0.45, 0.85, 1 } }
+UI.TRADE_COLORS = { buy = W.COLORS.chart.bought, sale = W.COLORS.chart.sold }
 
 local function tradePoints(itemID)
   local ledger = ns.AME.ledger
@@ -634,8 +656,8 @@ function UI.GroupLast(xs, ys, size)
   return oxs, oys
 end
 
-UI.SMA_COLOR = { 1, 0.67, 0.2 }
-UI.FAST_COLOR = { 0.78, 0.55, 1 }
+UI.SMA_COLOR = W.COLORS.chart.average
+UI.FAST_COLOR = W.COLORS.chart.fast
 UI.FAST_CANDLES = 20
 
 -- Chart layers you switch on and off by clicking them in the legend (Settings chartLayers: key -> true / false).
@@ -656,7 +678,7 @@ end
 
 -- the vendor price line: drawn when the vendor pays at least this share of the lowest price on the chart
 UI.VENDOR_LINE_SHARE = 0.33
-UI.VENDOR_COLOR = { 0.85, 0.85, 0.85, 0.85 }
+UI.VENDOR_COLOR = W.COLORS.chart.vendor
 
 -- (Re)draw the item chart in the current style from self.series.
 function UI:DrawItemChart()
@@ -687,7 +709,7 @@ function UI:DrawItemChart()
       and (intraday and (INTRADAY_CANDLE_HOURS[self.rangeDays] or 2) * 3600 or candlePeriod(series, self.rangeDays) * DAY)
     or (intraday and 3600)
   local qxs, qys = UI.GroupLast(xs, qty, bucket)
-  chart:SetSeries("qty", { xs = qxs, ys = qys, kind = "bars", axis = "volume", color = { 0.53, 0.53, 0.67, 1 } })
+  chart:SetSeries("qty", { xs = qxs, ys = qys, kind = "bars", axis = "volume", color = W.COLORS.chart.supply })
   if candles then
     local c
     if intraday then
@@ -725,12 +747,12 @@ function UI:DrawItemChart()
       ys = market,
       kind = "area",
       axis = "price",
-      color = { 0.2, 0.8, 1, 1 },
+      color = W.COLORS.chart.market,
       marker = true,
     })
-    chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = { 0.4, 0.87, 0.47, 0.9 } })
-    legend[#legend + 1] = { { 0.2, 0.8, 1 }, L["Market"], kind = "line", key = "market" }
-    legend[#legend + 1] = { { 0.4, 0.87, 0.47 }, L["Lowest"], kind = "line", key = "min" }
+    chart:SetSeries("min", { xs = xs, ys = low, kind = "line", axis = "price", color = W.COLORS.chart.lowest })
+    legend[#legend + 1] = { W.COLORS.chart.market, L["Market"], kind = "line", key = "market" }
+    legend[#legend + 1] = { W.COLORS.chart.lowest, L["Lowest"], kind = "line", key = "min" }
   end
   -- the 7-day average, up to now. By day: each day's average of it and the 6 before. Today's day point holds
   -- today so far, so it's drawn at now rather than at today's noon. On the scan-by-scan ranges (a 7-point average
@@ -814,7 +836,7 @@ function UI:DrawItemChart()
       legend[#legend + 1] = { note = L["Vendor price %s (below the chart)"]:format(W.Money(vendor, true)) }
     end
   end
-  legend[#legend + 1] = { { 0.53, 0.53, 0.67 }, L["Supply"], kind = "square", key = "qty" }
+  legend[#legend + 1] = { W.COLORS.chart.supply, L["Supply"], kind = "square", key = "qty" }
   if intraday then
     legend[#legend + 1] = {
       note = self.intradayDaily and L["(older days: one point a day)"] or L["(each point is one scan)"],
@@ -1081,11 +1103,16 @@ function UI:FillItem(_, series, latest, mixed)
         or L["No history for this item yet. Search for it at the auction house, or run a full scan."]
     )
     v.sub:SetText(ns.ShardLabel(self:ViewShard()))
+    -- nothing to show: every figure a dash, no badge, no phase, no confidence
+    v.marketCard:SetContent({
+      subtitle = L["Market price"],
+      rows = { { label = L["Now"], text = W.NONE, big = true }, { label = "", text = "" } },
+    })
     for _, c in ipairs(v.cards) do
-      c.value:SetText("-")
+      c.value:SetText(W.NONE)
     end
-    v.change:SetText("")
-    v.confidence:SetText("")
+    v.badge:Hide()
+    v.phase:SetText("")
     self:FillVerdict(nil)
     v.slots.status:SetText("")
     self.itemFacts = {}
@@ -1121,48 +1148,66 @@ function UI:FillItem(_, series, latest, mixed)
   if latest then -- the posting prices (here and on the sell bar) go by the same market as this page
     ns.Posting:NoteMarket(self:ViewShard(), self.itemID, latest.market, latest.t)
   end
-  local cards = v.cards
-  cards[1].value:SetText(W.Money(latest and latest.market or s.market))
-  cards[2].value:SetText(W.Money(latest and latest.min or s.min))
-  cards[3].label:SetText(L["%d-day average"]:format(avgDays()))
-  cards[3].value:SetText(W.Money(s["avg" .. avgDays()] or s.avg30))
-  cards[4].value:SetText(s.vol30 and ("%.1f%%"):format(s.vol30 * 100) or "-")
-  -- supply with its weekly trend: rising supply is bad for sellers (red), falling good (green)
-  local trend = s.supplyTrend30 and s.supplyTrend30 * 7
-  local trendText = ""
-  if trend and math.abs(trend) >= 0.005 then
-    trendText = "  " .. W.Color(trend > 0 and "bad" or "good", L["%+d%%/wk"]:format(math.floor(trend * 100 + 0.5)))
-  end
-  cards[5].value:SetText(W.Count(latest and latest.qty or s.qty or 0) .. trendText)
-  cards[6].value:SetText(s.sellRate and ("~" .. W.Count(s.sellRate)) or W.NONE)
-  local phaseText = s.phase and W.Dim(ns.Analytics.PHASE_LABEL[s.phase]:lower()) or ""
-  if s.signal and s.signal ~= "none" then
-    cards[7].value:SetText(W.SignalGlyph(s.signal) .. (phaseText ~= "" and W.Dim("  ·  ") .. phaseText or ""))
-  else
-    cards[7].value:SetText(phaseText)
-  end
   local avg = s["avg" .. avgDays()] or s.avg30
   local market = latest and latest.market or s.market
   local change = market and avg and avg > 0 and market / avg - 1 or nil
-  local changeText = ""
+  -- against the average: an arrow and how far, in the gain / loss colour
+  local changeText = W.NONE
   if change then
     local pct = math.floor(math.abs(change) * 100 + 0.5)
     if pct == 0 then
-      changeText = W.Dim(L["right at its %d-day average"]:format(avgDays()))
+      changeText = W.Dim(L["right at it"])
     else
-      changeText = W.Color(
-        change > 0 and "good" or "bad",
-        (change > 0 and L["%d%% above its %d-day average"] or L["%d%% below its %d-day average"]):format(pct, avgDays())
-      )
+      local tone = change > 0 and "good" or "bad"
+      changeText = arrow(change > 0, tone)
+        .. W.Color(tone, (change > 0 and L["%d%% above"] or L["%d%% below"]):format(pct))
     end
   end
-  v.change:SetText(changeText)
   local today = math.floor(GetServerTime() / DAY)
   local level = ns.Analytics.Confidence(s, today)
   local scans = L["%d scans this week"]:format(s.scans7 or 0)
-  v.confidence:SetText(
-    L["Confidence %s %s"]:format(W.Confidence(level), UI.CONFIDENCE_WORD[level] or "") .. "  ·  " .. scans
-  )
+  v.marketCard:SetContent({
+    subtitle = L["Market price"],
+    rows = {
+      { label = L["Now"], copper = market, text = W.NONE, big = true },
+      { label = L["vs %d-day average"]:format(avgDays()), text = changeText },
+    },
+    note = L["Confidence %s %s"]:format(W.Confidence(level), UI.CONFIDENCE_WORD[level] or "") .. "  ·  " .. scans,
+  })
+  -- the signal's badge, the market's phase after it
+  v.phase:SetText(s.phase and ns.Analytics.PHASE_LABEL[s.phase]:lower() or "")
+  v.badge:SetShown(s.signal and s.signal ~= "none" and true or false)
+  v.badge:SetSignal(s.signal)
+  v.badge:ClearAllPoints()
+  if (v.phase:GetText() or "") ~= "" then
+    v.badge:SetPoint("RIGHT", v.phase, "LEFT", -4, 0)
+  else
+    v.badge:SetPoint("TOPRIGHT", -8, -7)
+  end
+  -- supply with its weekly trend: rising supply is bad for sellers (red), falling good (green)
+  local trend = s.supplyTrend30 and s.supplyTrend30 * 7
+  local supply = W.Count(latest and latest.qty or s.qty or 0)
+  if trend and math.abs(trend) >= 0.005 then
+    local tone = trend > 0 and "bad" or "good"
+    supply = supply
+      .. "  "
+      .. arrow(trend > 0, tone)
+      .. W.Color(tone, L["%d%%/wk"]:format(math.floor(math.abs(trend) * 100 + 0.5)))
+  end
+  v.statsCard:SetContent({
+    rows = {
+      { label = L["Lowest listing"], copper = latest and latest.min or s.min, text = W.NONE, term = "min" },
+      {
+        label = L["%d-day average"]:format(avgDays()),
+        copper = s["avg" .. avgDays()] or s.avg30,
+        text = W.NONE,
+        term = "avg",
+      },
+      { label = L["Volatility"], text = s.vol30 and ("%.1f%%"):format(s.vol30 * 100) or W.NONE, term = "vol30" },
+      { label = L["Supply"], text = supply, term = "qty" },
+      { label = L["Sales per day"], text = s.sellRate and ("~" .. W.Count(s.sellRate)) or W.NONE, term = "sellRate" },
+    },
+  })
   -- subtitle: category · market · pips + scans · last seen
   local info = ns.ItemCache.Get(self.itemID)
   local category = info and info.subClassID and ns.ItemCache.SubClassName(info.classID, info.subClassID)
@@ -1300,9 +1345,10 @@ function UI.Verdict(s, ctx)
   return signal, HEADLINE[signal] or L["No call yet"], why
 end
 
--- "Better: make Silk Bandage and vendor it (Tyken) - ~2s per item instead of 1s 50c."
+-- "Better: make Silk Bandage and vendor it (Tyken) - ~2s per item instead of 1s 50c." The product is an item link
+-- (it works as one where the text's frame has links switched on: W.EnableLinks).
 function UI.CraftInsteadText(c)
-  local name = W.ItemLabel(c.product)
+  local name = W.LinkText(c.product)
   local text = c.where == "vendor" and L["Better: make %s and vendor it - ~%s per item instead of %s."]
     or L["Better: make %s and sell it - ~%s per item after the cut, instead of %s."]
   local who = c.crafter and (" " .. W.Dim("(" .. c.crafter .. ")")) or ""
@@ -1319,21 +1365,26 @@ function UI:FillVerdict(s, ctx)
   v:FitCards()
 end
 
--- the compact layout's one-line gist of the sidebar
+-- the compact layout's gist of the sidebar, in pieces: the market price and its change, the signal's badge, what
+-- to post at
 function UI:UpdateItemSummary()
   local v, facts = self.itemView, self.itemFacts or {}
-  local parts =
-    { W.Dim(L["Market"]) .. " " .. W.Money(facts.market) .. (facts.change and " " .. W.Percent(facts.change, 0) or "") }
-  if facts.signal and facts.signal ~= "none" then
-    parts[#parts + 1] = W.SignalGlyph(facts.signal)
-  end
-  if facts.post then
-    parts[#parts + 1] = W.Dim(L["Post at"])
-      .. " "
-      .. W.Money(facts.post)
-      .. (facts.postHours and " " .. W.Dim(W.Hours(facts.postHours)) or "")
-  end
-  v.summary:SetText(table.concat(parts, "     "))
+  v.summaryMarket:SetText(
+    W.Dim(L["Market"]) .. " " .. W.Money(facts.market) .. (facts.change and " " .. W.Percent(facts.change, 0) or "")
+  )
+  local signal = facts.signal and facts.signal ~= "none" and facts.signal or nil
+  v.summaryBadge:SetSignal(signal)
+  v.summaryBadge:SetShown(signal ~= nil)
+  v.summaryPost:ClearAllPoints()
+  v.summaryPost:SetPoint("LEFT", signal and v.summaryBadge or v.summaryMarket, "RIGHT", 12, 0)
+  v.summaryPost:SetPoint("RIGHT", v.details, "LEFT", -8, 0)
+  v.summaryPost:SetText(
+    facts.post
+        and (W.Dim(L["Post at"]) .. " " .. W.Money(facts.post) .. (facts.postHours and " " .. W.Dim(
+          W.Hours(facts.postHours)
+        ) or ""))
+      or ""
+  )
 end
 
 -- what to post the viewed item at (one unit, your usual listing time) at the viewed auction house
@@ -1349,57 +1400,65 @@ function UI:UpdatePostAdvice()
     ns.AME:ReportError("posting price", advice)
     advice = nil
   end
-  v.postHead:SetText(L["Post at"] .. "  " .. W.Dim("(" .. L["%d h listing"]:format(hours or 24) .. ")"))
-  v.postHeadRow.value:SetText("")
+  local head = {
+    label = L["Post at"] .. "  " .. W.Dim("(" .. L["%d h listing"]:format(hours or 24) .. ")"),
+    text = "",
+    term = "posting",
+  }
   self.itemFacts = self.itemFacts or {}
   self.itemFacts.post = advice and advice.normal.price
   self.itemFacts.postHours = advice and advice.normal.hours
   if not advice then
-    v.post.text:SetText(W.Dim(L["not enough data yet"]))
-    v.postNet:SetText(L["Search for it at the auction house, or run a full scan."])
-    v.postQuick.value:SetText(W.NONE)
-    v.postPatient.value:SetText(W.NONE)
-    v.postAlt:SetText("")
-    v.postWarn:SetText("")
+    v.post:SetContent({
+      rows = { head, { label = L["Normal"], text = W.Dim(L["not enough data yet"]), big = true, term = "posting" } },
+      note = L["Search for it at the auction house, or run a full scan."],
+    })
   else
     local n = advice.normal
-    v.post.text:SetText(W.Money(n.price))
-    v.postHeadRow.value:SetText(W.Dim(L["%d ahead"]:format(n.ahead)))
-    local function choice(c)
-      return W.Money(c.price) .. W.Dim("  ·  " .. W.Hours(c.hours))
-    end
-    v.postQuick.value:SetText(choice(advice.quick))
-    v.postPatient.value:SetText(choice(advice.patient))
+    head.text = W.Dim(L["%d ahead"]:format(n.ahead))
     local _, house = ns.SplitShard(shard)
     local cut = ns.Settings:AuctionCut(house or ns.AME:CurrentHouse())
     local net = n.price * (1 - (cut or 0)) - (advice.deposit or 0) / (advice.qty or 1)
-    v.postNet:SetText(
-      L["sells in %s  ·  you net %s after the %d%% cut"]:format(W.Hours(n.hours), W.Money(net), W.CutPct(cut))
-    )
-    if advice.quick.price == advice.patient.price then
-      local onlyLowest = n.ahead == 0 and (advice.book and #advice.book.prices or 0) > 0
-      v.postAlt:SetText(
-        onlyLowest and W.Dim(L["more is listed than sells in one listing time: only the lowest price sells soon"]) or ""
-      )
-    else
-      v.postAlt:SetText("")
-    end
+    -- under the prices: a warning, or why Quick and Patient are the same
+    local notes = {}
     local info = ns.ItemCache.Get(self.itemID)
     local vendor = info and info.sellPrice
     if vendor and vendor > 0 and net < vendor and self.craftInstead then
       local c = self.craftInstead
-      v.postWarn:SetText(
-        W.Color("warn", L["Make %s first: ~%s per item"]:format(W.ItemLabel(c.product), W.Money(c.each)))
-      )
+      notes[#notes + 1] =
+        W.Color("warn", L["Make %s first: ~%s per item"]:format(W.LinkText(c.product), W.Money(c.each)))
     elseif vendor and vendor > 0 and net < vendor then
-      v.postWarn:SetText(W.Color("bad", L["Vendor it: a vendor pays %s"]:format(W.Money(vendor))))
+      notes[#notes + 1] = W.Color("bad", L["Vendor it: a vendor pays %s"]:format(W.Money(vendor)))
     elseif advice.hold then
-      v.postWarn:SetText(W.Color("bad", L["unlikely to sell soon: consider holding"]))
+      notes[#notes + 1] = W.Color("bad", L["unlikely to sell soon: consider holding"])
     elseif advice.cheap then
-      v.postWarn:SetText(W.Color("warn", L["well below its usual price"]))
-    else
-      v.postWarn:SetText("")
+      notes[#notes + 1] = W.Color("warn", L["well below its usual price"])
     end
+    if advice.quick.price == advice.patient.price then
+      local onlyLowest = n.ahead == 0 and (advice.book and #advice.book.prices or 0) > 0
+      if onlyLowest then
+        notes[#notes + 1] = L["more is listed than sells in one listing time: only the lowest price sells soon"]
+      end
+    end
+    -- how long each takes goes with its name; the prices line up on the right
+    local function when(label, hrs)
+      return label .. W.Dim("  ·  " .. W.Hours(hrs))
+    end
+    v.post:SetContent({
+      rows = {
+        head,
+        {
+          label = L["Normal"] .. W.Dim("  ·  " .. L["sells in %s"]:format(W.Hours(n.hours))),
+          copper = n.price,
+          big = true,
+          term = "posting",
+        },
+        { label = L["You net, after the %d%% cut"]:format(W.CutPct(cut)), copper = net },
+        { label = when(L["Quick"], advice.quick.hours), copper = advice.quick.price, term = "posting" },
+        { label = when(L["Patient"], advice.patient.hours), copper = advice.patient.price, term = "posting" },
+      },
+      note = #notes > 0 and table.concat(notes, "\n") or nil,
+    })
   end
   self:UpdateItemSummary()
   v:FitCards()
@@ -1438,7 +1497,7 @@ function UI:SuggestItems(box, text)
   local entries = {}
   for i, h in ipairs(hits) do
     entries[i] = {
-      text = W.QualityText(h.quality, h.name),
+      item = h.itemID, -- icon, quality colour and its tooltip
       func = function()
         box:SetText("")
         box:ClearFocus()

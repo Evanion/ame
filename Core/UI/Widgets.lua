@@ -18,9 +18,19 @@ W.COLORS = {
   rowHover = { 1, 1, 1, 0.08 }, -- list, menu and sidebar rows under the mouse
   rowSelected = { 0.2, 0.8, 1, 0.2 }, -- the picked row (accent; follows the theme)
   selected = { 0.2, 0.8, 1, 0.18 },
-  -- chart lines by what they show (data colours: they don't follow the theme)
+  -- the charts' colours by what they show (data colours: they don't follow the theme)
   chart = {
-    market = { 0.3, 0.85, 0.78, 1 }, -- the market price, and the Overview's index
+    market = { 0.302, 0.851, 0.784, 1 }, -- the market price, and the Overview's index (#4dd9c8)
+    lowest = { 0.498, 0.863, 0.541, 0.9 }, -- the cheapest listing (#7fdc8a)
+    average = { 1, 0.8, 0.2, 1 }, -- the 7-day average (#ffcc33)
+    fast = { 0.78, 0.55, 1, 1 }, -- MA 20
+    supply = { 0.435, 0.455, 0.537, 1 }, -- units listed (#6f7489)
+    vendor = { 0.85, 0.85, 0.85, 0.85 }, -- what a vendor pays
+    bought = { 0.35, 0.65, 1, 1 }, -- your trades
+    sold = { 1, 0.45, 0.85, 1 },
+    bg = { 0.07, 0.08, 0.1, 1 }, -- behind the plot
+    legendBg = { 0.06, 0.07, 0.09, 0.85 },
+    legendBorder = { 1, 1, 1, 0.08 },
   },
 }
 
@@ -802,6 +812,8 @@ end
 W.ARROW_UP = " |TInterface\\AddOns\\AzerothMercantileExchange\\media\\Signals\\Up:9:9:0:0:32:32:0:32:0:32:255:209:0|t"
 W.ARROW_DOWN =
   " |TInterface\\AddOns\\AzerothMercantileExchange\\media\\Signals\\Down:9:9:0:0:32:32:0:32:0:32:255:209:0|t"
+-- pointing right: folded away, click to open (the game's own small arrow, as submenus have)
+W.ARROW_RIGHT = " |TInterface\\ChatFrame\\ChatFrameExpandArrow:10:10:0:0|t"
 
 -- small tinted colour square for legends: W.Swatch(r, g, b) or W.Swatch(colorTable)
 function W.Swatch(r, g, b)

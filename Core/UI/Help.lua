@@ -889,14 +889,15 @@ Help.EXAMPLES = {
     return f
   end,
   legend = function(parent)
+    local c = W.COLORS.chart -- the chart's own colours
     local rows = {
-      { { 0.2, 0.8, 1 }, L["Market"], 12, 3 },
-      { { 0.4, 0.87, 0.47 }, L["Lowest"], 12, 3 },
-      { { 1, 0.67, 0.2 }, L["7-day average"], 12, 3 },
-      { { 0.78, 0.55, 1 }, L["MA %d (%s)"]:format(20, L["%d days"]:format(5)), 12, 3 },
-      { { 0.53, 0.53, 0.67 }, L["Supply"], 8, 8 },
-      { ns.UI and ns.UI.TRADE_COLORS and ns.UI.TRADE_COLORS.buy or { 0.35, 0.65, 1 }, L["You bought"], 8, 8 },
-      { ns.UI and ns.UI.TRADE_COLORS and ns.UI.TRADE_COLORS.sale or { 1, 0.45, 0.85 }, L["You sold"], 8, 8 },
+      { c.market, L["Market"], 12, 3 },
+      { c.lowest, L["Lowest"], 12, 3 },
+      { c.average, L["7-day average"], 12, 3 },
+      { c.fast, L["MA %d (%s)"]:format(20, L["%d days"]:format(5)), 12, 3 },
+      { c.supply, L["Supply"], 8, 8 },
+      { c.bought, L["You bought"], 8, 8 },
+      { c.sold, L["You sold"], 8, 8 },
     }
     local f = panel(parent, #rows * 16 + 12)
     for k, r in ipairs(rows) do

@@ -279,7 +279,8 @@ function UI:UpdateWatchControls(keepInputs)
       listName = l.name
     end
   end
-  v.watch.label:SetText(inList and (L["Watching"] .. (listName and "  ·  " .. listName or "")) or L["Watch"])
+  local label = inList and (L["Watching"] .. (listName and "  ·  " .. listName or "")) or L["Watch"]
+  v.watch.label:SetText(label .. W.ARROW_DOWN) -- it opens the watchlist menu
   v.watch:SetSelected(inList)
   W.SetStar(v.watch.star, inList)
   local a = watch:Alert(id) or {}

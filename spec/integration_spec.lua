@@ -952,6 +952,10 @@ describe("addon in a stubbed client", function()
         assert.truthy(v.call.text:find("HOLD") or v.call.text:find("BUY") or v.call.text:find("SELL"), v.call.text)
         assert.truthy(v.callWhy.text:find("day average", 1, true), v.callWhy.text)
         assert.truthy(v.callWhy.text:find("scans"))
+        -- the market card: Now large, how it compares with the average, the confidence as its note
+        assert.are.equal("big", v.marketCard.rows[1].kind)
+        assert.truthy(v.marketCard.rows[2].label.text:find("day average", 1, true))
+        assert.truthy(v.marketCard.parts.note.text:find("scans this week", 1, true))
         for _, it in ipairs(v.column.items) do
           assert.is_true(it[1]:GetHeight() > 20)
         end
@@ -977,8 +981,8 @@ describe("addon in a stubbed client", function()
         ns.UI:OnResize(800)
         assert.is_false(v.sidebar:IsShown())
         assert.is_true(v.summaryBar:IsShown())
-        assert.truthy(v.summary.text:find("Market"))
-        assert.truthy(v.summary.text:find("Post at"))
+        assert.truthy(v.summaryMarket.text:find("Market"))
+        assert.truthy(v.summaryPost.text:find("Post at"))
         assert.are.same({ "BOTTOMRIGHT", 0, 0 }, v.slots.main.points[2]) -- the chart takes the width
         local hp = ns.UI.chartHolder.points
         assert.are.same({ "BOTTOMRIGHT", 0, ns.UI.ITEM_SUMMARY_H + 6 }, hp[#hp]) -- above the summary bar
@@ -2848,6 +2852,12 @@ describe("addon in a stubbed client", function()
       drainJobs()
       assert.truthy(ns.UI.itemView.postHead.text:find("Post at"))
       assert.truthy(ns.UI.itemView.postNet.text:find("% cut", 1, true))
+      -- Normal's time goes with its name, its price large on the right; Quick and Patient the same
+      local post = ns.UI.itemView.post.rows
+      assert.truthy(post[2].label.text:find("sells in", 1, true), post[2].label.text)
+      assert.are.equal("big", post[2].kind)
+      assert.truthy(post[4].label.text:find("Quick", 1, true))
+      assert.is_nil(post[4].value.text:find("·", 1, true))
 
       -- the auction house's sell window: a bar under it fills in the price you pick (you still click Post)
       local filled
