@@ -57,6 +57,7 @@ Core\SyncV2Service.lua
 Core\Trading.lua
 Core\Professions.lua
 Core\Recipes.lua
+Core\CraftModel.lua
 Core\CraftingData.lua
 Core\Crafting.lua
 Core\CraftQueue.lua

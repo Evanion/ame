@@ -10,8 +10,8 @@ local L = ns.L
 local W = ns.Widgets
 local UI = ns.UI
 
--- gathering professions craft nothing worth ranking
-local GATHERING = { [182] = true, [356] = true, [393] = true }
+-- gathering professions craft nothing worth ranking (Core/CraftModel.lua)
+local GATHERING = ns.CraftModel.GATHERING
 -- the pages, as the sidebar lists them (headings between groups)
 local PAGES = {
   { heading = L["Crafting"] },
@@ -92,137 +92,13 @@ local function recipeFor(profession, id)
   return ns.Recipes.Get(id, profession)
 end
 
--- Crafting's prices and rules for the faction auction house (index): its quote (Core/Quote.lua: the market with a
--- fresh search's cheapest listing over the day's average, vendor prices, the cut and deposit). producers: product ->
--- recipes (chains), optional.
-function UI:CraftingEnv(index, producers)
-  return ns.Quote.For(ns.AME:FactionShard(), index):CraftEnv(producers)
-end
-
--- Make something of an item instead of vendoring it? Recipes your characters know that use it, valued as the
--- refine page does (Crafting:SellOrRefine: the product sold where it nets most, AH or vendor; other reagents bought).
--- -> { product, where ("ah" | "vendor"), each (per unit of the item), raw (selling it as is, per unit), crafter }
--- or nil when no known recipe beats selling it as it is
-UI.CRAFT_INSTEAD_QTY = 100 -- valued over this many (whole crafts; per unit after)
+-- the Crafting model and "craft it instead" live in Core/CraftModel.lua
 function UI:CraftInstead(itemID)
-  local index = ns.AME:FactionIndex()
-  if not (index and itemID) then
-    return nil
-  end
-  local recipes, crafters = {}, {}
-  for key, c in pairs(ns.Professions:Characters()) do
-    for profession, p in pairs(c.professions or {}) do
-      if not GATHERING[profession] then
-        for id in pairs(p.learned or {}) do
-          if not crafters[id] then
-            local r = recipeFor(profession, id)
-            local uses = false
-            for _, reagent in ipairs(r and r.reagents or {}) do
-              uses = uses or reagent[1] == itemID
-            end
-            if uses and r.product then
-              recipes[#recipes + 1] = r
-              crafters[id] = key:match("[^:]+$") or key
-            end
-          end
-        end
-      end
-    end
-  end
-  if #recipes == 0 then
-    return nil
-  end
-  local craft = self:CraftingEnv(index)
-  local n = UI.CRAFT_INSTEAD_QTY
-  local r = craft:SellOrRefine(itemID, n, recipes)
-  local best = r.best
-  if not best then
-    return nil
-  end
-  local _, where = craft:NetSale(best.recipe.product)
-  return {
-    product = best.recipe.product,
-    where = where,
-    each = best.net / n,
-    raw = r.raw / n,
-    crafter = crafters[best.recipe.id],
-  }
+  return ns.CraftModel.Instead(itemID)
 end
 
--- everything the three modes need, for the faction auction house's prices
 function UI:CraftingModel()
-  local index = ns.AME:FactionIndex()
-  if not index then
-    return nil, "loading"
-  end
-  -- the data library: every recipe in the game (Recipes to buy, Leveling); the other pages work from what your
-  -- characters' profession windows recorded, so they don't need it
-  local hasData = ns.CraftingData:Load()
-  local chars = ns.Professions:Characters()
-  local only = self.craftChar -- nil: every character
-
-  -- known recipes, one entry per recipe with every character who knows it; product -> recipes (chains)
-  local byRecipe, producers, uses, entries = {}, {}, {}, {}
-  for key, c in pairs(chars) do
-    for profession, p in pairs(c.professions or {}) do
-      if not GATHERING[profession] then
-        for id in pairs(p.learned or {}) do
-          local r = recipeFor(profession, id)
-          if r then
-            local e = byRecipe[id]
-            if not e then
-              e = { recipe = r, crafters = {}, profession = profession, cooldown = nil }
-              byRecipe[id] = e
-              if r.product then
-                producers[r.product] = producers[r.product] or {}
-                table.insert(producers[r.product], r)
-              end
-              for _, reagent in ipairs(r.reagents) do
-                uses[reagent[1]] = uses[reagent[1]] or {}
-                table.insert(uses[reagent[1]], r)
-              end
-            end
-            e.crafters[#e.crafters + 1] = key
-            local ready = p.cooldowns and p.cooldowns[id]
-            if ready then
-              e.cooldown = math.min(e.cooldown or ready, ready)
-            end
-          end
-        end
-      end
-    end
-  end
-  for _, e in pairs(byRecipe) do
-    local mine = not only
-    for _, k in ipairs(e.crafters) do
-      mine = mine or k == only
-    end
-    if mine then
-      table.sort(e.crafters)
-      entries[#entries + 1] = e
-    end
-  end
-
-  -- what you hold (bags and bank), per item across the characters in view
-  local held = ns.Holdings.Totals(ns.Trading:Holdings(), "stored", only and function(key)
-    return key == only
-  end)
-  local heldSet = {}
-  for id, n in pairs(held) do
-    heldSet[id] = n > 0 or nil
-  end
-
-  local craft = self:CraftingEnv(index, producers)
-  return {
-    hasData = hasData,
-    index = index,
-    craft = craft,
-    entries = entries,
-    held = held,
-    heldSet = heldSet,
-    uses = uses,
-    chars = chars,
-  }
+  return ns.CraftModel.Build(self.craftChar)
 end
 
 -- does a row match the toolbar's profession and search? (rows about an item: its name)
