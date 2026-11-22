@@ -2496,7 +2496,9 @@ function W.PostAdvice(advice)
   return text
 end
 
--- data confidence as three small bars (textures, not font glyphs): high = 3 green, medium = 2 amber, low = 1 red
+-- data confidence as three small bars (textures, not font glyphs): high = 3 green, medium = 2 amber, low = 1 red.
+-- Rising bars on one baseline: the game centres an inline texture on the line, so each shorter bar is moved down by
+-- half of what it lacks.
 local CONFIDENCE = {
   high = { 3, W.COLORS.up },
   medium = { 2, { 1, 0.8, 0.2 } },
@@ -2507,8 +2509,10 @@ function W.Confidence(level)
   local out = {}
   for i = 1, 3 do
     local col = i <= c[1] and c[2] or { 0.35, 0.35, 0.38 }
-    out[i] = ("|TInterface\\Buttons\\WHITE8x8:%d:3:0:0:8:8:0:8:0:8:%d:%d:%d|t"):format(
-      4 + i * 2,
+    local h = 4 + i * 2
+    out[i] = ("|TInterface\\Buttons\\WHITE8x8:%d:3:0:%d:8:8:0:8:0:8:%d:%d:%d|t"):format(
+      h,
+      -(10 - h) / 2,
       col[1] * 255,
       col[2] * 255,
       col[3] * 255
