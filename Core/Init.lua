@@ -27,6 +27,8 @@ ns.HEX = {
   disenchant = "b49cff", -- DE (disenchant)
   brand = "33ccff", -- "AME" / "Azeroth" in chat and titles
   gold = "ffd100", -- the gold unit, "Post at"
+  link = "8bb8ff", -- actions written as text ("+ New list")
+  soft = "cfcdc7", -- quieter lines in a list (subclasses)
   white = "ffffff",
 }
 

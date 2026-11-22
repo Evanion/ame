@@ -133,6 +133,9 @@ function W.SetTheme(house)
   for check in pairs(W.checks) do
     check:SetChecked(check.checked)
   end
+  for list in pairs(W.sideLists) do
+    list:Repaint()
+  end
   for tag in pairs(W.tags) do
     if tag.kind == "made" then
       tag:Set(tag.value, tag.kind)
@@ -142,6 +145,7 @@ end
 
 W.buttons = setmetatable({}, { __mode = "k" }) -- every W.Button, for re-tinting on a theme change
 W.checks = setmetatable({}, { __mode = "k" }) -- every W.Check, likewise
+W.sideLists = setmetatable({}, { __mode = "k" }) -- every UI.SideList (Shell.lua), for its selection's tint
 
 -- "ffRRGGBB" for |c escapes
 function W.Hex(c)

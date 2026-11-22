@@ -26,6 +26,15 @@ describe("shell widgets", function()
     env:restore()
   end)
 
+  local function same(a, b)
+    for i = 1, 3 do
+      if math.abs(a[i] - b[i]) > 1e-6 then
+        return false
+      end
+    end
+    return true
+  end
+
   describe("card:SetContent", function()
     local function newCard()
       local col = UI.Stack(UIParent, 0)
@@ -112,6 +121,87 @@ describe("shell widgets", function()
       card:SetContent({ rows = { { label = "Lowest", text = "1g", term = "min" } } })
       row.scripts.OnEnter(row)
       assert.are.equal(ns.Help.TERMS.min[1], GameTooltip.text)
+    end)
+  end)
+
+  describe("UI.SideList", function()
+    local function newList(onClick)
+      local side = UI.Sidebar(UIParent, 200)
+      return UI.SideList(side, { onClick = onClick }), side
+    end
+    local function entries(n)
+      local out = { { heading = "Categories" } }
+      for i = 1, n do
+        out[#out + 1] = { label = "Line " .. i, count = i * 1000 }
+      end
+      return out
+    end
+
+    it("grows its lines with the sidebar's height, and keeps them as sidebar.lines", function()
+      local list, side = newList()
+      list:SetEntries(entries(30))
+      side.scripts.OnSizeChanged(side, 200, 4 + 4 + 10 * UI.SIDE_LINE_H)
+      assert.are.equal(10, list.rows)
+      assert.are.equal(list.lines, side.lines)
+      assert.is_true(#side.lines >= 10)
+      assert.are.equal("Line 9", side.lines[10].text.text)
+      side.scripts.OnSizeChanged(side, 200, 4 + 4 + 20 * UI.SIDE_LINE_H)
+      assert.are.equal(20, #side.lines)
+      assert.are.equal("Line 19", side.lines[20].text.text)
+    end)
+
+    it("pages with the mouse wheel, never past the end", function()
+      local list, side = newList()
+      side.scripts.OnSizeChanged(side, 200, 4 + 4 + 5 * UI.SIDE_LINE_H)
+      list:SetEntries(entries(6)) -- 7 entries, 5 lines
+      side.scripts.OnMouseWheel(side, -1)
+      assert.are.equal(2, list.offset)
+      side.scripts.OnMouseWheel(side, -1)
+      assert.are.equal(2, list.offset)
+      assert.are.equal("Line 6", side.lines[5].text.text)
+      side.scripts.OnMouseWheel(side, 5)
+      assert.are.equal(0, list.offset)
+    end)
+
+    it("draws the selected line tinted and white, links in link blue, counts with separators", function()
+      local list, side = newList()
+      side.scripts.OnSizeChanged(side, 200, 200)
+      list:SetEntries({
+        { label = "Potions", count = 1234, selected = true },
+        { label = "+ New list", kind = "link" },
+        { label = "Raid", count = "done", kind = "done" },
+        { label = "Mine", note = "Tyken", indent = 1 },
+      })
+      local sel, link, done, owned = side.lines[1], side.lines[2], side.lines[3], side.lines[4]
+      assert.is_true(sel.sel:IsShown())
+      assert.is_true(same(sel.text._textColor, W.RGB("white")))
+      assert.is_true(same(sel.sel._color, W.COLORS.rowSelected))
+      assert.are.equal("1,234", sel.count.text)
+      assert.is_false(link.sel:IsShown())
+      assert.is_true(same(link.text._textColor, W.RGB("link")))
+      assert.are.equal(W.Color("good", "done"), done.count.text)
+      assert.truthy(owned.text.text:find(W.Dim("Tyken"), 1, true))
+      assert.are.same({ "LEFT", 6 + UI.SIDE_INDENT, 0 }, owned.text.points[1])
+    end)
+
+    it("re-tints the selection when the theme changes", function()
+      local list, side = newList()
+      list:SetEntries({ { label = "Potions", selected = true } })
+      W.SetTheme("Alliance")
+      assert.is_true(same(side.lines[1].sel._color, W.COLORS.rowSelected))
+    end)
+
+    it("passes a click's entry and button, and ignores headings", function()
+      local clicks = {}
+      local list, side = newList(function(e, button)
+        clicks[#clicks + 1] = { e.key, button }
+      end)
+      side.scripts.OnSizeChanged(side, 200, 200)
+      list:SetEntries({ { heading = "Lists" }, { label = "Potions", key = "s:1" } })
+      local head, line = side.lines[1], side.lines[2]
+      head.scripts.OnClick(head, "LeftButton")
+      line.scripts.OnClick(line, "RightButton")
+      assert.are.same({ { "s:1", "RightButton" } }, clicks)
     end)
   end)
 end)

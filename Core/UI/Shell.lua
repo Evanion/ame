@@ -34,6 +34,147 @@ local function sidebar(parent, width, plain)
 end
 UI.Sidebar = sidebar
 
+-- A side menu (Market's categories and lists, Settings' sections, the Guide's articles, Crafting's pages): one line
+-- per entry, as many lines as the sidebar is tall, paging with the mouse wheel.
+--   local list = UI.SideList(sidebar, { onClick = function(entry, button, line) end })
+--   list:SetEntries({ { heading = "Watchlists", note = "3" },
+--     { label, count, note, selected, kind = "link" | "dim" | "done", indent = 1, key }, ... })
+-- Lines are gold; kind "link" is an action written as text ("+ New list"), "dim" a quieter line (a subclass), "done"
+-- a finished one (its count in green). The selected line is tinted with the theme's accent and its text turns white.
+-- note: dim text after the label (a guild list's owner). indent: steps of 10 px in. A count that is a number gets
+-- thousands separators. Headings don't click.
+-- The lines are sidebar.lines (and list.lines), each with .text, .count, .sel and .entry.
+UI.SIDE_LINE_H = 19
+UI.SIDE_INDENT = 10
+local SIDE_PAD = 4
+
+function UI.SideList(side, opts)
+  opts = opts or {}
+  local lineH = opts.lineHeight or UI.SIDE_LINE_H
+  local list = { sidebar = side, lines = {}, entries = {}, offset = 0, rows = opts.rows or 1, opts = opts }
+  side.lines = list.lines
+  if side.pane then
+    side.pane:Hide() -- the list pages itself, so a long one needs no scroll bar
+  end
+
+  local function line(i)
+    local b = CreateFrame("Button", nil, side)
+    b:SetHeight(lineH)
+    b:SetPoint("TOPLEFT", SIDE_PAD, -SIDE_PAD - (i - 1) * lineH)
+    b:SetPoint("RIGHT", side, "RIGHT", -SIDE_PAD, 0)
+    b.sel = b:CreateTexture(nil, "BACKGROUND")
+    b.sel:SetAllPoints()
+    W.Fill(b.sel, W.COLORS.rowSelected)
+    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+    b.hl:SetAllPoints()
+    W.Fill(b.hl, W.COLORS.rowHover)
+    b.text = W.Text(b, "GameFontNormalSmall")
+    b.text:SetPoint("LEFT", 6, 0)
+    b.text:SetPoint("RIGHT", -38, 0)
+    b.text:SetWordWrap(false)
+    b.count = W.Text(b, "GameFontDisableSmall", "RIGHT")
+    b.count:SetPoint("RIGHT", -4, 0)
+    b.entry = false
+    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    b:SetScript("OnClick", function(self, button)
+      local e = self.entry
+      if e and not e.heading and opts.onClick then
+        opts.onClick(e, button, self)
+      end
+    end)
+    list.lines[i] = b
+    return b
+  end
+  for i = 1, list.rows do
+    line(i)
+  end
+
+  local function paint(b, e)
+    b.entry = e or false
+    if not e then
+      b:Hide()
+      return
+    end
+    b:Show()
+    b:EnableMouse(not e.heading)
+    b.hl:SetShown(not e.heading)
+    b.sel:SetShown(e.selected and not e.heading or false)
+    local x = 6 + UI.SIDE_INDENT * (e.indent or 0)
+    b.text:ClearAllPoints()
+    b.text:SetPoint("LEFT", x, 0)
+    b.text:SetPoint("RIGHT", -38, 0)
+    local label = e.heading or e.label or ""
+    if e.note and e.note ~= "" then
+      label = label .. "  " .. W.Dim(e.note)
+    end
+    b.text:SetText(label)
+    -- every line gets its colour set, so a reused line never keeps the one its last entry had
+    local font, color = "GameFontNormalSmall", "gold"
+    if e.heading then
+      font, color = "GameFontDisableSmall", "dim"
+    elseif e.selected then
+      font, color = "GameFontHighlightSmall", "white"
+    elseif e.kind == "link" then
+      font, color = "GameFontHighlightSmall", "link"
+    elseif e.kind == "dim" then
+      font, color = "GameFontHighlightSmall", "soft"
+    end
+    b.text:SetFontObject(font)
+    local c = W.RGB(color)
+    b.text:SetTextColor(c[1], c[2], c[3], 1)
+    local count = e.count
+    if type(count) == "number" then
+      count = W.Thousands(count)
+    end
+    b.count:SetText(count and (e.kind == "done" and W.Color("good", count) or tostring(count)) or "")
+  end
+
+  function list:Render()
+    self.offset = math.max(0, math.min(self.offset, #self.entries - self.rows))
+    for i, b in ipairs(self.lines) do
+      paint(b, i <= self.rows and self.entries[self.offset + i] or nil)
+    end
+  end
+
+  -- entries: the whole list; the lines show the part that fits from the current offset
+  function list:SetEntries(entries)
+    self.entries = entries or {}
+    self:Render()
+  end
+
+  -- page by n lines (positive: down the list)
+  function list:Scroll(n)
+    self.offset = self.offset + n
+    self:Render()
+  end
+
+  -- the selection's tint follows the theme (W.SetTheme calls this)
+  function list:Repaint()
+    for _, b in ipairs(self.lines) do
+      W.Fill(b.sel, W.COLORS.rowSelected)
+    end
+  end
+
+  -- as many lines as the side's height holds
+  function list:Fit(h)
+    local n = math.max(1, math.floor(((h or 0) - 2 * SIDE_PAD) / lineH))
+    for i = #self.lines + 1, n do
+      line(i)
+    end
+    self.rows = n
+    self:Render()
+  end
+  side:HookScript("OnSizeChanged", function(_, _, h)
+    list:Fit(h)
+  end)
+  side:EnableMouseWheel(true)
+  side:SetScript("OnMouseWheel", function(_, delta)
+    list:Scroll(-delta * 2)
+  end)
+  W.sideLists[list] = true
+  return list
+end
+
 -- A vertical stack in a sidebar: each piece goes under the previous one, spanning the width (10 px margins).
 --   stack:Heading(text) -> font string      stack:Text(font) -> wrapping font string
 --   stack:Pair(label, term) -> row with .label (dim, left) and .value (right); term: hover explanation (Help)
