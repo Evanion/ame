@@ -405,6 +405,18 @@ describe("addon in a stubbed client", function()
       assert.is_true(junk.ame_vendor.callback(0, 1, 4306, "item:4306"))
       assert.is_false(junk.ame_vendor.callback(0, 1, 2589, "item:2589"))
 
+      -- the setting (General, Other addons): off, nothing shows and nothing is junk; Baganator redraws either way
+      local refreshes = refreshed
+      ns.Settings:Set("baganator", false)
+      ns.Baganator:SettingChanged(false)
+      assert.is_false(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
+      assert.is_false(corners.ame_signal.onUpdate(icon, { itemLink = "item:4306" }))
+      assert.is_false(junk.ame_vendor.callback(0, 1, 4306, "item:4306"))
+      assert.truthy(refreshed > refreshes)
+      ns.Settings:Set("baganator", true)
+      ns.Baganator:SettingChanged(true)
+      assert.is_true(junk.ame_vendor.callback(0, 1, 4306, "item:4306"))
+
       -- new prices: API listeners and Baganator's slots hear of it
       local before = refreshed
       env.now = env.now + 86400

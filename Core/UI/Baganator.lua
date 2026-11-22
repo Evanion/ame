@@ -72,15 +72,41 @@ function Bag.Instead(key)
   return hit or nil
 end
 
+-- the setting (General, Other addons): off, the corners show nothing and nothing is junk (Baganator keeps listing
+-- the options until a /reload: it can't take them back)
+function Bag.On()
+  return ns.Settings:Get("baganator") ~= false
+end
+
+-- Baganator is loaded (the setting's card says so)
+function Bag.Present()
+  local B = _G.Baganator
+  return B ~= nil and B.API ~= nil and B.API.RegisterCornerWidget ~= nil
+end
+
+-- the setting changed: plug in now (on), and Baganator redraws its slots either way
+function Bag:SettingChanged(on)
+  if on then
+    self:Install()
+  end
+  local B = _G.Baganator
+  if B and B.API and B.API.RequestItemButtonsRefresh then
+    B.API.RequestItemButtonsRefresh()
+  end
+end
+
 function Bag:Install()
   local B = _G.Baganator
   local api = ns.API and ns.API.v1
-  if self.installed or not (B and B.API and B.API.RegisterCornerWidget and api) then
+  if self.installed or not Bag.On() or not (Bag.Present() and api) then
     return
   end
   self.installed = true
 
   B.API.RegisterCornerWidget(L["AME: signal"], "ame_signal", function(icon, details)
+    if not Bag.On() then
+      return false
+    end
     if not details.itemLink then
       return nil
     end
@@ -101,6 +127,9 @@ function Bag:Install()
   end)
 
   B.API.RegisterCornerWidget(L["AME: value"], "ame_value", function(text, details)
+    if not Bag.On() then
+      return false
+    end
     if not details.itemLink then
       return nil
     end
@@ -119,7 +148,7 @@ function Bag:Install()
 
   if B.API.RegisterJunkPlugin then
     B.API.RegisterJunkPlugin(L["AME: vendor is better"], "ame_vendor", function(_, _, _, itemLink)
-      if not itemLink then
+      if not itemLink or not Bag.On() then
         return false
       end
       local key = ns.API.KeyOf(itemLink)

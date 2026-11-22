@@ -191,6 +191,27 @@ function UI:CreateSettingsView(parent, contentArea)
     { check = L["Announce recorded full scans"], key = "announceScans" },
     { check = L["Sound when an alert fires"], key = "alertSound" },
   })
+  -- Other addons: what AME adds to them (Core/UI/Baganator.lua)
+  local bag = ns.Baganator
+  card("general", L["Other addons"], {
+    {
+      check = L["Baganator: AME's icon corners and junk rule"],
+      key = "baganator",
+      onChange = function(on)
+        if bag then
+          bag:SettingChanged(on)
+        end
+      end,
+    },
+    {
+      text = L['The signal and value corners (place them under Icons in Baganator\'s settings) and the "vendor is better" junk rule.']
+        .. " "
+        .. (
+          (bag and bag.Present()) and L["Turned off, Baganator lists them until a /reload, but they show nothing."]
+          or W.Dim(L["Baganator isn't installed: nothing to do."])
+        ),
+    },
+  })
 
   -- Tooltips & charts
   local avgs = {
