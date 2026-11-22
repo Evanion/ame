@@ -801,6 +801,7 @@ function UI:CreateCraftingView(parent, contentArea)
   end)
   v.action:SetPoint("LEFT")
   v.action:SetPoint("RIGHT", -70, 0)
+  W.Primary(v.action) -- every page's main action, Leveling's too
   -- its label changes with the tab ("Add all reagents to a shopping list"): kept inside the button, cut short with
   -- "..." when the sidebar is narrow
   v.action.label:ClearAllPoints()

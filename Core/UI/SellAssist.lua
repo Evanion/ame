@@ -232,7 +232,7 @@ function Sell:Build(parent)
     end
   end)
   bar.fill:SetPoint("RIGHT", -8, 0)
-  bar.fill:SetSelected(true)
+  W.Primary(bar.fill)
   bar.patient = W.Button(bar, "", 130, 20, function()
     fill(Sell.advice and Sell.advice.patient.price, nil, "patient")
   end)
@@ -359,6 +359,7 @@ function Sell:Draw()
     )
     self.vendorCase = true
     bar.fill.label:SetText(L["Post anyway at %s"]:format(W.Money(choice.price)))
+    W.Primary(bar.fill, false) -- posting is the wrong move here: not the main action
     bar.fill:SetSelected(false)
     bar.quick:Hide()
     bar.patient:Hide()
@@ -409,6 +410,7 @@ function Sell:Draw()
     bar.fill:SetShown(advice.market ~= nil)
     if advice.market then
       bar.fill.label:SetText(L["Market %s"]:format(W.Money(advice.market.price)))
+      W.Primary(bar.fill)
       bar.fill:SetSelected(lit == "market")
     end
   end

@@ -41,6 +41,43 @@ describe("Widgets formatters", function()
     end)
   end)
 
+  describe("primary buttons", function()
+    local function hex(c)
+      return W.Hex(c):sub(3)
+    end
+
+    it("keep white labels readable on the accent fill, at rest and under the mouse, on every theme", function()
+      for name, palette in pairs(W.PALETTES) do
+        W.HEX.good, W.HEX.bad = palette.good, palette.bad
+        for house in pairs(W.THEMES) do
+          W.SetTheme(house)
+          for _, role in ipairs({ "primary", "primaryHover" }) do
+            local ratio = W.Contrast(hex(W.COLORS[role]), "ffffff")
+            assert.is_true(ratio >= 4.5, ("%s %s %s: %.2f:1"):format(name, house, role, ratio))
+          end
+        end
+      end
+    end)
+
+    it("are the accent as bright as that allows, lighter under the mouse", function()
+      for house in pairs(W.THEMES) do
+        W.SetTheme(house)
+        local rest, hover =
+          W.Contrast(hex(W.COLORS.primary), "ffffff"), W.Contrast(hex(W.COLORS.primaryHover), "ffffff")
+        assert.is_true(rest < 5.3, ("%s: %.2f:1 is darker than it needs"):format(house, rest))
+        assert.is_true(hover < rest, house)
+      end
+    end)
+
+    it("look different from a selected button next to them", function()
+      for house in pairs(W.THEMES) do
+        W.SetTheme(house)
+        local ratio = W.Contrast(hex(W.COLORS.primary), hex(W.COLORS.selected))
+        assert.is_true(ratio >= 1.5, ("%s: %.2f:1"):format(house, ratio))
+      end
+    end)
+  end)
+
   describe("BigMoney", function()
     it("shortens whole-market amounts from 100,000 gold, smaller ones as short money", function()
       assert.are.equal("486K g", plain(W.BigMoney(486000 * 10000)))

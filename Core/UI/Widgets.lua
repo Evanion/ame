@@ -68,19 +68,47 @@ W.THEMES = {
   Neutral = { 1, 0.73, 0.22 }, -- goblin auction houses
 }
 
-W.SELECTED_SHADE = 0.5
+-- Selected buttons are a dark tint of the accent with the full accent as the border. Dark enough that a primary
+-- button (the accent as bright as white text allows) still looks different next to one: gold can't get much
+-- brighter than half strength behind white text, so selected stays well under that.
+W.SELECTED_SHADE = 0.35
+
+-- Primary buttons (a panel's main action) are filled with the accent, as bright as it can be with a white label
+-- still readable on it: 5:1 at rest, and the hover a little lighter, still 4.5:1 (WCAG AA). Full-strength Horde red
+-- behind white is about 3.9:1, so each theme's accent is darkened by just what it needs.
+W.PRIMARY_CONTRAST, W.PRIMARY_HOVER_CONTRAST = 5, 4.5
+
+local function hexOf(c)
+  return W.Hex(c):sub(3)
+end
+
+-- the accent darkened until white text on it reaches `ratio`
+function W.PrimaryShade(c, ratio)
+  for step = 100, 0, -1 do
+    local f = step / 100
+    local shaded = { c[1] * f, c[2] * f, c[3] * f, 1 }
+    if W.Contrast(hexOf(shaded), "ffffff") >= ratio then
+      return shaded
+    end
+  end
+  return { 0, 0, 0, 1 }
+end
+
+local function setAccent(c)
+  W.COLORS.accent = { c[1], c[2], c[3], 1 }
+  W.COLORS.selected = { c[1] * W.SELECTED_SHADE, c[2] * W.SELECTED_SHADE, c[3] * W.SELECTED_SHADE, 1 }
+  W.COLORS.rowSelected = { c[1], c[2], c[3], 0.2 }
+  W.COLORS.primary = W.PrimaryShade(c, W.PRIMARY_CONTRAST)
+  W.COLORS.primaryHover = W.PrimaryShade(c, W.PRIMARY_HOVER_CONTRAST)
+end
 
 function W.SetTheme(house)
   local c = W.THEMES[house] or W.THEMES.Neutral
   W.theme = W.THEMES[house] and house or "Neutral" -- the applied theme
-  W.COLORS.accent = { c[1], c[2], c[3], 1 }
-  -- selected buttons: the accent at half strength, so white labels keep their contrast (full-strength red, blue or
-  -- gold behind white text is too bright to read comfortably); the border carries the full accent
-  W.COLORS.selected = { c[1] * W.SELECTED_SHADE, c[2] * W.SELECTED_SHADE, c[3] * W.SELECTED_SHADE, 1 }
-  W.COLORS.rowSelected = { c[1], c[2], c[3], 0.2 }
-  -- selected buttons and ticked checkboxes take the new accent
+  setAccent(c)
+  -- selected and primary buttons and ticked checkboxes take the new accent
   for b in pairs(W.buttons) do
-    if b.selected or b.tone then -- coloured choices redraw too (the colour-blind palette may have changed)
+    if b.selected or b.tone or b.primary then -- coloured choices redraw too (the palette may have changed)
       b:SetSelected(b.selected)
     end
   end
@@ -99,6 +127,10 @@ function W.Hex(c)
   end
   return ("ff%02x%02x%02x"):format(byte(c[1]), byte(c[2]), byte(c[3]))
 end
+
+-- until a theme is applied: the default accent's primary fill
+W.COLORS.primary = W.PrimaryShade(W.COLORS.accent, W.PRIMARY_CONTRAST)
+W.COLORS.primaryHover = W.PrimaryShade(W.COLORS.accent, W.PRIMARY_HOVER_CONTRAST)
 
 local FLAT = {
   bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -122,15 +154,27 @@ function W.Text(parent, font, justify)
   return fs
 end
 
+-- a text role ("good", "dim", ...) or "RRGGBB" as a colour table
+function W.RGB(color)
+  local h = ns.HEX[color] or color
+  return { tonumber(h:sub(1, 2), 16) / 255, tonumber(h:sub(3, 4), 16) / 255, tonumber(h:sub(5, 6), 16) / 255, 1 }
+end
+
+local WHITE = { 1, 1, 1, 1 }
+
 -- flat button with hover and optional selected state; onClick(button).
 -- opts.icon: a leading icon of that size (b.icon, a texture; the label moves right of it)
+-- opts.color: the label's colour, a text role or "RRGGBB" (b:SetLabelColor to change it)
 function W.Button(parent, label, width, height, onClick, opts)
   local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
   b:SetSize(width or 60, height or 20)
   W.Skin(b, W.COLORS.panel)
   b.selected = false
+  b.primary = false -- the panel's main action: W.Primary
+  b.enabled = true
   W.buttons[b] = true
   b.tone = false -- coloured choices (signals): set by W.Segmented
+  b.labelColor = opts and opts.color and W.RGB(opts.color) or false
   b.label = W.Text(b, "GameFontHighlightSmall", "CENTER")
   b.label:SetText(label)
   -- the label is AME's own font string (the button has none of the game's): its text goes there
@@ -140,11 +184,20 @@ function W.Button(parent, label, width, height, onClick, opts)
   -- disabled looks it: faded, its label dimmed (the game's own state isn't drawn on AME's flat buttons)
   local setEnabled, enable, disable = b.SetEnabled, b.Enable, b.Disable
   local function look(self, on)
+    self.enabled = on
     self:SetAlpha(on and 1 or 0.45)
     if self.label.SetTextColor then
-      local c = on and W.COLORS.text or W.COLORS.dim
+      local c = W.COLORS.dim
+      if on then
+        c = self.labelColor or (self.primary and not self.selected and WHITE) or W.COLORS.text
+      end
       self.label:SetTextColor(c[1], c[2], c[3], c[4])
     end
+  end
+  b.Look = look
+  function b:SetLabelColor(color)
+    self.labelColor = color and W.RGB(color) or false
+    look(self, self.enabled)
   end
   function b:SetEnabled(on)
     on = on and true or false
@@ -176,16 +229,29 @@ function W.Button(parent, label, width, height, onClick, opts)
   else
     b.label:SetPoint("CENTER")
   end
+  if b.labelColor then
+    look(b, true)
+  end
+  -- not selected: the panel colour, or for a primary button the accent fill; a little lighter under the mouse
+  local function rest(self, hover)
+    local c, bc
+    if self.primary then
+      c = hover and W.COLORS.primaryHover or W.COLORS.primary
+      bc = c
+    else
+      c, bc = hover and W.COLORS.panelHover or W.COLORS.panel, W.COLORS.border
+    end
+    self:SetBackdropColor(c[1], c[2], c[3], c[4])
+    self:SetBackdropBorderColor(bc[1], bc[2], bc[3], bc[4])
+  end
   b:SetScript("OnEnter", function(self)
     if not self.selected then
-      local c = W.COLORS.panelHover
-      self:SetBackdropColor(c[1], c[2], c[3], c[4])
+      rest(self, true)
     end
   end)
   b:SetScript("OnLeave", function(self)
     if not self.selected then
-      local c = W.COLORS.panel
-      self:SetBackdropColor(c[1], c[2], c[3], c[4])
+      rest(self, false)
     end
   end)
   b:SetScript("OnClick", function(self)
@@ -195,6 +261,9 @@ function W.Button(parent, label, width, height, onClick, opts)
   end)
   function b:SetSelected(on)
     self.selected = on
+    if self.primary and self.label.SetTextColor then
+      look(self, self.enabled) -- white on the fill, the usual colour when selected
+    end
     if self.tone then
       -- a coloured choice (a signal): its own label normally; selected, inverted - filled with its colour, dark text
       local text, fill = self.tone(on)
@@ -205,18 +274,24 @@ function W.Button(parent, label, width, height, onClick, opts)
         return
       end
     end
-    local c = on and W.COLORS.selected or W.COLORS.panel
-    self:SetBackdropColor(c[1], c[2], c[3], on and 1 or c[4])
-    local bc = on and W.COLORS.accent or W.COLORS.border
-    self:SetBackdropBorderColor(bc[1], bc[2], bc[3], on and 1 or bc[4])
+    if not on then
+      rest(self, false)
+      return
+    end
+    local c, bc = W.COLORS.selected, W.COLORS.accent
+    self:SetBackdropColor(c[1], c[2], c[3], 1)
+    self:SetBackdropBorderColor(bc[1], bc[2], bc[3], 1)
   end
   return b
 end
 
--- the main action of a panel (Post, Buy, Queue, Craft next): filled with the theme's accent, as the designs show
-function W.Primary(b)
-  b.primary = true
-  b:SetSelected(true)
+-- The main action of a panel (Post, Buy, Queue, Craft next, Search the AH): filled with the theme's accent and a
+-- white label, as the designs show. Not the selected look (a dark tint with an accent border): that one says which
+-- choice is picked. on = false makes it an ordinary button again (a panel whose main action changes).
+function W.Primary(b, on)
+  b.primary = on ~= false
+  b:SetSelected(b.selected)
+  b:Look(b.enabled)
   return b
 end
 

@@ -144,6 +144,19 @@ local function newObject(kind)
     GetScale = function(self)
       return rawget(self, "scale") or 1
     end,
+    -- colours are recorded, so widget specs can check a look (backdrop, border, text, fill)
+    SetBackdropColor = function(self, r, g, b, a)
+      self._backdrop = { r, g, b, a }
+    end,
+    SetBackdropBorderColor = function(self, r, g, b, a)
+      self._border = { r, g, b, a }
+    end,
+    SetTextColor = function(self, r, g, b, a)
+      self._textColor = { r, g, b, a }
+    end,
+    SetColorTexture = function(self, r, g, b, a)
+      self._color = { r, g, b, a }
+    end,
     SetVerticalScroll = function(self, y)
       self.vscroll = y
     end,
