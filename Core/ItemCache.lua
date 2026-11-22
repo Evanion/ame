@@ -250,12 +250,13 @@ function C.Get(key)
       list[#list + 1] = key
     end
   end
-  if not e.name then
+  -- read until the client has it: a variant's name can arrive first (setName), its facts with GetItemInfo
+  if not e.name or e.quality == nil then
     local getInfo = api("GetItemInfo")
-    local name, quality
+    local name, quality, level, icon, bind
     if getInfo then
-      local n, _, q, _, _, _, _, _, _, _, sell = getInfo(ns.BaseID(key))
-      name, quality = n, q
+      local n, _, q, lvl, _, _, _, _, _, tex, sell, _, _, b = getInfo(ns.BaseID(key))
+      name, quality, level, icon, bind = n, q, lvl, tex, b
       e.sellPrice = sell
     end
     if name and ns.IsVariant(key) then
@@ -266,7 +267,8 @@ function C.Get(key)
       name = C.variants[key] or name
     end
     if name then
-      e.name, e.quality = name, quality
+      -- the client's facts, read once with the name: quality, item level, icon, bind type (1: binds when picked up)
+      e.name, e.quality, e.level, e.icon, e.bind = name, quality, level, icon, bind
     end
   end
   return e

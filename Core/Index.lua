@@ -92,8 +92,7 @@ end
 -- DE: gear worth more disenchanted than listed (Analytics.DisenchantCheck). After the build, so the materials are
 -- priced from the same fresh index. Gear the client hasn't cached yet is skipped (checked again next build).
 function AME.DisenchantSignals(index, house, cut, hours, checkpoint)
-  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-  if not (getInfo and ns.Disenchant) then
+  if not ns.Disenchant then
     return
   end
   local function netSale(mat)
@@ -108,9 +107,9 @@ function AME.DisenchantSignals(index, house, cut, hours, checkpoint)
   for id, s in pairs(index.items) do
     local info = ns.ItemCache.Get(id)
     if (info.classID == 2 or info.classID == 4) and s.market then
-      local _, _, quality, level = getInfo(ns.BaseID(id))
+      local quality = info.quality
       if quality and quality >= 2 then
-        local value = ns.Disenchant.Value(level, quality, info.classID, netSale)
+        local value = ns.Disenchant.Value(info.level, quality, info.classID, netSale)
         local vendor = info.sellPrice
         ns.Analytics.DisenchantCheck(s, value, cut, vendor and ns.Arbitrage.Deposit(vendor, house, hours) or 0)
       end

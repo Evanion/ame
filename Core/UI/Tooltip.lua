@@ -280,12 +280,8 @@ function Tooltip.Disenchant(itemID, items)
   if not (info and (info.classID == 2 or info.classID == 4)) then
     return nil
   end
-  local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-  if not getInfo then
-    return nil
-  end
-  local _, _, quality, level = getInfo(ns.BaseID(itemID))
-  local outcomes = quality and quality >= 2 and ns.Disenchant.Outcomes(level, quality, info.classID)
+  local quality = info.quality
+  local outcomes = quality and quality >= 2 and ns.Disenchant.Outcomes(info.level, quality, info.classID)
   if not outcomes then
     return nil
   end

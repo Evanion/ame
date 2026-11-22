@@ -134,12 +134,11 @@ function UI:LevelingPlans(m)
   local craft = m.craft
   local deValue = enchanter
       and function(id)
-        local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-        if not getInfo then
+        local info = ns.ItemCache.Get(id)
+        if not info.name then
           return nil
         end
-        local _, _, quality, level, _, _, _, _, _, _, _, classID = getInfo(id)
-        return ns.Disenchant.Value(level, quality, classID, function(mat)
+        return ns.Disenchant.Value(info.level, info.quality, info.classID, function(mat)
           return craft:NetSale(mat)
         end)
       end

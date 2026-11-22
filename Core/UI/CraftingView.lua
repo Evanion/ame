@@ -163,9 +163,7 @@ function UI:CraftingEnv(index, producers)
       return sell and ns.Arbitrage.Deposit(sell, house, hours) or 0
     end,
     sellable = function(id)
-      local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-      local bind = getInfo and select(14, getInfo(id))
-      return bind ~= 1 -- 1: binds when picked up
+      return ns.ItemCache.Get(id).bind ~= 1 -- 1: binds when picked up
     end,
     producers = function(id)
       return producers[id]

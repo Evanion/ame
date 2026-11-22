@@ -50,6 +50,25 @@ describe("ItemCache with random-suffix variants", function()
     end
   end)
 
+  it("reads the client's facts once with the name: quality, item level, icon, bind type", function()
+    local getInfo = _G.C_Item.GetItemInfo
+    _G.C_Item.GetItemInfo = function(id)
+      if id == 18832 then -- Brutality Blade: epic, item level 70, binds when picked up
+        return "Brutality Blade", nil, 4, 70, nil, nil, nil, nil, nil, 135349, 21000, 2, 7, 1
+      end
+      return getInfo(id)
+    end
+    local e = C.Get(18832)
+    assert.are.equal(4, e.quality)
+    assert.are.equal(70, e.level)
+    assert.are.equal(135349, e.icon)
+    assert.are.equal(1, e.bind)
+    -- a name that arrived without the facts (a variant's, from its link) is completed on the next look
+    local v = ns.ItemKey(15211, 1234)
+    C.info[v] = { name = "Raider Shortsword of Magic" }
+    assert.are.equal(2, C.Get(v).quality)
+  end)
+
   it("learns a variant's name from its link, and keeps the base item's facts", function()
     local key = C.Learn(magicLink)
     assert.are.equal(ns.ItemKey(15211, 1234), key)
