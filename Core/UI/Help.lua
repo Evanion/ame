@@ -188,7 +188,7 @@ function Help.Explain(frame, key)
       return false
     end
     W.TipText(tip, term[1], term[2])
-    tip:AddLine(L["Right-click: open it in the Guide's glossary"], 0.5, 0.5, 0.5)
+    tip:AddLine(W.Dim(L["Right-click: open it in the Guide's glossary"]))
   end, "ANCHOR_TOP")
   -- right-click: the term's glossary entry on the Guide tab
   frame:HookScript("OnMouseUp", function(self, button)
@@ -546,7 +546,7 @@ function Help.Articles()
             L["An alert fires once when its condition comes true, and again only after the price has moved back past its line. Alerts are checked after scans, after prices arrive from guild members and at login, and show on screen as well as in chat; the sound can be turned off under Settings, General. Signal alerts fire on Buy and Sell."],
             H(L["Notifications"]),
             L["The bell left of the tabs is the notification center: it keeps the alerts that fired (and players asking to share prices with you), newest first, with a red count of the ones you haven't seen. Click one to open its item (or, for a request, Settings, Sharing); Clear all empties it."],
-            L['Using an info bar addon (Titan Panel, ChocolateBar, Bazooka and others that read LibDataBroker)? Add its "AME notifications" entry: it shows how many you haven\'t seen, the newest on hover, and opens the list on a click.'],
+            L['Using an info bar addon (Titan Panel, ChocolateBar, Bazooka and others that read LibDataBroker)? Add its "Notifications" entry: it shows how many you haven\'t seen, the newest on hover, and opens the list on a click.'],
             L["Right-click a guild member's shared list to copy it into your own watchlists."],
           },
         },
@@ -748,7 +748,7 @@ Help.EXAMPLES = {
     for _, l in ipairs(labels) do
       local y = math.floor(yOf(l[1]))
       local line = f:CreateTexture(nil, "ARTWORK")
-      line:SetColorTexture(1, 1, 1, 0.22)
+      W.Fill(line, W.COLORS.border)
       line:SetHeight(1)
       line:SetPoint("TOPLEFT", f, "TOPLEFT", xOf(1) + bw / 2 + 3, -y)
       line:SetPoint("RIGHT", f, "TOPLEFT", 150, 0)
@@ -793,7 +793,7 @@ Help.EXAMPLES = {
     for k, p in ipairs(patterns) do
       local top = 8 + (k - 1) * ROW
       local box = f:CreateTexture(nil, "BACKGROUND", nil, 1)
-      box:SetColorTexture(0.07, 0.08, 0.1, 1)
+      W.Fill(box, W.COLORS.chart.bg)
       box:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -top)
       box:SetSize(140, ROW - 8)
       drawCandles(f, 14, top + 4, 132, ROW - 16, p[1])
@@ -946,8 +946,8 @@ Help.EXAMPLES = {
   end,
 }
 
--- The Guide: a sidebar of articles by group (filtered by the search box) and the article on the right, scrolling
--- when long. Narrow window: the sidebar becomes a dropdown next to the search box.
+-- The Guide: a side menu of articles by group (UI.SideList, filtered by the search box) and the article on a panel on
+-- the right, scrolling when long. Narrow window: the sidebar becomes a dropdown next to the search box.
 Help.ARTICLE_WIDTH = 640 -- longest comfortable line
 
 function Help.CreateGuide(parent, contentArea)
@@ -968,42 +968,32 @@ function Help.CreateGuide(parent, contentArea)
     end
   end
 
-  -- sidebar: group headings and article links
-  local list = slots.left.content
-  v.links = {}
-  local function heading(text)
-    local h = W.Text(list, "GameFontDisableSmall")
-    h:SetText(text:upper())
-    return { heading = true, frame = h, group = text }
-  end
-  local function link(a)
-    local b = CreateFrame("Button", nil, list)
-    b:SetHeight(18)
-    b.sel = b:CreateTexture(nil, "BACKGROUND")
-    b.sel:SetAllPoints()
-    W.Fill(b.sel, W.COLORS.rowSelected)
-    b.sel:Hide()
-    b.hl = b:CreateTexture(nil, "HIGHLIGHT")
-    b.hl:SetAllPoints()
-    W.Fill(b.hl, W.COLORS.rowHover)
-    b.text = W.Text(b, "GameFontHighlightSmall")
-    b.text:SetPoint("LEFT", 8, 0)
-    b.text:SetPoint("RIGHT", -4, 0)
-    b.text:SetWordWrap(false)
-    b.text:SetText(a.label or a.title) -- the sidebar's short name; the article keeps its full title
-    b:SetScript("OnClick", function()
-      v:ShowArticle(a.key)
-    end)
-    b.article = a
-    return { frame = b, article = a }
-  end
+  -- sidebar: the articles under their group headings, the shared side menu (the glossary's heading counts its terms)
+  local total = 0
   for _, g in ipairs(groups) do
-    v.links[#v.links + 1] = heading(g[1])
-    for _, a in ipairs(g[2]) do
-      local l = link(a)
-      v.links[#v.links + 1] = l
-      a.link = l.frame
+    total = total + 1 + #g[2]
+  end
+  v.nav = UI.SideList(slots.left, {
+    rows = total,
+    onClick = function(e)
+      v:ShowArticle(e.key)
+    end,
+  })
+  -- the menu's entries for the articles that match, the shown one selected and paged into view
+  function v:RenderNav()
+    local entries, at = {}, nil
+    for _, e in ipairs(self.navEntries or {}) do
+      if e.article then
+        e.selected = e.article == self.shownArticle
+        at = e.selected and #entries + 1 or at
+      end
+      entries[#entries + 1] = e
     end
+    local nav = self.nav
+    if at and (at <= nav.offset or at > nav.offset + nav.rows) then
+      nav.offset = math.max(0, at - math.floor(nav.rows / 2))
+    end
+    nav:SetEntries(entries)
   end
 
   -- lay the sidebar out, showing only articles matching the search (a group's heading when any of it matches)
@@ -1023,36 +1013,27 @@ function Help.CreateGuide(parent, contentArea)
   end
   function v:Filter(text)
     text = text and text:lower() or nil
-    local y, shown = -8, {}
-    for _, l in ipairs(self.links) do
-      if not l.heading then
-        shown[l.article.group] = shown[l.article.group] or matches(l.article, text)
-      end
-    end
-    self.matches = {}
-    for _, l in ipairs(self.links) do
-      local f = l.frame
-      f:ClearAllPoints()
-      local on
-      if l.heading then
-        on = shown[l.group]
-        if on then
-          y = y - (y < -8 and 10 or 0)
-          f:SetPoint("TOPLEFT", 10, y)
-          y = y - 16
-        end
-      else
-        on = matches(l.article, text)
-        if on then
-          f:SetPoint("TOPLEFT", 4, y)
-          f:SetPoint("RIGHT", list, "RIGHT", -4, 0)
-          y = y - 18
-          self.matches[#self.matches + 1] = l.article
+    self.matches, self.navEntries = {}, {}
+    for _, g in ipairs(groups) do
+      local shown = {}
+      for _, a in ipairs(g[2]) do
+        if matches(a, text) then
+          shown[#shown + 1] = a
         end
       end
-      f:SetShown(on and true or false)
+      if #shown > 0 then
+        local glossary = g[1] == L["Glossary"]
+        self.navEntries[#self.navEntries + 1] =
+          { heading = g[1], note = glossary and L["%d terms"]:format(#g[2]) or nil }
+        for _, a in ipairs(shown) do
+          -- the sidebar's short name; the article keeps its full title
+          self.navEntries[#self.navEntries + 1] = { label = a.label or a.title, key = a.key, article = a }
+          self.matches[#self.matches + 1] = a
+        end
+      end
     end
-    slots.left.pane:Measure()
+    self.nav.offset = 0
+    self:RenderNav()
     -- the compact dropdown lists the same articles
     local options = {}
     for i, a in ipairs(self.matches) do
@@ -1093,8 +1074,10 @@ function Help.CreateGuide(parent, contentArea)
   end, { neutral = true })
   v.pick:SetPoint("LEFT", v.search, "RIGHT", 8, 0)
 
-  -- the article
-  local pane = W.ScrollPane(slots.main)
+  -- the article, on a panel of its own
+  v.article = W.Panel(slots.main)
+  v.article:SetAllPoints()
+  local pane = W.ScrollPane(v.article)
   local page = pane.content
   v.pane = pane
   v.title = W.Text(page, "GameFontNormalLarge")
@@ -1213,11 +1196,7 @@ function Help.CreateGuide(parent, contentArea)
         prev = obj
       end
     end
-    for _, l in ipairs(self.links) do
-      if not l.heading then
-        l.frame.sel:SetShown(l.article == a)
-      end
-    end
+    self:RenderNav()
     self.pick:SetValue(a.key)
     pane:SetScroll(0)
     self:LayoutArticle()

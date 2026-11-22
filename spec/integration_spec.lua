@@ -1796,10 +1796,23 @@ describe("addon in a stubbed client", function()
       assert.are.equal("market", ns.UI.views.guide.term)
       -- the Guide is a documentation page: sidebar of articles by group, one article at a time, searchable
       local guide = ns.UI.views.guide
+      -- the side menu's line showing an article (nil when it isn't listed)
+      local function link(key)
+        for _, line in ipairs(guide.nav.lines) do
+          if line:IsShown() and line.entry and line.entry.key == key then
+            return line
+          end
+        end
+      end
       assert.are.equal("Glossary", guide.crumb.text)
       assert.truthy(guide.title.text:find("Market price"))
-      assert.is_true(guide.byKey.market.link.sel:IsShown())
-      guide.byKey.selling.link.scripts.OnClick(guide.byKey.selling.link)
+      assert.is_true(link("market").sel:IsShown()) -- paged into view, and selected
+      local glossary -- the glossary's heading counts its terms
+      for _, e in ipairs(guide.nav.entries) do
+        glossary = glossary or (e.heading == "Glossary" and e)
+      end
+      assert.truthy(glossary.note:find("%d+ terms"), glossary.note)
+      link("selling").scripts.OnClick(link("selling"), "LeftButton")
       assert.are.equal("Trading", guide.crumb.text)
       assert.is_true(guide.paras[2]:IsShown()) -- two paragraphs
       guide.search:SetText("deposit")
@@ -1812,12 +1825,12 @@ describe("addon in a stubbed client", function()
         local text = table.concat(parts, " "):lower()
         assert.truthy(text:find("deposit"), a.key)
       end
-      assert.is_false(guide.byKey.commands.link:IsShown()) -- doesn't mention deposits
+      assert.is_nil(link("commands")) -- doesn't mention deposits
       guide.search:SetText("")
       guide.search.scripts.OnTextChanged(guide.search, true)
-      assert.is_true(guide.byKey.commands.link:IsShown())
-      assert.are.equal("Market", guide.byKey.tabMarket.link.text.text) -- the sidebar label, not "Market tab"
-      guide.byKey.tabMarket.link.scripts.OnClick(guide.byKey.tabMarket.link)
+      assert.truthy(link("commands"))
+      assert.are.equal("Market", link("tabMarket").text.text) -- the sidebar label, not "Market tab"
+      link("tabMarket").scripts.OnClick(link("tabMarket"), "LeftButton")
       assert.are.equal("Market tab", guide.title.text) -- the article keeps its full title
       assert.is_true(guide.examples["tabMarket:4"]:IsShown()) -- a live example in the article (the signal filter)
       -- every article opens, its drawn examples included (the Item article's candles)
@@ -1834,7 +1847,7 @@ describe("addon in a stubbed client", function()
       assert.is_true(candles >= 4) -- verdict, legend, candle anatomy, candle patterns
       assert.is_true(guide.heads[1]:IsShown()) -- and a section heading
       -- slash commands are links: a click puts the command in the chat box
-      guide.byKey.commands.link.scripts.OnClick(guide.byKey.commands.link)
+      link("commands").scripts.OnClick(link("commands"), "LeftButton")
       local text = guide.paras[1].text
       assert.truthy(text:find("|Hamecmd:/ame status|h", 1, true), text)
       assert.truthy(text:find("|Hamecmd:/ame|h", 1, true)) -- "/ame <item link>": just /ame
