@@ -23,7 +23,6 @@
 --   q:BestSale(id) -> net, where   the better of the auction house ("ah": ListingNet) and a vendor ("vendor");
 --                                  nil, "unsellable" for a bind-on-pickup item; nil without either
 --   q:Worth(id)                    what one unit you hold is worth: BestSale's net (the portfolio, the Sell tab)
---   q:WorthOf(counts) -> total, unpriced   { [id] = n } at Worth; unpriced: how many kinds have no price
 --   q:Disenchant(id)               gear: { value, outcomes = { { item, name, chance, min, max, price } }, level,
 --                                  classID } with the materials at BestSale (value nil while one has no price)
 --   q:CraftEnv(producers)          the Crafting env (Core/Crafting.lua) on this quote
@@ -169,19 +168,6 @@ end
 
 function Quote:Worth(id)
   return (self:BestSale(id))
-end
-
-function Quote:WorthOf(counts)
-  local total, unpriced = 0, 0
-  for id, n in pairs(counts or {}) do
-    local each = self:Worth(id)
-    if each then
-      total = total + each * n
-    else
-      unpriced = unpriced + 1
-    end
-  end
-  return total, unpriced
 end
 
 function Quote:Disenchant(id)

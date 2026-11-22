@@ -259,7 +259,7 @@ function Tooltip.Lines(s, opts)
 
   if not opts.compact then
     -- what you have, and where, on one line ("You have 43 · bags 20 · bank 18"); what's up for sale on the line
-    -- under it; then what this character's bags and bank are worth
+    -- under it; then what what's in your bags and bank is worth
     if n > 0 then
       local where_ = places(held)
       rows[#rows + 1] = { L["You have %s"]:format(W.Count(n)) .. (where_ ~= "" and Dim(" · " .. where_) or "") }
@@ -267,8 +267,10 @@ function Tooltip.Lines(s, opts)
     if onAH > 0 then
       rows[#rows + 1] = { L["AH"] .. " " .. Dim(W.Count(onAH)) }
     end
-    if opts.stash and opts.stash > 0 then
-      rows[#rows + 1] = { L["All in bags + bank"], money(opts.stash) }
+    -- what you have of it in bags and bank, at the market price (in the column for all of yours)
+    local stock = (held.bags or 0) + (held.bank or 0)
+    if stock > 0 and s.market then
+      rows[#rows + 1] = { L["Bags + bank"] .. " " .. Dim(W.Count(stock)), money(s.market * stock) }
     end
     -- how it trades, one dim line: the change against its average (in its colour), how many sell a day (else how
     -- many are listed), how much of what's listed sells
@@ -481,24 +483,6 @@ local function factionIndex()
   return ns.AME and ns.AME:FactionIndex()
 end
 
--- What this character's bags and bank are worth (each item at Quote:Worth: the better of listing it and a vendor),
--- worked out again at most every STASH_SECONDS, so you can see while farming how much you've gathered.
-Tooltip.STASH_SECONDS = 5
-local stash = { at = nil }
-function Tooltip.Stash()
-  local index = factionIndex()
-  local now = GetServerTime()
-  if not (index and ns.Trading and AME_DB and AME_DB.holdings) then
-    return nil
-  end
-  if stash.index ~= index or not stash.at or now - stash.at >= Tooltip.STASH_SECONDS then
-    local counts = ns.Holdings.Totals(AME_DB.holdings, { "bags", "bank" }, ns.Holdings.Keep(ns.Trading.CharKey()))
-    stash.value = ns.Quote.For(ns.AME:FactionShard(), index, { fresh = false }):WorthOf(counts)
-    stash.at, stash.index = now, index
-  end
-  return stash.value
-end
-
 -- the item's summary at your faction's auction house (nil when unknown)
 function Tooltip.Summary(itemID)
   local index = factionIndex()
@@ -628,7 +612,6 @@ function Tooltip.Gather(itemID, detail)
     house = ns.HOUSE_LABEL[own] or own,
     age = age(shard, itemID, s, today),
     held = ns.Trading and AME_DB and ns.Trading.Held(itemID) or nil,
-    stash = Tooltip.Stash(),
     vendor = ns.ItemCache.Get(itemID).sellPrice,
     -- what one disenchant gives, its materials at what selling them nets (Quote:Disenchant, as the DE signal)
     de = ns.Quote.For(shard, factionIndex(), { fresh = false }):Disenchant(itemID),

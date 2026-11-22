@@ -77,13 +77,13 @@ describe("Tooltip.Lines", function()
     assert.truthy(t:find("You have 43 · bags 20 · bank 18 · guild bank 5", 1, true), t) -- one line, as drawn
   end)
 
-  it("counts what's up for sale apart (its own AH row), and says what your bags and bank are worth", function()
+  it("counts what's up for sale apart (its own AH row), and what this item in your bags and bank is worth", function()
     local listed = { total = 48, bags = 20, bank = 18, guildBank = 5, auctions = 5 }
-    local t = text(T.Lines(s, { held = listed, house = "Horde AH", stash = 1234500 }))
+    local t = text(T.Lines(s, { held = listed, house = "Horde AH" }))
     assert.truthy(t:find("You have 43 · bags 20 · bank 18 · guild bank 5", 1, true), t) -- not the 5 on the AH
     assert.truthy(t:find("guild bank 5 = \nAH 5 = ", 1, true), t) -- a line of its own, under it
     assert.truthy(t:find("your 43", 1, true), t) -- the totals are for what you have too
-    assert.truthy(t:find("All in bags + bank = 123g 45s", 1, true), t)
+    assert.truthy(t:find("Bags + bank 38 = 2,127g", 1, true), t) -- 38 at 55g 98s: not the guild bank's 5
   end)
 
   it("leaves out the comparison on the first day (nothing to compare with)", function()
