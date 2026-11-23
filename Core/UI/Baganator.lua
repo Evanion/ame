@@ -259,14 +259,23 @@ function Bag:Install()
     if not file then
       return false
     end
-    icon:SetTexture(W.SIGNAL_MEDIA .. file)
+    icon.glyph:SetTexture(W.SIGNAL_MEDIA .. file)
+    icon.outline:SetTexture(W.SIGNAL_MEDIA .. file)
     local c = W.RGB(W.SignalRole(signal))
-    icon:SetVertexColor(c[1], c[2], c[3])
+    icon.glyph:SetVertexColor(c[1], c[2], c[3])
     return true
   end, function(button)
-    local icon = button:CreateTexture(nil, "OVERLAY")
+    -- the icon on a black copy of itself a little larger: an outline, so a red or green triangle reads on any
+    -- item's art (Baganator places this frame in the corner)
+    local icon = CreateFrame("Frame", nil, button)
     icon:SetSize(12, 12)
     icon.padding = 0
+    icon.outline = icon:CreateTexture(nil, "OVERLAY", nil, 6)
+    icon.outline:SetSize(15, 15)
+    icon.outline:SetPoint("CENTER", 0, 0)
+    icon.outline:SetVertexColor(0, 0, 0, 0.9)
+    icon.glyph = icon:CreateTexture(nil, "OVERLAY", nil, 7)
+    icon.glyph:SetAllPoints()
     return icon
   end, Bag.CORNERS.ame_signal)
 
