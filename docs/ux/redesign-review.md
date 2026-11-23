@@ -59,7 +59,7 @@ the look are all open.
 
 - **Scope:** AME doesn't take over the mailbox (other addons do that well): WEALTH-3 and WEALTH-4 are out. Cancelling
   auctions stays the game's job; AME flags undercut auctions (SELL-6) but adds no cancel scan.
-- **The AME window takes over the auction house** (proposed, see 5): at the AH it switches to Buy, Sell and Auctions
+- **The AME window takes over the auction house** (accepted, see 5): at the AH it switches to Buy, Sell and Auctions
   modes, and the game's AH frame stays open underneath, hidden.
 - **Auctionator stays a choice, through one switch, not a setting.** AME began as Auctionator's sidecar.
   - Without Auctionator, AME takes over.
@@ -216,4 +216,4 @@ The redesign itself (R1 onward on the canvas) runs on Claude Fable.
 ## Questions to settle before R3
 
 1. Shift-click: give it back to the game everywhere (link to chat), with AH search as a button?
-2. AH takeover with a swap button both ways (proposed above): agreed?
+
