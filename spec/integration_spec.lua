@@ -2526,6 +2526,27 @@ describe("addon in a stubbed client", function()
         ns.Trading:OnSystemMessage("You won an auction for Item 2589 (x30)")
         assert.are.equal(30, AME_DB.holdings[ns.Trading.CharKey()].mail[2589])
 
+        -- a purchase priced, then another item picked: dropped, never confirmed from the other item's detail; Cancel
+        -- backs out of one too
+        T:Select(2589)
+        T.panel.qty:SetText("5")
+        T.panel.buy.scripts.OnClick(T.panel.buy)
+        assert.are.equal(2589, ns.AHSearch.pending.key)
+        assert.is_true(T.panel.cancel:IsShown())
+        T:Select(2592)
+        assert.is_nil(ns.AHSearch.pending)
+        T:Select(2589)
+        T.panel.buy.scripts.OnClick(T.panel.buy)
+        assert.is_not_nil(ns.AHSearch.pending)
+        T.panel.cancel.scripts.OnClick(T.panel.cancel)
+        assert.is_nil(ns.AHSearch.pending)
+        -- an item searched while a run goes on goes first, and the run carries on after it
+        local S = ns.AHSearch
+        S.current, S.queue = 111, { 222, 333 }
+        S:Push(333)
+        assert.are.same({ 333, 222 }, S.queue)
+        S:Stop()
+
         -- search by name and filters: the game's browse query, rows with AME's view, filtered by price here
         local queries = {}
         ah.SendBrowseQuery = function(q)

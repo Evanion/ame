@@ -268,6 +268,10 @@ function UI:SearchShoppingList()
     tab:SearchAll()
     return
   end
+  if tab and tab.tab and sel then -- a guild list: its items as a list of their own, every one searched
+    tab:ShowKeys(keys, sel.list and sel.list.name, sel.list and sel.list.items)
+    return
+  end
   ns.AME:SearchAuctionHouse(keys[1])
 end
 

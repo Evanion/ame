@@ -55,7 +55,7 @@ frame, the profession window, a vendor, the mailbox, their bags, or the AME wind
 | SELL-3 | Farmer, Switcher | post a whole bag (or a group) in one pass, each at its suggested price | posting 30 stacks takes a minute, not ten | ✗ | One item per click, no next item, gear 1 per click |
 | SELL-4 | Any | be told when an item pays more at a vendor, from crafting it first, or disenchanting it | I take the best outcome, not just the AH | ◐ | Tip column, hints; no action button for any of them |
 | SELL-5 | Crafter | go from "make it first" straight to queueing that craft | the tip turns into action | ✗ | Text only |
-| SELL-6 | Trader, Switcher | see which of my auctions are undercut and cancel or repost them | my auctions stay at the front of the queue | ✗ | Portfolio > Auctions lists them, no undercut flag, no cancel |
+| SELL-6 | Trader, Switcher | see which of my auctions are undercut, to cancel them in the game's window and repost | my auctions stay at the front of the queue | ✗ | Portfolio > Auctions lists them, no undercut flag |
 | SELL-7 | Switcher | have AME remember my last price and duration per item | reposting is one click | ✗ | Not remembered |
 | SELL-8 | Any | undercut or match a specific listing deliberately | I control the price when I want to | ◐ | Click a listing = 1c under; no match |
 | SELL-9 | Any | know what I net after the cut and the deposit, one way everywhere | the numbers agree with each other | ◐ | Three different "net" calculations |
@@ -76,7 +76,7 @@ frame, the profession window, a vendor, the mailbox, their bags, or the AME wind
 | BUY-8 | Crafter | skip what a vendor sells, and buy it at the vendor in the right amount | I don't pay AH prices for vendor goods | ✓ | "vendor" mark, vendor panel |
 | BUY-9 | Switcher | use search-term lists ("of the Bear", price caps) and import my Auctionator lists | my old lists keep working | ✗ | Exact items only, no import |
 | BUY-10 | Any | jump from what I'm buying to its history, and add a result to my list in one click | buying and planning stay connected | ◐ | Chart via link; adding takes 4 steps |
-| BUY-11 | Auctionator user | get AME's shopping lists while keeping Auctionator | I don't have to uninstall it to try AME | ✗ | AME's tabs only appear without Auctionator |
+| BUY-11 | Auctionator user | keep Auctionator for the AH, with AME as its sidecar | I choose my AH addon | ✓ | AME's tabs step aside when Auctionator is loaded (decided: no mode to show both) |
 
 ## FARM: out in the world
 
@@ -146,8 +146,8 @@ frame, the profession window, a vendor, the mailbox, their bags, or the AME wind
 |---|---|---|---|---|---|
 | WEALTH-1 | Any | see what I hold, where (bags, bank, mail, auctions, alts) and what it's worth | I know my net worth | ✓ | Portfolio positions, tooltip |
 | WEALTH-2 | Trader | see my sales, purchases and profit by period | I know my income | ✓ | Portfolio ledger |
-| WEALTH-3 | Any | collect all mail and AH gold in one click | the mailbox isn't a chore | ✗ | — |
-| WEALTH-4 | Crafter | send mats to the alt that crafts them | the craft queue's "mail them over" step is easy | ✗ | Queue says so in text |
+| WEALTH-3 | Any | collect all mail and AH gold in one click | the mailbox isn't a chore | out | Left to mail addons (decided) |
+| WEALTH-4 | Crafter | send mats to the alt that crafts them | the craft queue's "mail them over" step is easy | out | Left to mail addons; the queue says what to send |
 | WEALTH-5 | Trader | see who buys from me and who I buy from, and contact them | I build regular trade | ◐ | Customers/Suppliers, names not actionable |
 | WEALTH-6 | Any | export my data | I can work in a spreadsheet | ◐ | Portfolio export only |
 

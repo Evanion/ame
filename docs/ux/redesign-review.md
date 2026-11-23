@@ -55,7 +55,17 @@ the look are all open.
 9. **The Guide disagrees with the code in about 15 places** (listed in the inventories): commands that don't link, wrong
    button names, a setting that doesn't exist, a sort order that isn't the default, and the bell's position.
 
-## Fix now (bugs, no design needed)
+## Decisions so far (2026-11-23)
+
+- **Scope:** AME doesn't take over the mailbox (other addons do that well): WEALTH-3 and WEALTH-4 are out. Cancelling
+  auctions stays the game's job; AME flags undercut auctions (SELL-6) but adds no cancel scan.
+- **Auctionator stays a choice.** AME began as Auctionator's sidecar. With Auctionator loaded, AME stays out of the AH
+  frame (sell bar, tooltips, the window) as today; no extra mode or setting to show both (BUY-11 is out).
+- **Interaction contract** (direction 1): accepted.
+- **Craft requests** between AME users (direction 7): wanted, to be designed.
+- **R0** (fix now): done.
+
+## Fix now (bugs, no design needed) - done
 
 | Issue | Where | Story |
 |---|---|---|
@@ -122,16 +132,14 @@ Settings stays behind the cog. Each page gets a small "settings for this" link t
 | Workspace part | Routine | Stories |
 |---|---|---|
 | **Sell** | A post queue: everything in the bags (or a saved group) at the suggested price, one key posts and moves on; prices and durations remembered per item | SELL-3, SELL-7 |
-| **Auctions** | Your auctions with an undercut flag; cancel the undercut ones in one pass, then repost them through Sell | SELL-6 |
+| **Auctions** | Your auctions with an undercut flag, and a repost through Sell once the game's window has cancelled them | SELL-6 |
 | **Buy** | A buy loop over a list: one key buys up to the need at or under the top price, then moves on; safe confirm; all listings | BUY-1, BUY-3, BUY-4, BUY-7 |
-| **Beside Auctionator** | A setting to show AME's tabs even when Auctionator is loaded | BUY-11, DATA-2 |
 | **Key bindings** | For the loops, opening AME and scanning | LEARN-5 |
 
 ### 6. Out in the world and at vendors
 
 - **Vendor:** "Sell junk and vendor-tip items" next to the merchant frame, with a preview and buyback (FARM-5).
 - **Session tracker:** bag value now, gold made this session, per hour; a small optional HUD (FARM-2).
-- **Mailbox:** Collect all, and "send to alt" for the craft queue's mail steps (WEALTH-3, WEALTH-4).
 - **"Worth farming"** as a screener view: gatherable mats ranked by price × sell rate (FARM-3).
 
 ### 7. Social crafting
@@ -187,13 +195,13 @@ The canvas is more wireframe than the game in places and more polished in others
 | R3 | Navigation (Home, Guild) and the Item hub, on the canvas first | large |
 | R4 | AH workspace: post queue, auctions/cancel, buy loop, beside Auctionator, key bindings | large |
 | R5 | Social crafting: requests, offers, tips | large |
-| R6 | Farming, vendor selling, mailbox, session tracker | medium |
+| R6 | Farming, vendor selling, session tracker | medium |
 
 The redesign itself (R1 onward on the canvas) runs on Claude Fable.
 
 ## Questions to settle before R3
 
 1. Is the situation-based tab set (Home, Market, Item, Crafting, Guild, Portfolio, Guide) the right cut?
-2. Should AME's AH tabs show beside Auctionator by default, or only when switched on?
-3. Craft requests between AME users: a new sync message kind, guild-only at first?
-4. Shift-click: give it back to the game everywhere (link to chat), with AH search as a button?
+2. Shift-click: give it back to the game everywhere (link to chat), with AH search as a button?
+3. At the AH without Auctionator: keep AME's tabs inside the game's AH frame (a sidecar window beside it), or let
+   the AME window take over the AH, with its AH modes (Buy, Sell, Auctions) shown only while the AH is open?

@@ -124,7 +124,8 @@ Grouped by size, smallest first.
 - **Fixes:** BUY-3 (safe buying), BUY-7 (all gear listings), LEARN-4 (Guide mismatches).
 - **Links between what exists:** SELL-5, CRAFT-7, ITEM-3, ITEM-4, ITEM-7, ASK-3, ASK-4, WEALTH-5, CRAFT-9.
 - **New pieces on existing surfaces:** SELL-6 and SELL-7 (auctions and remembered prices), SELL-3 (post queue),
-  BUY-4 (top-price buying), FARM-5 (vendor selling), WEALTH-3 (open all mail), GOLD-8 (cooldown notices), ITEM-8 (alerts
-  list), BUY-9 (search terms and import), BUY-11 (AME tabs beside Auctionator).
+  BUY-4 (top-price buying), FARM-5 (vendor selling), GOLD-8 (cooldown notices), ITEM-8 (alerts
+  list), BUY-9 (search terms and import).
 - **New areas:** GOLD-7 (a home that says what to do now), FARM-2 (bag value and session gold per hour), ASK-2, ASK-5,
-  ASK-6, HELP-2, HELP-3, HELP-5, HELP-6 (craft requests and offers), WEALTH-4 (mail to alts).
+  ASK-6, HELP-2, HELP-3, HELP-5, HELP-6 (craft requests and offers).
+- **Out of scope (decided):** WEALTH-3, WEALTH-4 (mail addons do it).

@@ -116,8 +116,18 @@ local function createPanel()
   p.empty:SetPoint("TOPLEFT", 10, -36)
   p.empty:SetPoint("RIGHT", -10, 0)
   p.empty:SetWordWrap(true)
-  p.empty:SetText(L["Nothing yet. Alerts you set on an item's page show up here when they fire."])
+  p.empty:SetText(
+    L["Nothing yet. Alerts you set on an item's page, players asking to share prices and news of a newer AME show up here."]
+  )
   p.more = W.Text(p, "GameFontDisableSmall")
+  -- more than fit: the mouse wheel pages through the older ones
+  p.offset = 0
+  p:EnableMouseWheel(true)
+  p:SetScript("OnMouseWheel", function(_, delta)
+    local count = #notices():List()
+    p.offset = math.max(0, math.min(count - ROWS, p.offset - delta * 3))
+    UI:RenderNotices()
+  end)
   p.rows = {}
   for i = 1, ROWS do
     local r = CreateFrame("Button", nil, p)
@@ -186,6 +196,7 @@ function UI:ToggleNotices()
   W.HideMenu()
   -- what's new is marked while the panel shows (the dots), and counts as read from now on
   self.noticesSeenBefore = notices().db.readAt
+  p.offset = 0
   self:RenderNotices()
   p:Show()
   notices():MarkRead(GetServerTime())
@@ -196,8 +207,10 @@ function UI:RenderNotices()
   local list, now = n:List(), GetServerTime()
   local seen = self.noticesSeenBefore or n.db.readAt
   local shown = math.min(#list, ROWS)
+  local offset = math.max(0, math.min(#list - ROWS, p.offset or 0))
+  p.offset = offset
   for i, r in ipairs(p.rows) do
-    local e = list[i]
+    local e = list[offset + i]
     r.notice = e
     if e then
       local text, icon = UI.NoticeLine(e)
@@ -214,7 +227,7 @@ function UI:RenderNotices()
   p.clear:SetShown(#list > 0)
   p.more:ClearAllPoints()
   p.more:SetPoint("TOPLEFT", 10, -34 - shown * ROW_H)
-  p.more:SetText(#list > ROWS and L["+ %d older"]:format(#list - ROWS) or "")
+  p.more:SetText(#list > ROWS and L["%d-%d of %d · scroll for more"]:format(offset + 1, offset + shown, #list) or "")
   p:SetHeight(#list == 0 and 70 or (36 + shown * ROW_H + (#list > ROWS and 16 or 4)))
 end
 

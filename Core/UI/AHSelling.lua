@@ -407,7 +407,7 @@ function S:Select(entry)
   self.qty = entry and (entry.commodity and entry.qty or 1) or nil
   self.panel.result:SetText("")
   if entry then
-    ns.AHSearch:Start({ entry.key }, function()
+    ns.AHSearch:Push(entry.key, function() -- ahead of a running search, which goes on after it
       S:Suggest()
     end)
     -- the AME window beside the auction house shows the item (its chart), as it does for a search
@@ -529,7 +529,7 @@ function S:OnBagsChanged()
   end
   if key and self.posted == key then
     self.posted = nil
-    ns.AHSearch:Start({ key }, function()
+    ns.AHSearch:Push(key, function()
       S:Render()
     end)
   end

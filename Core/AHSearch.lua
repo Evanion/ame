@@ -3,11 +3,13 @@
 -- per item at the pace the game allows (it says when it's ready for the next), and keeps each item's listings.
 --
 --   AHSearch:Start(keys, onChange)   search them in turn; onChange() after each answer
+--   AHSearch:Push(key, onChange)     search one item next, ahead of the rest (a run like Search all goes on after it)
 --   AHSearch.results[key]  { rows = { { price (each), qty, auctionID?, mine?, timeLeft?, band? } } cheapest first,
 --                            commodity, at }
 --   AHSearch.TimeLeft(book, row, now)  a listing's time left now: seconds, or the game's band; nil when not known
 --   AHSearch:Buy(key, qty, row)      commodities: ask the game for the price of qty (then Confirm); gear: row's auction
 --   AHSearch:Confirm()               buy what Buy priced (the game wants a click for each purchase)
+--   AHSearch:Cancel()                drop a purchase Buy priced and Confirm hasn't sent
 -- Book is pure (the client API is passed in), so it's tested with a fake C_AuctionHouse.
 local _, ns = ...
 
@@ -154,6 +156,26 @@ function S:Start(keys, onChange)
   step()
 end
 
+-- one item next, ahead of what's queued: picking an item, or what's left after buying, doesn't cancel a run like
+-- Search all - it goes on after it
+function S:Push(key, onChange)
+  self.onChange = onChange or self.onChange
+  if self.current == key then
+    return
+  end
+  for i = #self.queue, 1, -1 do
+    if self.queue[i] == key then
+      table.remove(self.queue, i)
+      self.total = self.total - 1
+    end
+  end
+  table.insert(self.queue, 1, key)
+  self.total = self.total + 1
+  if not self.waiting then
+    step()
+  end
+end
+
 -- search results arrived (the game's events)
 function S:OnCommodity(itemID)
   if self.current and ns.BaseID(self.current) == itemID then
@@ -184,6 +206,9 @@ function S:Buy(key, qty, row)
     return false
   end
   local book = self.results[key]
+  if self.pending and not self.pending.sent then
+    self:Cancel() -- another purchase was priced and not confirmed: dropped, never bought behind your back
+  end
   if book and book.commodity then
     self.pending = { key = key, qty = qty, commodity = true }
     pcall(a.StartCommoditiesPurchase, ns.BaseID(key), qty)
@@ -233,7 +258,7 @@ local function finished(ok)
       if S.onBought then
         S.onBought(p.key, p.qty) -- the list it was bought for counts it off
       end
-      S:Start({ p.key }) -- what's left of it now
+      S:Push(p.key) -- what's left of it now (a Search all goes on after it)
     end
   end
   notify()

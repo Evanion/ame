@@ -28,8 +28,6 @@ Settings.DEFAULTS = {
   -- the Market tab's Overview (indexes and totals for the whole AH): off by default, since it adds work to every
   -- market index build
   marketOverview = false,
-  -- Crafting (top earners, sell or refine, recipes to buy): off by default; while off, profession windows aren't read
-  crafting = false,
   syncGuild = true,
   syncTrusted = true,
   buyWarnPct = 5, -- buying a commodity: warn when the game's price is this many % over the listings shown (0: off)

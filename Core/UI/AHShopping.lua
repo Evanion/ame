@@ -549,8 +549,10 @@ function T:Create(ah)
   p.buyText = W.Text(detail, "GameFontHighlightSmall")
   p.buyText:SetPoint("LEFT", p.qty, "RIGHT", 8, 0)
   p.buy = W.Button(detail, L["Buy"], 90, 20, function()
+    -- Confirm buys only the purchase priced for the item on screen; one priced for another item is dropped (Buy
+    -- cancels it) and this one is priced instead
     local pending = ns.AHSearch.pending
-    if pending and not pending.sent then
+    if pending and not pending.sent and pending.key == T.selected then
       ns.AHSearch:Confirm()
     else
       local qty = math.max(1, tonumber(p.qty:GetText()) or 1)
@@ -563,6 +565,12 @@ function T:Create(ah)
   end)
   p.buy:SetPoint("BOTTOMRIGHT", 0, 2)
   W.Primary(p.buy)
+  -- back out of a priced purchase before confirming it
+  p.cancel = W.Button(detail, L["Cancel"], 70, 20, function()
+    ns.AHSearch:Cancel()
+  end)
+  p.cancel:SetPoint("RIGHT", p.buy, "LEFT", -6, 0)
+  p.cancel:Hide()
   p.note = W.Text(detail, "GameFontDisableSmall")
   p.note:SetPoint("RIGHT", p.buy, "LEFT", -10, 0)
 
@@ -613,8 +621,12 @@ end
 -- shows it, as it does for a search
 function T:Select(key)
   self.selected = key
+  local pending = ns.AHSearch.pending
+  if pending and not pending.sent and pending.key ~= key then
+    ns.AHSearch:Cancel() -- a purchase priced for the item you left: never confirmed from another item's listings
+  end
   if key and not ns.AHSearch.results[key] then
-    ns.AHSearch:Start({ key }, function()
+    ns.AHSearch:Push(key, function() -- ahead of a Search all, which goes on after it
       T:Render()
     end)
   end
@@ -710,10 +722,15 @@ function T:SideEntries()
   if self.temp then
     out[#out + 1] = { label = self.temp.name, selected = self.mode == "list", click = pick(nil) }
   end
+  -- each list with how many items are still short, or done - as the Market sidebar counts them
+  local index = ns.AME.FactionIndex and ns.AME:FactionIndex()
+  local holdings = ns.Holdings.Of("usable")
   for i, l in ipairs(shopping():Lists()) do
+    local _, totals = ns.Shopping.Progress(l.items, holdings, index and index.items or {})
     out[#out + 1] = {
       label = l.name,
-      count = shopping():Count(i),
+      count = totals.done and L["done"] or totals.missing,
+      kind = totals.done and "done" or nil,
       selected = self.mode == "list" and not self.temp and i == (self.list or 1),
       click = pick(i),
     }
@@ -808,10 +825,7 @@ function T:RenderDetail()
     and (pending and pending.key == key and not pending.sent and pending.qty or tonumber(p.qty:GetText()))
   local taken, cost, covered = T.Fill(book and book.rows, want or 0)
   local shown, now = {}, GetServerTime()
-  for i, row in ipairs(book and book.rows or {}) do
-    if i > T.LISTINGS then
-      break
-    end
+  for i, row in ipairs(book and book.rows or {}) do -- every listing: the table scrolls past the first T.LISTINGS
     local left, band = ns.AHSearch.TimeLeft(book, row, now)
     shown[i] = {
       key = key,
@@ -872,7 +886,11 @@ function T:RenderDetail()
       last and last.key == key and (last.ok and L["bought"] or W.Color("bad", L["the purchase failed"])) or ""
     )
   end
-  p.buy:SetShown(commodity or (pending and pending.key == key and not pending.sent) or false)
+  local priced = pending and pending.key == key and not pending.sent or false
+  p.buy:SetShown(commodity or priced)
+  p.cancel:SetShown(priced)
+  p.note:ClearAllPoints()
+  p.note:SetPoint("RIGHT", priced and p.cancel or p.buy, "LEFT", -10, 0)
 end
 
 function T:SearchAll()
@@ -889,10 +907,13 @@ function T:SearchAll()
 end
 
 -- Search AH from the profession window: the recipe's item and reagents as a list of their own, searched right away
-function T:ShowKeys(keys, title)
-  local items = {}
-  for _, k in ipairs(keys) do
-    items[k] = { need = 1 }
+-- (or a guild's shared list: its own items and amounts)
+function T:ShowKeys(keys, title, listItems)
+  local items = listItems or {}
+  if not listItems then
+    for _, k in ipairs(keys) do
+      items[k] = { need = 1 }
+    end
   end
   self.temp = { name = title or L["Search"], items = items }
   self.mode, self.selected = "list", nil

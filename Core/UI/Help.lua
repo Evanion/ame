@@ -224,6 +224,7 @@ Help.GLOSSARY = {
   "name",
   "confidence",
   "posting",
+  "marketDay",
   "candles",
   "arbBuy",
   "arbSell",
@@ -320,7 +321,7 @@ function Help.Articles()
             L["Hold Shift for more: what gear disenchants into (each result with its chance and value), yours per character and guild bank with your average cost, every auction house you have prices for and what a listing there nets after its cut and deposit (alt there marks the other faction's when one of your characters on this market is of it; each counts once it has logged in), how much the goblin auction house sells a day and how fresh its prices are, then the lowest listing, the average, what to post at (the sell window's Normal price) with how soon it should sell and its chance to, and for gear the deposit it risks, the supply trend, volatility, the score and how much data it rests on. Always show details keeps it open."],
             L["Guild banks count as AME last saw them: open the guild bank once (each tab) to count it. On a small screen with a large UI scale, tooltips leave out the freshness, holdings and context lines on their own. Turn tooltips off, or change the average they compare with, under Settings, Tooltips & charts."],
             H(L["Recipes"]),
-            L["With Crafting on, a recipe's tooltip (pattern, plans, formula...) also shows what it makes at today's market price, and what one craft earns after the reagents and the auction house's cut and deposit - red when it loses money. It prices as the Crafting tab and the profession window do: each reagent bought at market, from a vendor or crafted by a recipe you know, whichever is cheapest, and an item searched in the last hour at its cheapest listing. Only the Crafting tab also counts the reagents you hold."],
+            L["A recipe's tooltip (pattern, plans, formula...) also shows what it makes at today's market price, and what one craft earns after the reagents and the auction house's cut and deposit - red when it loses money. It prices as the Crafting tab and the profession window do: each reagent bought at market, from a vendor or crafted by a recipe you know, whichever is cheapest, and an item searched in the last hour at its cheapest listing. Only the Crafting tab also counts the reagents you hold."],
           },
         },
         {
@@ -376,7 +377,7 @@ function Help.Articles()
             L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."],
             L["Every item name in AME is a link: with a chat box open, Shift-click one to put its link in chat, as you would from your bags. Faded rows have data older than three days; hover a row for the reasons behind its signal."],
             H(L["The item menu"]),
-            L["Right-click any item in a list - Market, Arbitrage or Portfolio - for what you can do with it: open its chart, search the auction house for it (while the auction house is open), add it to a watchlist, set a price alert, or put its link in the chat box."],
+            L["Right-click any item in a list - Market, Arbitrage or Portfolio - for what you can do with it: open its chart, search the auction house for it (while the auction house is open), add it to a watchlist or a shopping list, see who can make it, set a price alert, or put its link in the chat box."],
             H(L["Hiding items"]),
             L["Items you never trade can be hidden - drinks you buy from a vendor, for example: right-click one in the Market, Arbitrage or Portfolio list and pick Hide from lists, or use the button on its item page. Hidden items leave those lists and their totals, on every auction house and character (Portfolio says how many it left out and what they're worth), but AME keeps recording their prices, your ledger keeps every sale and purchase, and their tooltips still work. They're listed under Hidden in the Market sidebar: right-click one there to unhide it, or unhide them all under Settings, Tooltips & charts."],
           },
@@ -409,7 +410,7 @@ function Help.Articles()
             H(L["Craft queue"]),
             L["What you've queued - from a profession window, Top earners, Sell or refine or Leveling - worked out into steps, parts first, with its profit and what's to buy in the heading. A part's Buy buys it instead of making it (Make on its material makes it again); x takes a queued craft off the queue, and Clear empties it. To do lists what to do in order: what to buy, what to fetch from the bank, the mailbox or your other characters, then what to craft and on whom. Missing to shopping list puts everything still missing on the Craft queue shopping list."],
             H(L["Top earners"]),
-            L["Every recipe your characters know, ranked by Market/day: profit per craft times how many the whole market takes a day - the size of the opportunity, not what you'd earn (that's your share of the sales, after the other sellers'). Reagents count at the cheapest way to get them - bought at market price, from a vendor, crafted from cheaper materials, or, for what you already hold, at what selling it would net (listing costs the AH cut, buying doesn't). Signal is the product's market signal, as the Market screener shows it. Click a row for the breakdown: how it's made, its reagents, and what it sells for. A recipe that requires a tool (a Salt Shaker, a Blacksmith Hammer) or a place (an anvil, a forge) gets a Tools section: whether one of your characters has the tool, and how to get one - make it (or the pattern that teaches it, with its price and who sells it), buy it from a vendor, or the auction house. (Open the profession window once so AME knows what each recipe requires.) Queue puts one craft on the craft queue, and Reagents to a list puts one craft's reagents on a shopping list."],
+            L["Every recipe your characters know, most profit per craft first; Market/day is profit per craft times how many the whole market takes a day - the size of the opportunity, not what you'd earn (that's your share of the sales, after the other sellers'). Click a column to sort by it. Reagents count at the cheapest way to get them - bought at market price, from a vendor, crafted from cheaper materials, or, for what you already hold, at what selling it would net (listing costs the AH cut, buying doesn't). Signal is the product's market signal, as the Market screener shows it. Click a row for the breakdown: how it's made, its reagents, and what it sells for. A recipe that requires a tool (a Salt Shaker, a Blacksmith Hammer) or a place (an anvil, a forge) gets a Tools section: whether one of your characters has the tool, and how to get one - make it (or the pattern that teaches it, with its price and who sells it), buy it from a vendor, or the auction house. (Open the profession window once so AME knows what each recipe requires.) Queue puts one craft on the craft queue, and Reagents to a list puts one craft's reagents on a shopping list."],
             H(L["Sell or refine"]),
             L["For the materials your characters hold: sell them as they are, or craft them into something worth more and sell that. Takes says how long the market needs to absorb what you'd list. When crafting it is the best use, the button queues those crafts (Queue the smelt for ore)."],
             H(L["Recipes to buy"]),
@@ -434,7 +435,7 @@ function Help.Articles()
             EX("legend"),
             L["Market price, the lowest listing, the 7-day average, supply, and your own buys and sales as dots. A dashed line marks what a vendor pays for one when that's near the prices - where selling to a vendor can beat the auction house; when it's far below, the legend just says it."],
             H(L["The averages: MA 20 and the 7-day average"]),
-            L["Two averages, as on a trading chart: MA 20 is the simple moving average of the last 20 time slots' closes, so its span follows the zoom - about 20 hours on 2D, 60 hours on 7D, 20 days on 30D. The 7-day average is a fixed reference, the one the verdict and signals compare against. Click any line in the legend to hide it or show it again; AME remembers."],
+            L["Two averages, as on a trading chart: MA 20 is the simple moving average of the last 20 time slots' closes, so its span follows the zoom - about 20 hours on 2D, 60 hours on 7D, 20 days on 30D. The 7-day average is a fixed reference line. The verdict compares the price with the average period set in Settings (7 days unless you change it), and signals with the 30-day average. Click any line in the legend to hide it or show it again; AME remembers."],
             L["Hover the item's name or icon at the top for the game's own tooltip, with its stats."],
             H(L["Reading candles"]),
             L["Switch the chart from Line to Candles for a trading view. Each candle sums up one time slot - an hour on the 2D range, 3 hours on 7D, a day or more on longer ranges, smaller as you zoom in (about 60 across the chart) - in four prices:"],
@@ -474,7 +475,7 @@ function Help.Articles()
             H(L["Five views"]),
             L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."],
             H(L["Whose, and since when"]),
-            L["Pick All characters or This character, and a period - Today, 7 days, 30 days or All time - for the ledger, the counterparties and the profit cards."],
+            L["Pick All characters (Account on a wide window: your characters on this market) or This character, and a period - Today, 7 days, 30 days or All time - for the ledger, the counterparties and the profit cards."],
             H(L["How sales get recorded"]),
             L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."],
             H(L["Export"]),
@@ -551,7 +552,7 @@ function Help.Articles()
             guideText(6),
             L["An alert fires once when its condition comes true, and again only after the price has moved back past its line. Alerts are checked after scans, after prices arrive from guild members and at login, and show on screen as well as in chat; the sound can be turned off under Settings, General. Signal alerts fire on Buy and Sell."],
             H(L["Notifications"]),
-            L["The bell left of the tabs is the notification center: it keeps the alerts that fired (and players asking to share prices with you), newest first, with a red count of the ones you haven't seen. Click one to open its item (or, for a request, Settings, Sharing); Clear all empties it."],
+            L["The bell at the right end of the title bar is the notification center: it keeps the alerts that fired, players asking to share prices with you and news of a newer AME, newest first, with a red count of the ones you haven't seen. Click one to open its item (or, for a request or a new version, Settings, Sharing); Clear all empties it."],
             L['Using an info bar addon (Titan Panel, ChocolateBar, Bazooka and others that read LibDataBroker)? Add its "Notifications" entry: it shows how many you haven\'t seen, the newest on hover, and opens the list on a click.'],
             L["Right-click a guild member's shared list to copy it into your own watchlists."],
           },
@@ -560,13 +561,13 @@ function Help.Articles()
           key = "shopping",
           title = L["Shopping lists"],
           body = {
-            L["A shopping list is for buying toward something - the reagents for a robe you're about to craft - while a watchlist is for items you keep an eye on for good. Make one with \"+ New shopping list\" in the Market sidebar, from any item's right-click menu (Add to shopping list...), or from a recipe: open your profession window, pick the recipe, click Add reagents and say how many you'll craft."],
+            L["A shopping list is for buying toward something - the reagents for a robe you're about to craft - while a watchlist is for items you keep an eye on for good. Make one with \"+ New shopping list\" in the Market sidebar, from any item's right-click menu (Add to shopping list...), or from a recipe: open your profession window, pick the recipe, set how many you'll make and click Add to shopping list."],
             H(L["What's left to buy"]),
             L["Pick a list in the Market sidebar to see each item: how many you need, how many your characters on this realm have to use - bags, bank, mailbox and guild banks, as the craft queue counts them (hover a row for who holds what), how many are still to buy, the market price and what the rest costs. It counts down by itself as you buy or gather; the sidebar shows how many items are still short, and done once everything is covered."],
             H(L["Top prices and searching"]),
             L["Right-click an item on the list to change the quantity, set the most you'd pay for one (a star marks items at or under it right now) or remove it. Search the AH searches the open auction house for everything still needed - all at once with Auctionator."],
             H(L["The Shopping tab"]),
-            L["Without Auctionator, the auction house window gets a Shopping tab next to Buy, Sell and Auctions. Pick a list on the left and click Search all: AME searches each item in turn, as fast as the game allows, and shows how many you still need, the cheapest listing, how many are on sale at or under your top price, and what the rest costs. Click an item for its listings, cheapest first, with how long each has left (for gear the game often gives only a range, such as 2-12 h); Buy asks the game for the price, then Confirm buys it - the game wants a click for each purchase. The list counts down as you buy. Shift-click an item (in your bags, in chat) to search for it there, and Search the AH on AME's pages searches this tab too."],
+            L["Without Auctionator, the auction house window gets a Shopping tab next to Buy, Sell and Auctions. Pick a list on the left and click Search all: AME searches each item in turn, as fast as the game allows, and shows how many you still need, the cheapest listing, your top price, and what the rest costs. The sidebar shows how many items are still short on each list. Click an item for its listings, cheapest first, with how long each has left (for gear the game often gives only a range, such as 2-12 h); scroll for more. Buy asks the game for the price, then Confirm buys it - the game wants a click for each purchase - or Cancel backs out. Confirm only ever buys the item on screen: picking another item drops a purchase that wasn't confirmed. Clicking an item while Search all runs searches it first, then Search all goes on. The list counts down as you buy. Shift-click an item (in your bags, in chat) to search for it there, and Search the AH on AME's pages searches this tab too."],
             L["Search the auction house from its box at the top: a name, and under Filters a category, required level, item level, lowest quality, highest price each, exact name or only what you can use. Each result shows its cheapest listing against the market price, and the signal. Your recent searches stay on the left with their filters: click one to run it again, right-click to remove it."],
             H(L["At a vendor"]),
             L["When a vendor sells something one of your shopping lists still needs (thread, vials, flux...), a For your lists panel opens beside the merchant window: how many you need, what that buys in the vendor's stacks, and the cost. Buy takes one row, Buy all everything you can afford. The rows count down as the items reach your bags, and the panel isn't there at vendors with nothing you need."],
@@ -632,8 +633,17 @@ end
 -- (the player presses Enter; addons can't run slash commands for them). Commands aren't translated, so they're
 -- found in any language's text: "/ame", or "/ame" and one of its words.
 Help.CODE_COLOR = "8fd0ff"
-local SUBCOMMANDS =
-  { status = true, config = true, selftest = true, backfill = true, help = true, item = true, sync = true }
+local SUBCOMMANDS = {
+  status = true,
+  config = true,
+  selftest = true,
+  backfill = true,
+  help = true,
+  item = true,
+  sync = true,
+  scan = true,
+  who = true,
+}
 function Help.CommandLink(cmd)
   return ("|Hamecmd:%s|h|cff%s%s|r|h"):format(cmd, Help.CODE_COLOR, cmd)
 end
