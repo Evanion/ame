@@ -219,9 +219,22 @@ supply).
 | TSM's setup is the standing complaint; the Skillet price plugin is stale; GuildCrafts (129K) is abandoned | Profit with no setup, and the guild's crafters, are where to win (inferred) |
 
 Redrawn (New screens): the professions your characters have are listed on the left with their skill; a profession
-shows its recipes in the game's sections, foldable, with Collapse all, the skill-up colour and the Ready column.
-"All professions" is the flat list across characters (drawn on Ready now and To learn). To check in game: the section
-names (placeholders on the board) and whether the game's window has favourites.
+shows its recipes in the game's sections, foldable, with Collapse all, the skill-up arrows and the Ready column.
+"All professions" is the flat list across characters (drawn on Ready now and To learn).
+
+Checked against the user's screenshots of the game's windows (2026-11-23), which settle what the research could not:
+
+| The game's window has | So the board |
+|---|---|
+| A Professions overview (every profession with its skill bar) and a tab per profession down the right edge | Lists the professions on the left with their skill |
+| Sections per profession, each with a fold button (Alchemy: Camping, Reagents, Recovery Potions, Potions, ...) | Uses those names in that order ("Elixirs" is assumed: it was below the fold) |
+| Skill-up arrows beside a recipe: an orange double arrow, a yellow or green single one, none when grey | Draws the same arrows in a Skill column |
+| A Filter menu: Has skill up, Have Materials, Slots (per profession) | Has a Filter button for Has skill up, Slots and Favourites; Have Materials is our Ready now, counted across bags, bank and mail |
+| A favourite star and Track Recipe on the picked recipe; Create, Create All and a count | Marks favourites; leaves creating and tracking to the game's window, with AME's bar under it |
+| No queue, no cost or profit, no count beyond this character's bags | Adds those (today as the bar under the window and the profit beside each recipe) |
+
+Seen in the second screenshot: the bar's hint line ("Profit after the AH cut, reagents at market...") draws over its
+"Cost to craft" line. A bug in the current bar, to fix apart from the redesign.
 
 ### F14: the tab's name
 
