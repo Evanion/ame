@@ -79,6 +79,12 @@ the look are all open.
 - **Craft requests** between AME users (direction 7): wanted, to be designed.
 - **The Guild tab is `social` in code.** Module, setting keys and the slash word use `social`; the locale strings say
   "Guild".
+- **Crafting has two modes, as the auction house has** (decided 2026-11-23). AME takes over: opening a profession
+  opens the Crafting tab, which is the recipe list and creates (Create, Create all, Queue), with a way back to the
+  game's window. Beside the game's window: the game's window stays the recipe list with AME's bar under it, and the
+  Crafting tab is the view across characters (All professions, Ready now, To learn). One setting: "Opening a
+  profession". Sections, their order and skill-up marks come from the game (`C_TradeSkillUI.GetCategoryInfo`: name,
+  uiOrder, parentCategoryID; confirmed in the Forever client), stored per recipe when a character opens the profession.
 - **Crafting is one screen, laid out as the game's window** (to confirm on the sketch): a profession picked on the
   left, its recipes in the game's foldable sections with the skill-up colour, a Ready column and filters; folds,
   filters and search are remembered. "All professions" is the flat view. It replaces Top earners, Sell or refine,
