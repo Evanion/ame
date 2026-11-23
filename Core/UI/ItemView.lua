@@ -1375,7 +1375,8 @@ function UI.CraftInsteadText(c)
   return text .. (who and (" " .. who) or "")
 end
 
--- how a recipe is made, in a few words: "Leatherworking: Refined Deeprock Salt, needs a Salt Shaker"
+-- how a recipe is made, in a few words: "Leatherworking: Refined Deeprock Salt, needs a Salt Shaker";
+-- "Blacksmithing: Thorium Bar, at a Forge"
 function UI.RecipeHow(r)
   local db = AME_DB and AME_DB.crafting
   local prof = r.profession and db and db.catalog and db.catalog[r.profession] and db.catalog[r.profession].name
@@ -1386,6 +1387,9 @@ function UI.RecipeHow(r)
   local out = prof and recipe and L["%s: %s"]:format(prof, recipe) or prof or recipe
   if r.tools and #r.tools > 0 then
     out = out .. ", " .. L["needs a %s"]:format(table.concat(r.tools, ", "))
+  end
+  if r.at and #r.at > 0 then
+    out = out .. ", " .. L["at a %s"]:format(table.concat(r.at, L[" or "]))
   end
   return out
 end

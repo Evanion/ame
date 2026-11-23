@@ -43,7 +43,8 @@ end
 
 -- One recipe's schematic as saved: product, yield, recipe type and its basic reagents. A reagent slot that accepts
 -- several items keeps them all: { {itemID, n, alt = { otherID, ... }} }. tools: the tools it needs, by name ("Salt
--- Shaker"; the game's recipe requirements of the tool kind), when it needs any.
+-- Shaker"; the game's recipe requirements of the tool kind), and at: where it's made ("Anvil", "Forge", a campfire
+-- or camp object: the requirements of the spell-focus kind), when it needs any.
 function Professions.Recipe(api, recipeID)
   local s = call(api, "GetRecipeSchematic", recipeID, false)
   if type(s) ~= "table" then
@@ -56,13 +57,16 @@ function Professions.Recipe(api, recipeID)
     type = plain(s.recipeType),
     r = {},
   }
-  local totem = _G.Enum and _G.Enum.RecipeRequirementType and _G.Enum.RecipeRequirementType.Totem
-  local requirements = totem and call(api, "GetRecipeRequirements", recipeID)
+  local kinds = _G.Enum and _G.Enum.RecipeRequirementType
+  local requirements = kinds and call(api, "GetRecipeRequirements", recipeID)
   for _, req in ipairs(type(requirements) == "table" and requirements or {}) do
-    local name = type(req) == "table" and req.type == totem and plain(req.name)
+    local name = type(req) == "table" and plain(req.name)
     if type(name) == "string" and name ~= "" then
-      out.tools = out.tools or {}
-      out.tools[#out.tools + 1] = name
+      local field = req.type == kinds.Totem and "tools" or req.type == kinds.SpellFocus and "at" or nil
+      if field then
+        out[field] = out[field] or {}
+        table.insert(out[field], name)
+      end
     end
   end
   for _, slot in ipairs(s.reagentSlotSchematics or {}) do

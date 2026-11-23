@@ -4810,7 +4810,9 @@ describe("addon in a stubbed client", function()
         catalog = {
           [129] = {
             name = "First Aid",
-            recipes = { [7928] = { out = 6450, min = 1, r = { { 4306, 1 } }, tools = { "Bandage Kit" } } },
+            recipes = {
+              [7928] = { out = 6450, min = 1, r = { { 4306, 1 } }, tools = { "Bandage Kit" }, at = { "Campfire" } },
+            },
           },
         },
       }
@@ -4834,7 +4836,7 @@ describe("addon in a stubbed client", function()
       assert.is_nil(text:find("Vendor it instead", 1, true))
       -- and how: the profession and the recipe, the tool it needs, who knows it
       assert.truthy(text:find("First Aid: ", 1, true), text)
-      assert.truthy(text:find("needs a Bandage Kit", 1, true), text)
+      assert.truthy(text:find("needs a Bandage Kit, at a Campfire", 1, true), text)
       -- without the recipe: nothing to suggest
       AME_DB.crafting.chars[me].professions[129].learned = {}
       assert.is_nil(ns.UI:CraftInstead(4306))

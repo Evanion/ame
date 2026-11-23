@@ -89,6 +89,7 @@ local function build(id)
     out.madeMin, out.madeMax = r.min or 1, r.max or r.min or 1
     out.src = r.src
     out.tools = r.tools -- the tools it needs ("Salt Shaker"), as the profession window said
+    out.at = r.at -- where it's made ("Forge", a campfire, a camp object)
     for _, g in ipairs(r.r or {}) do
       out.reagents[#out.reagents + 1] = { g[1], g[2], alt = g.alt }
     end

@@ -2028,7 +2028,9 @@ UI.CRAFT_DETAIL.earners = function(_, v, e)
         card = {
           item = e.recipe.product,
           title = not e.recipe.product and W.Dim(L["Enchant"]) or nil,
-          subtitle = L["%s · makes %s"]:format(table.concat(names, ", "), tostring(e.recipe.made)),
+          -- how it's made first ("Leatherworking: Refined Deeprock Salt, needs a Salt Shaker"), then who and how many
+          subtitle = (UI.RecipeHow(e.recipe) and (UI.RecipeHow(e.recipe) .. W.SEP) or "")
+            .. L["%s · makes %s"]:format(table.concat(names, ", "), tostring(e.recipe.made)),
         },
       },
       { heading = L["Reagents"] },

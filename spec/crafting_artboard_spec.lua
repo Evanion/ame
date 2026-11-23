@@ -221,6 +221,9 @@ describe("crafting artboard: the pages", function()
     assert.is_string(e.signal)
     ns.UI.craftSelected = e
     ns.UI:RenderCraftingDetail()
+    -- the card says how it's made: the profession and the recipe, then who and how many
+    local subtitle = v.detail.cards[1].contentData.subtitle
+    assert.truthy(subtitle:find("First Aid: ", 1, true), subtitle)
     assert.are.equal("Queue", v.action.label.text)
     assert.is_true(v.second:IsShown())
     assert.is_false(v.chart:IsShown()) -- two buttons share the width

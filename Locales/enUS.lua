@@ -7,6 +7,7 @@ if not L then
   return
 end
 
+L[" or "] = true
 L["%d AH sales and purchases. AME records them from auction mail: open your mailbox to catch new ones."] = true
 L["%d a day"] = true
 L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] = true
@@ -1165,6 +1166,7 @@ L["any"] = true
 L["armor"] = true
 L["asked"] = true
 L["asking the price..."] = true
+L["at a %s"] = true
 L["auctionator history import"] = true
 L["awaiting mail"] = true
 L["backfill"] = true

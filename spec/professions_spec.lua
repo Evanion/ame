@@ -112,6 +112,7 @@ describe("Professions", function()
       1000
     )
     assert.are.same({ "Salt Shaker" }, snap.recipes[7837].tools) -- a tool; an anvil nearby isn't one you carry
+    assert.are.same({ "Anvil" }, snap.recipes[7837].at) -- where it's made
     assert.is_nil(snap.recipes[1263005].tools)
   end)
 
