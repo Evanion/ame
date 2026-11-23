@@ -53,3 +53,8 @@
 
 /* status row */
 .status{height:26px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:11px;color:var(--dim);background:var(--chrome-bottom);border-top:1px solid var(--frame)}
+
+/* the auction house's own tabs, hanging under the window as on the game's AH frame: Buy, Sell, Auctions */
+.ahtabs{display:flex;gap:2px;padding-left:16px;font-family:var(--font-display)}
+.ahtab{font-size:13px;color:var(--tab);background:linear-gradient(180deg,var(--chrome-bottom),var(--chrome-top));border:1px solid var(--frame);border-top:0;padding:5px 18px 6px;text-decoration:none}
+.ahtab.on{color:var(--white);background:linear-gradient(180deg,var(--acc-sel),var(--chrome-top));border-color:var(--frame-lit);box-shadow:inset 0 -2px 0 var(--acc)}

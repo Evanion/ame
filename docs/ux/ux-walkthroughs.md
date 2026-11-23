@@ -55,6 +55,115 @@ Clicks are counted from the window being open on Home.
 | F13 | Settings has no way back; Back and Forward aren't wired. | Easy to get lost in the prototype, and in the game today. | Wire Back/Forward in the prototype; Escape steps back |
 | F14 | "Guild" also holds trusted friends who aren't in the guild. | The name promises less than the tab does. | Keep "Guild" (short, known), or "Network" (already rejected as a word), or "People" |
 
+## Proposals
+
+One proposal per finding, with what it changes on the boards. F1 is drawn; the rest wait for a yes or no.
+
+### F1. Selling is hard to find: bottom tabs at the auction house (drawn)
+
+While the auction house is open, three tabs hang under the window where the game's own AH frame has its tabs: **Buy**,
+**Sell**, **Auctions**. They are shortcuts into the same screens the top tabs reach (Buy = Market searching the AH,
+Sell = Portfolio > Sell, Auctions = Portfolio > Auctions), and the one you're in is lit. A new player sees the three
+words they know from the game; the top row stays AME's own sections. Away from the auction house there are no bottom
+tabs. Drawn on all eight auction house boards (component `AHTabs`).
+
+Also proposed: at the auction house the window **opens on Sell** when your bags hold something worth posting, else on
+Buy.
+
+### F2. Two places to post one item
+
+Keep both, as **one form**: the same component on Item at the AH ("Sell yours") and on Portfolio > Sell, with one
+memory of last price and duration per item. Posting from either updates the other. No board change beyond naming them
+the same ("Sell yours" on both).
+
+### F3. Shopping lists live under Market
+
+Keep the lists in the Market sidebar (buying happens there), and add two ways in so a crafter never has to know that:
+- **Home** gets a "Lists" row when a list still needs something: "potions: 3 items to buy, about 4g" with "Buy" (at the
+  AH) or "Open".
+- **"Reagents to a list"** stops jumping tabs: it adds, shows "Added to potions" with an "Open the list" link, and
+  leaves you where you were.
+
+### F4. Browsing to buy takes a screen per result
+
+At the auction house, Market gets a **listings panel on the right** (the place Arbitrage already uses for its route):
+click a row and its listings, Buy, Confirm and Cancel show beside the table, with no page change. The item's name in
+the panel still opens the full Item page for the chart. Arrow keys move the picked row, so comparing ten swords is ten
+key presses. The Item page at the AH stays as it is, for when you arrive from elsewhere.
+
+### F5. Crafting for profit crosses three tabs
+
+A **"next step" strip** above the status row, shown while the craft queue has work in it:
+"Craft queue: 3 steps · next: buy 5 Mithril Ore" with one button that does the next thing for where you are (Search
+all at the AH, Craft next at the profession window, Sell when the results are in your bags). It follows you across
+tabs, so the chain reads as one job. The queue page stays the full view.
+
+### F6. A request ends at Accept
+
+The request gets its whole life on Requests:
+- states **new → accepted → crafted → handed over**; "Mark crafted" appears when the queue step is done, "Handed over"
+  closes it;
+- the asker's side shows the same states and gets a notice at each change;
+- the tip is typed (prefilled with the offer) at "Handed over" and lands in the Ledger as income, with the mats you
+  provided as cost.
+
+### F7. "Craft" and "DE" tips have no button
+
+In Portfolio > Sell, picking a row whose tip isn't Sell swaps the posting form's main button:
+- **Craft**: "Queue 5 Bolt of Silk Cloth" (the recipe that makes it worth more), with what that nets against selling raw;
+- **DE**: "Disenchant" when one of yours is an enchanter (it goes to that character's to-do), else "Find an enchanter"
+  (Guild > Crafters, Enchanting);
+- **Vendor**: "Sell at a vendor" does nothing here but says so: the vendor panel takes it at the next merchant.
+Posting anyway stays possible as the second button.
+
+### F8. No first-run state
+
+Home with nothing yet shows **three steps**, each with its button and a tick when done: "Scan the auction house" (at
+the AH: Full scan; away: "visit an auction house"), "Open your profession windows once" (lists which are missing),
+"Share with your guild" (on by default: shows who else has AME, or how to trust a friend). The normal Home replaces
+each step as its data arrives.
+
+### F9. Home is the same with and without the AH
+
+One Home, two states of its buttons:
+- **at the AH** the rows that need it act: Sell, Review (auctions), Buy (lists);
+- **away** those rows stay but their button reads "At the AH" (greyed), and the rows you can act on anywhere (alerts,
+  cooldowns, requests, crafting) sort to the top.
+
+### F10. "Search the AH" and "Post" look active away from the AH
+
+Same rule everywhere: a button that needs the auction house is **greyed with "At the AH"** as its hover text, never
+hidden (so you learn it exists) and never a chat error. On the Item page, "Add to a shopping list" stays the action
+that works anywhere.
+
+### F11. "Your alerts" has no screen
+
+It is the **screener filtered to items with alerts**, with three extra columns: Below, Above, Last fired. Right-click
+a row to change or remove its alert; a bell marks those rows in every other list. No new page type.
+
+### F12. The notification bell's panel
+
+Redrawn in the new look as a **panel under the bell**: kinds are alert, request, cooldown, sharing and version; each
+row opens its screen (alert → Item, request → Requests, cooldown → the craft queue); it scrolls; "Clear all". Home's
+"To do now" is the same list filtered to what you can act on, so the two never disagree.
+
+### F13. No way back
+
+- **Back and Forward** in the title bar keep a history of screens and items (wired in the prototype too).
+- **Escape** steps back once, and closes the window only from where you started.
+- **Settings** opens over the screen you were on and closes back to it.
+
+### F14. "Guild" holds non-guild friends too
+
+Keep the name **Guild**: short, and true for nearly everyone. Inside it, trusted players who aren't guildmates are
+marked "trusted" (as the Crafters list already does), and the Sharing page's heading reads "Guild and trusted players".
+
+### What I'd do first
+
+F4 (listings beside the table) and F13 (Back and Forward) change how buying feels the most. F7, F9 and F10 are one
+rule applied in three places: every piece of advice has a button, and a button that can't work says why. F8 is the
+first thing a new player sees.
+
 ## Next
 
 1. The user plays J1–J12 and marks each finding.
