@@ -254,6 +254,24 @@ function PB:ShowRecipe(recipeID)
   end
 end
 
+-- does the character you're on know a recipe of this profession (skill line), as its window last recorded?
+function PB.KnowsHere(skillLine, recipeID)
+  local chars = AME_DB and AME_DB.crafting and AME_DB.crafting.chars
+  local char = chars and chars[ns.Trading.CharKey()]
+  local p = char and char.professions and char.professions[skillLine]
+  return (p and p.learned and p.learned[recipeID]) and true or false
+end
+
+-- a profession window Craft next opened has its recipes in: show the step it was opened for
+function PB:ShowPending()
+  local id = self.pendingRecipe
+  local info = id and C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(id)
+  if info and info.learned then
+    self.pendingRecipe = nil
+    self:ShowRecipe(id)
+  end
+end
+
 function PB:CraftNext()
   local plan = PB.Plan()
   local step = self:NextStep(plan)
@@ -265,13 +283,22 @@ function PB:CraftNext()
   -- the game crafts only from the profession window that's open: another one is, say which to open
   local info = C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(step.recipe)
   if not (info and info.learned) then
-    local profession
+    local profession, line
     for skillLine, c in pairs(AME_DB.crafting and AME_DB.crafting.catalog or {}) do
       if c.recipes and c.recipes[step.recipe] then
         local get = C_TradeSkillUI and C_TradeSkillUI.GetProfessionInfoBySkillLineID
         local ok, info2 = pcall(get or error, skillLine)
         profession = ok and info2 and info2.professionName or c.name
+        line = skillLine
       end
+    end
+    -- this character knows it: open that profession's window (the game allows it on a click, like this one); its
+    -- recipes load a moment later, so the step is shown then and the next click crafts it
+    local open = C_TradeSkillUI and C_TradeSkillUI.OpenTradeSkill
+    if line and open and PB.KnowsHere(line, step.recipe) and pcall(open, line) then
+      self.pendingRecipe = step.recipe
+      ns.AME.Say(L["opening %s: click Craft next again to craft %s"], profession, name(step.item))
+      return
     end
     ns.AME.Say(L["open %s to craft %s"], profession or L["its profession"], name(step.item))
     return
@@ -1096,8 +1123,13 @@ function PB:Start()
       if a == "player" and spellID then
         PB:OnCrafted(spellID)
       end
-    elseif PB.bar and PB.bar:IsVisible() then
-      PB:Refresh() -- what you hold changed: what's missing did too
+    else
+      if event == "TRADE_SKILL_LIST_UPDATE" and PB.pendingRecipe then
+        PB:ShowPending() -- the window Craft next opened has its recipes
+      end
+      if PB.bar and PB.bar:IsVisible() then
+        PB:Refresh() -- what you hold changed: what's missing did too
+      end
     end
   end)
   self:Attach() -- already loaded

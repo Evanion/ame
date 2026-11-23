@@ -47,6 +47,74 @@ describe("profession bar pieces", function()
     local none = PB.Summary({ product = 8, reagents = {} }, craft, 1, nil, quote)
     assert.are.equal("none", none.signal)
   end)
+
+  it("Craft next opens the step's profession when another one's window is open, then shows the step", function()
+    local opened, said, shown = nil, {}, nil
+    local loaded = false
+    rawset(_G, "C_TradeSkillUI", {
+      GetRecipeInfo = function(id)
+        return loaded and { learned = true, recipeID = id } or nil -- Tailoring's window is open, not Alchemy's
+      end,
+      OpenTradeSkill = function(line)
+        opened = line
+      end,
+    })
+    rawset(_G, "AME_DB", {
+      crafting = {
+        catalog = { [171] = { name = "Alchemy", recipes = { [2330] = {} } } },
+        chars = { ["Realm:Me"] = { professions = { [171] = { learned = { [2330] = true } } } } },
+      },
+    })
+    ns.Trading = {
+      CharKey = function()
+        return "Realm:Me"
+      end,
+    }
+    ns.ItemCache = ns.ItemCache
+      or {
+        Name = function()
+          return "Elixir of Lion's Strength"
+        end,
+        Get = function()
+          return {}
+        end,
+      }
+    ns.Recipes = {
+      Get = function(id)
+        return { id = id, product = 118, reagents = {} }
+      end,
+    }
+    ns.AME = ns.AME or {}
+    ns.AME.Say = function(fmt, ...)
+      said[#said + 1] = fmt:format(...)
+    end
+    PB.Plan = function()
+      return {}
+    end
+    PB.NextStep = function()
+      return { recipe = 2330, item = 118, count = 1 }
+    end
+    PB.ShowRecipe = function(_, id)
+      shown = id
+    end
+    PB:CraftNext()
+    assert.are.equal(171, opened)
+    assert.truthy(said[1]:find("opening Alchemy", 1, true), said[1])
+    -- its recipes come in: the step is shown in the window
+    loaded = true
+    PB:ShowPending()
+    assert.are.equal(2330, shown)
+    assert.is_nil(PB.pendingRecipe)
+    -- a recipe only another character knows: say where, open nothing
+    opened = nil
+    loaded = false
+    AME_DB.crafting.chars["Realm:Me"].professions[171].learned = {}
+    PB:CraftNext()
+    assert.is_nil(opened)
+    assert.truthy(said[2]:find("open Alchemy", 1, true), said[2])
+    rawset(_G, "C_TradeSkillUI", nil)
+    rawset(_G, "AME_DB", nil)
+  end)
 end)
 
 describe("Who can make it pieces", function()
