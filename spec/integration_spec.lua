@@ -481,6 +481,25 @@ describe("addon in a stubbed client", function()
       sort.callback(false, "character_bank") -- the bank: not sorted (said in chat)
       assert.are.equal(4, #picks)
 
+      -- the corners' entries are worked out ahead, in the background, for what's in the bags: drawing a slot then
+      -- looks nothing up (the corners are registered as fast)
+      local worth, calls = api.GetWorth, 0
+      api.GetWorth = function(...)
+        calls = calls + 1
+        return worth(...)
+      end
+      ns.Baganator.values = {}
+      ns.Baganator:Prime(true)
+      drainJobs()
+      assert.truthy(calls > 0)
+      calls = 0
+      local link = bag[1].hyperlink
+      assert.is_true(corners.ame_value.onUpdate(text, { itemLink = link, itemCount = 5 }))
+      corners.ame_signal.onUpdate(icon, { itemLink = link })
+      corners.ame_tip.onUpdate(tipText, { itemLink = link })
+      assert.are.equal(0, calls)
+      api.GetWorth = worth
+
       -- the setting (General, Other addons): off, nothing shows and the sort does nothing; Baganator redraws
       local refreshes = refreshed
       ns.Settings:Set("baganator", false)

@@ -127,10 +127,38 @@ function Bag.ValueText(each, count)
   return Bag.SlotMoney(amount)
 end
 
--- What a slot's corners need of an item - its worth, where that's from, its signal - looked up once per item
--- link and kept until new market data arrives (Baganator asks for every slot on each redraw, three corners each).
--- Bag.Cached(api) has the API's GetWorth / GetSignal, answered from it.
-local looked, lookedIndex = {}, nil
+-- What a slot's corners need of an item - its worth, where that's from, its signal, its tip - per item link, worked
+-- out ahead: Bag:Prime, a background job over your bags (and the bank while it's open) when new market data arrives
+-- or your bags change. The corners only read it (Baganator calls them for every slot on every redraw), so they're
+-- registered as fast. A new index doesn't clear it: the old values show until the job has redone them. An item the
+-- job hasn't seen (a guild bank tab, another character's bags) is worked out when it's first drawn.
+Bag.values = {}
+
+-- one item's entry: { each, where, signal, tip } (false: none)
+function Bag.Compute(api, link)
+  local each, where = api.GetWorth(link)
+  local e = { each = each, where = where, signal = api.GetSignal(link) or false }
+  e.tip = Bag.Tip({
+    GetSignal = function()
+      return e.signal or nil
+    end,
+    GetWorth = function()
+      return e.each, e.where
+    end,
+  }, link, Bag.Instead) or false
+  return e
+end
+
+function Bag.Lookup(api, link)
+  local e = Bag.values[link]
+  if not e then
+    e = Bag.Compute(api, link)
+    Bag.values[link] = e
+  end
+  return e
+end
+
+-- Bag.Cached(api): the API's GetWorth / GetSignal, answered from the entries
 function Bag.Cached(api)
   return {
     GetWorth = function(link)
@@ -140,21 +168,82 @@ function Bag.Cached(api)
     GetSignal = function(link)
       return Bag.Lookup(api, link).signal or nil
     end,
+    Tip = function(link)
+      return Bag.Lookup(api, link).tip or nil
+    end,
   }
 end
 
-function Bag.Lookup(api, link)
-  local index = ns.AME and ns.AME.FactionIndex and ns.AME:FactionIndex()
-  if index ~= lookedIndex then
-    looked, lookedIndex = {}, index
+-- the item links in your bags, and the bank's while it's open
+function Bag.HeldLinks()
+  local C = _G.C_Container or {}
+  local bags = {}
+  for bag = 0, (_G.NUM_BAG_SLOTS or 4) do
+    bags[#bags + 1] = bag
   end
-  local e = looked[link]
-  if not e then
-    local each, where = api.GetWorth(link)
-    e = { each = each, where = where, signal = api.GetSignal(link) or false }
-    looked[link] = e
+  if ns.Trading and ns.Trading.bankOpen then
+    bags[#bags + 1] = -1
+    for bag = (_G.NUM_BAG_SLOTS or 4) + 1, (_G.NUM_BAG_SLOTS or 4) + (_G.NUM_BANKBAGSLOTS or 7) do
+      bags[#bags + 1] = bag
+    end
   end
-  return e
+  local seen, out = {}, {}
+  for _, bag in ipairs(bags) do
+    for slot = 1, (C.GetContainerNumSlots and C.GetContainerNumSlots(bag) or 0) do
+      local info = C.GetContainerItemInfo and C.GetContainerItemInfo(bag, slot)
+      local link = info and info.hyperlink
+      if link and not seen[link] then
+        seen[link] = true
+        out[#out + 1] = link
+      end
+    end
+  end
+  return out
+end
+
+-- Work the entries out in the background: all of them for new market data (fresh), else only items not seen yet
+-- (bags changed). Baganator redraws once they're in.
+function Bag:Prime(fresh)
+  local AME, public = ns.AME, ns.API and ns.API.v1
+  if not (AME and AME.jobs and public) then
+    return
+  end
+  if self.priming then
+    self.primeAgain = self.primeAgain or fresh or "missing"
+    return
+  end
+  self.priming = true
+  AME.jobs:Add("bags-corners", function(job)
+    local out = {}
+    for _, link in ipairs(Bag.HeldLinks()) do
+      if fresh or not Bag.values[link] then
+        out[link] = Bag.Compute(public, link)
+        job:Checkpoint()
+      end
+    end
+    return out
+  end, function(ok, out)
+    self.priming = false
+    if ok and out then
+      if fresh then
+        Bag.values = {} -- everything else is worked out again when it's drawn
+      end
+      for link, e in pairs(out) do
+        Bag.values[link] = e
+      end
+      local B = _G.Baganator
+      if (fresh or next(out)) and B and B.API and B.API.RequestItemButtonsRefresh then
+        B.API.RequestItemButtonsRefresh()
+      end
+    elseif not ok and AME.ReportError then
+      AME:ReportError("bag corners", out)
+    end
+    local again = self.primeAgain
+    self.primeAgain = nil
+    if again then
+      self:Prime(again == true)
+    end
+  end)
 end
 
 -- CraftModel.Instead, kept while the market data and your recipes stay the same (Baganator asks for every slot on
@@ -228,7 +317,7 @@ function Bag:Install()
     if not details.itemLink then
       return nil
     end
-    local kind = Bag.Tip(api, details.itemLink, Bag.Instead)
+    local kind = api.Tip(details.itemLink)
     if kind == "sell" and not ns.Settings:Get("baganatorSellTip") then
       kind = nil -- most of a bag: only marked when asked for (Settings, General, Other addons)
     end
@@ -242,7 +331,7 @@ function Bag:Install()
     local text = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
     text.sizeFont = true
     return text
-  end, Bag.CORNERS.ame_tip)
+  end, Bag.CORNERS.ame_tip, true)
 
   B.API.RegisterCornerWidget(L["AME: signal"], "ame_signal", function(icon, details)
     if not Bag.On() then
@@ -277,7 +366,7 @@ function Bag:Install()
     icon.glyph = icon:CreateTexture(nil, "OVERLAY", nil, 7)
     icon.glyph:SetAllPoints()
     return icon
-  end, Bag.CORNERS.ame_signal)
+  end, Bag.CORNERS.ame_signal, true)
 
   B.API.RegisterCornerWidget(L["AME: value"], "ame_value", function(text, details)
     if not Bag.On() then
@@ -296,7 +385,7 @@ function Bag:Install()
     local text = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
     text.sizeFont = true
     return text
-  end, Bag.CORNERS.ame_value)
+  end, Bag.CORNERS.ame_value, true)
 
   if B.API.RegisterContainerSort then
     B.API.RegisterContainerSort(L["AME: worth"], "ame_worth", function(isReverse, containerType)
@@ -305,11 +394,20 @@ function Bag:Install()
   end
 
   -- new prices: Baganator redraws its slots
+  -- new prices: the entries are worked out again in the background, then Baganator redraws (Bag:Prime); bags that
+  -- changed or the bank opened: only the items not seen yet
   public.RegisterForUpdates("Baganator", function()
-    if B.API.RequestItemButtonsRefresh then
-      B.API.RequestItemButtonsRefresh()
+    self:Prime(true)
+  end)
+  local events = CreateFrame("Frame")
+  events:RegisterEvent("BAG_UPDATE_DELAYED")
+  pcall(events.RegisterEvent, events, "BANKFRAME_OPENED")
+  events:SetScript("OnEvent", function()
+    if Bag.On() then
+      self:Prime(false)
     end
   end)
+  self:Prime(true)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
