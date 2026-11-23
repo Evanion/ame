@@ -36,7 +36,10 @@ Settings.DEFAULTS = {
   scanMode = "detailed", -- AME's full scan: "detailed" (every listing, once per 15 min) or "fast" (cheapest only)
   shareRecipes = true, -- what your characters can craft goes out with sync (guildmates' "who can make it")
   syncProtocol = 2, -- 2: guild fan-out (Core/SyncV2.lua); 1: the lighter original
-  baganator = true, -- Baganator's icon corners and junk rule from AME (Core/UI/Baganator.lua)
+  baganator = true, -- Baganator: AME's corners and worth sort (Core/UI/Baganator.lua)
+  baganatorSellTip = false, -- the tip corner marks items to sell too (most of a bag: off, it shows the exceptions)
+  baganatorValue = "stack", -- the value corner: "stack" (all of it) or "each" (one)
+  baganatorMinValue = 1000, -- the value corner stays blank under this (copper; 0: never)
   minimap = { hide = false },
 }
 

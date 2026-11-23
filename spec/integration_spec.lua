@@ -348,17 +348,20 @@ describe("addon in a stubbed client", function()
     end
 
     it("answers other addons through the public API, and plugs into Baganator", function()
-      local corners, junk, refreshed = {}, {}, 0
+      local corners, refreshed = {}, 0
       _G.Baganator = {
         API = {
           RegisterCornerWidget = function(label, id, onUpdate, onInit)
             corners[id] = { label = label, onUpdate = onUpdate, onInit = onInit }
           end,
-          RegisterJunkPlugin = function(label, id, callback)
-            junk[id] = { label = label, callback = callback }
+          RegisterJunkPlugin = function()
+            error("AME leaves junk to Baganator and other addons")
           end,
           RequestItemButtonsRefresh = function()
             refreshed = refreshed + 1
+          end,
+          RegisterContainerSort = function(label, id, callback)
+            corners["sort:" .. id] = { label = label, callback = callback }
           end,
         },
       }
@@ -393,8 +396,8 @@ describe("addon in a stubbed client", function()
         updates = updates + 1
       end)
 
-      -- Baganator: two corner widgets and a junk plugin, registered at login
-      assert.truthy(corners.ame_signal and corners.ame_value and junk.ame_vendor)
+      -- Baganator: three corners and a sort, registered at login (no junk rule: that's Baganator's own)
+      assert.truthy(corners.ame_signal and corners.ame_value and corners.ame_tip)
       local button = CreateFrame("Button")
       local text = corners.ame_value.onInit(button)
       assert.is_true(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
@@ -402,20 +405,76 @@ describe("addon in a stubbed client", function()
       assert.is_false(corners.ame_value.onUpdate(text, { itemLink = "item:999999", itemCount = 1 }))
       local icon = corners.ame_signal.onInit(button)
       assert.is_true(corners.ame_signal.onUpdate(icon, { itemLink = "item:4306" }))
-      assert.is_true(junk.ame_vendor.callback(0, 1, 4306, "item:4306"))
-      assert.is_false(junk.ame_vendor.callback(0, 1, 2589, "item:2589"))
+      -- the value corner's settings: one item instead of the stack; blank under the threshold
+      ns.Settings:Set("baganatorValue", "each")
+      ns.Settings:Set("baganatorMinValue", 0) -- (one Linen is worth less than the default 10s)
+      assert.is_true(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
+      assert.are.equal(ns.Baganator.SlotMoney(q:Worth(2589)), text:GetText())
+      ns.Settings:Set("baganatorMinValue", q:Worth(2589) + 1)
+      assert.is_false(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
+      ns.Settings:Set("baganatorValue", "stack")
+      ns.Settings:Set("baganatorMinValue", 0)
 
-      -- the setting (General, Other addons): off, nothing shows and nothing is junk; Baganator redraws either way
+      -- the tip corner: what to do with it, as the Selling tab says (it moves nothing); Sell only when asked for
+      local tipText = corners.ame_tip.onInit(button)
+      assert.is_false(corners.ame_tip.onUpdate(tipText, { itemLink = "item:2589" }))
+      ns.Settings:Set("baganatorSellTip", true)
+      assert.is_true(corners.ame_tip.onUpdate(tipText, { itemLink = "item:2589" }))
+      assert.truthy(tipText:GetText():find("Sell", 1, true))
+      assert.is_true(corners.ame_tip.onUpdate(tipText, { itemLink = "item:4306" }))
+      assert.truthy(tipText:GetText():find("Vend", 1, true))
+      assert.is_false(corners.ame_tip.onUpdate(tipText, { itemLink = "item:999999" }))
+
+      -- the worth sort: the most valuable stack first, a swap at a time as the slots unlock
+      local sort = corners["sort:ame_worth"]
+      assert.is_not_nil(sort)
+      local bag = {
+        [1] = { hyperlink = "|Hitem:2589::::::::|h", stackCount = 1 }, -- one Linen: little
+        [2] = false,
+        [3] = { hyperlink = "|Hitem:4306::::::::|h", stackCount = 5 }, -- five at 10g each (a vendor's)
+      }
+      local picks = {}
+      local container = _G.C_Container
+      _G.C_Container = {
+        GetContainerNumSlots = function(b)
+          return b == 0 and 3 or 0
+        end,
+        GetContainerNumFreeSlots = function()
+          return 1, 0
+        end,
+        GetContainerItemInfo = function(b, s)
+          return b == 0 and bag[s] or nil
+        end,
+        PickupContainerItem = function(_, s)
+          picks[#picks + 1] = s
+          if #picks % 2 == 0 then -- the second click swaps the two slots
+            local x, y = picks[#picks - 1], s
+            bag[x], bag[y] = bag[y], bag[x]
+          end
+        end,
+      }
+      finally(function()
+        _G.C_Container = container
+      end)
+      sort.callback(false, "backpack")
+      env:update(3) -- (a swap a frame, as the slots unlock)
+      assert.are.same({ 3, 1, 3, 2 }, picks) -- the 10g stack first, then the Linen next to it (the gap closed)
+      assert.truthy(bag[1].hyperlink:find("item:4306", 1, true))
+      assert.is_nil(ns.Baganator.sorting) -- done
+      sort.callback(false, "character_bank") -- the bank: not sorted (said in chat)
+      assert.are.equal(4, #picks)
+
+      -- the setting (General, Other addons): off, nothing shows and the sort does nothing; Baganator redraws
       local refreshes = refreshed
       ns.Settings:Set("baganator", false)
       ns.Baganator:SettingChanged(false)
       assert.is_false(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
       assert.is_false(corners.ame_signal.onUpdate(icon, { itemLink = "item:4306" }))
-      assert.is_false(junk.ame_vendor.callback(0, 1, 4306, "item:4306"))
+      assert.is_false(corners.ame_tip.onUpdate(tipText, { itemLink = "item:4306" }))
       assert.truthy(refreshed > refreshes)
       ns.Settings:Set("baganator", true)
       ns.Baganator:SettingChanged(true)
-      assert.is_true(junk.ame_vendor.callback(0, 1, 4306, "item:4306"))
+      assert.is_true(corners.ame_tip.onUpdate(tipText, { itemLink = "item:4306" }))
 
       -- new prices: API listeners and Baganator's slots hear of it
       local before = refreshed

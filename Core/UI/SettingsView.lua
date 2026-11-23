@@ -193,9 +193,14 @@ function UI:CreateSettingsView(parent, contentArea)
   })
   -- Other addons: what AME adds to them (Core/UI/Baganator.lua)
   local bag = ns.Baganator
-  card("general", L["Other addons"], {
+  local function redrawBags()
+    if bag then
+      bag:SettingChanged(ns.Settings:Get("baganator") ~= false)
+    end
+  end
+  _, ctl = card("general", L["Other addons"], {
     {
-      check = L["Baganator: AME's icon corners and junk rule"],
+      check = L["Baganator: AME's corners and worth sort"],
       key = "baganator",
       onChange = function(on)
         if bag then
@@ -203,8 +208,26 @@ function UI:CreateSettingsView(parent, contentArea)
         end
       end,
     },
+    { check = L["Tip corner: mark items to sell too"], key = "baganatorSellTip", indent = true, onChange = redrawBags },
+    field(L["Value corner shows"], 130, {
+      { "stack", L["The whole stack"] },
+      { "each", L["One item"] },
+    }, function(value)
+      ns.Settings:Set("baganatorValue", value)
+      redrawBags()
+    end),
+    field(L["Hide values under"], 130, {
+      { 0, L["Show every value"] },
+      { 100, W.Money(100) },
+      { 1000, W.Money(1000) },
+      { 10000, W.Money(10000) },
+      { 100000, W.Money(100000) },
+    }, function(value)
+      ns.Settings:Set("baganatorMinValue", value)
+      redrawBags()
+    end),
     {
-      text = L['The signal and value corners (place them under Icons in Baganator\'s settings) and the "vendor is better" junk rule.']
+      text = L["Place the corners under Icons, and pick the worth sort as the sort, in Baganator's settings. The tip marks a slot; it never moves anything (junk is Baganator's own)."]
         .. " "
         .. (
           (bag and bag.Present()) and L["Turned off, Baganator lists them until a /reload, but they show nothing."]
@@ -212,6 +235,7 @@ function UI:CreateSettingsView(parent, contentArea)
         ),
     },
   })
+  v.bagValue, v.bagMin = ctl[3], ctl[4]
 
   -- Tooltips & charts
   local avgs = {
@@ -494,6 +518,8 @@ function UI:RefreshSettings()
   v.click:SetValue(ns.Settings:Get("clickModifier"))
   v.outliers:SetValue(ns.Settings:Get("outlierFactor"))
   v.avgDays:SetValue(ns.Settings:Get("tooltipAvgDays"))
+  v.bagValue:SetValue(ns.Settings:Get("baganatorValue"))
+  v.bagMin:SetValue(ns.Settings:Get("baganatorMinValue"))
   v.theme:SetValue(ns.Settings:Get("theme"))
   v.scanMode:SetValue(ns.Settings:Get("scanMode"))
   v.scale:SetValue(ns.Settings:Get("windowScale"))
