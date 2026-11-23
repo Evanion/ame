@@ -77,6 +77,11 @@ the look are all open.
   - While you're writing a chat message, Shift-click always links, everywhere.
   - To check in game: Shift-click on a stack in the bags also opens the game's split-stack box.
 - **Craft requests** between AME users (direction 7): wanted, to be designed.
+- **No retrofit of the old boards.** The current boards get no theme switch, no side-by-side and no board-by-board
+  comparison with the game: they're replaced as each screen is redesigned. New boards carry the faction theme switch
+  from the start (canvas page "Redesign"), and one colour set in the repo will feed both the game and the canvas.
+- **The look** is being picked from three versions of the new Home tab on the canvas (A refined terminal, B Azeroth
+  native, C hybrid).
 - **R0** (fix now): done.
 
 ## Fix now (bugs, no design needed) - done
@@ -211,7 +216,7 @@ The canvas is more wireframe than the game in places and more polished in others
 | Step | What | Size |
 |---|---|---|
 | R0 | Fix-now list above | small |
-| R1 | Canvas tokens + faction themes + parity pass | medium |
+| R1 | Pick the look (three Home boards); one colour set in the repo for the game and the canvas | small |
 | R2 | Interaction contract, back/forward, one market, words | medium |
 | R3 | Navigation (Home, Guild) and the Item hub, on the canvas first | large |
 | R4 | AH workspace: post queue, auctions/cancel, buy loop, beside Auctionator, key bindings | large |
