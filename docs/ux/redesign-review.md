@@ -68,6 +68,8 @@ the look are all open.
     The last choice is remembered.
   - No mode shows both at once.
 - **Interaction contract** (direction 1): accepted.
+- **Tab set** (direction 2): Home, Market, Item, Crafting, Guild, Portfolio, Guide, with Settings behind the cog -
+  accepted.
 - **Craft requests** between AME users (direction 7): wanted, to be designed.
 - **R0** (fix now): done.
 
@@ -102,7 +104,7 @@ the look are all open.
 
 ### 2. Navigation by situation
 
-Proposed tabs (open for discussion):
+Tabs (accepted):
 
 | Tab | Holds | Replaces |
 |---|---|---|
@@ -213,6 +215,5 @@ The redesign itself (R1 onward on the canvas) runs on Claude Fable.
 
 ## Questions to settle before R3
 
-1. Is the situation-based tab set (Home, Market, Item, Crafting, Guild, Portfolio, Guide) the right cut?
-2. Shift-click: give it back to the game everywhere (link to chat), with AH search as a button?
-3. AH takeover with a swap button both ways (proposed above): agreed?
+1. Shift-click: give it back to the game everywhere (link to chat), with AH search as a button?
+2. AH takeover with a swap button both ways (proposed above): agreed?
