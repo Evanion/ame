@@ -59,8 +59,14 @@ the look are all open.
 
 - **Scope:** AME doesn't take over the mailbox (other addons do that well): WEALTH-3 and WEALTH-4 are out. Cancelling
   auctions stays the game's job; AME flags undercut auctions (SELL-6) but adds no cancel scan.
-- **Auctionator stays a choice.** AME began as Auctionator's sidecar. With Auctionator loaded, AME stays out of the AH
-  frame (sell bar, tooltips, the window) as today; no extra mode or setting to show both (BUY-11 is out).
+- **The AME window takes over the auction house** (proposed, see 5): at the AH it switches to Buy, Sell and Auctions
+  modes, and the game's AH frame stays open underneath, hidden.
+- **Auctionator stays a choice, through one switch, not a setting.** AME began as Auctionator's sidecar.
+  - Without Auctionator, AME takes over.
+  - With Auctionator, the game's AH (and Auctionator in it) shows as today, with AME's sell bar, tooltips and window.
+  - Either way, one button swaps: "Use the game's AH" in AME's takeover, and "Open in AME" on the game's AH frame.
+    The last choice is remembered.
+  - No mode shows both at once.
 - **Interaction contract** (direction 1): accepted.
 - **Craft requests** between AME users (direction 7): wanted, to be designed.
 - **R0** (fix now): done.
@@ -128,6 +134,12 @@ Settings stays behind the cog. Each page gets a small "settings for this" link t
   everywhere.
 
 ### 5. AH workspace (the Switcher's daily routine)
+
+At the AH the AME window takes over: the game's frame stays open underneath (closing it would end the AH session) but
+hidden, and the window switches to the modes below. A button swaps back to the game's AH (and Auctionator, if it's
+installed), and the game's frame gets an "Open in AME" button to swap again. AME starts in takeover without Auctionator
+and in the game's AH with it, then remembers the last choice. This replaces today's Shopping and Selling tabs inside the
+game's frame; the sell bar stays for the game's and Auctionator's sell windows.
 
 | Workspace part | Routine | Stories |
 |---|---|---|
@@ -203,5 +215,4 @@ The redesign itself (R1 onward on the canvas) runs on Claude Fable.
 
 1. Is the situation-based tab set (Home, Market, Item, Crafting, Guild, Portfolio, Guide) the right cut?
 2. Shift-click: give it back to the game everywhere (link to chat), with AH search as a button?
-3. At the AH without Auctionator: keep AME's tabs inside the game's AH frame (a sidecar window beside it), or let
-   the AME window take over the AH, with its AH modes (Buy, Sell, Auctions) shown only while the AH is open?
+3. AH takeover with a swap button both ways (proposed above): agreed?
