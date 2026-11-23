@@ -114,16 +114,12 @@ function Bag.SortPlan(cells, reverse)
   return swaps
 end
 
--- the value corner's text: the stack's worth or one item's (Settings: baganatorValue), blank under the setting's
--- threshold (baganatorMinValue) or without a price
+-- the value corner's text: the stack's worth or one item's (Settings: baganatorValue); blank without a price
 function Bag.ValueText(each, count)
   if not each then
     return nil
   end
   local amount = ns.Settings:Get("baganatorValue") == "each" and each or each * (count or 1)
-  if amount < (ns.Settings:Get("baganatorMinValue") or 0) then
-    return nil
-  end
   return Bag.SlotMoney(amount)
 end
 
@@ -135,7 +131,18 @@ end
 Bag.values = {}
 
 -- one item's entry: { each, where, signal, tip } (false: none)
+-- the game hasn't sent the item's details yet (its vendor price, whether it binds): any answer now would be wrong
+function Bag.Loading(link)
+  local key = ns.API and ns.API.KeyOf(link)
+  local info = key and ns.ItemCache and ns.ItemCache.Get(key)
+  return info ~= nil and info.name == nil
+end
+
+-- (an item still loading gets { loading = true }: never kept, asked again on the next draw)
 function Bag.Compute(api, link)
+  if Bag.Loading(link) then
+    return { loading = true }
+  end
   local each, where = api.GetWorth(link)
   local e = { each = each, where = where, signal = api.GetSignal(link) or false }
   e.tip = Bag.Tip({
@@ -153,7 +160,9 @@ function Bag.Lookup(api, link)
   local e = Bag.values[link]
   if not e then
     e = Bag.Compute(api, link)
-    Bag.values[link] = e
+    if not e.loading then
+      Bag.values[link] = e
+    end
   end
   return e
 end
@@ -170,6 +179,10 @@ function Bag.Cached(api)
     end,
     Tip = function(link)
       return Bag.Lookup(api, link).tip or nil
+    end,
+    -- still loading: the corners answer nil, and Baganator asks again in a moment
+    Loading = function(link)
+      return Bag.Lookup(api, link).loading == true
     end,
   }
 end
@@ -217,7 +230,10 @@ function Bag:Prime(fresh)
     local out = {}
     for _, link in ipairs(Bag.HeldLinks()) do
       if fresh or not Bag.values[link] then
-        out[link] = Bag.Compute(public, link)
+        local e = Bag.Compute(public, link)
+        if not e.loading then
+          out[link] = e
+        end
         job:Checkpoint()
       end
     end
@@ -290,9 +306,9 @@ function Bag:SettingChanged(on)
   end
 end
 
--- where each corner goes the first time (Baganator's defaultPosition; a priority past its list's end appends)
+-- where each corner goes the first time (Baganator's defaultPosition; a priority past its list's end appends): the
+-- signal top left, the value top right, clear of the game's stack count; the tip isn't placed (players add it)
 Bag.CORNERS = {
-  ame_tip = { corner = "top_left", priority = 99 },
   ame_signal = { corner = "top_left", priority = 99 },
   ame_value = { corner = "top_right", priority = 99 },
 }
@@ -306,16 +322,15 @@ function Bag:Install()
   self.installed = true
   local api = Bag.Cached(public) -- the corners' lookups, kept per item until new prices arrive
 
-  -- Where each goes the first time (Bag.CORNERS; Baganator places a widget once, then it's the player's): the tip and
-  -- then the signal at the end of the top left - Baganator shows a corner's first widget with something to show, so
-  -- an item with a tip shows it, otherwise its signal - and the value top right, clear of the game's stack count.
-  -- Registered in that order: it's their order in a shared corner.
   B.API.RegisterCornerWidget(L["AME: tip"], "ame_tip", function(text, details)
     if not Bag.On() then
       return false
     end
     if not details.itemLink then
       return nil
+    end
+    if api.Loading(details.itemLink) then
+      return nil -- Baganator asks again in a moment
     end
     local kind = api.Tip(details.itemLink)
     if kind == "sell" and not ns.Settings:Get("baganatorSellTip") then
@@ -339,6 +354,9 @@ function Bag:Install()
     end
     if not details.itemLink then
       return nil
+    end
+    if api.Loading(details.itemLink) then
+      return nil -- Baganator asks again in a moment
     end
     local signal = api.GetSignal(details.itemLink)
     if (signal == "hold" or signal == "wait") and not ns.Settings:Get("baganatorAllSignals") then
@@ -374,6 +392,9 @@ function Bag:Install()
     end
     if not details.itemLink then
       return nil
+    end
+    if api.Loading(details.itemLink) then
+      return nil -- Baganator asks again in a moment
     end
     local shown = Bag.ValueText(api.GetWorth(details.itemLink), details.itemCount)
     if not shown then

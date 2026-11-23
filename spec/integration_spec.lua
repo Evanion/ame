@@ -399,10 +399,9 @@ describe("addon in a stubbed client", function()
 
       -- Baganator: three corners and a sort, registered at login (no junk rule: that's Baganator's own)
       assert.truthy(corners.ame_signal and corners.ame_value and corners.ame_tip)
-      -- suggested the first time: the tip then the signal top left (the first with something to show wins), the
-      -- value top right, clear of the stack count
-      assert.are.same({ "ame_tip", "ame_signal", "ame_value" }, { corners[1], corners[2], corners[3] })
-      assert.are.equal("top_left", corners.ame_tip.at.corner)
+      -- suggested the first time: the signal top left, the value top right (clear of the stack count); the tip is
+      -- the player's to add
+      assert.is_nil(corners.ame_tip.at)
       assert.are.equal("top_left", corners.ame_signal.at.corner)
       assert.are.equal("top_right", corners.ame_value.at.corner)
       local button = CreateFrame("Button")
@@ -422,15 +421,26 @@ describe("addon in a stubbed client", function()
       assert.is_true(corners.ame_signal.onUpdate(icon, { itemLink = "item:2589:hold" }))
       ns.Settings:Set("baganatorAllSignals", false)
       api.GetSignal = getSignal
-      -- the value corner's settings: one item instead of the stack; blank under the threshold
+      -- the value corner's setting: one item instead of the stack (every value shows, however small)
       ns.Settings:Set("baganatorValue", "each")
-      ns.Settings:Set("baganatorMinValue", 0) -- (one Linen is worth less than the default 10s)
       assert.is_true(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
       assert.are.equal(ns.Baganator.SlotMoney(q:Worth(2589)), text:GetText())
-      ns.Settings:Set("baganatorMinValue", q:Worth(2589) + 1)
-      assert.is_false(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
       ns.Settings:Set("baganatorValue", "stack")
-      ns.Settings:Set("baganatorMinValue", 0)
+
+      -- an item the game hasn't sent the details of yet: no answer now (nil: Baganator asks again), nothing kept
+      local cached = ns.ItemCache.info[3575]
+      ns.ItemCache.info[3575] = {}
+      local getInfo = _G.C_Item.GetItemInfo
+      _G.C_Item.GetItemInfo = function(id)
+        if id == 3575 then
+          return nil
+        end
+        return getInfo(id)
+      end
+      assert.is_nil(corners.ame_value.onUpdate(text, { itemLink = "item:3575", itemCount = 1 }))
+      assert.is_nil(ns.Baganator.values["item:3575"])
+      _G.C_Item.GetItemInfo = getInfo
+      ns.ItemCache.info[3575] = cached
 
       -- the tip corner: what to do with it, as the Selling tab says (it moves nothing); Sell only when asked for
       local tipText = corners.ame_tip.onInit(button)

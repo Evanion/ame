@@ -222,16 +222,6 @@ function UI:CreateSettingsView(parent, contentArea)
       ns.Settings:Set("baganatorValue", value)
       redrawBags()
     end),
-    field(L["Hide values under"], 130, {
-      { 0, L["Show every value"] },
-      { 100, W.Money(100) },
-      { 1000, W.Money(1000) },
-      { 10000, W.Money(10000) },
-      { 100000, W.Money(100000) },
-    }, function(value)
-      ns.Settings:Set("baganatorMinValue", value)
-      redrawBags()
-    end),
     {
       text = L["Place the corners under Icons, and pick the worth sort as the sort, in Baganator's settings. The tip marks a slot; it never moves anything (junk is Baganator's own)."]
         .. " "
@@ -241,7 +231,7 @@ function UI:CreateSettingsView(parent, contentArea)
         ),
     },
   })
-  v.bagValue, v.bagMin = ctl[4], ctl[5]
+  v.bagValue = ctl[4]
 
   -- Tooltips & charts
   local avgs = {
@@ -525,7 +515,6 @@ function UI:RefreshSettings()
   v.outliers:SetValue(ns.Settings:Get("outlierFactor"))
   v.avgDays:SetValue(ns.Settings:Get("tooltipAvgDays"))
   v.bagValue:SetValue(ns.Settings:Get("baganatorValue"))
-  v.bagMin:SetValue(ns.Settings:Get("baganatorMinValue"))
   v.theme:SetValue(ns.Settings:Get("theme"))
   v.scanMode:SetValue(ns.Settings:Get("scanMode"))
   v.scale:SetValue(ns.Settings:Get("windowScale"))
