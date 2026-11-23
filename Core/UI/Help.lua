@@ -597,7 +597,7 @@ function Help.Articles()
           title = L["Other addons"],
           body = {
             H(L["Baganator"]),
-            L["With Baganator, AME adds three icon corners and a sort. In Baganator's settings, under Icons, place AME: signal (the item's market signal, as its icon), AME: tip (what to do with it, as the Selling tab's Tip says: Arb, DE or Vend, and Sell if you ask for it) and AME: value (what it's worth, in the coin's colour) in a corner; pick AME: worth as the sort to put the most valuable stacks first. The tip only marks a slot: what's junk is Baganator's own. Settings, General, Other addons says what the tip and value corners show, or turns it all off."],
+            L["With Baganator, AME adds three icon corners and a sort. In Baganator's settings, under Icons, place AME: signal (the item's market signal as its icon: BUY or SELL, and HOLD and WAIT if you ask for them), AME: tip (what to do with it, as the Selling tab's Tip says: Arb, DE or Vend, and Sell if you ask for it) and AME: value (what it's worth, in the coin's colour) in a corner; pick AME: worth as the sort to put the most valuable stacks first. The tip only marks a slot: what's junk is Baganator's own. Settings, General, Other addons says what the tip and value corners show, or turns it all off."],
             H(L["Launchers"]),
             L["AME's launcher works with the minimap button, info bar addons that read LibDataBroker, and the game's addon menu by the minimap: left-click opens the window, right-click the settings."],
             H(L["For addon authors"]),

@@ -208,6 +208,12 @@ function UI:CreateSettingsView(parent, contentArea)
         end
       end,
     },
+    {
+      check = L["Signal corner: show HOLD and WAIT too"],
+      key = "baganatorAllSignals",
+      indent = true,
+      onChange = redrawBags,
+    },
     { check = L["Tip corner: mark items to sell too"], key = "baganatorSellTip", indent = true, onChange = redrawBags },
     field(L["Value corner shows"], 130, {
       { "stack", L["The whole stack"] },
@@ -235,7 +241,7 @@ function UI:CreateSettingsView(parent, contentArea)
         ),
     },
   })
-  v.bagValue, v.bagMin = ctl[3], ctl[4]
+  v.bagValue, v.bagMin = ctl[4], ctl[5]
 
   -- Tooltips & charts
   local avgs = {

@@ -252,6 +252,9 @@ function Bag:Install()
       return nil
     end
     local signal = api.GetSignal(details.itemLink)
+    if (signal == "hold" or signal == "wait") and not ns.Settings:Get("baganatorAllSignals") then
+      signal = nil -- nothing to do yet: on most of a bag, so only shown when asked for (Settings, Other addons)
+    end
     local file = signal and W.SIGNAL_ICON[signal]
     if not file then
       return false

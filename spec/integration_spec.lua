@@ -412,6 +412,16 @@ describe("addon in a stubbed client", function()
       assert.is_false(corners.ame_value.onUpdate(text, { itemLink = "item:999999", itemCount = 1 }))
       local icon = corners.ame_signal.onInit(button)
       assert.is_true(corners.ame_signal.onUpdate(icon, { itemLink = "item:4306" }))
+      -- HOLD and WAIT (nothing to do yet) only when asked for: they were on most of a bag
+      local getSignal = api.GetSignal
+      api.GetSignal = function(item)
+        return item == "item:2589:hold" and "hold" or getSignal(item)
+      end
+      assert.is_false(corners.ame_signal.onUpdate(icon, { itemLink = "item:2589:hold" }))
+      ns.Settings:Set("baganatorAllSignals", true)
+      assert.is_true(corners.ame_signal.onUpdate(icon, { itemLink = "item:2589:hold" }))
+      ns.Settings:Set("baganatorAllSignals", false)
+      api.GetSignal = getSignal
       -- the value corner's settings: one item instead of the stack; blank under the threshold
       ns.Settings:Set("baganatorValue", "each")
       ns.Settings:Set("baganatorMinValue", 0) -- (one Linen is worth less than the default 10s)
