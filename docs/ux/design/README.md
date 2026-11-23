@@ -36,8 +36,13 @@ transitions, fractional pixel sizes.
 
 ## Still open
 
-- **Fonts.** The canvas draws in Inter (text) and Marcellus (headings); the game draws AME in its own font. To be 1:1
-  the addon ships both fonts (both are open: SIL OFL) and uses them, falling back to the game's fonts where they lack
-  the script (Korean, Chinese).
+- **Fonts: through LibSharedMedia-3.0** (decided; to build with the first redesigned screen).
+  - The canvas draws in Inter (text) and Marcellus (headings). The addon ships both (both are open: SIL OFL),
+    registers them with LibSharedMedia, and uses them by default: that default is what the boards show, 1:1.
+  - Settings gets two font pickers (text, headings) listing every font LibSharedMedia knows, so a player's shared
+    media packs work in AME too. Picking another font is the player's choice to differ from the boards.
+  - Where a font lacks the script (Korean, Chinese), AME falls back to the game's own font.
+  - Textures AME ships (the round badge and dots, later any frame art) are registered the same way; bars and
+    backgrounds a player picks elsewhere aren't used for AME's own chrome, which stays as designed.
 - **Sizes and spacing** move into `tokens.lua` as each screen is redesigned (row heights, paddings, font sizes), so
   the addon's layout constants and the boards read the same numbers.
