@@ -70,6 +70,12 @@ the look are all open.
 - **Interaction contract** (direction 1): accepted.
 - **Tab set** (direction 2): Home, Market, Item, Crafting, Guild, Portfolio, Guide, with Settings behind the cog -
   accepted.
+- **Shift-click depends on where you click:**
+  - Inside AME: the game's meaning (link to chat while a chat box is open); searching the AH is a button.
+  - In bags, the bank or on a chat link, while no chat box is open: look the item up in AME (its Item page; at the
+    AH, its listings too).
+  - While you're writing a chat message, Shift-click always links, everywhere.
+  - To check in game: Shift-click on a stack in the bags also opens the game's split-stack box.
 - **Craft requests** between AME users (direction 7): wanted, to be designed.
 - **R0** (fix now): done.
 
@@ -95,8 +101,9 @@ the look are all open.
 - **Click** an item row: open it in the Item page. Pages where a row has its own detail (Arbitrage, Crafting) show that
   detail in the sidebar, and the sidebar's item link opens the Item page. The rule is written down and the same on
   every page.
-- **Shift-click** links in chat (the game's meaning). **Ctrl-click**: dressing room. Searching the AH becomes a visible
-  button, not a modifier.
+- **Shift-click** inside AME links in chat (the game's meaning); in bags, the bank or on a chat link, with no chat
+  box open, it looks the item up in AME. **Ctrl-click**: dressing room. Searching the AH becomes a visible button, not
+  a modifier.
 - **Right-click** an item, anywhere, opens the one item menu. Right-click a list opens the list menu.
 - **Back / forward** in the title bar, with a history of pages and items. Escape steps back, then closes.
 - **One market at a time.** The house picker sets the market for every number in the window (Arbitrage keeps its own
@@ -215,5 +222,4 @@ The redesign itself (R1 onward on the canvas) runs on Claude Fable.
 
 ## Questions to settle before R3
 
-1. Shift-click: give it back to the game everywhere (link to chat), with AH search as a button?
-
+None open: see Decisions so far.
