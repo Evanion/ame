@@ -85,6 +85,7 @@ the look are all open.
   Crafting tab is the view across characters (All professions, Ready now, To learn). One setting: "Opening a
   profession". Sections, their order and skill-up marks come from the game (`C_TradeSkillUI.GetCategoryInfo`: name,
   uiOrder, parentCategoryID; confirmed in the Forever client), stored per recipe when a character opens the profession.
+  Takeover has no Track Recipe: the game's Track pins a recipe to the quest tracker, and the queue fills that role.
 - **Crafting is one screen, laid out as the game's window** (to confirm on the sketch): a profession picked on the
   left, its recipes in the game's foldable sections with the skill-up colour, a Ready column and filters; folds,
   filters and search are remembered. "All professions" is the flat view. It replaces Top earners, Sell or refine,
