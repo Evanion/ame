@@ -172,13 +172,13 @@ first thing a new player sees.
 | Open on Sell | Rejected as proposed: players always have something sellable, so the rule would always pick Sell | Changed: at the AH the window opens where you last were at the AH (Buy the first time) |
 | F1 bottom tabs | Asked for | Drawn |
 | F2 | Don't sell on the Item page: it confuses, and it cost the page its stats when they matter most. "On sale now" becomes a sidebar card called Buy. The only difference at the AH: Item gains that card | Redrawn: Item at the AH is the full Item page plus a Buy card; "Sell 120" goes to Sell |
-| F3 lists | Reconsider | Open: options below |
+| F3 lists | Reconsider, then: try A | Drawn: Lists is a fourth mode of Market (away and at the AH, on the compare page) |
 | F4 | The proposal wasn't findable | Drawn so it can be seen: Market at the AH, right-hand panel (the picked row's listings and the same Buy card) |
-| F5 | Why several screens: one screen with the recipes and whether each is ready to craft | Drawn as a proposal: "Crafting as one screen" |
+| F5 | Why several screens: one screen with the recipes and whether each is ready to craft; then: sketch it out | Sketched in three states: All, Ready now, To learn (New screens). The Crafting tab opens it |
 | F6-F13 | OK | To draw: requests' states, Sell's Craft/DE buttons, first run, alerts list, bell panel, Back/Forward. F9/F10 drawn (Home at the AH; greyed "At the AH" buttons on Home and Item) |
-| F14 | OK, or rename? | Open: options below |
+| F14 | "Social" in code, "Guild" in translation strings | Decided: the tab reads Guild; its code name (module, keys, slash word) is `social` |
 
-### F3, reconsidered: where shopping lists live
+### F3, reconsidered: where shopping lists live (decided: A, to try)
 
 What a list is for: made from a recipe, an item or a guildmate's list; used at the auction house (and vendors) to buy.
 
@@ -209,7 +209,8 @@ professions stay as buttons to their pages. If agreed, the six Crafting pages be
 | Crafters | What most people come for | Leaves out lists and sharing prices |
 | Community | Guild and friends | Long for a tab |
 
-Recommended: **Social**, if the trusted-friends side matters to you; otherwise keep Guild.
+Decided: the code calls it **social** (it holds guildmates and trusted friends), and every string the player sees
+says **Guild**.
 
 ## Next
 

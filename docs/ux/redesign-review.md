@@ -77,6 +77,14 @@ the look are all open.
   - While you're writing a chat message, Shift-click always links, everywhere.
   - To check in game: Shift-click on a stack in the bags also opens the game's split-stack box.
 - **Craft requests** between AME users (direction 7): wanted, to be designed.
+- **The Guild tab is `social` in code.** Module, setting keys and the slash word use `social`; the locale strings say
+  "Guild".
+- **Crafting is one screen** (to confirm on the sketch): every recipe with a Ready column and filters; it replaces
+  Top earners, Sell or refine, Recipes to buy and the Craft queue page. Leveling and Your professions stay as pages.
+- **Lists is a mode of Market** (to try): Screener · Overview · Arbitrage · Lists.
+- **Item at the auction house** is the Item page plus one Buy card; selling is only under Sell.
+- **At the auction house** Buy / Sell / Auctions hang under the window, and the window opens where you last were at
+  the AH.
 - **No retrofit of the old boards.** The current boards get no theme switch, no side-by-side and no board-by-board
   comparison with the game: they're replaced as each screen is redesigned. New boards carry the faction theme switch
   from the start (canvas page "Redesign"), and one colour set in the repo will feed both the game and the canvas.
