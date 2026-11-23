@@ -4,7 +4,7 @@
    th- is the market's theme (the accent), fa- the player's own faction ("Azeroth" in the title). */
 
 /* the window */
-.ame{box-sizing:border-box;display:flex;flex-direction:column;position:relative;overflow:hidden;font-family:var(--font-ui);font-size:12px;color:var(--text);background:var(--bg);border:1px solid var(--frame);border-radius:4px}
+.ame{box-sizing:border-box;display:flex;flex-direction:column;position:relative;overflow:hidden;font-family:var(--font-ui);font-size:12px;color:var(--text);background:var(--bg);border:1px solid var(--frame)}
 .ame *{box-sizing:border-box}
 .grow{flex:1}
 
@@ -20,20 +20,20 @@
 .badge{position:absolute;top:-1px;right:-3px;min-width:13px;height:13px;border-radius:7px;font-size:9px;line-height:13px;text-align:center;font-weight:700;color:var(--white);background:var(--badge)}
 
 /* controls */
-.btn{padding:4px 10px;white-space:nowrap;font-family:var(--font-ui);font-size:11px;line-height:14px;flex:none;cursor:pointer;background:var(--control);border:1px solid var(--control-line);color:var(--soft);border-radius:3px}
+.btn{padding:4px 10px;white-space:nowrap;font-family:var(--font-ui);font-size:11px;line-height:14px;flex:none;cursor:pointer;background:var(--control);border:1px solid var(--control-line);color:var(--soft)}
 .btn.pri{background:linear-gradient(var(--acc-pri),var(--acc-sel));border-color:var(--primary-line);color:var(--white)}
 .btn.sel{background:var(--acc-sel);border-color:var(--acc);color:var(--white)}
 .btn.off{opacity:.45}
-.input{padding:4px 8px;font-size:11px;background:var(--bg);border:1px solid var(--control-line);color:var(--dim);border-radius:3px}
-.pill{font-size:9px;font-weight:700;letter-spacing:.06em;padding:3px 0;width:66px;text-align:center;flex:none;border-radius:2px;background:var(--control)}
+.input{padding:4px 8px;font-size:11px;background:var(--bg);border:1px solid var(--control-line);color:var(--dim)}
+.pill{font-size:9px;font-weight:700;padding:3px 0;width:66px;text-align:center;flex:none;background:var(--control)}
 
 /* content */
 .body{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:10px 12px}
-.panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--panel);border:1px solid var(--line)}
 .panel h3,.h{margin:0;font-family:var(--font-display);font-weight:400;font-size:15px;color:var(--heading)}
 .panel h3{padding:9px 12px 7px;border-bottom:1px solid var(--line)}
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.kpi{padding:9px 12px;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-top-color:var(--frame-lit);border-radius:4px}
+.kpi{padding:9px 12px;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-top-color:var(--frame-lit)}
 .kpi .l,.kpi .n{font-size:11px;color:var(--dim)}
 .kpi .v{font-size:19px;font-weight:600}
 .row{display:flex;align-items:center;gap:10px;padding:6px 12px;min-height:46px}
