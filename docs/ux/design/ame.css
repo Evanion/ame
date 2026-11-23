@@ -1,0 +1,54 @@
+/* AME's shared look for the design canvas (the "hybrid" look): flat dark content, game-flavoured chrome.
+   Colours and fonts come from tokens.css (generated from tokens.lua); nothing here names a colour of its own.
+   A board's root is <div class="ame th-horde|th-alliance|th-goblin fa-horde|fa-alliance" style="width:..;height:..">:
+   th- is the market's theme (the accent), fa- the player's own faction ("Azeroth" in the title). */
+
+/* the window */
+.ame{box-sizing:border-box;display:flex;flex-direction:column;position:relative;overflow:hidden;font-family:var(--font-ui);font-size:12px;color:var(--text);background:var(--bg);border:1px solid var(--frame);border-radius:4px}
+.ame *{box-sizing:border-box}
+.grow{flex:1}
+
+/* title bar: brand, back and forward, the market, tabs, settings, notifications, close */
+.title{display:flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 14px;flex:none;background:linear-gradient(180deg,var(--chrome-top),var(--chrome-bottom));border-bottom:1px solid var(--frame-lit);box-shadow:inset 4px 0 0 var(--acc)}
+.brand{font-family:var(--font-display);color:var(--heading);font-size:15px;white-space:nowrap}
+.brand b{font-weight:400;color:var(--faction)}
+.tabs{display:flex;gap:2px;align-self:stretch;align-items:flex-end}
+.tab{font-family:var(--font-display);font-size:13px;color:var(--tab);height:40px;padding:0 10px;display:flex;align-items:center;white-space:nowrap}
+.tab.on{color:var(--white);background:linear-gradient(180deg,rgba(0,0,0,0),var(--acc-row));box-shadow:inset 0 -2px 0 var(--acc)}
+.ico{width:24px;height:24px;display:flex;align-items:center;justify-content:center;position:relative;flex:none;color:var(--tab)}
+.badge{position:absolute;top:-1px;right:-3px;min-width:13px;height:13px;border-radius:7px;font-size:9px;line-height:13px;text-align:center;font-weight:700;color:var(--white);background:var(--badge)}
+
+/* controls */
+.btn{padding:4px 10px;white-space:nowrap;font-size:11px;flex:none;background:var(--control);border:1px solid var(--control-line);color:var(--soft);border-radius:3px}
+.btn.pri{background:linear-gradient(var(--acc-pri),var(--acc-sel));border-color:var(--primary-line);color:var(--white)}
+.btn.sel{background:var(--acc-sel);border-color:var(--acc);color:var(--white)}
+.btn.off{opacity:.45}
+.input{padding:4px 8px;font-size:11px;background:var(--bg);border:1px solid var(--control-line);color:var(--dim);border-radius:3px}
+.pill{font-size:9px;font-weight:700;letter-spacing:.06em;padding:3px 0;width:66px;text-align:center;flex:none;border-radius:2px;background:var(--control)}
+
+/* content */
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:10px 12px}
+.panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.panel h3,.h{margin:0;font-family:var(--font-display);font-weight:400;font-size:15px;color:var(--heading)}
+.panel h3{padding:9px 12px 7px;border-bottom:1px solid var(--line)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{padding:9px 12px;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-top-color:var(--frame-lit);border-radius:4px}
+.kpi .l,.kpi .n{font-size:11px;color:var(--dim)}
+.kpi .v{font-size:19px;font-weight:600}
+.row{display:flex;align-items:center;gap:10px;padding:6px 12px;min-height:46px}
+.row+.row{border-top:1px solid var(--line-soft)}
+.row.sel{background:var(--acc-row);box-shadow:inset 2px 0 0 var(--acc)}
+.row .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.row .t>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{font-size:11px;color:var(--dim)}
+
+/* an item name is always a link: its icon, its quality colour */
+.il{white-space:nowrap}
+.il i{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin-right:4px;border:1px solid currentColor;background:linear-gradient(135deg,#3a3f4a,#15171c)}
+.q0{color:var(--q0)}.q1{color:var(--q1)}.q2{color:var(--q2)}.q3{color:var(--q3)}.q4{color:var(--q4)}.q5{color:var(--q5)}
+
+/* meaning */
+.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}.gold{color:var(--gold)}.dim{color:var(--dim)}.acc{color:var(--acc)}
+
+/* status row */
+.status{height:26px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:11px;color:var(--dim);background:var(--chrome-bottom);border-top:1px solid var(--frame)}

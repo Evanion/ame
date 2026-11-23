@@ -80,8 +80,13 @@ the look are all open.
 - **No retrofit of the old boards.** The current boards get no theme switch, no side-by-side and no board-by-board
   comparison with the game: they're replaced as each screen is redesigned. New boards carry the faction theme switch
   from the start (canvas page "Redesign"), and one colour set in the repo will feed both the game and the canvas.
-- **The look** is being picked from three versions of the new Home tab on the canvas (A refined terminal, B Azeroth
-  native, C hybrid).
+- **The look: hybrid.** Flat dark content for tables and charts, game-flavoured chrome (bronze frame, gold headings in
+  the game's font, gilt primary buttons).
+- **Two colours in the chrome.** "Azeroth" in the title is always in your own faction's colour; the accent (the title
+  bar's edge, the active tab, primary buttons, the picked row) follows the market you're viewing. A Horde player on
+  the goblin AH sees a red "Azeroth" with a gold accent; an Alliance player at home sees both in blue.
+- **One colour set:** `docs/ux/design/tokens.lua`. `scripts/design-tokens.lua` writes `tokens.css` from it for the
+  canvas, and `ame.css` is the shared look every new board links. The addon's palette moves to it screen by screen.
 - **R0** (fix now): done.
 
 ## Fix now (bugs, no design needed) - done
@@ -216,7 +221,7 @@ The canvas is more wireframe than the game in places and more polished in others
 | Step | What | Size |
 |---|---|---|
 | R0 | Fix-now list above | small |
-| R1 | Pick the look (three Home boards); one colour set in the repo for the game and the canvas | small |
+| R1 | Pick the look (three Home boards); one colour set in the repo for the game and the canvas | done |
 | R2 | Interaction contract, back/forward, one market, words | medium |
 | R3 | Navigation (Home, Guild) and the Item hub, on the canvas first | large |
 | R4 | AH workspace: post queue, auctions/cancel, buy loop, beside Auctionator, key bindings | large |
