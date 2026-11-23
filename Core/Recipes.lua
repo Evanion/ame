@@ -90,6 +90,7 @@ local function build(id)
     out.src = r.src
     out.tools = r.tools -- the tools it needs ("Salt Shaker"), as the profession window said
     out.at = r.at -- where it's made ("Forge", a campfire, a camp object)
+    out.toolIDs = r.toolIDs -- [tool name] = item ID, where known (the tool shows as a link)
     for _, g in ipairs(r.r or {}) do
       out.reagents[#out.reagents + 1] = { g[1], g[2], alt = g.alt }
     end

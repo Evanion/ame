@@ -67,6 +67,17 @@ function Professions.Recipe(api, recipeID)
         out[field] = out[field] or {}
         table.insert(out[field], name)
       end
+      -- a tool is an item: its ID, when the client knows the item by name (you carry it), so it shows as a link
+      local instant = field == "tools" and _G.C_Item and _G.C_Item.GetItemInfoInstant
+      local ok, id = false, nil
+      if instant then
+        ok, id = pcall(instant, name)
+      end
+      id = ok and plain(id) or nil
+      if type(id) == "number" then
+        out.toolIDs = out.toolIDs or {}
+        out.toolIDs[name] = id
+      end
     end
   end
   for _, slot in ipairs(s.reagentSlotSchematics or {}) do

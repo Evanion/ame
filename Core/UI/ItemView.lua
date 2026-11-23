@@ -1386,7 +1386,14 @@ function UI.RecipeHow(r)
   end
   local out = prof and recipe and L["%s: %s"]:format(prof, recipe) or prof or recipe
   if r.tools and #r.tools > 0 then
-    out = out .. ", " .. L["needs a %s"]:format(table.concat(r.tools, ", "))
+    -- a tool is an item: a link (quality colour, tooltip, Shift-click) when its ID is known - recorded with the
+    -- profession window, or the client's item by that name - otherwise its name
+    local shown = {}
+    for i, name in ipairs(r.tools) do
+      local id = r.toolIDs and r.toolIDs[name] or (ns.ItemCache.KeyByName and ns.ItemCache.KeyByName(name))
+      shown[i] = id and W.LinkText(id) or name
+    end
+    out = out .. ", " .. L["needs a %s"]:format(table.concat(shown, ", "))
   end
   if r.at and #r.at > 0 then
     out = out .. ", " .. L["at a %s"]:format(table.concat(r.at, L[" or "]))
