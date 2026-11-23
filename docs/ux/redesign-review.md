@@ -79,8 +79,11 @@ the look are all open.
 - **Craft requests** between AME users (direction 7): wanted, to be designed.
 - **The Guild tab is `social` in code.** Module, setting keys and the slash word use `social`; the locale strings say
   "Guild".
-- **Crafting is one screen** (to confirm on the sketch): every recipe with a Ready column and filters; it replaces
-  Top earners, Sell or refine, Recipes to buy and the Craft queue page. Leveling and Your professions stay as pages.
+- **Crafting is one screen, laid out as the game's window** (to confirm on the sketch): a profession picked on the
+  left, its recipes in the game's foldable sections with the skill-up colour, a Ready column and filters; folds,
+  filters and search are remembered. "All professions" is the flat view. It replaces Top earners, Sell or refine,
+  Recipes to buy and the Craft queue page. Leveling and Your professions stay as pages. It must match or beat the
+  game's own window (`reports/Crafting UI pain points and wishes.md`).
 - **Lists is a mode of Market** (to try): Screener · Overview · Arbitrage · Lists.
 - **Item at the auction house** is the Item page plus one Buy card; selling is only under Sell.
 - **At the auction house** Buy / Sell / Auctions hang under the window, and the window opens where you last were at

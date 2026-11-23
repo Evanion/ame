@@ -200,6 +200,29 @@ on the right with Queue and "Buy what's missing"; the queue is one line under th
 Recipes to buy and the Craft queue page fold into it (as the sort, the filters and that line); Leveling and Your
 professions stay as buttons to their pages. If agreed, the six Crafting pages become this one plus those two.
 
+#### F5, after the sketch: the game's structure (2026-11-23)
+
+The user's read of the sketch: "All" would list every recipe on every character, which is too long; do it as the
+game's window does, a tab per profession and its sections ("Agility food", "Caster Elixirs", "One-handed Swords");
+merged crafting must be as good as or better than the game's own. Research:
+`reports/Crafting UI pain points and wishes.md` (thin on direct player quotes; mostly forum threads and what addons
+supply).
+
+| Finding | What it means here |
+|---|---|
+| WoW Forever ships the modern profession window: a tab per profession, search, filters, recipe tracking | That window is the bar, not the vanilla one |
+| The most-liked complaints: the window is too big and fights the auction house | Crafting inside the AME window answers it by construction |
+| It forgets: filters, "show unlearned" and folded sections reset; no Collapse All | Remember all of it; have Collapse all |
+| Skill-up cues got harder to read | Keep the orange, yellow, green, grey colour on each row |
+| Every crafting-window addon has a saved queue, a shopping list that subtracts bags, bank and alts, vendor buying, cross-alt counts | Table stakes |
+| None uses one long list as its main view; flat lists serve "who can make X" and "what pays" | Sections by default; All professions as a view |
+| TSM's setup is the standing complaint; the Skillet price plugin is stale; GuildCrafts (129K) is abandoned | Profit with no setup, and the guild's crafters, are where to win (inferred) |
+
+Redrawn (New screens): the professions your characters have are listed on the left with their skill; a profession
+shows its recipes in the game's sections, foldable, with Collapse all, the skill-up colour and the Ready column.
+"All professions" is the flat list across characters (drawn on Ready now and To learn). To check in game: the section
+names (placeholders on the board) and whether the game's window has favourites.
+
 ### F14: the tab's name
 
 | Name | Reads as | Note |
