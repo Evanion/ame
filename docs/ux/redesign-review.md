@@ -248,6 +248,7 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 | At the auction house: Market | new | The same screener, searching the AH live: what's on sale now beside AME's market view; shopping lists in the sidebar |
 | At the auction house: Market, a shopping list | new | The list against what's on sale now, Search all, and buying down the list (Confirm, Skip, Cancel), capped at your top prices |
 | At the auction house: Item, narrow | new | Chart, On sale now and Sell yours take turns; the title bar folds the scan and the swap into one AH menu |
+| At the auction house: Market and Portfolio > Sell, narrow | new | The narrow-window versions: the search and results; the bags beside the posting form |
 | At the auction house: Item | new | The chart, what's on sale now with Buy / Confirm / Cancel, and Sell yours with the one price ladder |
 | At the auction house: Portfolio > Sell | new | Your bags by worth, the price ladder, the item's chart and listings, Post and next |
 | At the auction house: Portfolio > Auctions | new | Your auctions against what's on sale now, Check prices, Cancel per auction |
@@ -263,6 +264,10 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 | Settings, General | redesigned | "At the auction house" (AME's window or the game's); Fonts and bars (LibSharedMedia); the Market overview switch and the Sharing section are gone |
 | Crafting, Recipes to buy | redesigned | "Guild crafters" (was Network), a From column, recipes a vendor sells |
 | Crafting, Sell or refine | redesigned | "Sell it raw" and "Open item" next to queueing |
+| Crafting, Leveling | redesigned | "Reagents and recipes to a list": the recipes to learn go on the list too |
+| Crafting, Your professions | redesigned | "Tell me when a cooldown is ready"; links to its top earners, Leveling and Your crafts |
+| Crafting, Craft queue | redesigned | "Missing to a list" asks which list; Search the AH; where crafting and selling happen |
+| Guide | redesigned | An article opens the screen it describes and lists related articles; a new At the auction house article; the article list follows the tabs |
 | Crafting, Top earners | redesigned | A quantity before Queue; "Reagents to a list" asks which list; Find a crafter left the Crafting pages |
 
 ## Decided while drawing (2026-11-24, to confirm)
@@ -283,5 +288,5 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 
 ## Still to draw
 
-The Guide's articles (their text follows once the screens are settled); the narrow Market and Portfolio at the
-auction house; Leveling, Your professions and the craft queue page in detail.
+Nothing planned is left: every screen in the review has a board. Next is the user's read of the boards, then building
+screen by screen, each done when an in-game screenshot matches its board (docs/ux/design/README.md).
