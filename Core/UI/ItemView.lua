@@ -1359,12 +1359,35 @@ end
 
 -- "Better: make Silk Bandage and vendor it (Tyken) - ~2s per item instead of 1s 50c." The product is an item link
 -- (it works as one where the text's frame has links switched on: W.EnableLinks).
+-- "Better: make X and sell it - ~Y per item ... Leatherworking: Refined Deeprock Salt, needs a Salt Shaker (Tyken)."
+-- - what to make and what it pays, then how: the profession and the recipe, the tool it needs, and who knows it
 function UI.CraftInsteadText(c)
   local name = W.LinkText(c.product)
   local text = c.where == "vendor" and L["Better: make %s and vendor it - ~%s per item instead of %s."]
     or L["Better: make %s and sell it - ~%s per item after the cut, instead of %s."]
-  local who = c.crafter and (" " .. W.Dim("(" .. c.crafter .. ")")) or ""
-  return text:format(name, W.Money(c.each), W.Money(c.raw)) .. who
+  text = text:format(name, W.Money(c.each), W.Money(c.raw))
+  local r = c.recipe
+  local how = r and UI.RecipeHow(r)
+  local who = c.crafter and W.Dim("(" .. c.crafter .. ")") or nil
+  if how then
+    return text .. " " .. how .. (who and (" " .. who) or "") .. "."
+  end
+  return text .. (who and (" " .. who) or "")
+end
+
+-- how a recipe is made, in a few words: "Leatherworking: Refined Deeprock Salt, needs a Salt Shaker"
+function UI.RecipeHow(r)
+  local db = AME_DB and AME_DB.crafting
+  local prof = r.profession and db and db.catalog and db.catalog[r.profession] and db.catalog[r.profession].name
+  local recipe = ns.Crafters and ns.Crafters.RecipeName and ns.Crafters.RecipeName(r.id)
+  if not (prof or recipe) then
+    return nil
+  end
+  local out = prof and recipe and L["%s: %s"]:format(prof, recipe) or prof or recipe
+  if r.tools and #r.tools > 0 then
+    out = out .. ", " .. L["needs a %s"]:format(table.concat(r.tools, ", "))
+  end
+  return out
 end
 
 function UI:FillVerdict(s, ctx)

@@ -88,6 +88,7 @@ local function build(id)
     out.product = r.out
     out.madeMin, out.madeMax = r.min or 1, r.max or r.min or 1
     out.src = r.src
+    out.tools = r.tools -- the tools it needs ("Salt Shaker"), as the profession window said
     for _, g in ipairs(r.r or {}) do
       out.reagents[#out.reagents + 1] = { g[1], g[2], alt = g.alt }
     end

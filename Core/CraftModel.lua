@@ -5,7 +5,7 @@
 --   CraftModel.Build(only) -> { hasData, index, quote, craft, entries, held, heldSet, uses, chars } or nil, "loading"
 --     only: one character's key (nil: every character). entries: the recipes your characters know, one per recipe
 --     with every character who knows it; craft: a Crafting instance on the faction auction house's quote.
---   CraftModel.Instead(itemID) -> { product, where, each, raw, crafter } or nil
+--   CraftModel.Instead(itemID) -> { product, where, each, raw, crafter, recipe } or nil (recipe: Recipes.Get's)
 --   CraftModel.Producers() -> { [product] = { recipe, ... } }: the recipes your characters know that make each item
 --   CraftModel.Craft() -> the one Crafting env every view prices crafts with (the Crafting tab, the profession bar
 --     and craft queue, recipe tooltips): your faction's auction house quote (fresh searches, bind-on-pickup products
@@ -110,6 +110,7 @@ function M.Instead(itemID)
     each = best.net / n,
     raw = r.raw / n,
     crafter = crafters[best.recipe.id],
+    recipe = best.recipe, -- how: its profession, name and tools (the hint says them)
   }
 end
 

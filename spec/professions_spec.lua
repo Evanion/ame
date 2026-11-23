@@ -93,6 +93,28 @@ describe("Professions", function()
     assert.is_nil(snap.recipes[7837].src) -- learned: no need
   end)
 
+  it("keeps the tools a recipe needs (the game's tool requirements), by name", function()
+    _G.Enum = _G.Enum or {}
+    local had = _G.Enum.RecipeRequirementType
+    _G.Enum.RecipeRequirementType = { SpellFocus = 0, Totem = 1, Area = 2 }
+    finally(function()
+      _G.Enum.RecipeRequirementType = had
+    end)
+    local snap = P.Snapshot(
+      alchemy({
+        GetRecipeRequirements = function(id)
+          if id == 7837 then
+            return { { name = "Salt Shaker", type = 1, met = true }, { name = "Anvil", type = 0, met = false } }
+          end
+          return {}
+        end,
+      }),
+      1000
+    )
+    assert.are.same({ "Salt Shaker" }, snap.recipes[7837].tools) -- a tool; an anvil nearby isn't one you carry
+    assert.is_nil(snap.recipes[1263005].tools)
+  end)
+
   it("saves nothing from someone else's window, an unready one, or one with no profession", function()
     assert.is_nil(P.Snapshot(
       alchemy({

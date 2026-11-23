@@ -98,6 +98,7 @@ L["%s wants to share auction prices with you. Type |cffffffff/ame config|r and o
 L["%s · %s %d / %d"] = true
 L["%s · makes %s"] = true
 L["%s's bags or bank"] = true
+L["%s: %s"] = true
 L["(after combat)"] = true
 L["(alt there)"] = true
 L["(in use)"] = true
@@ -1285,6 +1286,7 @@ L["more is listed than sells in one listing time: only the lowest price sells so
 L["need"] = true
 L["needs %d"] = true
 L["needs %d, has %d"] = true
+L["needs a %s"] = true
 L["never"] = true
 L["new"] = true
 L["newest full scan %s"] = true

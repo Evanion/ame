@@ -42,7 +42,8 @@ local function plain(v)
 end
 
 -- One recipe's schematic as saved: product, yield, recipe type and its basic reagents. A reagent slot that accepts
--- several items keeps them all: { {itemID, n, alt = { otherID, ... }} }.
+-- several items keeps them all: { {itemID, n, alt = { otherID, ... }} }. tools: the tools it needs, by name ("Salt
+-- Shaker"; the game's recipe requirements of the tool kind), when it needs any.
 function Professions.Recipe(api, recipeID)
   local s = call(api, "GetRecipeSchematic", recipeID, false)
   if type(s) ~= "table" then
@@ -55,6 +56,15 @@ function Professions.Recipe(api, recipeID)
     type = plain(s.recipeType),
     r = {},
   }
+  local totem = _G.Enum and _G.Enum.RecipeRequirementType and _G.Enum.RecipeRequirementType.Totem
+  local requirements = totem and call(api, "GetRecipeRequirements", recipeID)
+  for _, req in ipairs(type(requirements) == "table" and requirements or {}) do
+    local name = type(req) == "table" and req.type == totem and plain(req.name)
+    if type(name) == "string" and name ~= "" then
+      out.tools = out.tools or {}
+      out.tools[#out.tools + 1] = name
+    end
+  end
   for _, slot in ipairs(s.reagentSlotSchematics or {}) do
     local kind = plain(slot.reagentType)
     local items = slot.reagents or {}
