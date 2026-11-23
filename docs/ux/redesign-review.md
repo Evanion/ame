@@ -236,9 +236,38 @@ None open: see Decisions so far.
 
 ## Progress on the canvas
 
+Canvas pages: **Existing screens** (every current screen, re-skinned, some redesigned in place) and **New screens**.
+
 | Screen | State | What changed |
 |---|---|---|
 | All existing screens | re-skinned | The hybrid look, the shared colour set, square corners, the new title bar and tab row, theme and faction switches |
-| Home | new board | What to do now, and what's worth doing today |
-| Market | redesigned | Three modes (Screener, Overview, Arbitrage); "Your alerts" in the sidebar; a "You hold" column; the row-click rule written under the table |
-| Market, Arbitrage mode | redesigned | Arbitrage is a mode of Market; star column; "Add to a shopping list" and "Open item" next to Search; "Sells/day there" and "Units" in the route's data |
+| Home | new | What to do now, and what's worth doing today |
+| Market | redesigned | Three modes (Screener, Overview, Arbitrage); "Your alerts" in the sidebar; a "You hold" column; the row-click rule under the table |
+| Market, Arbitrage mode | redesigned | A mode of Market; star column; "Add to a shopping list" and "Open item" next to Search; "Sells/day there" and "Units" in the route's data |
+| Item | redesigned | An action bar (Search the AH, Post, Add to a shopping list, Watching, Alert, Who can make it, Hide); under the chart: Your position, Other auction houses, Crafting; a Verdict card; the posting ladder takes what you hold |
+| Auction house: Sell, Buy, Auctions | new | The AME window takes over the AH: bags by worth with one price ladder and Post-and-next; shopping lists with a buy loop capped at the top price; your auctions with their standing and Cancel per auction |
+| Guild: Crafters | redesigned | Was Crafting > Find a crafter and the Who can make it popup: one finder, with Ask writing the request (mats, suggested tip) |
+| Guild: Requests | new | Asked of you and what you asked; mats, what the craft is worth, Accept / Decline |
+| Guild: Sharing prices | moved | Was Settings > Sharing; same content under the Guild tab |
+| Settings, General | redesigned | "At the auction house" (AME's window or the game's); Fonts and bars (LibSharedMedia); the Market overview switch and the Sharing section are gone |
+| Crafting, Top earners | redesigned | A quantity before Queue; "Reagents to a list" asks which list; Find a crafter left the Crafting pages |
+
+## Decided while drawing (2026-11-24, to confirm)
+
+- **The Auction house tab** appears first in the tab row only while the AH is open, and the window opens on it.
+- **Cancel per auction** is on the Auctions page (one click each, the game's rule). Without it you'd have to swap to
+  the game's window to cancel. There is still no cancel scan.
+- **Market overview is always there** as a mode; its Settings switch is gone. (If building its numbers costs too much
+  per scan, the mode can build them when first opened.)
+- **Signal and Score** both stay for now: Signal is the verdict, Score the default sort.
+- **Shopping lists** show under Auction house > Buy; they also stay in the Market sidebar until the lists get a home
+  of their own.
+- **Tip words:** Sell, Craft, DE, Vendor (Craft replaces Arbitrate).
+- **Requests** also go out as a whisper, so a crafter without AME sees them. A fair tip is suggested as about a tenth
+  of what the craft adds.
+
+## Still to draw
+
+Guild lists; offering your crafts (taking orders, an advert for chat); Portfolio (Auctions now also lives at the AH);
+the other Crafting pages, the profession bar and craft queue panel; vendor selling and the session tracker; the
+"Open in AME" button on the game's AH frame; the compact (narrow) boards; tooltips; the Guide.
