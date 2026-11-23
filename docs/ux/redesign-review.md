@@ -245,7 +245,13 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 | Market | redesigned | Three modes (Screener, Overview, Arbitrage); "Your alerts" in the sidebar; a "You hold" column; the row-click rule under the table |
 | Market, Arbitrage mode | redesigned | A mode of Market; star column; "Add to a shopping list" and "Open item" next to Search; "Sells/day there" and "Units" in the route's data |
 | Item | redesigned | An action bar (Search the AH, Post, Add to a shopping list, Watching, Alert, Who can make it, Hide); under the chart: Your position, Other auction houses, Crafting; a Verdict card; the posting ladder takes what you hold |
-| Auction house: Sell, Buy, Auctions | new | The AME window takes over the AH: bags by worth with one price ladder and Post-and-next; shopping lists with a buy loop capped at the top price; your auctions with their standing and Cancel per auction |
+| At the auction house: Market | new | The same screener, searching the AH live: what's on sale now beside AME's market view; shopping lists in the sidebar |
+| At the auction house: Item | new | The chart, what's on sale now with Buy / Confirm / Cancel, and Sell yours with the one price ladder |
+| At the auction house: Portfolio > Sell | new | Your bags by worth, the price ladder, the item's chart and listings, Post and next |
+| At the auction house: Portfolio > Auctions | new | Your auctions against what's on sale now, Check prices, Cancel per auction |
+| The game's AH window | redesigned | An "Open in AME" button; the sell bar shows the same four-step ladder |
+| Portfolio | redesigned | A Where column, "All characters", the undercut count, the click rule |
+| Session tracker | new | A small panel for farming: what the outing is worth, the rate an hour, the best finds |
 | Guild: Crafters | redesigned | Was Crafting > Find a crafter and the Who can make it popup: one finder, with Ask writing the request (mats, suggested tip) |
 | Guild: Requests | new | Asked of you and what you asked; mats, what the craft is worth, Accept / Decline |
 | Guild: Your crafts | new | The offering side: taking orders per profession, what guildmates look up, your tip per craft, an advert for chat |
@@ -257,20 +263,22 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 
 ## Decided while drawing (2026-11-24, to confirm)
 
-- **The Auction house tab** appears first in the tab row only while the AH is open, and the window opens on it.
+- **One window, with or without the auction house** (the user's call, 2026-11-24): there is no Auction house tab.
+  With the AH open the same tabs gain what the AH allows: Market searches it live, Item shows what's on sale with
+  Buy and Sell yours, Portfolio gains Sell (your bags) and its Auctions can be cancelled. The title bar gains Full
+  scan and "Use the game's AH".
 - **Cancel per auction** is on the Auctions page (one click each, the game's rule). Without it you'd have to swap to
   the game's window to cancel. There is still no cancel scan.
 - **Market overview is always there** as a mode; its Settings switch is gone. (If building its numbers costs too much
   per scan, the mode can build them when first opened.)
 - **Signal and Score** both stay for now: Signal is the verdict, Score the default sort.
-- **Shopping lists** show under Auction house > Buy; they also stay in the Market sidebar until the lists get a home
-  of their own.
+- **Shopping lists** stay in the Market sidebar: at the AH that is where you search and buy from them.
 - **Tip words:** Sell, Craft, DE, Vendor (Craft replaces Arbitrate).
 - **Requests** also go out as a whisper, so a crafter without AME sees them. A fair tip is suggested as about a tenth
   of what the craft adds.
 
 ## Still to draw
 
-Portfolio (Auctions now also lives at the AH); the other Crafting pages, the profession bar and craft queue panel; the
-session tracker (bag value, gold per hour); the "Open in AME" button on the game's AH frame; the compact (narrow)
-boards; tooltips; the Guide; item names inside the request and advert texts as links.
+The other Crafting pages in detail; the narrow-window boards at the auction house; tooltips (the Made by names as
+links into Guild > Crafters); the Guide's articles; a shopping list picked in Market at the AH (Search all and the
+buy loop from the list).
