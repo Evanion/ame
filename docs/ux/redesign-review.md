@@ -248,6 +248,9 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 | Auction house: Sell, Buy, Auctions | new | The AME window takes over the AH: bags by worth with one price ladder and Post-and-next; shopping lists with a buy loop capped at the top price; your auctions with their standing and Cancel per auction |
 | Guild: Crafters | redesigned | Was Crafting > Find a crafter and the Who can make it popup: one finder, with Ask writing the request (mats, suggested tip) |
 | Guild: Requests | new | Asked of you and what you asked; mats, what the craft is worth, Accept / Decline |
+| Guild: Your crafts | new | The offering side: taking orders per profession, what guildmates look up, your tip per craft, an advert for chat |
+| Guild: Guild lists | new | The shared watchlists and shopping lists: read, copy, search |
+| Vendor: sell | new | Beside the merchant window: sell what AME tips Vendor, and junk, in one go |
 | Guild: Sharing prices | moved | Was Settings > Sharing; same content under the Guild tab |
 | Settings, General | redesigned | "At the auction house" (AME's window or the game's); Fonts and bars (LibSharedMedia); the Market overview switch and the Sharing section are gone |
 | Crafting, Top earners | redesigned | A quantity before Queue; "Reagents to a list" asks which list; Find a crafter left the Crafting pages |
@@ -268,6 +271,6 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 
 ## Still to draw
 
-Guild lists; offering your crafts (taking orders, an advert for chat); Portfolio (Auctions now also lives at the AH);
-the other Crafting pages, the profession bar and craft queue panel; vendor selling and the session tracker; the
-"Open in AME" button on the game's AH frame; the compact (narrow) boards; tooltips; the Guide.
+Portfolio (Auctions now also lives at the AH); the other Crafting pages, the profession bar and craft queue panel; the
+session tracker (bag value, gold per hour); the "Open in AME" button on the game's AH frame; the compact (narrow)
+boards; tooltips; the Guide; item names inside the request and advert texts as links.
