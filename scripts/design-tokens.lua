@@ -1,6 +1,6 @@
--- Writes docs/ux/design/tokens.css from docs/ux/design/tokens.lua: the colours and fonts as CSS variables on .ame,
--- each faction theme's accent with the shades derived from it (.ame.th-horde / .th-alliance / .th-goblin), and the
--- player's own faction colour (.ame.fa-horde / .fa-alliance).
+-- Writes docs/ux/design/tokens.css from docs/ux/design/tokens.lua: the colours and fonts as CSS variables (the
+-- defaults on :root, so a component drawn alone has them), each faction theme's accent with the shades derived from
+-- it (.th-horde / .th-alliance / .th-goblin), and the player's own faction colour (.fa-horde / .fa-alliance).
 --   lua5.1 scripts/design-tokens.lua
 local T = dofile("docs/ux/design/tokens.lua")
 
@@ -57,13 +57,13 @@ for _, v in ipairs(accentVars(T.themes[1])) do -- the default theme
   base[#base + 1] = v
 end
 base[#base + 1] = "--faction:" .. rgb(T.factions[1].color) -- the default faction
-out[#out + 1] = ".ame{" .. table.concat(base, ";") .. "}"
+out[#out + 1] = ":root{" .. table.concat(base, ";") .. "}"
 for _, theme in ipairs(T.themes) do
-  out[#out + 1] = ".ame.th-" .. theme.key .. "{" .. table.concat(accentVars(theme), ";") .. "}"
+  out[#out + 1] = ".th-" .. theme.key .. "{" .. table.concat(accentVars(theme), ";") .. "}"
 end
 
 for _, faction in ipairs(T.factions) do
-  out[#out + 1] = ".ame.fa-" .. faction.key .. "{--faction:" .. rgb(faction.color) .. "}"
+  out[#out + 1] = ".fa-" .. faction.key .. "{--faction:" .. rgb(faction.color) .. "}"
 end
 
 local f = assert(io.open("docs/ux/design/tokens.css", "wb"))

@@ -16,10 +16,11 @@
 .tab{font-family:var(--font-display);font-size:13px;color:var(--tab);height:40px;padding:0 10px;display:flex;align-items:center;white-space:nowrap}
 .tab.on{color:var(--white);background:linear-gradient(180deg,rgba(0,0,0,0),var(--acc-row));box-shadow:inset 0 -2px 0 var(--acc)}
 .ico{width:24px;height:24px;display:flex;align-items:center;justify-content:center;position:relative;flex:none;color:var(--tab)}
+.ico.on{color:var(--white)}
 .badge{position:absolute;top:-1px;right:-3px;min-width:13px;height:13px;border-radius:7px;font-size:9px;line-height:13px;text-align:center;font-weight:700;color:var(--white);background:var(--badge)}
 
 /* controls */
-.btn{padding:4px 10px;white-space:nowrap;font-size:11px;flex:none;background:var(--control);border:1px solid var(--control-line);color:var(--soft);border-radius:3px}
+.btn{padding:4px 10px;white-space:nowrap;font-family:var(--font-ui);font-size:11px;line-height:14px;flex:none;cursor:pointer;background:var(--control);border:1px solid var(--control-line);color:var(--soft);border-radius:3px}
 .btn.pri{background:linear-gradient(var(--acc-pri),var(--acc-sel));border-color:var(--primary-line);color:var(--white)}
 .btn.sel{background:var(--acc-sel);border-color:var(--acc);color:var(--white)}
 .btn.off{opacity:.45}
