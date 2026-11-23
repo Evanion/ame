@@ -164,6 +164,53 @@ F4 (listings beside the table) and F13 (Back and Forward) change how buying feel
 rule applied in three places: every piece of advice has a button, and a button that can't work says why. F8 is the
 first thing a new player sees.
 
+## The user's read of the proposals (2026-11-24)
+
+| Finding | Answer | State |
+|---|---|---|
+| Compare | Screens that differ at the auction house must be seen side by side | Done: canvas page "Away vs at the AH", in pairs (Home, Market, Item, Portfolio) |
+| Open on Sell | Rejected as proposed: players always have something sellable, so the rule would always pick Sell | Changed: at the AH the window opens where you last were at the AH (Buy the first time) |
+| F1 bottom tabs | Asked for | Drawn |
+| F2 | Don't sell on the Item page: it confuses, and it cost the page its stats when they matter most. "On sale now" becomes a sidebar card called Buy. The only difference at the AH: Item gains that card | Redrawn: Item at the AH is the full Item page plus a Buy card; "Sell 120" goes to Sell |
+| F3 lists | Reconsider | Open: options below |
+| F4 | The proposal wasn't findable | Drawn so it can be seen: Market at the AH, right-hand panel (the picked row's listings and the same Buy card) |
+| F5 | Why several screens: one screen with the recipes and whether each is ready to craft | Drawn as a proposal: "Crafting as one screen" |
+| F6-F13 | OK | To draw: requests' states, Sell's Craft/DE buttons, first run, alerts list, bell panel, Back/Forward. F9/F10 drawn (Home at the AH; greyed "At the AH" buttons on Home and Item) |
+| F14 | OK, or rename? | Open: options below |
+
+### F3, reconsidered: where shopping lists live
+
+What a list is for: made from a recipe, an item or a guildmate's list; used at the auction house (and vendors) to buy.
+
+| Option | What it means | For | Against |
+|---|---|---|---|
+| **A. Lists is a mode of Market** (recommended) | Market's modes become Screener · Overview · Arbitrage · Lists. Lists shows every list on the left (yours, the guild's, watchlists too) and the picked one on the right. The Screener's sidebar keeps watchlists only as filters. At the AH, Buy opens on Lists when one still needs something | A named place, no new tab, and it is where buying happens | Market gets a fourth mode |
+| B. Lists under Buy only | Lists exist only at the AH, under the Buy bottom tab; away from it you reach them from Home | Matches when they're used | You can't plan a list away from the AH without going through Home |
+| C. A Lists tab | An eighth top tab | Most visible | The tab row is full, and lists aren't a daily destination |
+| D. As now | In the Market sidebar | No change | The finding stands |
+
+Whichever is picked: "Reagents to a list" adds without changing tab, and says where it went.
+
+### F5: Crafting as one screen
+
+Drawn (New screens, "Proposal · Crafting as one screen"): one table of every recipe your characters can make, with a
+**Ready** column: "ready ×3", "1 now · missing 6 Mountain Silversage", "needs a tool", "cooldown: 14 h", "learn it:
+recipe 72g on the AH". Filters: All · Ready now · Queued · Missing something · To learn. The picked recipe's needs are
+on the right with Queue and "Buy what's missing"; the queue is one line under the table. Top earners, Sell or refine,
+Recipes to buy and the Craft queue page fold into it (as the sort, the filters and that line); Leveling and Your
+professions stay as buttons to their pages. If agreed, the six Crafting pages become this one plus those two.
+
+### F14: the tab's name
+
+| Name | Reads as | Note |
+|---|---|---|
+| **Guild** (keep) | Your guild | Short and known; trusted friends are marked "trusted" inside |
+| **Social** | The game's own word for friends and guild (its Social window) | Covers trusted friends honestly; a little vague for "who can craft this" |
+| Crafters | What most people come for | Leaves out lists and sharing prices |
+| Community | Guild and friends | Long for a tab |
+
+Recommended: **Social**, if the trusted-friends side matters to you; otherwise keep Guild.
+
 ## Next
 
 1. The user plays J1–J12 and marks each finding.
