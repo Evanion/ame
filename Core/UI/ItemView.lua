@@ -1375,9 +1375,10 @@ function UI.CraftInsteadText(c)
   return text .. (who and (" " .. who) or "")
 end
 
--- how a recipe is made, in a few words: "Leatherworking: Refined Deeprock Salt, needs a Salt Shaker";
--- "Blacksmithing: Thorium Bar, at a Forge"
-function UI.RecipeHow(r)
+-- how a recipe is made, in a few words and the game's own ("Requires"): "Leatherworking: Refined Deeprock Salt,
+-- requires [Salt Shaker]"; "Blacksmithing: Thorium Bar, requires Anvil"
+-- short: the profession and the recipe only (the Top earners card: its Tools section says the rest)
+function UI.RecipeHow(r, short)
   local db = AME_DB and AME_DB.crafting
   local prof = r.profession and db and db.catalog and db.catalog[r.profession] and db.catalog[r.profession].name
   local recipe = ns.Crafters and ns.Crafters.RecipeName and ns.Crafters.RecipeName(r.id)
@@ -1385,18 +1386,21 @@ function UI.RecipeHow(r)
     return nil
   end
   local out = prof and recipe and L["%s: %s"]:format(prof, recipe) or prof or recipe
-  if r.tools and #r.tools > 0 then
-    -- a tool is an item: a link (quality colour, tooltip, Shift-click) when its ID is known - recorded with the
-    -- profession window, or the client's item by that name - otherwise its name
-    local shown = {}
-    for i, name in ipairs(r.tools) do
-      local id = r.toolIDs and r.toolIDs[name] or (ns.ItemCache.KeyByName and ns.ItemCache.KeyByName(name))
-      shown[i] = id and W.LinkText(id) or name
-    end
-    out = out .. ", " .. L["needs a %s"]:format(table.concat(shown, ", "))
+  if short then
+    return out
   end
-  if r.at and #r.at > 0 then
-    out = out .. ", " .. L["at a %s"]:format(table.concat(r.at, L[" or "]))
+  -- what it requires: the tools - items, so links (quality colour, tooltip, Shift-click) when their IDs are known,
+  -- recorded with the profession window or the client's item by that name - then the places to make it
+  local needs = {}
+  for _, name in ipairs(r.tools or {}) do
+    local id = r.toolIDs and r.toolIDs[name] or (ns.ItemCache.KeyByName and ns.ItemCache.KeyByName(name))
+    needs[#needs + 1] = id and W.LinkText(id) or name
+  end
+  for _, place in ipairs(r.at or {}) do
+    needs[#needs + 1] = place
+  end
+  if #needs > 0 then
+    out = out .. ", " .. L["requires %s"]:format(table.concat(needs, ", "))
   end
   return out
 end

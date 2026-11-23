@@ -161,11 +161,28 @@ local function isRecipe(itemID)
 end
 RS.IsRecipe = isRecipe
 
+-- a tool some recorded recipe needs (Professions: recipe.toolIDs): merchants selling one are noted too, so the
+-- Crafting tab's Tools section can say where to buy it. Built once per catalog change (RS.CatalogChanged).
+local toolSet
+function RS.IsTool(itemID)
+  if not toolSet then
+    toolSet = {}
+    for _, c in pairs(AME_DB and AME_DB.crafting and AME_DB.crafting.catalog or {}) do
+      for _, r in pairs(c.recipes or {}) do
+        for _, id in pairs(r.toolIDs or {}) do
+          toolSet[id] = true
+        end
+      end
+    end
+  end
+  return itemID ~= nil and toolSet[itemID] == true
+end
+
 local function zone()
   return (_G.GetRealZoneText and _G.GetRealZoneText()) or (_G.GetZoneText and _G.GetZoneText()) or nil
 end
 
--- a merchant's window: the recipe items it sells
+-- a merchant's window: the recipe items it sells, and tools recipes need
 function RS:RecordMerchant()
   local n = _G.GetMerchantNumItems and _G.GetMerchantNumItems() or 0
   local npc = UnitName and UnitName("npc")
@@ -176,7 +193,7 @@ function RS:RecordMerchant()
   for i = 1, n do
     local link = _G.GetMerchantItemLink and _G.GetMerchantItemLink(i)
     local id = link and ns.ItemCache.Learn(link)
-    if id and RS.IsRecipe(id) then
+    if id and (RS.IsRecipe(id) or RS.IsTool(id)) then
       local price
       local info = C_MerchantFrame and C_MerchantFrame.GetItemInfo and C_MerchantFrame.GetItemInfo(i)
       if type(info) == "table" then
@@ -237,7 +254,7 @@ local function recipeOf(itemID)
 end
 
 function RS.CatalogChanged()
-  byName = nil
+  byName, toolSet = nil, nil
 end
 
 -- the game's own source text for the recipe an item teaches (recorded from a profession window), or nil

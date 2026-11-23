@@ -4844,9 +4844,9 @@ describe("addon in a stubbed client", function()
       -- and how: the profession and the recipe, the tool it needs, who knows it
       assert.truthy(text:find("First Aid: ", 1, true), text)
       -- the tool is an item: a link (its item ID recorded with the window); the place is just its name
-      assert.truthy(text:find("needs a |c", 1, true), text)
+      assert.truthy(text:find("requires |c", 1, true), text)
       assert.truthy(text:find("|Hitem:2592", 1, true), text)
-      assert.truthy(text:find(", at a Campfire", 1, true), text)
+      assert.truthy(text:find(", Campfire", 1, true), text)
       -- without the recipe: nothing to suggest
       AME_DB.crafting.chars[me].professions[129].learned = {}
       assert.is_nil(ns.UI:CraftInstead(4306))

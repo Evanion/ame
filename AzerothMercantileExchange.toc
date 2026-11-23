@@ -94,6 +94,7 @@ Core\UI\ArbitrageView.lua
 Core\UI\PortfolioView.lua
 Core\UI\LevelingView.lua
 Core\UI\CraftingView.lua
+Core\UI\CraftTools.lua
 Core\UI\ProfessionBar.lua
 Core\UI\AHSelling.lua
 Core\UI\AHShopping.lua

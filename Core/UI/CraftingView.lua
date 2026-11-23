@@ -2022,30 +2022,33 @@ UI.CRAFT_DETAIL.earners = function(_, v, e)
   -- one craft onto the craft queue; one craft's reagents onto a shopping list
   v.action:SetText(L["Queue"])
   second(v, L["Reagents to a list"])
-  return {
-    blocks = {
-      {
-        card = {
-          item = e.recipe.product,
-          title = not e.recipe.product and W.Dim(L["Enchant"]) or nil,
-          -- how it's made first ("Leatherworking: Refined Deeprock Salt, needs a Salt Shaker"), then who and how many
-          subtitle = (UI.RecipeHow(e.recipe) and (UI.RecipeHow(e.recipe) .. W.SEP) or "")
-            .. L["%s · makes %s"]:format(table.concat(names, ", "), tostring(e.recipe.made)),
-        },
-      },
-      { heading = L["Reagents"] },
-      { table = "reagents", rows = reagents },
-      {
-        card = {
-          title = L["Selling it"],
-          titleColor = "gold",
-          rows = rows,
-          note = L["The whole market's daily profit at this price: you'd sell a share of it, after the other sellers."],
-        },
+  local blocks = {
+    {
+      card = {
+        item = e.recipe.product,
+        title = not e.recipe.product and W.Dim(L["Enchant"]) or nil,
+        -- how it's made first ("Leatherworking: Refined Deeprock Salt"), then who and how many; the tools and
+        -- where to make it are the Tools section's, under it
+        subtitle = (UI.RecipeHow(e.recipe, true) and (UI.RecipeHow(e.recipe, true) .. W.SEP) or "")
+          .. L["%s · makes %s"]:format(table.concat(names, ", "), tostring(e.recipe.made)),
       },
     },
-  },
-    why
+  }
+  -- Tools (Core/UI/CraftTools.lua): only when the recipe needs a tool or a place to make it
+  for _, b in ipairs(UI.CraftToolBlocks(UI.CraftTools(e.recipe))) do
+    blocks[#blocks + 1] = b
+  end
+  blocks[#blocks + 1] = { heading = L["Reagents"] }
+  blocks[#blocks + 1] = { table = "reagents", rows = reagents }
+  blocks[#blocks + 1] = {
+    card = {
+      title = L["Selling it"],
+      titleColor = "gold",
+      rows = rows,
+      note = L["The whole market's daily profit at this price: you'd sell a share of it, after the other sellers."],
+    },
+  }
+  return { blocks = blocks }, why
 end
 
 UI.CRAFT_DETAIL.refine = function(_, v, e)

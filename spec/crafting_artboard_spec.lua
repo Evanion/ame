@@ -224,6 +224,17 @@ describe("crafting artboard: the pages", function()
     -- the card says how it's made: the profession and the recipe, then who and how many
     local subtitle = v.detail.cards[1].contentData.subtitle
     assert.truthy(subtitle:find("First Aid: ", 1, true), subtitle)
+    assert.is_nil(v.detail.heads[1] and v.detail.heads[1]:IsShown() and v.detail.heads[1].text == "Tools" or nil)
+    -- a recipe that needs a tool (as the profession window said): a Tools section under the card, the tool a card
+    AME_DB.crafting.catalog[129].recipes[3275].tools = { "Bandage Kit" }
+    AME_DB.crafting.catalog[129].recipes[3275].toolIDs = { ["Bandage Kit"] = 2592 }
+    ns.Events.Fire("RecipesChanged")
+    ns.UI:RenderCraftingDetail()
+    assert.are.equal("Tools", v.detail.heads[1].text)
+    assert.are.equal(2592, v.detail.cards[2].contentData.item)
+    AME_DB.crafting.catalog[129].recipes[3275].tools = nil
+    AME_DB.crafting.catalog[129].recipes[3275].toolIDs = nil
+    ns.Events.Fire("RecipesChanged")
     assert.are.equal("Queue", v.action.label.text)
     assert.is_true(v.second:IsShown())
     assert.is_false(v.chart:IsShown()) -- two buttons share the width
