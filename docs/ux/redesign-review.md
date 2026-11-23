@@ -288,8 +288,18 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 
 ## Planned drawings: the checklist
 
-The plan is every screen this review asked for (the Proposed direction above, and the "still to draw" lists kept while
-drawing). Each line names the board's file on the canvas. All 37 were opened on the canvas on 2026-11-24 after their
+Where the plan comes from, in the user's own words and choices:
+
+- "start with existing feature": every existing screen, in the new look and redesigned where the review found a
+  problem (items 2-7, 16-17, 22, 24-32, 35-36);
+- the tab set the user accepted (Home, Market, Item, Crafting, Guild, Portfolio, Guide): items 1 and 18-23;
+- "the unified UI with AH open ... a view like the market view, and then an item view like a mix of the buy view in AH
+  and the item view in AME": items 8-15;
+- the "Still to draw" lists reported to the user on 2026-11-24, each answered with "carry on": the Guild pages, vendor
+  selling, the session tracker, the game's AH window, the narrow boards, the Crafting pages, the tooltip, the Guide
+  (items 13-15, 19-21, 25-37).
+
+The plan is therefore every screen this review asked for (the Proposed direction above, and those lists). Each line names the board's file on the canvas. All 37 were opened on the canvas on 2026-11-24 after their
 last change and render as described, except where the Checked column says otherwise. A script also checks every one of
 the canvas's 72 board files (planned boards, shared components and untouched screens): listed in the index, every
 value its markup uses supplied, every component it imports present, stylesheets linked. It reports no problems.
@@ -326,7 +336,7 @@ value its markup uses supplied, every component it imports present, stylesheets 
 | 28 | Crafting: Leveling, recipes to the list too | `CraftingLeveling.dc.html` | Existing | viewed |
 | 29 | Crafting: Your professions, cooldown notice | `CraftingProfessions.dc.html` | Existing | viewed |
 | 30 | Crafting: Craft queue page | `CraftingQueuePage.dc.html` | Existing | viewed |
-| 31 | The profession window's bar | `ProfBar.dc.html` | Existing | viewed; its side text was reworded after |
+| 31 | The profession window's bar | `ProfBar.dc.html` | Existing | viewed, again after its side text was reworded |
 | 32 | The craft queue panel | `CraftQueue.dc.html` | Existing | viewed |
 | 33 | Vendor: sell | `VendorSell.dc.html` | New | viewed |
 | 34 | Session tracker | `SessionTracker.dc.html` | New | viewed |
@@ -335,8 +345,12 @@ value its markup uses supplied, every component it imports present, stylesheets 
 | 37 | Guide: At the auction house | `GuideAH.dc.html` | New | viewed |
 
 Not planned, and so not drawn: the other Guide articles' full text, and redrawn tooltips beyond the Made by line.
-Not checked on any board: flipping the theme and faction switches on the canvas (the classes they set are checked by
-the script, not by eye).
+The theme and faction switches were tried on the canvas: on Market the theme turned the selected buttons, the picked
+row and the active tab red (Horde), blue (Alliance) and gold (Goblin); on Home the faction turned "Azeroth" blue while
+the accent stayed red. Both were set back to Horde. Every other window board sets the same two classes the same way
+(the script checks that each one supplies them).
+
+What only the user can do: confirm that these boards are what was wanted.
 
 ## Still to draw
 
