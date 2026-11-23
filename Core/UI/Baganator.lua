@@ -201,6 +201,13 @@ function Bag:SettingChanged(on)
   end
 end
 
+-- where each corner goes the first time (Baganator's defaultPosition; a priority past its list's end appends)
+Bag.CORNERS = {
+  ame_tip = { corner = "top_left", priority = 99 },
+  ame_signal = { corner = "top_left", priority = 99 },
+  ame_value = { corner = "top_right", priority = 99 },
+}
+
 function Bag:Install()
   local B = _G.Baganator
   local public = ns.API and ns.API.v1
@@ -209,6 +216,33 @@ function Bag:Install()
   end
   self.installed = true
   local api = Bag.Cached(public) -- the corners' lookups, kept per item until new prices arrive
+
+  -- Where each goes the first time (Bag.CORNERS; Baganator places a widget once, then it's the player's): the tip and
+  -- then the signal at the end of the top left - Baganator shows a corner's first widget with something to show, so
+  -- an item with a tip shows it, otherwise its signal - and the value top right, clear of the game's stack count.
+  -- Registered in that order: it's their order in a shared corner.
+  B.API.RegisterCornerWidget(L["AME: tip"], "ame_tip", function(text, details)
+    if not Bag.On() then
+      return false
+    end
+    if not details.itemLink then
+      return nil
+    end
+    local kind = Bag.Tip(api, details.itemLink, Bag.Instead)
+    if kind == "sell" and not ns.Settings:Get("baganatorSellTip") then
+      kind = nil -- most of a bag: only marked when asked for (Settings, General, Other addons)
+    end
+    local tip = Bag.TIP_TEXT[kind or ""]
+    if not tip then
+      return false
+    end
+    text:SetText(W.Color(tip[2], tip[1]))
+    return true
+  end, function(button)
+    local text = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+    text.sizeFont = true
+    return text
+  end, Bag.CORNERS.ame_tip)
 
   B.API.RegisterCornerWidget(L["AME: signal"], "ame_signal", function(icon, details)
     if not Bag.On() then
@@ -231,7 +265,7 @@ function Bag:Install()
     icon:SetSize(12, 12)
     icon.padding = 0
     return icon
-  end)
+  end, Bag.CORNERS.ame_signal)
 
   B.API.RegisterCornerWidget(L["AME: value"], "ame_value", function(text, details)
     if not Bag.On() then
@@ -250,30 +284,7 @@ function Bag:Install()
     local text = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
     text.sizeFont = true
     return text
-  end)
-
-  B.API.RegisterCornerWidget(L["AME: tip"], "ame_tip", function(text, details)
-    if not Bag.On() then
-      return false
-    end
-    if not details.itemLink then
-      return nil
-    end
-    local kind = Bag.Tip(api, details.itemLink, Bag.Instead)
-    if kind == "sell" and not ns.Settings:Get("baganatorSellTip") then
-      kind = nil -- most of a bag: only marked when asked for (Settings, General, Other addons)
-    end
-    local tip = Bag.TIP_TEXT[kind or ""]
-    if not tip then
-      return false
-    end
-    text:SetText(W.Color(tip[2], tip[1]))
-    return true
-  end, function(button)
-    local text = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
-    text.sizeFont = true
-    return text
-  end)
+  end, Bag.CORNERS.ame_value)
 
   if B.API.RegisterContainerSort then
     B.API.RegisterContainerSort(L["AME: worth"], "ame_worth", function(isReverse, containerType)

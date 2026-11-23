@@ -351,8 +351,9 @@ describe("addon in a stubbed client", function()
       local corners, refreshed = {}, 0
       _G.Baganator = {
         API = {
-          RegisterCornerWidget = function(label, id, onUpdate, onInit)
-            corners[id] = { label = label, onUpdate = onUpdate, onInit = onInit }
+          RegisterCornerWidget = function(label, id, onUpdate, onInit, defaultPosition)
+            corners[id] = { label = label, onUpdate = onUpdate, onInit = onInit, at = defaultPosition }
+            corners[#corners + 1] = id
           end,
           RegisterJunkPlugin = function()
             error("AME leaves junk to Baganator and other addons")
@@ -398,6 +399,12 @@ describe("addon in a stubbed client", function()
 
       -- Baganator: three corners and a sort, registered at login (no junk rule: that's Baganator's own)
       assert.truthy(corners.ame_signal and corners.ame_value and corners.ame_tip)
+      -- suggested the first time: the tip then the signal top left (the first with something to show wins), the
+      -- value top right, clear of the stack count
+      assert.are.same({ "ame_tip", "ame_signal", "ame_value" }, { corners[1], corners[2], corners[3] })
+      assert.are.equal("top_left", corners.ame_tip.at.corner)
+      assert.are.equal("top_left", corners.ame_signal.at.corner)
+      assert.are.equal("top_right", corners.ame_value.at.corner)
       local button = CreateFrame("Button")
       local text = corners.ame_value.onInit(button)
       assert.is_true(corners.ame_value.onUpdate(text, { itemLink = "item:2589", itemCount = 20 }))
