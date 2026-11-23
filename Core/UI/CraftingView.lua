@@ -2051,6 +2051,37 @@ UI.CRAFT_DETAIL.earners = function(_, v, e)
   return { blocks = blocks }, why
 end
 
+-- Sell or refine: how a craft's other reagents are had (Crafting:InputCost's source)
+local REFINE_SOURCE = { buy = L["bought"], vendor = L["from a vendor"], craft = L["crafted"] }
+
+-- one craft option's card rows (e: a Sell or refine row, o: one of its options): the products sold, each other
+-- reagent at what getting it costs, the material left over sold raw - adding up to "That nets" - then the gain
+function UI:RefineCardRows(e, o)
+  local rows = {
+    { item = o.recipe.product, count = W.Count(o.sold.n), label = L["sold"], copper = o.sold.copper, signed = true },
+  }
+  for _, r in ipairs(o.others) do
+    rows[#rows + 1] = {
+      item = r.item,
+      count = W.Count(r.n),
+      label = REFINE_SOURCE[r.source] or "",
+      copper = -r.copper,
+      signed = true,
+    }
+  end
+  if o.left.n > 0 then
+    rows[#rows + 1] =
+      { item = e.itemID, count = W.Count(o.left.n), label = L["left, sold raw"], copper = o.left.copper, signed = true }
+  end
+  rows[#rows + 1] = { label = L["That nets"], copper = o.net, total = true }
+  rows[#rows + 1] = {
+    label = o.gain > 0 and L["More than selling it raw"] or L["Less than selling it raw"],
+    copper = o.gain,
+    signed = true,
+  }
+  return rows
+end
+
 UI.CRAFT_DETAIL.refine = function(_, v, e)
   local blocks = {
     { card = { item = e.itemID, count = W.Count(e.qty) } },
@@ -2061,22 +2092,20 @@ UI.CRAFT_DETAIL.refine = function(_, v, e)
       },
     },
   }
-  -- each way to craft it, best first: what it nets and how much more than selling it raw
+  -- each way to craft it, best first: what goes in and out (the lines add up to what it nets), and how much more
+  -- than selling it raw
   for i, o in ipairs(e.options) do
     if i > UI.CRAFT_REFINE_OPTIONS then
       break
     end
     local better = o.gain > 0
+    local rows = UI:RefineCardRows(e, o)
     blocks[#blocks + 1] = {
       card = {
         title = L["Craft %s ×%d"]:format(link(o.recipe.product), o.crafts),
         titleColor = (i == 1 and better) and "good" or nil,
         subtitle = (i == 1 and better) and L["Best use"] or nil,
-        rows = {
-          { label = L["That nets"], copper = o.net },
-          better and { label = L["More than selling it raw"], copper = o.gain, signed = true, total = true }
-            or { label = L["Less than selling it raw"], copper = o.gain, signed = true, total = true },
-        },
+        rows = rows,
         note = o.days and L["The market takes it in %s."]:format(days(o.days)) or nil,
       },
     }

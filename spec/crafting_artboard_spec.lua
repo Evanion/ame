@@ -338,6 +338,18 @@ describe("crafting artboard: the pages", function()
     ns.UI.craftSelected = r
     ns.UI:RenderCraftingDetail()
     assert.are.equal("Queue the crafts", v.action.label.text)
+    -- the best use's card: the products sold, each other reagent, any leftover, adding up to "That nets"
+    local o = r.options[1]
+    local want = 2 + #o.others + (o.left.n > 0 and 1 or 0) + 1
+    local card = ns.UI:RefineCardRows(r, o)
+    assert.are.equal(want, #card)
+    assert.are.equal(o.recipe.product, card[1].item)
+    local sum = 0
+    for i = 1, #card - 2 do
+      sum = sum + card[i].copper
+    end
+    assert.are.equal(o.net, sum)
+    assert.are.equal(o.net, card[#card - 1].copper)
     assert.are.equal("Queue the smelt", ns.UI.QueueRefineLabel({ profession = 186 }))
     v.action.scripts.OnClick(v.action)
     assert.are.same({ { recipe = 3275, count = r.best.crafts } }, AME_DB.craftQueue.items)

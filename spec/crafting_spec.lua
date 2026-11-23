@@ -114,6 +114,18 @@ describe("Crafting", function()
     market[BAR].market = 14000
   end)
 
+  it("charges a refine for the other reagents, and its parts add up to what it nets", function()
+    local c = C.New(env())
+    -- 7 sage: 3 elixirs, each needing 2 bloom (bought) and a vial (vendor); 1 sage left, sold raw
+    local o = c:SellOrRefine(SAGE, 7, { MONGOOSE }).options[1]
+    assert.are.equal(3, o.crafts)
+    assert.are.same({ n = 3, copper = 3 * 135000 * 0.95 }, o.sold)
+    assert.are.same({ item = BLOOM, n = 6, each = 21000, copper = 6 * 21000, source = "buy" }, o.others[1])
+    assert.are.same({ item = VIAL, n = 3, each = 400, copper = 3 * 400, source = "vendor" }, o.others[2])
+    assert.are.same({ n = 1, copper = 20000 * 0.95 }, o.left)
+    assert.are.equal(o.sold.copper - o.others[1].copper - o.others[2].copper + o.left.copper, o.net)
+  end)
+
   it("recommends recipes on the AH your characters could learn, by payback", function()
     local c = C.New(env())
     local teaches = function(item)

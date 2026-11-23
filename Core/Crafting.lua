@@ -186,9 +186,11 @@ function Crafting:TopEarners(entries, heldSet)
 end
 
 -- Sell a stack raw, or craft it into something and sell that? For qty of itemID you hold and the known recipes that
--- use it: { raw = net of selling it all, options = { { recipe, crafts, net, gain, days }, ... } best first,
--- best = the best option (or nil when selling raw is best) }. Other reagents are valued as InputCost says (bought);
--- leftovers count as sold raw; days = how long the market needs to absorb the products.
+-- use it: { raw = net of selling it all, options = { { recipe, crafts, net, gain, days, sold, others, left }, ... }
+-- best first, best = the best option (or nil when selling raw is best) }. Other reagents are valued as InputCost
+-- says (bought); leftovers count as sold raw; days = how long the market needs to absorb the products.
+-- The parts add up to net: sold = { n, copper } (the products), others = { { item, n, copper, source }, ... } (what
+-- the other reagents cost, all crafts), left = { n, copper } (the material left over, sold raw; n 0 when none).
 function Crafting:SellOrRefine(itemID, qty, recipes)
   local each = self:NetSale(itemID) or 0
   local out = { item = itemID, qty = qty, raw = each * qty, options = {} }
@@ -201,21 +203,30 @@ function Crafting:SellOrRefine(itemID, qty, recipes)
     end
     local productNet = recipe.product and self:NetSale(recipe.product)
     if need > 0 and productNet then
-      local others, ok = 0, true
+      local others, ok = {}, true
       for _, r in ipairs(recipe.reagents) do
         if r[1] ~= itemID then
-          local cost = self:InputCost(r[1])
+          local cost, source = self:InputCost(r[1])
           if not cost then
             ok = false
             break
           end
-          others = others + cost * r[2]
+          others[#others + 1] = { item = r[1], n = r[2], each = cost, source = source }
         end
       end
       local crafts = math.floor(qty / need)
       if ok and crafts > 0 then
         local made = recipe.made or 1
-        local net = crafts * (productNet * made - others) + (qty - crafts * need) * each
+        local sold = { n = crafts * made, copper = crafts * made * productNet }
+        local net = sold.copper
+        for _, o in ipairs(others) do
+          o.n = o.n * crafts
+          o.copper = o.n * o.each
+          net = net - o.copper
+        end
+        local left = { n = qty - crafts * need }
+        left.copper = left.n * each
+        net = net + left.copper
         local rate = self:SalesPerDay(recipe.product)
         out.options[#out.options + 1] = {
           recipe = recipe,
@@ -223,6 +234,9 @@ function Crafting:SellOrRefine(itemID, qty, recipes)
           net = net,
           gain = net - out.raw,
           days = rate and rate > 0 and crafts * made / rate or nil,
+          sold = sold,
+          others = others,
+          left = left,
         }
       end
     end
