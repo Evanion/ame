@@ -233,3 +233,12 @@ The redesign itself (R1 onward on the canvas) runs on Claude Fable.
 ## Questions to settle before R3
 
 None open: see Decisions so far.
+
+## Progress on the canvas
+
+| Screen | State | What changed |
+|---|---|---|
+| All existing screens | re-skinned | The hybrid look, the shared colour set, square corners, the new title bar and tab row, theme and faction switches |
+| Home | new board | What to do now, and what's worth doing today |
+| Market | redesigned | Three modes (Screener, Overview, Arbitrage); "Your alerts" in the sidebar; a "You hold" column; the row-click rule written under the table |
+| Market, Arbitrage mode | redesigned | Arbitrage is a mode of Market; star column; "Add to a shopping list" and "Open item" next to Search; "Sells/day there" and "Units" in the route's data |
