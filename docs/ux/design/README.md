@@ -42,7 +42,10 @@ transitions, fractional pixel sizes.
   - Settings gets two font pickers (text, headings) listing every font LibSharedMedia knows, so a player's shared
     media packs work in AME too. Picking another font is the player's choice to differ from the boards.
   - Where a font lacks the script (Korean, Chinese), AME falls back to the game's own font.
-  - Textures AME ships (the round badge and dots, later any frame art) are registered the same way; bars and
-    backgrounds a player picks elsewhere aren't used for AME's own chrome, which stays as designed.
+  - **Bars** use a LibSharedMedia status bar texture too: a third picker in Settings, flat by default (what the
+    boards show). It applies to the bars that fill: sync transfers, a category's share of the market, the leveling
+    skill bar, the scan progress. Marks that are data, not fills, stay as drawn: chart bars, confidence pips.
+  - Textures AME ships (the round badge and dots, later any frame art) are registered the same way. Backgrounds and
+    borders a player picks elsewhere aren't used for AME's own chrome, which stays as designed.
 - **Sizes and spacing** move into `tokens.lua` as each screen is redesigned (row heights, paddings, font sizes), so
   the addon's layout constants and the boards read the same numbers.
