@@ -286,7 +286,59 @@ Canvas pages: **Existing screens** (every current screen, re-skinned, some redes
 - **Requests** also go out as a whisper, so a crafter without AME sees them. A fair tip is suggested as about a tenth
   of what the craft adds.
 
+## Planned drawings: the checklist
+
+The plan is every screen this review asked for (the Proposed direction above, and the "still to draw" lists kept while
+drawing). Each line names the board's file on the canvas. All 37 were opened on the canvas on 2026-11-24 after their
+last change and render as described, except where the Checked column says otherwise. A script also checks every one of
+the canvas's 72 board files (planned boards, shared components and untouched screens): listed in the index, every
+value its markup uses supplied, every component it imports present, stylesheets linked. It reports no problems.
+
+| # | Planned | Board | Page | Checked |
+|---|---|---|---|---|
+| 1 | Home: what to do now | `Home.dc.html` | New | viewed |
+| 2 | Market, Screener: three modes, alerts, You hold | `Market.dc.html` | Existing | viewed |
+| 3 | Market, Overview: the three-mode switch | `MarketOverview.dc.html` | Existing | viewed |
+| 4 | Market, Arbitrage as a mode | `Arbitrage.dc.html` | Existing | viewed |
+| 5 | Market with a shopping list picked | `ShoppingList.dc.html` | Existing | viewed |
+| 6 | Market, narrow: modes as a dropdown | `MarketCompact.dc.html`, `MarketOverviewCompact.dc.html` | Existing | viewed |
+| 7 | Item as a hub: action bar, position, other houses, crafting | `Main.dc.html` | Existing | viewed |
+| 8 | At the AH: Market searches the AH | `MarketAH.dc.html` | New | viewed |
+| 9 | At the AH: a shopping list, Search all, buying down the list | `MarketAHList.dc.html` | New | viewed |
+| 10 | At the AH: Item with listings, Buy and Sell yours | `ItemAH.dc.html` | New | viewed |
+| 11 | At the AH: Portfolio > Sell, Post and next | `AHSell.dc.html` | New | viewed |
+| 12 | At the AH: Portfolio > Auctions, undercuts, Cancel | `AHAuctions.dc.html` | New | viewed |
+| 13 | At the AH, narrow: Item | `ItemAHCompact.dc.html` | New | viewed |
+| 14 | At the AH, narrow: Market | `MarketAHCompact.dc.html` | New | viewed |
+| 15 | At the AH, narrow: Portfolio > Sell | `SellCompact.dc.html` | New | viewed |
+| 16 | The game's AH window: Open in AME, the sell bar's ladder | `SellBar.dc.html` | Existing | viewed |
+| 17 | Portfolio: Where, All characters, undercut count | `Portfolio.dc.html` | Existing | viewed |
+| 18 | Guild: Crafters, with Ask | `CraftingCrafters.dc.html` | Existing | viewed |
+| 19 | Guild: Requests | `GuildRequests.dc.html` | New | viewed |
+| 20 | Guild: Your crafts | `GuildOffers.dc.html` | New | viewed |
+| 21 | Guild: Guild lists | `GuildLists.dc.html` | New | viewed |
+| 22 | Guild: Sharing prices (moved from Settings) | `Sync.dc.html` | Existing | viewed |
+| 23 | Guild's pages (the sidebar) | `GuildNav.dc.html` | New | viewed |
+| 24 | Settings: at the auction house; fonts and bars | `Settings.dc.html` | Existing | viewed |
+| 25 | Crafting: Top earners, a quantity | `Crafting.dc.html` | Existing | viewed |
+| 26 | Crafting: Recipes to buy, crafters and vendor recipes | `CraftingRecipes.dc.html` | Existing | viewed |
+| 27 | Crafting: Sell or refine, Sell it raw | `CraftingRefine.dc.html` | Existing | viewed |
+| 28 | Crafting: Leveling, recipes to the list too | `CraftingLeveling.dc.html` | Existing | viewed |
+| 29 | Crafting: Your professions, cooldown notice | `CraftingProfessions.dc.html` | Existing | viewed |
+| 30 | Crafting: Craft queue page | `CraftingQueuePage.dc.html` | Existing | viewed |
+| 31 | The profession window's bar | `ProfBar.dc.html` | Existing | viewed; its side text was reworded after |
+| 32 | The craft queue panel | `CraftQueue.dc.html` | Existing | viewed |
+| 33 | Vendor: sell | `VendorSell.dc.html` | New | viewed |
+| 34 | Session tracker | `SessionTracker.dc.html` | New | viewed |
+| 35 | Tooltip: Made by, and the way to the crafters | `Crafters.dc.html` | Existing | viewed |
+| 36 | Guide: the Item article leads to its screen | `Guide.dc.html` | Existing | viewed |
+| 37 | Guide: At the auction house | `GuideAH.dc.html` | New | viewed |
+
+Not planned, and so not drawn: the other Guide articles' full text, and redrawn tooltips beyond the Made by line.
+Not checked on any board: flipping the theme and faction switches on the canvas (the classes they set are checked by
+the script, not by eye).
+
 ## Still to draw
 
-Nothing planned is left: every screen in the review has a board. Next is the user's read of the boards, then building
-screen by screen, each done when an in-game screenshot matches its board (docs/ux/design/README.md).
+Nothing planned is left. Next is the user's read of the boards, then building screen by screen, each done when an
+in-game screenshot matches its board (docs/ux/design/README.md).
