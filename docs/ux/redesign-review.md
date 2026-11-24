@@ -313,7 +313,16 @@ Deadmines; Fermenter: Rath'mael, Ruins of Lordaeron; and so on), so To learn nee
 house and vendors: "blueprint drops: boss, dungeon". AME cannot read drop sources from the game; this would be a
 small table kept by hand, for deployable blueprints only. At least some blueprints can be traded, so they also sell on the auction house: a blueprint AME has seen listed
 shows as any recipe does (price, payback, Buy), and the drop line is the fallback when none is listed. AME learns
-which blueprints trade from seeing them on the auction house, not from a list. To check in game: that the recipe's requirements say
+which blueprints trade from seeing them on the auction house, not from a list. 
+
+Where drop sources come from (researched 2026-11-24, a quick pass): no maintained library fits. LibPeriodicTable
+has instance loot under a compatible licence but is retail-only and stale since 2023; the AtlasLoot forks, one of
+which covers Forever, are GPLv2 static tables that an LGPL addon cannot copy. The plan, in order: (1) the game's
+Encounter Journal (`EJ_SelectInstance`, `C_EncounterJournal.GetLootInfoByIndex`), which the API wiki lists for
+Forever 1.60.1, read once into a cache with the loot filters reset; unconfirmed is whether Forever's journal is
+filled in and lists recipe items. (2) A small hand-kept table for what the journal omits, as `Core/Disenchant.lua`
+is. (3) Optionally, the boss recorded when a player loots one (`ENCOUNTER_LOOT_RECEIVED`), shared over guild sync.
+To check in game: that the recipe's requirements say
 which are items and which are met (`C_TradeSkillUI.GetRecipeRequirements`).
 
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
