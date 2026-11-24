@@ -137,7 +137,7 @@ local function ladderCard(app, s, compact)
     meta = { h = 42 },
     children = {
       { id = "sell.qty", type = "field", props = { label = L["Quantity"], value = tostring(s.qty), numeric = true, action = "qty" }, meta = { w = compact and 50 or 56 } },
-      { id = "sell.price", type = "field", props = { label = L["Price each"], value = s.price and ns.MoneyInputText(s.price) or "", hint = L["gold"], action = "price" }, meta = { w = compact and 80 or 90 } },
+      { id = "sell.price", type = "field", props = { label = L["Price each"], value = s.price and ns.MoneyInputText(s.price) or "", hint = L["gold"], action = "price", money = true }, meta = { w = compact and 80 or 90 } },
       {
         id = "sell.dur",
         type = "column",

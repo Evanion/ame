@@ -115,8 +115,9 @@ local function text(id, value, color, size, meta)
   return { id = id, type = "text", props = { text = value or "", color = color, size = size }, meta = meta }
 end
 
-local function input(id, value, hint, action, w)
-  return { id = id, type = "input", props = { value = value or "", hint = hint, action = action }, meta = { w = w, h = 24 } }
+-- money: the amount drawn in its coins' colours while it isn't being typed in
+local function input(id, value, hint, action, w, money)
+  return { id = id, type = "input", props = { value = value or "", hint = hint, action = action, money = money or nil }, meta = { w = w, h = 24 } }
 end
 
 local function gap(id, w)
@@ -354,8 +355,8 @@ local function screenerToolbar(app, params, hidden, ah)
     }
     kids[#kids + 1] = btn("market.more", L["More"] .. arrow(), "more")
   else
-    kids[#kids + 1] = input("market.min", gold(q.minPrice), L["min g"], "minPrice", 60)
-    kids[#kids + 1] = input("market.max", gold(q.maxPrice), L["max g"], "maxPrice", 60)
+    kids[#kids + 1] = input("market.min", gold(q.minPrice), L["min g"], "minPrice", 60, true)
+    kids[#kids + 1] = input("market.max", gold(q.maxPrice), L["max g"], "maxPrice", 60, true)
     kids[#kids + 1] = gap("market.gap2")
     kids[#kids + 1] = btn("market.views", L["Views"] .. arrow(), "views")
     kids[#kids + 1] = btn("market.columns", Market.ColumnsLabel(hidden), "columns")
@@ -950,7 +951,7 @@ local function arbitrageBody(app, params)
     btn("market.sellAt", houseLabel(a.sell) .. arrow(), "arbSell"),
   }
   if not app.compact then
-    bar[#bar + 1] = input("market.minProfit", a.minProfit and a.minProfit > 1 and gold(a.minProfit) or "", L["min profit g"], "arbMinProfit", 86)
+    bar[#bar + 1] = input("market.minProfit", a.minProfit and a.minProfit > 1 and gold(a.minProfit) or "", L["min profit g"], "arbMinProfit", 86, true)
     bar[#bar + 1] = input("market.minMargin", a.minMargin and tostring(math.floor(a.minMargin * 100 + 0.5)) or "", L["min margin %"], "arbMinMargin", 86)
     bar[#bar + 1] = btn("market.age", Market.AgeLabel(a.maxAge) .. arrow(), "arbAge")
     bar[#bar + 1] = gap("market.gap2")

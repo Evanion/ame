@@ -184,10 +184,10 @@ function Q.FormTree(d, s)
         meta = { h = 24 * 3 + 20 },
         children = {
           text("rf.offer.l", L["For %s's mats"]:format(crafter), { color = "dim" }),
-          { id = "rf.offer", type = "input", props = { value = typed(d.offer), hint = L["For the mats"], action = "offer" } },
+          { id = "rf.offer", type = "input", props = { value = typed(d.offer), hint = L["For the mats"], action = "offer", money = true } },
           text("rf.offer.n", offerNote, { color = "dim" }),
           text("rf.tip.l", L["Tip"], { color = "dim" }),
-          { id = "rf.tip", type = "input", props = { value = typed(d.tip), hint = L["Tip"], action = "tip" } },
+          { id = "rf.tip", type = "input", props = { value = typed(d.tip), hint = L["Tip"], action = "tip", money = true } },
           {
             id = "rf.tip.n",
             type = "row",
@@ -348,7 +348,7 @@ function Q.AnswerTree(r, a, s)
     grid[#grid + 1] = { id = "ra.m." .. m.key .. ".o", type = "money", props = { copper = o } }
     if crafter then
       grid[#grid + 1] =
-        { id = "ra.m." .. m.key .. ".a", type = "input", props = { value = typed(v), hint = m.label, action = m.key } }
+        { id = "ra.m." .. m.key .. ".a", type = "input", props = { value = typed(v), hint = m.label, action = m.key, money = true } }
     else
       grid[#grid + 1] = { id = "ra.m." .. m.key .. ".a", type = "money", props = { copper = v, bold = diff ~= 0 } }
     end

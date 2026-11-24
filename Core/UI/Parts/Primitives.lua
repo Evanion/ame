@@ -17,6 +17,7 @@
 local _, ns = ...
 
 local Layout, Kit, W = ns.Layout, ns.Kit, ns.Widgets
+local L = ns.L
 
 local function dispatch(ctx, props, extra)
   if props.action and ctx then
@@ -141,6 +142,20 @@ Layout.Register("button", {
 
 -- ----------------------------------------------------------------------------------------------------- input
 
+-- money = true: while it isn't being typed in, the amount shows through the money helper (gold, silver and copper
+-- in their coins' colours) over the box's own text; typing in it shows the plain text
+local function drawCoins(box)
+  local p = box.props or {}
+  local copper = p.money and not (box.HasFocus and box:HasFocus()) and ns.ParseMoney and ns.ParseMoney(box:GetText() or "")
+  local show = copper ~= nil and copper ~= false
+  box.coins:SetShown(show)
+  if show then
+    box.coins:SetText(W.Money(copper))
+  end
+  local c = Kit.C("soft")
+  box:SetTextColor(c[1], c[2], c[3], show and 0 or 1)
+end
+
 local function newInput(parent, ctx)
   local box = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
   Kit.Box(box, "bg", "controlLine")
@@ -150,6 +165,9 @@ local function newInput(parent, ctx)
   box:SetAutoFocus(false)
   box.hintText = Kit.Text(box, { size = 11, color = "dim" })
   box.hintText:SetPoint("LEFT", 7, 0)
+  box.coins = Kit.Text(box, { size = 11 })
+  box.coins:SetPoint("LEFT", 7, 0)
+  box.coins:Hide()
   local function send(self)
     if self.props and self.props.action then
       dispatch(ctx, self.props, { text = self:GetText() or "" })
@@ -168,10 +186,28 @@ local function newInput(parent, ctx)
   end)
   box:SetScript("OnEditFocusGained", function(self)
     Kit.Box(self, "bg", Kit.Accent())
+    drawCoins(self)
   end)
   box:HookScript("OnEditFocusLost", function(self)
     Kit.Box(self, "bg", "controlLine")
+    drawCoins(self)
   end)
+  if box.SetScript then
+    -- a money tip on hover, as the old window's money boxes give
+    box:SetScript("OnEnter", function(self)
+      if self.props and self.props.money and GameTooltip then
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(L["Gold, or silver and copper too"], 1, 1, 1)
+        GameTooltip:AddLine(L["12 or 12g is gold; 1.5 is 1g 50s; 9s 50c, 1g 20s and 150c work too."], nil, nil, nil, true)
+        GameTooltip:Show()
+      end
+    end)
+    box:SetScript("OnLeave", function()
+      if GameTooltip then
+        GameTooltip:Hide()
+      end
+    end)
+  end
   return box
 end
 
@@ -185,10 +221,11 @@ local function setInput(box, p)
   end
   box.hintText:SetText(p.hint or "")
   box.hintText:SetShown((box:GetText() or "") == "")
+  drawCoins(box)
 end
 
 Layout.Register("input", {
-  props = { value = "string?", hint = "string?", action = "string?", payload = "any?", numeric = "boolean?" },
+  props = { value = "string?", hint = "string?", action = "string?", payload = "any?", numeric = "boolean?", money = "boolean?" },
   create = newInput,
   update = setInput,
   size = function()
@@ -204,6 +241,7 @@ Layout.Register("field", {
     action = "string?",
     payload = "any?",
     numeric = "boolean?",
+    money = "boolean?",
   },
   create = function(parent, ctx)
     local f = CreateFrame("Frame", nil, parent)

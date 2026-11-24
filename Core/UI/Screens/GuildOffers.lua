@@ -130,7 +130,7 @@ local function build(app, params)
         {
           id = "offers.tiprow.in",
           type = "input",
-          props = { value = tip and ns.Requests.Typed(tip) or "", hint = L["suggested"], action = "setTip", payload = pickedRow.recipe },
+          props = { value = tip and ns.Requests.Typed(tip) or "", hint = L["suggested"], action = "setTip", payload = pickedRow.recipe, money = true },
           meta = { w = 70, h = 24 },
         },
       },
