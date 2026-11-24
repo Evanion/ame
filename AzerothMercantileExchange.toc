@@ -4,7 +4,7 @@
 ## Author: Evanion
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\AzerothMercantileExchange\media\Icon
-## OptionalDeps: Auctionator, Baganator, Ace3, LibDeflate, LibDataBroker-1.1, LibDBIcon-1.0
+## OptionalDeps: Auctionator, Baganator, Ace3, LibDeflate, LibDataBroker-1.1, LibDBIcon-1.0, LibSharedMedia-3.0
 ## AddonCompartmentFunc: AzerothMercantileExchange_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: AzerothMercantileExchange_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: AzerothMercantileExchange_OnAddonCompartmentLeave

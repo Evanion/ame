@@ -20,3 +20,7 @@ fetch LibDataBroker-1.1 https://github.com/tekkub/libdatabroker-1-1.git
 if [ ! -f Libs/LibDBIcon-1.0/LibDBIcon-1.0.lua ] && command -v svn >/dev/null; then
   svn export -q https://repos.wowace.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0 Libs/LibDBIcon-1.0
 fi
+# LibSharedMedia-3.0 is SVN-only too: svn if available, otherwise copy it from an installed addon (BugSack, DBM, ...).
+if [ ! -f Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua ] && command -v svn >/dev/null; then
+  svn export -q https://repos.wowace.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0 Libs/LibSharedMedia-3.0
+fi

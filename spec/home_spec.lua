@@ -106,6 +106,39 @@ describe("Home", function()
     assert.falsy(fs:GetText():find("▾", 1, true))
   end)
 
+  it("a font picked in Settings reaches Kit text already on screen (one font object per role and size)", function()
+    local Kit = ns.Kit
+    local made = {}
+    _G.CreateFont = function(name)
+      local o = { name = name }
+      function o:SetFont(path, size)
+        self.path, self.size = path, size
+      end
+      made[name] = o
+      return o
+    end
+    local fs = { color = { 1, 1, 1, 1 } }
+    function fs:SetFontObject(obj)
+      self.obj = obj
+    end
+    function fs:GetTextColor()
+      return unpack(self.color)
+    end
+    function fs:SetTextColor(r, g, b, a)
+      self.color = { r, g, b, a }
+    end
+    fs:SetTextColor(0.5, 0.5, 0.5, 1)
+    Kit.SetFont(fs, "ui", 12, true)
+    assert.truthy(fs.obj.path:find("Inter%-SemiBold"), fs.obj.path)
+    assert.are.same({ 0.5, 0.5, 0.5, 1 }, fs.color) -- its colour kept
+    ns.SettingsScreen = { FontPath = function()
+      return "Fonts\\picked.ttf"
+    end }
+    Kit.ApplyFonts()
+    assert.are.equal("Fonts\\picked.ttf", fs.obj.path)
+    ns.SettingsScreen, _G.CreateFont = nil, nil
+  end)
+
   it("the best refine names its recipe by id (SellOrRefine hands back the recipe itself)", function()
     local SMELT = { id = 2659, product = 2840, reagents = { { 2770, 1 } } }
     local m = {

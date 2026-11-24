@@ -45,6 +45,15 @@ local L = ns.L
 local W = ns.Widgets
 
 local DataTable = {}
+
+-- a font string in the table; opts.styleText(fs, gameFont) restyles it (the new window: Kit's fonts)
+local function styled(t, parent, font, justify)
+  local fs = W.Text(parent, font, justify)
+  if t.opts and t.opts.styleText then
+    t.opts.styleText(fs, font)
+  end
+  return fs
+end
 DataTable.__index = DataTable
 ns.DataTable = DataTable
 
@@ -152,7 +161,7 @@ function DataTable.New(parent, opts)
     h:SetHeight(18) -- width and position: t:Layout()
     h:SetShown(not opts.bare)
     local left = leftAligned(col)
-    h.text = W.Text(h, "GameFontNormalSmall", left and "LEFT" or "RIGHT")
+    h.text = styled(t, h, "GameFontNormalSmall", left and "LEFT" or "RIGHT")
     h.text:SetAllPoints()
     if col.term and ns.Help then
       ns.Help.Explain(h, col.term)
@@ -203,7 +212,7 @@ function DataTable.New(parent, opts)
     row.links, row.shares, row.buttons, row.badges, row.tags = {}, {}, {}, {}, {} -- by column: their parts
     for c, col in ipairs(opts.columns) do
       local left = leftAligned(col)
-      local fs = W.Text(row, "GameFontHighlightSmall", left and "LEFT" or "RIGHT")
+      local fs = styled(t, row, "GameFontHighlightSmall", left and "LEFT" or "RIGHT")
       fs:SetWordWrap(false)
       fs:SetHeight(rowH) -- width and position (and of the star, icon, confidence bars): t:Layout()
       if linkItem(col) then
@@ -278,7 +287,7 @@ function DataTable.New(parent, opts)
         row.icon = row:CreateTexture(nil, "ARTWORK")
         row.icon:SetSize(ICON_W, ICON_W)
         if opts.confidence then
-          row.conf = W.Text(row, "GameFontHighlightSmall", "LEFT")
+          row.conf = styled(t, row, "GameFontHighlightSmall", "LEFT")
           row.conf:SetSize(20, rowH)
         end
       end
@@ -406,7 +415,7 @@ end
 -- a message centred over the rows (nothing to show, loading); nil hides it
 function DataTable:SetMessage(text)
   if not self.message then
-    self.message = W.Text(self.frame, "GameFontDisableSmall", "CENTER")
+    self.message = styled(self, self.frame, "GameFontDisableSmall", "CENTER")
     self.message:SetPoint("LEFT", 20, -self.headH / 2) -- below the header
     self.message:SetPoint("RIGHT", -20, -self.headH / 2)
   end
@@ -552,7 +561,7 @@ end
 -- it the room of the rows it needs; a fixed one grows by it.
 function DataTable:SetNote(text)
   if not self.note then
-    self.note = W.Text(self.frame, "GameFontDisableSmall", "LEFT")
+    self.note = styled(self, self.frame, "GameFontDisableSmall", "LEFT")
     self.note:SetWordWrap(true)
     self.note:SetPoint("BOTTOMLEFT", 8, 4)
     self.note:SetPoint("BOTTOMRIGHT", -8 - DataTable.BAR_SPACE, 4)

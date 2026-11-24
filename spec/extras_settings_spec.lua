@@ -99,7 +99,7 @@ describe("Settings screen", function()
     assert.is_false(rowByKey(cards, "soundAuction").checked)
     assert.is_true(rowByKey(cards, "minimap").checked)
     assert.equals("", rowByKey(cards, "fontText").value)
-    assert.equals("Arial Narrow (AME)", rowByKey(cards, "fontText").options[1].label)
+    assert.equals("Inter (AME)", rowByKey(cards, "fontText").options[1].label)
   end)
 
   it("the minimap check says what it needs when LibDBIcon is missing", function()

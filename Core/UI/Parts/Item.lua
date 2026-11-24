@@ -47,7 +47,7 @@ Layout.Register("itemhead", {
         HandleModifiedItemClick(link)
       end
     end)
-    f.link = W.ItemLink(f, { icon = 0 })
+    f.link = W.ItemLink(f, { kit = true, icon = 0 })
     f.sub = Kit.Text(f, { size = 11, color = "dim" })
     if f.sub.SetWordWrap then
       f.sub:SetWordWrap(false)

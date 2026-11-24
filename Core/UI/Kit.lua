@@ -127,9 +127,17 @@ end
 
 -- ------------------------------------------------------------------------------------------------ fonts
 
--- The UI font is the client's own narrow face; headings and tabs use the game's display font. Korean and Chinese
--- clients keep the game's own font for both (theirs has the glyphs). LibSharedMedia picks come in Settings.
-Kit.FONTS = { ui = "Fonts\\ARIALN.TTF", display = "Fonts\\FRIZQT__.TTF" }
+-- The boards' fonts, shipped in media/Fonts (SIL Open Font License, the licences beside them): Inter for text (its
+-- SemiBold for bold), Marcellus for headings and tabs. Korean and Chinese clients keep the game's own font (Inter
+-- and Marcellus lack the glyphs). Settings (Fonts and bars) can pick any LibSharedMedia font instead.
+local FONT_DIR = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Fonts\\"
+Kit.FONTS = {
+  ui = FONT_DIR .. "Inter-Regular.ttf",
+  uiBold = FONT_DIR .. "Inter-SemiBold.ttf",
+  display = FONT_DIR .. "Marcellus-Regular.ttf",
+}
+-- their names in LibSharedMedia (so other addons can use them, and Settings lists them)
+Kit.FONT_NAMES = { ui = "Inter (AME)", uiBold = "Inter SemiBold (AME)", display = "Marcellus (AME)" }
 
 local function localeFont()
   local loc = GetLocale and GetLocale() or "enUS"
@@ -138,19 +146,78 @@ local function localeFont()
   end
 end
 
-function Kit.FontPath(font)
+function Kit.FontPath(font, bold)
   -- a LibSharedMedia pick in Settings (Fonts and bars), else AME's own
   local picked = ns.SettingsScreen
     and ns.SettingsScreen.FontPath
     and ns.SettingsScreen.FontPath(font == "display" and "heading" or "text")
-  return localeFont() or picked or Kit.FONTS[font or "ui"] or Kit.FONTS.ui
+  local own = font == "display" and Kit.FONTS.display or bold and Kit.FONTS.uiBold or Kit.FONTS.ui
+  return localeFont() or picked or own
 end
 
-function Kit.SetFont(fs, font, size)
-  if fs.SetFont then
-    fs:SetFont(Kit.FontPath(font), size or 12, "")
+-- One font object per role, size and weight: every Kit font string uses one, so a font picked in Settings reaches
+-- all text on screen at once (Kit.ApplyFonts changes the objects, the strings follow).
+local fontObjects = {}
+
+local function applyObject(o)
+  o.obj:SetFont(Kit.FontPath(o.font, o.bold), o.size, "")
+end
+
+function Kit.FontObject(font, size, bold)
+  if not CreateFont then
+    return nil
   end
-  fs.kitFont, fs.kitSize = font or "ui", size or 12
+  font, size = font or "ui", size or 12
+  local key = font .. "_" .. size .. (bold and "_b" or "")
+  local o = fontObjects[key]
+  if not o then
+    o = { obj = CreateFont("AMEFont_" .. key:gsub("%W", "_")), font = font, size = size, bold = bold }
+    if not o.obj then
+      return nil
+    end
+    applyObject(o)
+    fontObjects[key] = o
+  end
+  return o.obj
+end
+
+-- after a font pick in Settings: every Kit font string redraws in it
+function Kit.ApplyFonts()
+  for _, o in pairs(fontObjects) do
+    applyObject(o)
+  end
+end
+
+-- AME's fonts into LibSharedMedia (when it is loaded), so the Settings list and other addons have them
+function Kit.RegisterFonts()
+  local stub = _G.LibStub
+  local media = stub and stub("LibSharedMedia-3.0", true)
+  if not (media and media.Register) then
+    return
+  end
+  for key, name in pairs(Kit.FONT_NAMES) do
+    pcall(media.Register, media, "font", name, Kit.FONTS[key], media.LOCALE_BIT_western)
+  end
+end
+Kit.RegisterFonts()
+
+function Kit.SetFont(fs, font, size, bold)
+  font, size = font or "ui", size or 12
+  local obj = fs.SetFontObject and Kit.FontObject(font, size, bold)
+  if obj then
+    -- a font object brings its own colour: keep the string's
+    local r, g, b, a
+    if fs.GetTextColor then
+      r, g, b, a = fs:GetTextColor()
+    end
+    fs:SetFontObject(obj)
+    if r and fs.SetTextColor then
+      fs:SetTextColor(r, g, b, a)
+    end
+  elseif fs.SetFont then
+    fs:SetFont(Kit.FontPath(font, bold), size, "")
+  end
+  fs.kitFont, fs.kitSize, fs.kitBold = font, size, bold
 end
 
 function Kit.SetColor(fs, color)
@@ -236,6 +303,17 @@ end
 -- a texture in a colour
 function Kit.Fill(tex, color)
   tex:SetColorTexture(rgba(color))
+end
+
+-- a bar's fill: the bar texture picked in Settings (Fonts and bars), else flat, tinted the colour
+function Kit.BarPath()
+  local S = ns.SettingsScreen
+  return S and S.BarTexture and S.BarTexture() or WHITE
+end
+
+function Kit.Bar(tex, color)
+  tex:SetTexture(Kit.BarPath())
+  tex:SetVertexColor(rgba(color))
 end
 
 -- the warm gradient of the title bar and status row (top to bottom)

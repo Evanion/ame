@@ -1241,6 +1241,12 @@ function W.ItemLink(parent, opts)
   f.count:SetPoint("LEFT", f.name, "RIGHT", 4, 0)
   f.conf = W.Text(f, "GameFontHighlightSmall")
   f.conf:SetPoint("LEFT", f.count, "RIGHT", 4, 0)
+  -- opts.kit: the new window's link, in Kit's fonts (Settings' text font reaches it)
+  if opts.kit and ns.Kit then
+    ns.Kit.SetFont(f.name, "ui", 12)
+    ns.Kit.SetFont(f.count, "ui", 12)
+    ns.Kit.SetFont(f.conf, "ui", 12)
+  end
   -- once the client has the name: draw it again
   f.redraw = function()
     if f.key then
@@ -1289,6 +1295,11 @@ function W.ItemLink(parent, opts)
 
   -- The game's font has no bold weight: bold draws the name 2 px larger, as the game's own headings stand out.
   function f:SetFont(px, bold)
+    if self.opts.kit and ns.Kit then
+      ns.Kit.SetFont(self.name, "ui", px or 12, bold) -- Inter has a real bold
+      self:Layout()
+      return
+    end
     local file, _, flags = self.name:GetFont()
     if file and px then
       self.name:SetFont(file, bold and px + 2 or px, flags)

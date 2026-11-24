@@ -161,7 +161,7 @@ Layout.Register("buybar", {
     f.next = Kit.Text(f, { size = 11, color = "dim" })
     f.next:SetPoint("LEFT", 10, 0)
     f.next:SetText(L["Next"])
-    f.link = W.ItemLink(f, { icon = 14 })
+    f.link = W.ItemLink(f, { kit = true, icon = 14 })
     f.link:SetPoint("LEFT", f.next, "RIGHT", 8, 0)
     f.price = Kit.Text(f, { size = 12 })
     f.note = Kit.Text(f, { size = 11, color = "dim" })

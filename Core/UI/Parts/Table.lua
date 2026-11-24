@@ -95,6 +95,10 @@ local function build(f, p, ctx)
   local opts = {
     columns = columnsFor(f, p.columns, ctx),
     fill = true,
+    -- headers 11 px, cells and notes 12 px, in Kit's text font (Settings' pick reaches them)
+    styleText = function(fs, gameFont)
+      Kit.SetFont(fs, "ui", gameFont == "GameFontNormalSmall" and 11 or 12)
+    end,
     bare = p.bare,
     note = p.note,
     star = p.star,

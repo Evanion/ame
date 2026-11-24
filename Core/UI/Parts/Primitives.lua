@@ -336,7 +336,7 @@ Layout.Register("money", {
 Layout.Register("itemlink", {
   props = { item = "any?", count = "any?", size = "number?", bold = "boolean?", icon = "number?" },
   create = function(parent)
-    return W.ItemLink(parent, { icon = 14 })
+    return W.ItemLink(parent, { kit = true, icon = 14 })
   end,
   update = function(f, p)
     if f.SetFont then
@@ -371,12 +371,12 @@ Layout.Register("keyvalue", {
   },
   create = function(parent, ctx)
     local f = CreateFrame("Button", nil, parent)
-    f.link = W.ItemLink(f, { icon = 12 })
+    f.link = W.ItemLink(f, { kit = true, icon = 12 })
     f.link:SetPoint("LEFT", 0, 0)
     f.label = Kit.Text(f, { size = 12, color = "dim" })
     f.value = Kit.Text(f, { size = 12, justify = "RIGHT" })
     f.value:SetPoint("RIGHT", 0, 0)
-    f.vlink = W.ItemLink(f, { icon = 12 })
+    f.vlink = W.ItemLink(f, { kit = true, icon = 12 })
     f.vlink:SetPoint("RIGHT", 0, 0)
     f:SetScript("OnClick", function(self)
       dispatch(ctx, self.props)

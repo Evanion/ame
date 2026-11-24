@@ -318,7 +318,7 @@ Layout.Register("crafthead", {
     local f = cardFrame(parent)
     f.title:ClearAllPoints()
     f.title:SetPoint("TOPLEFT", 10, -8)
-    f.link = W.ItemLink(f, { icon = 16 })
+    f.link = W.ItemLink(f, { kit = true, icon = 16 })
     f.link:SetPoint("TOPLEFT", 10, -6)
     f.link:SetPoint("RIGHT", -10, 0)
     f.sub = Kit.Text(f, { size = 11, color = "dim" })
@@ -362,7 +362,7 @@ Layout.Register("toolscard", {
       local line = f.lines[i]
       if not line then
         line = {
-          link = W.ItemLink(f, { icon = 12 }),
+          link = W.ItemLink(f, { kit = true, icon = 12 }),
           place = Kit.Text(f, { size = 12 }),
           have = Kit.Text(f, { size = 11, justify = "RIGHT" }),
           how = Kit.Text(f, { size = 11, color = "dim" }),
@@ -651,7 +651,7 @@ Layout.Register("skillbar", {
     local edges = { p.lo, p.yellow, p.green, p.grey, p.hi }
     local scale = w / math.max(1, p.hi - p.lo)
     for i, t in ipairs(f.parts) do
-      Kit.Fill(t, CraftingUI.DiffColor(t.diff))
+      Kit.Bar(t, CraftingUI.DiffColor(t.diff))
       t:ClearAllPoints()
       t:SetPoint("TOPLEFT", (edges[i] - p.lo) * scale, 0)
       t:SetSize(math.max(1, (edges[i + 1] - edges[i]) * scale), 14)

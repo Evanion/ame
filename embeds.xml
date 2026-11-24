@@ -6,6 +6,9 @@
   <Include file="Libs\Ace3\AceLocale-3.0\AceLocale-3.0.xml"/>
   <Include file="Libs\LibDeflate\lib.xml"/>
   <Script file="Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
+  <!-- LibSharedMedia: fonts, bar textures and sounds from other addons (Settings: Fonts and bars, Sound). WowAce SVN
+       like LibDBIcon below: .pkgmeta fetches it; in development scripts/fetch-libs.sh (svn) or copy it in. -->
+  <Include file="Libs\LibSharedMedia-3.0\lib.xml"/>
   <!-- LibDBIcon comes from the official WowAce SVN: .pkgmeta fetches it for release builds; in development run
        scripts/fetch-libs.sh (svn) or copy it from any addon that embeds it. -->
   <Script file="Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua"/>

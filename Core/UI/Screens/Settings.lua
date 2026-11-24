@@ -63,8 +63,15 @@ local function mediaOptions(kind, own)
   if media and media.List then
     ok, list = pcall(media.List, media, kind)
   end
+  -- AME's own are registered there too (Kit.RegisterFonts); they're the first entry already
+  local own = {}
+  for _, n in pairs(ns.Kit and ns.Kit.FONT_NAMES or {}) do
+    own[n] = true
+  end
   for _, name in ipairs(ok and type(list) == "table" and list or {}) do
-    out[#out + 1] = opt(name, name)
+    if not own[name] then
+      out[#out + 1] = opt(name, name)
+    end
   end
   return out
 end
@@ -145,8 +152,8 @@ local function general(env)
     {
       title = L["Fonts and bars"],
       rows = {
-        field(L["Text font"], "fontText", mediaOptions("font", L["Arial Narrow (AME)"])),
-        field(L["Heading font"], "fontHeading", mediaOptions("font", L["Friz Quadrata (AME)"])),
+        field(L["Text font"], "fontText", mediaOptions("font", L["Inter (AME)"])),
+        field(L["Heading font"], "fontHeading", mediaOptions("font", L["Marcellus (AME)"])),
         field(L["Bar texture"], "barTexture", mediaOptions("statusbar", L["Flat (AME)"])),
         {
           text = L["From LibSharedMedia: fonts and bar textures from your other addons' media packs are listed here too. Korean and Chinese text uses the game's own font."],
@@ -339,7 +346,19 @@ local function redrawBags()
 end
 
 -- what a change does besides being saved (as Core/UI/SettingsView.lua does it)
+local function fontsChanged()
+  if ns.Kit and ns.Kit.ApplyFonts then
+    ns.Kit.ApplyFonts()
+  end
+  if ns.App and ns.App.Redraw then
+    ns.App:Redraw() -- text widths changed: lay it out again
+  end
+end
+
 S.EFFECTS = {
+  fontText = fontsChanged,
+  fontHeading = fontsChanged,
+  barTexture = fontsChanged,
   windowScale = function(value)
     if ns.App and ns.App.frame and ns.App.frame.SetScale then
       ns.App.frame:SetScale(value)

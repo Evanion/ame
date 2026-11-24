@@ -67,8 +67,8 @@ local T = {
   },
 
   font = {
-    ui = "Inter, system-ui, sans-serif", -- in game: the UI font the client ships
-    display = "Marcellus, Georgia, serif", -- headings and tabs; in game: Friz Quadrata, the game's own
+    ui = "Inter, system-ui, sans-serif", -- in game: Inter, shipped in media/Fonts (Kit.FONTS)
+    display = "Marcellus, Georgia, serif", -- headings and tabs; in game: Marcellus, shipped in media/Fonts
   },
 }
 if type(ns) == "table" then
