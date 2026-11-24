@@ -301,9 +301,11 @@ whether one of your characters has it, and one short line; "Made by Engineers (2
 and the price are lines AME adds to the item's tooltip, so they show wherever the item is linked. No button for it.
 A tool that is a place (Forge, Anvil, Cooking Fire) is not an item: it shows as plain text in the game's words, with
 whether the character is near one, and has no link or tooltip. Forever also has deployable tools (a fermenter and
-the like, two or three per profession): a third kind, between the two. Not drawn yet; open questions: whether the
-deployable is a bag item, who can use one that is put down, how long it lasts, and how a recipe's requirement maps
-to the item. To check in game: that the recipe's requirements say
+the like, two or three per profession): an item you make with a profession recipe or buy from a crafter or the
+auction house, and deploy at a camp. So it shows as an item link with its tooltip, and its state answers two
+questions: is one deployed at this camp, and does one of yours hold one. Blizzard may later make deployables
+spells or toys; then the name stays and the link goes. Drawn on the takeover board (Mana Well, as an example
+pairing). Still open: who can use one that is put down, and how long it lasts. To check in game: that the recipe's requirements say
 which are items and which are met (`C_TradeSkillUI.GetRecipeRequirements`).
 
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
