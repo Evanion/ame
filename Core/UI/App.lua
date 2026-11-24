@@ -329,7 +329,12 @@ function App:Create()
   self.frame = f
   self.compact = f:GetWidth() < App.COMPACT_W
   self.ctx = Layout.Context(handlers, { app = self, sources = {} })
-  self.renderer = Layout.Renderer(f, self.ctx)
+  -- the screen sits 1 px inside the window, so the window's lit border runs round the title bar and status row too
+  local inner = CreateFrame("Frame", nil, f)
+  inner:SetPoint("TOPLEFT", 1, -1)
+  inner:SetPoint("BOTTOMRIGHT", -1, 1)
+  self.inner = inner
+  self.renderer = Layout.Renderer(inner, self.ctx)
   f:SetScale(ns.Settings and ns.Settings:Get("windowScale") or 1)
   -- the bell's count and the notifications screen follow the notices
   if ns.AME and ns.AME.notices and ns.AME.notices.OnChange then
