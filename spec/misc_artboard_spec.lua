@@ -150,6 +150,14 @@ describe("artboard features", function()
     assert.is_nil(left)
     assert.is_nil(band)
     local gear = S.Book(api, 4306)
+    -- a row's buyout is the price of one (Forever): 5 listed at 50s each is 50s each, not 10s
+    api.GetItemSearchResultInfo = function()
+      return { buyoutAmount = 5000, quantity = 5, auctionID = 8 }
+    end
+    local five = S.Book(api, 4306)
+    assert.are.equal(5000, five.rows[1].price)
+    assert.are.equal(5, five.rows[1].qty)
+    assert.are.equal(5000, five.rows[1].total) -- one buy takes one of them
     left, band = S.TimeLeft(gear, gear.rows[1], 1000)
     assert.is_nil(left)
     assert.are.equal(2, band)

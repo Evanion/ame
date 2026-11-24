@@ -60,10 +60,12 @@ function S.Book(api, key)
     local info = api.GetItemSearchResultInfo(itemKey, i)
     local q = info and (info.quantity or 1)
     if info and info.buyoutAmount and q > 0 then
+      -- on Forever a row groups identical auctions: quantity of them, buyoutAmount of ONE, never the whole row (as
+      -- Ingest reads it). A buy (PlaceBid on the row's auction) takes one of them, for that price.
       rows[#rows + 1] = {
-        price = math.floor(info.buyoutAmount / q),
+        price = info.buyoutAmount,
         qty = q,
-        total = info.buyoutAmount,
+        total = info.buyoutAmount, -- what one buy pays
         auctionID = info.auctionID,
         mine = info.containsOwnerItem or nil,
         timeLeft = info.timeLeftSeconds, -- not on every client: the band otherwise
@@ -213,7 +215,7 @@ function S:Buy(key, qty, row)
     self.pending = { key = key, qty = qty, commodity = true }
     pcall(a.StartCommoditiesPurchase, ns.BaseID(key), qty)
   elseif row and row.auctionID then
-    self.pending = { key = key, qty = row.qty, total = row.total, row = row }
+    self.pending = { key = key, qty = 1, total = row.total, row = row } -- one auction of the row
   else
     return false
   end
