@@ -151,8 +151,8 @@ function Chart.ItemSeries(data, size, style, hidden)
   end
   local axs, ays = present(s.avg)
   if #axs > 1 then
-    add("sma", { xs = axs, ys = ays, kind = "line", axis = "price", color = rgba(c.average, 0.9), width = 1.5, dash = { 6, 4 } })
-    legend[#legend + 1] = { c.average, L["7-day average"], kind = "dash", key = "sma" }
+    add("sma", { xs = axs, ys = ays, kind = "line", axis = "price", color = rgba(c.average, 0.9), width = 1.5 })
+    legend[#legend + 1] = { c.average, L["7-day average"], kind = "line", key = "sma" }
   end
   local fxs, fys = {}, {}
   for i = 2, #s.xs do
@@ -489,7 +489,7 @@ function Chart.Draw(f)
             axs[#axs + 1], ays[#ays + 1] = x, data.avg[i]
           end
         end
-        c:SetSeries("avg", { xs = axs, ys = ays, kind = "line", color = Kit.C("chartAverage"), width = 1.5, dash = { 5, 4 } })
+        c:SetSeries("avg", { xs = axs, ys = ays, kind = "line", color = Kit.C("chartAverage"), width = 1.5 })
       end
     end
     local days = rangeDays(p.range)
