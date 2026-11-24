@@ -80,11 +80,12 @@ Core\UI\Tokens.lua
 Core\UI\Kit.lua
 Core\UI\Layout.lua
 Core\UI\Widgets.lua
-Core\UI\Parts\Primitives.lua
-Core\UI\Parts\Chrome.lua
-Core\UI\App.lua
 Core\UI\Help.lua
 Core\UI\DataTable.lua
+Core\UI\Parts\Primitives.lua
+Core\UI\Parts\Chrome.lua
+Core\UI\Parts\Table.lua
+Core\UI\App.lua
 Core\UI\Window.lua
 Core\UI\Notices.lua
 Core\UI\Shell.lua

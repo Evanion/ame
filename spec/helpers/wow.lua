@@ -184,7 +184,13 @@ local function newObject(kind)
   }
   return setmetatable(o, {
     __index = function(_, k)
-      return methods[k] or function() end
+      -- a method the stub lacks is a no-op (the game has hundreds); an unset field of our own (lower case) is nil
+      if methods[k] then
+        return methods[k]
+      end
+      if type(k) == "string" and k:match("^%u") then
+        return function() end
+      end
     end,
   })
 end

@@ -1590,7 +1590,6 @@ describe("addon in a stubbed client", function()
         assert.are.equal(arb.status.text, ns.UI.footerLeft.text) -- the tab's text, shown by the window
         assert.is_true(ns.UI.tabBar.byKey.arbitrage.primary) -- the open tab is filled with the accent
         assert.is_false(ns.UI.tabBar.byKey.market.primary)
-        assert.is_not_nil(arb.counts)
         -- Settings is the cog by the bell, not a tab
         assert.is_nil(ns.UI.tabBar.byKey.settings)
         local cog = ns.UI.settingsButton

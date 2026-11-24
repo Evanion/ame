@@ -127,6 +127,12 @@ function App:Forward()
   end
 end
 
+-- hand a table its rows: a list, or a function returning one (tables read ctx.sources[name] when drawn)
+function App:Source(name, rows)
+  self:Create()
+  self.ctx.sources[name] = rows
+end
+
 -- change the current screen's params (no history step)
 function App:Set(params)
   local s = self.state
@@ -317,7 +323,7 @@ function App:Create()
   f:Hide()
   self.frame = f
   self.compact = f:GetWidth() < App.COMPACT_W
-  self.ctx = Layout.Context(handlers, { app = self })
+  self.ctx = Layout.Context(handlers, { app = self, sources = {} })
   self.renderer = Layout.Renderer(f, self.ctx)
 
   -- the auction house's own tabs hang under the window while it's open
