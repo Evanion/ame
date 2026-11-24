@@ -11,19 +11,43 @@ local _, ns = ...
 local Layout, Kit, W = ns.Layout, ns.Kit, ns.Widgets
 local L = ns.L
 
-local function iconButton(parent, glyph, size)
+-- the boards' line icons (media/Icons, drawn by scripts/make-ui-icons.lua): white, tinted the tab colour, white on
+-- hover and while on (the cog on Settings), as the boards' .ico and .ico.on
+local ICONS = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Icons\\"
+
+local function tint(b, name)
+  local c = Kit.C(name)
+  b.icon:SetVertexColor(c[1], c[2], c[3], 1)
+end
+
+local function iconButton(parent, icon, size)
   local b = CreateFrame("Button", nil, parent)
   b:SetSize(24, 24)
-  b.text = Kit.Text(b, { size = size or 14, justify = "CENTER", color = "tab" })
-  b.text:SetPoint("CENTER", 0, 0)
-  b.text:SetText(glyph)
+  b.icon = b:CreateTexture(nil, "ARTWORK")
+  b.icon:SetTexture(ICONS .. icon)
+  b.icon:SetSize(size or 15, size or 15)
+  b.icon:SetPoint("CENTER", 0, 0)
+  tint(b, "tab")
   b:SetScript("OnEnter", function(self)
-    Kit.SetColor(self.text, "white")
+    tint(self, "white")
   end)
   b:SetScript("OnLeave", function(self)
-    Kit.SetColor(self.text, self.on and "white" or "tab")
+    tint(self, self.on and "white" or "tab")
   end)
   return b
+end
+
+-- the logo: three bars, up, down, up (the boards' 16-unit drawing)
+local function logo(parent)
+  local f = CreateFrame("Frame", nil, parent)
+  f:SetSize(16, 16)
+  for _, bar in ipairs({ { 1, 9, 6, "#4dd9c8" }, { 6, 5, 10, "#ff6b6b" }, { 11, 2, 13, "#4dd9c8" } }) do
+    local t = f:CreateTexture(nil, "ARTWORK")
+    Kit.Fill(t, bar[4])
+    t:SetSize(3, bar[3])
+    t:SetPoint("TOPLEFT", bar[1], -bar[2])
+  end
+  return f
 end
 
 -- ------------------------------------------------------------------------------------------------ title bar
@@ -50,7 +74,9 @@ Layout.Register("titlebar", {
     f.mark:SetPoint("BOTTOMLEFT")
     f.mark:SetWidth(4)
     f.brand = Kit.Text(f, { font = "display", size = 15, color = "heading" })
-    f.brand:SetPoint("LEFT", 14, 0)
+    f.logo = logo(f)
+    f.logo:SetPoint("LEFT", 14, 0)
+    f.brand:SetPoint("LEFT", f.logo, "RIGHT", 8, 0)
     local function act(name, payload)
       return function()
         ctx:Dispatch(name, payload)
@@ -85,10 +111,10 @@ Layout.Register("titlebar", {
     f.gameAH = Kit.Button(f)
     f.gameAH:SetHeight(22)
     f.gameAH:SetScript("OnClick", act("gameAH"))
-    f.close = iconButton(f, "×", 18)
+    f.close = iconButton(f, "Close", 13)
     f.close:SetPoint("RIGHT", -8, 0)
     f.close:SetScript("OnClick", act("close"))
-    f.bell = iconButton(f, "|TInterface\\Icons\\INV_Misc_Bell_01:16:16:0:0:64:64:5:59:5:59|t", 14)
+    f.bell = iconButton(f, "Bell", 15)
     f.bell:SetPoint("RIGHT", f.close, "LEFT", -4, 0)
     f.bell:SetScript("OnClick", act("bell"))
     f.badge = CreateFrame("Frame", nil, f.bell, "BackdropTemplate")
@@ -97,7 +123,7 @@ Layout.Register("titlebar", {
     Kit.Box(f.badge, "badge", false)
     f.badge.text = Kit.Text(f.badge, { size = 9, justify = "CENTER", color = "white" })
     f.badge.text:SetPoint("CENTER", 0, 0)
-    f.cog = iconButton(f, "|TInterface\\Icons\\INV_Misc_Gear_01:16:16:0:0:64:64:5:59:5:59|t", 15)
+    f.cog = iconButton(f, "Cog", 15)
     f.cog:SetPoint("RIGHT", f.bell, "LEFT", -4, 0)
     f.cog:SetScript("OnClick", act("settings"))
     f.tabs = {}
@@ -178,7 +204,7 @@ Layout.Register("titlebar", {
         self.tabs[i]:Hide()
       end
       self.cog.on = p.settings and true or false
-      Kit.SetColor(self.cog.text, self.cog.on and "white" or "tab")
+      tint(self.cog, self.cog.on and "white" or "tab")
       local n = p.unread or 0
       self.badge:SetShown(n > 0)
       self.badge.text:SetText(n > 9 and "9+" or tostring(n))
@@ -267,7 +293,7 @@ Layout.Register("frametitle", {
     f.title:SetPoint("LEFT", 0, 0)
     f.note = Kit.Text(f, { size = 11, color = "dim" })
     f.note:SetPoint("LEFT", f.title, "RIGHT", 8, 0)
-    f.close = iconButton(f, "×", 16)
+    f.close = iconButton(f, "Close", 12)
     f.close:SetPoint("RIGHT", 4, 0)
     f.close:SetScript("OnClick", function()
       ctx:Dispatch("close")
