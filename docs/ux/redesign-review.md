@@ -299,6 +299,9 @@ redrawn without them.
 Where a tool comes from is in its tooltip (decided 2026-11-24): the Tools section shows the tool as an item link,
 whether one of your characters has it, and one short line; "Made by Engineers (250)", "Sold by ...", the schematic
 and the price are lines AME adds to the item's tooltip, so they show wherever the item is linked. No button for it.
+A tool that is a place (Forge, Anvil, Cooking Fire) is not an item: it shows as plain text in the game's words, with
+whether the character is near one, and has no link or tooltip. To check in game: that the recipe's requirements say
+which are items and which are met (`C_TradeSkillUI.GetRecipeRequirements`).
 
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
 action with a small payload, the view handles it and changes state, and the changed state flows back as `props`.
