@@ -537,8 +537,8 @@ Fourth round (same day): the list above, finished.
 - **Chart** widget: one chart fed by a named series (an item's history, the price index, the small 7-day line; wide
   and narrow). Five boards drew their own. Legends and axis labels stay the screen's.
 - **KeyValue** (a label and its value) and **Field** (a text box with its label over it): 23 hand-written label
-  rows and 9 text boxes replaced. Thirteen label rows stay written out because their value is more than money or
-  text (an item link, a link, two values). **Input** now draws as the shared text box (it had its own background).
+  rows and 9 text boxes replaced. KeyValue also takes an item link as its label, and as its value money with a
+  short note, an item link or a link, so no label row on the new screens is written out by hand. **Input** now draws as the shared text box (it had its own background).
 - **PriceLadder** has three layouts: rows (the Sell view's picker), buttons (the bar under the game's AH window),
   lines (the Item page's summary). All four places draw from it.
 - **CraftingFilters** (search, the five filters, Leveling and Professions; `sections` adds Collapse all and the
