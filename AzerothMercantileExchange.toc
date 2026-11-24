@@ -85,6 +85,7 @@ Core\UI\DataTable.lua
 Core\UI\Parts\Primitives.lua
 Core\UI\Parts\Chrome.lua
 Core\UI\Parts\Table.lua
+Core\UI\Parts\Composites.lua
 Core\UI\App.lua
 Core\UI\Window.lua
 Core\UI\Notices.lua
