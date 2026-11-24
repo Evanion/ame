@@ -300,7 +300,10 @@ Where a tool comes from is in its tooltip (decided 2026-11-24): the Tools sectio
 whether one of your characters has it, and one short line; "Made by Engineers (250)", "Sold by ...", the schematic
 and the price are lines AME adds to the item's tooltip, so they show wherever the item is linked. No button for it.
 A tool that is a place (Forge, Anvil, Cooking Fire) is not an item: it shows as plain text in the game's words, with
-whether the character is near one, and has no link or tooltip. To check in game: that the recipe's requirements say
+whether the character is near one, and has no link or tooltip. Forever also has deployable tools (a fermenter and
+the like, two or three per profession): a third kind, between the two. Not drawn yet; open questions: whether the
+deployable is a bag item, who can use one that is put down, how long it lasts, and how a recipe's requirement maps
+to the item. To check in game: that the recipe's requirements say
 which are items and which are met (`C_TradeSkillUI.GetRecipeRequirements`).
 
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
