@@ -547,7 +547,9 @@ Fourth round (same day): the list above, finished.
   (narrow Item at the AH) is an Input.
 - **Frames outside the window**: `FrameTitle` (title, note, close) on the session tracker, the vendor panel and the
   frame beside the game's profession window; that frame is redrawn in the window's look (the window's chrome,
-  panel and card titles, tokens for every colour). `ProfBar` draws the game's own window and keeps its look.
+  panel and card titles, tokens for every colour). `ProfBar` shows the game's own window, so that
+  part keeps the game's look; what AME adds to it (the Profit column, the notes beside it) uses the shared widgets
+  and classes.
 - **Shell** is the documented region layout: header, toolbar, sidebar, main, right panel, status, laid out by row,
   column, grid and fill; a narrow window is a second layout of the same widgets.
 
