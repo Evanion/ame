@@ -206,6 +206,22 @@ game's frame; the sell bar stays for the game's and Auctionator's sell windows.
   Requests; with AME on both sides it arrives as a request, not just a whisper (ASK-2…6).
 - **Offer:** a crafter marks recipes "taking orders" and can post a short advert with links to trade or guild chat
   (HELP-2, HELP-3, HELP-6).
+- **The request exchange (decided with the author on the canvas, 2026-11-24; drawn):**
+  - *Asking* (`RequestForm`, its own frame, opened by Ask): how many and the item; one row per reagent with a tick
+    and an editable "You bring" count that starts at what you hold; what you leave out is the crafter's. A
+    soulbound reagent has no tick and is always the crafter's. "For the crafter's mats" starts at the market price
+    of their share and is an offer; the tip starts at the suggestion; "You pay" is the two. The message is written
+    from the terms and is yours to edit; AME puts the item link and the count in front when it sends. No recipe
+    item is shown: only crafters who already know the recipe are listed.
+  - *Answering* (`RequestAnswer`, side: crafter): the terms as offered beside the crafter's answer. Accept as
+    asked, or change the price for their mats, the tip, and add a message. A change goes back to the asker for
+    approval; nothing is queued until both agree.
+  - *Approving* (`RequestAnswer`, side: asker; board `RequestReview`): what changed is lit. Accept, change it and
+    send it back, or withdraw.
+  - *States:* new > answered (only when the crafter changes the terms) > accepted > crafted > handed over. Either
+    side can keep answering; it is agreed when one accepts the other's last terms as they stand.
+  - The terms (the split per reagent, the offer, the tip) travel with the request as data; the message as text.
+  - Open: what a crafter without AME sees (only the whisper), and the mail path below.
 - **Requests that do not need both players online (the author's idea, 2026-11-24; proposed, not yet drawn):**
   - *Carried by the guild.* A request to an offline crafter is stored and passed on by guild members' AME (the sync
     mesh), so it arrives when the crafter next logs in, through one or more relays. It carries an id, an expiry, and
