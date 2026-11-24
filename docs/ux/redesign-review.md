@@ -256,6 +256,24 @@ The canvas is more wireframe than the game in places and more polished in others
 
 The redesign itself (R1 onward on the canvas) runs on Claude Fable.
 
+### How the screens are built: layouts as data, drawn by widgets (decided 2026-11-24)
+
+For the whole addon, following the author's own `@evanion/widget` (https://libs.evanion.com/rendering/):
+
+- A screen is a tree of items: `{ id, type, props, meta, children }`. `type` names a widget, `props` is the widget's
+  data, `meta` is placement and belongs to the layout (a widget draws the same wherever it sits), and a shared context
+  carries what every widget needs (the market, the character, the theme).
+- One registry maps a type to the widget that draws it. The widget set is the canvas's component set: TitleBar,
+  Sidebar, DataTable, Card, SettingsCard, Segmented, Button, Input, ItemLink, Money, StatusBar.
+- Behaviour stays in code: the layout holds no conditions, bindings or handlers. A view's code builds the item tree
+  from its state and hands it to the renderer.
+- A validator returns a list of problems and never errors (unknown type, missing prop, duplicate id). It runs in the
+  specs over every screen's layout. The renderer is tolerant: it skips an unknown type and warns once.
+- Takeover and sidecar frames are the same widgets in a different layout, which is why Crafting can offer both.
+
+To settle when the first screen is built: how a layout updates without rebuilding frames (frames cannot be destroyed
+in the game, so the renderer reuses them by `id`), and whether the game's ScrollBox drives the DataTable.
+
 ## Questions to settle before R3
 
 None open: see Decisions so far.
