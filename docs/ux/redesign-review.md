@@ -286,6 +286,12 @@ Rules the game adds: a click that crafts, posts or buys must reach the game from
 widgets call their action directly from the click; text is localised by the view before it reaches `props`; and a
 view updates `props` in place, without building a new tree on each event, to keep garbage down during scans.
 
+Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
+action with a small payload, the view handles it and changes state, and the changed state flows back as `props`.
+Widgets never change state themselves. Protected clicks may sidestep this: where the game needs the call made
+straight from the button press (crafting, posting, buying, or a secure button), the widget makes the call itself
+and then dispatches the action to report it.
+
 To settle when the first screen is built: whether the game's ScrollBox drives the DataTable, and the measurement
 (in `bench/`) of a screen built this way against the hand-placed one.
 
