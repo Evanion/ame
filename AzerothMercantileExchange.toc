@@ -76,6 +76,7 @@ Core\Index.lua
 Core\Commands.lua
 Core\SelfTest.lua
 Core\API.lua
+Core\Home.lua
 Core\UI\Tokens.lua
 Core\UI\Kit.lua
 Core\UI\Layout.lua
@@ -87,6 +88,7 @@ Core\UI\Parts\Chrome.lua
 Core\UI\Parts\Table.lua
 Core\UI\Parts\Composites.lua
 Core\UI\App.lua
+Core\UI\Screens\Home.lua
 Core\UI\Window.lua
 Core\UI\Notices.lua
 Core\UI\Shell.lua

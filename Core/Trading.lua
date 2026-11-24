@@ -103,6 +103,15 @@ function Trading:ScanBags()
   if bags then
     h.bags, h.t = bags, GetServerTime()
   end
+  Trading:ScanMoney()
+end
+
+-- the character's gold (Home's net worth): copper, and when it was seen
+function Trading:ScanMoney()
+  if GetMoney then
+    local h = mine()
+    h.money, h.moneyAt = GetMoney(), GetServerTime()
+  end
 end
 
 -- The bank's containers: the character bank tabs where the game has them (Enum.BagIndex.CharacterBankTab_1...),

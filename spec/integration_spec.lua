@@ -347,6 +347,21 @@ describe("addon in a stubbed client", function()
       drainJobs()
     end
 
+    it("the redesigned window's Home gathers from the real modules and draws", function()
+      seeded()
+      local f = ns.Home.Gather(true)
+      assert.same({}, ns.Home.errors)
+      assert.is_true(f.hasPrices)
+      assert.is_table(f.listed)
+      assert.is_number(f.itemsValue)
+      ns.Settings:Set("newWindow", true)
+      SlashCmdList.AZEROTHMERCANTILEEXCHANGE("")
+      assert.is_true(ns.App.frame:IsShown())
+      assert.equals("home", ns.App:Current())
+      assert.same({}, ns.Layout.Validate(ns.App:Tree()))
+      assert.is_not_nil(ns.App.renderer:Frame("home.kpi1"))
+    end)
+
     it("answers other addons through the public API, and plugs into Baganator", function()
       local corners, refreshed = {}, 0
       _G.Baganator = {

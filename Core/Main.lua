@@ -569,6 +569,7 @@ function handlers.PLAYER_LOGIN()
     "MAIL_INBOX_UPDATE",
     "CHAT_MSG_SYSTEM",
     "BAG_UPDATE_DELAYED",
+    "PLAYER_MONEY",
     "BANKFRAME_OPENED",
     "BANKFRAME_CLOSED",
     "PLAYERBANKSLOTS_CHANGED",
@@ -737,6 +738,11 @@ end
 function handlers.MAIL_INBOX_UPDATE()
   ns.Trading:ScanMail()
   ns.Trading:ScanMailItems() -- what's waiting there now (won auctions taken out leave it)
+end
+
+-- your gold, for Home's net worth
+function handlers.PLAYER_MONEY()
+  ns.Trading:ScanMoney()
 end
 
 function handlers.BAG_UPDATE_DELAYED()
