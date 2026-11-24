@@ -86,6 +86,10 @@ the look are all open.
   profession". Sections, their order and skill-up marks come from the game (`C_TradeSkillUI.GetCategoryInfo`: name,
   uiOrder, parentCategoryID; confirmed in the Forever client), stored per recipe when a character opens the profession.
   Takeover has no Track Recipe: the game's Track pins a recipe to the quest tracker, and the queue fills that role.
+  The queue shows in the game's objectives tracker (decided 2026-11-24): out in the world the AME window is closed,
+  so the queue's missing reagents show in the tracker and count up as you gather. A setting, on by default, in both
+  modes. To check in game: whether `C_TradeSkillUI.SetRecipeTracked` is enough (it shows one craft's reagents per
+  recipe, not the queued count, and only for recipes this character knows) or AME needs its own tracker block.
 - **Crafting is one screen, laid out as the game's window** (to confirm on the sketch): a profession picked on the
   left, its recipes in the game's foldable sections with the skill-up colour, a Ready column and filters; folds,
   filters and search are remembered. "All professions" is the flat view. It replaces Top earners, Sell or refine,
