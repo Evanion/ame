@@ -87,8 +87,9 @@ the look are all open.
   uiOrder, parentCategoryID; confirmed in the Forever client), stored per recipe when a character opens the profession.
   Takeover has no Track Recipe: the game's Track pins a recipe to the quest tracker, and the queue fills that role.
   The sidecar stays as an option (decided 2026-11-24): with "Opening a profession" set to the game's window, AME
-  adds small frames to it, not the AME window: the bar under it and the queue panel beside it, as today. Takeover
-  is the default.
+  adds one frame beside it, not the AME window. The frame holds what the bar under the window held (the picked
+  recipe's cost, sells for, profit, Make N, Queue) and then the queue; the bar under the window goes. Profit per
+  recipe stays in the game's list. "Open in AME" on the frame swaps to takeover, which is the default.
   The queue shows in the game's objectives tracker (decided 2026-11-24): out in the world the AME window is closed,
   so the queue's missing reagents show in the tracker and count up as you gather. A setting, on by default, in both
   modes. To check in game: whether `C_TradeSkillUI.SetRecipeTracked` is enough (it shows one craft's reagents per
