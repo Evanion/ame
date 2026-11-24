@@ -331,6 +331,10 @@ seen on the auction house or at a vendor (AME's own data); the Encounter Journal
 player has installed, asked at runtime (AtlasLoot has a Forever fork; reading its data in game copies nothing, as
 with Auctionator); drops recorded by you and your guild; and otherwise "source not known", never a guess. A hand
 table stays only for gaps that matter and that nothing else covers.
+
+A possible next project (the author's idea, 2026-11-24): a library for item sources, as LibAMEChart is for charts.
+To keep that open, AME's source lookup is written as one module with providers behind one question ("where does
+this item come from"), with no AME types in its interface, so it can be lifted out later.
 To check in game: that the recipe's requirements say
 which are items and which are met (`C_TradeSkillUI.GetRecipeRequirements`).
 
