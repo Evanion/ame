@@ -56,6 +56,32 @@ describe("composite widgets", function()
     end)
   end)
 
+  describe("sidebar", function()
+    it("draws headings, entries with counts, a link and the picked one; a click names its key", function()
+      local tree = {
+        id = "s",
+        type = "sidebar",
+        props = {
+          action = "open",
+          entries = {
+            { key = "all", label = "All items", count = "7,004" },
+            { heading = true, label = "Watchlists" },
+            { key = "alchemy", label = "★ Alchemy", count = 8, selected = true },
+            { key = "new", label = "+ New list", link = true },
+          },
+        },
+      }
+      assert.same({}, Layout.Validate(tree))
+      r:Render(tree)
+      local f = r:Frame("s")
+      assert.equals("7,004", f.rows[1].count:GetText())
+      assert.is_nil(f.rows[2].key)
+      f.rows[3].scripts.OnClick(f.rows[3])
+      f.rows[2].scripts.OnClick(f.rows[2])
+      assert.same({ { "open", { key = "alchemy" } } }, got)
+    end)
+  end)
+
   describe("actionlist", function()
     local rows = {
       {

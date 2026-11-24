@@ -203,3 +203,74 @@ Layout.Register("actionlist", {
     return 300, (p.bare and 0 or 32) + #(p.rows or {}) * ROW_H
   end,
 })
+
+-- ------------------------------------------------------------------------------------------------ sidebar
+
+-- sidebar { entries = { { key?, label, count?, heading?, link?, selected?, tone? }, ... }, action? }
+-- A heading is a small dim caption; a link entry is blue ("+ New list"); the picked entry is lit with the accent.
+-- A click dispatches the action with { key = entry.key }.
+local SIDE_ROW, SIDE_HEAD = 22, 24
+
+Layout.Register("sidebar", {
+  props = { entries = "table", action = "string?" },
+  create = function(parent, ctx)
+    local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    Kit.Box(f, "panel", "line")
+    f.rows = {}
+    f.ctx = ctx
+    return f
+  end,
+  update = function(f, p, ctx)
+    local y = 6
+    for i, e in ipairs(p.entries) do
+      local b = f.rows[i]
+      if not b then
+        b = CreateFrame("Button", nil, f)
+        b.sel = b:CreateTexture(nil, "BACKGROUND")
+        b.sel:SetAllPoints()
+        b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+        b.hl:SetAllPoints()
+        b.hl:SetColorTexture(1, 1, 1, 0.05)
+        b.text = Kit.Text(b, { size = 12 })
+        b.text:SetPoint("LEFT", 10, 0)
+        b.count = Kit.Text(b, { size = 11, color = "dim", justify = "RIGHT" })
+        b.count:SetPoint("RIGHT", -10, 0)
+        b.text:SetPoint("RIGHT", b.count, "LEFT", -6, 0)
+        b:SetScript("OnClick", function(self)
+          if self.key ~= nil and f.props.action then
+            ctx:Dispatch(f.props.action, { key = self.key })
+          end
+        end)
+        f.rows[i] = b
+      end
+      b.key = not e.heading and e.key or nil
+      local h = e.heading and SIDE_HEAD or SIDE_ROW
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", 4, -y)
+      b:SetPoint("RIGHT", -4, 0)
+      b:SetHeight(h)
+      y = y + h
+      b.text:SetText(e.label or "")
+      if e.heading then
+        Kit.SetFont(b.text, "ui", 11)
+        Kit.SetColor(b.text, "dim")
+      else
+        Kit.SetFont(b.text, "ui", 12)
+        Kit.SetColor(b.text, e.link and "link" or e.tone or (e.selected and "white" or "heading"))
+      end
+      b.count:SetText(e.count and tostring(e.count) or "")
+      local row = Kit.Row()
+      b.sel:SetColorTexture(row[1], row[2], row[3], e.selected and row[4] or 0)
+      b.hl:SetShown(not e.heading)
+      b:EnableMouse(not e.heading)
+      b:Show()
+    end
+    for i = #p.entries + 1, #f.rows do
+      f.rows[i]:Hide()
+    end
+    f.props, f.natural = p, y + 6
+  end,
+  size = function(f)
+    return 190, f.natural or 0
+  end,
+})
