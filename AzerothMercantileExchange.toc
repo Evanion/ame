@@ -78,6 +78,7 @@ Core\SelfTest.lua
 Core\API.lua
 Core\Home.lua
 Core\PortfolioPage.lua
+Core\Market.lua
 Core\UI\Tokens.lua
 Core\UI\Kit.lua
 Core\UI\Layout.lua
@@ -89,8 +90,10 @@ Core\UI\Parts\Chrome.lua
 Core\UI\Parts\Table.lua
 Core\UI\Parts\Composites.lua
 Core\UI\Parts\Portfolio.lua
+Core\UI\Parts\Market.lua
 Core\UI\App.lua
 Core\UI\Screens\Home.lua
+Core\UI\Screens\Market.lua
 Core\UI\Screens\Portfolio.lua
 Core\UI\Screens\Sell.lua
 Core\UI\Screens\Auctions.lua

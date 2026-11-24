@@ -236,9 +236,10 @@ Layout.Register("sidebar", {
         b.count = Kit.Text(b, { size = 11, color = "dim", justify = "RIGHT" })
         b.count:SetPoint("RIGHT", -10, 0)
         b.text:SetPoint("RIGHT", b.count, "LEFT", -6, 0)
-        b:SetScript("OnClick", function(self)
+        b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+        b:SetScript("OnClick", function(self, button)
           if self.key ~= nil and f.props.action then
-            ctx:Dispatch(f.props.action, { key = self.key })
+            ctx:Dispatch(f.props.action, { key = self.key, button = button })
           end
         end)
         f.rows[i] = b

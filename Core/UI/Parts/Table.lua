@@ -103,6 +103,9 @@ local function build(f, p, ctx)
     itemID = function(d)
       return d.item
     end,
+    confidence = p.confidence and function(d)
+      return d.conf
+    end or nil,
     rowAlpha = function(d)
       return d.faded and 0.5 or 1
     end,
@@ -123,7 +126,7 @@ local function build(f, p, ctx)
   f.dt = ns.DataTable.New(f, opts)
   f.dt.frame:SetPoint("TOPLEFT", 0, 0)
   f.dt.frame:SetPoint("BOTTOMRIGHT", 0, 0)
-  f.sig = signature(p.columns)
+  f.sig = signature(p.columns) .. tostring(p.confidence)
 end
 
 Layout.Register("table", {
@@ -139,6 +142,7 @@ Layout.Register("table", {
     star = "boolean?",
     flex = "string?",
     empty = "string?",
+    confidence = "boolean?",
   },
   create = function(parent)
     local f = CreateFrame("Frame", nil, parent)
@@ -151,7 +155,7 @@ Layout.Register("table", {
   end,
   update = function(f, p, ctx)
     f.props = p
-    if not f.dt or f.sig ~= signature(p.columns) then
+    if not f.dt or f.sig ~= signature(p.columns) .. tostring(p.confidence) then
       build(f, p, ctx)
     end
     if p.note then
