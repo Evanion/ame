@@ -286,9 +286,12 @@ Rules the game adds: a click that crafts, posts or buys must reach the game from
 widgets call their action directly from the click; text is localised by the view before it reaches `props`; and a
 view updates `props` in place, without building a new tree on each event, to keep garbage down during scans.
 
-Retired from the canvas (2026-11-24): the old Crafting boards Top earners, Craft queue page, Recipes to buy,
-Sell or refine and the Who can make it popup; links to them now go to the one Crafting screen. CraftingNav and
-CraftingToolbar stay until Leveling, Your professions and Guild · Crafters are redrawn without them.
+Retired from the canvas (2026-11-24): Recipes to buy (To learn carries its payback and guild-crafter figures) and
+the Who can make it popup (Guild · Crafters). Links to the old Crafting pages now go to the one Crafting screen.
+Held back, because each has a detail the new screen does not draw yet: Top earners (the Tools section: the tool a
+recipe needs and how to get one), Craft queue page (the steps, make or buy, and where each material comes from, for
+takeover) and Sell or refine (the craft card with what goes in and out). CraftingNav and CraftingToolbar stay
+until Leveling, Your professions and Guild · Crafters are redrawn without them.
 
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
 action with a small payload, the view handles it and changes state, and the changed state flows back as `props`.
