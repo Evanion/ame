@@ -271,8 +271,23 @@ For the whole addon, following the author's own `@evanion/widget` (https://libs.
   specs over every screen's layout. The renderer is tolerant: it skips an unknown type and warns once.
 - Takeover and sidecar frames are the same widgets in a different layout, which is why Crafting can offer both.
 
-To settle when the first screen is built: how a layout updates without rebuilding frames (frames cannot be destroyed
-in the game, so the renderer reuses them by `id`), and whether the game's ScrollBox drives the DataTable.
+The architecture is adapted to Lua and the game's UI, not copied from the web (proposed 2026-11-24, to confirm):
+
+| On the web | In the game |
+|---|---|
+| A widget is a function that returns elements; the tree is redrawn | A widget has two halves: create its frames once, then update them from `props` any number of times |
+| Elements come and go | Frames are never freed: the renderer keeps one frame per `id`, hides what the layout drops, and pools repeated types |
+| CSS lays items out from `meta` | A few layout widgets (row, column, grid, fill) read `meta` and set the anchors; sizes are explicit |
+| TypeScript checks props | Each widget declares its props; the validator checks layouts in the specs, and at load in a debug mode |
+| Handlers are passed as functions | The layout names an action (`action = "queue"`); the view owns the handler. Layouts stay plain data, so a spec can read them and they could be saved |
+| A list is many items | DataTable (and the chart) is one widget fed by a data source: it draws its visible rows and never puts rows in the tree |
+
+Rules the game adds: a click that crafts, posts or buys must reach the game from the real button press, so those
+widgets call their action directly from the click; text is localised by the view before it reaches `props`; and a
+view updates `props` in place, without building a new tree on each event, to keep garbage down during scans.
+
+To settle when the first screen is built: whether the game's ScrollBox drives the DataTable, and the measurement
+(in `bench/`) of a screen built this way against the hand-placed one.
 
 ## Questions to settle before R3
 
