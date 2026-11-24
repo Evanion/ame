@@ -316,16 +316,27 @@ end
 
 local CHANGE_KEY = { [1] = "change1", [7] = "change7", [30] = "change30" }
 
+-- Items nobody trades for their price, left out of the risers and fallers: poor (gray) items, and common (white)
+-- weapons and armour - vendor fodder whose listings swing on a whim. White trade goods (bars, cloth, herbs) stay.
+-- e: ItemCache.Get's entry (classID, quality); an item whose quality the client hasn't said yet stays in.
+function MarketStats.Unremarkable(e)
+  if not (e and e.quality) then
+    return false
+  end
+  return e.quality == 0 or (e.quality == 1 and (e.classID == 2 or e.classID == 4))
+end
+
 -- What the Overview shows, over a period (1 / 7 / 30 days):
 -- index = { stats = ..., items = { [id] = summary } } (MarketIndex); classOf(itemID) -> classID; hide (optional set);
--- moverClass (optional): risers and fallers from this category only
+-- moverClass (optional): risers and fallers from this category only; itemOf (optional): id -> ItemCache entry, to
+-- leave Unremarkable items out of them
 -- -> {
 --   day, level, levelChange, value, valueChange, auctions, auctionsChange, items, units, capped, basket,
 --   turnover (copper per day), up, down, buy, sell, risers = { s, ... }, fallers = { s, ... },
 --   sectors = { { classID, value, share, change, turnover }, ... } by value, top = { ... } (see Finish),
 --   series = { days = {...}, level = {...}, value = {...}, auctions = {...} } for the chart
 -- } or nil when the index has no stats (or no full-scan day)
-function MarketStats.Summary(index, period, classOf, hide, factor, moverClass)
+function MarketStats.Summary(index, period, classOf, hide, factor, moverClass, itemOf)
   local st = index and index.stats
   local last = st and st.days[#st.days]
   if not last then
@@ -382,7 +393,10 @@ function MarketStats.Summary(index, period, classOf, hide, factor, moverClass)
         elseif c < -0.0005 then
           out.down = out.down + 1
         end
-        if not moverClass or ((classOf and classOf(id)) or MarketStats.OTHER) == moverClass then
+        if
+          (not moverClass or ((classOf and classOf(id)) or MarketStats.OTHER) == moverClass)
+          and not (itemOf and MarketStats.Unremarkable(itemOf(id)))
+        then
           movers[#movers + 1] = s
         end
       end

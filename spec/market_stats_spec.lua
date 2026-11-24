@@ -151,6 +151,21 @@ describe("MarketStats", function()
     assert.are.equal(5, #ns.MarketStats.Summary(index, 7, classOf, nil, 4, 7).risers)
   end)
 
+  it("leaves gray items and white weapons and armour out of the risers and fallers", function()
+    local index = market()
+    local function risers(quality, classID)
+      return #ns.MarketStats.Summary(index, 7, classOf, nil, 4, nil, function()
+        return { quality = quality, classID = classID }
+      end).risers
+    end
+    assert.are.equal(5, risers(1, 7)) -- white trade goods stay
+    assert.are.equal(5, risers(nil, 2)) -- not known yet: stays
+    assert.are.equal(5, risers(2, 2)) -- green gear stays
+    assert.are.equal(0, risers(0, 7)) -- gray
+    assert.are.equal(0, risers(1, 2)) -- a white weapon
+    assert.are.equal(0, risers(1, 4)) -- white armour
+  end)
+
   it("has nothing to summarise without statistics", function()
     assert.is_nil(ns.MarketStats.Summary({ items = {} }, 7))
   end)

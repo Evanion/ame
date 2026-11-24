@@ -393,7 +393,7 @@ function Help.Articles()
             H(L["Fair numbers"]),
             L["Only items listed at least 3 at a time on most days count for the indexes, risers and fallers, so one item reposted every day can't move them. Listed value caps each price at the outlier limit (Settings, Data) times its 30-day average. Totals come only from days with a full scan."],
             H(L["Categories and movers"]),
-            L["Categories shows each item class's share of the listed value: click one to open it in the screener. Biggest risers and fallers are steadily listed items; click one for its chart. Largest by value lists the items the total leans on most: how many are listed, the price each is counted at and what they come to. When an item's price was capped at the outlier limit, it says what its listings came to before the cap (capped from ...)."],
+            L["Categories shows each item class's share of the listed value: click one to open it in the screener. Biggest risers and fallers are steadily listed items, leaving out gray items and white weapons and armour; click one for its chart. Largest by value lists the items the total leans on most: how many are listed, the price each is counted at and what they come to. When an item's price was capped at the outlier limit, it says what its listings came to before the cap (capped from ...)."],
           },
         },
         {

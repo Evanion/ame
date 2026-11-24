@@ -507,7 +507,8 @@ function UI:RefreshOverview()
         itemClass,
         hide,
         ns.Settings:Get("outlierFactor"),
-        self.ovMoverClass
+        self.ovMoverClass,
+        ns.ItemCache.Get
       )
     or nil
   self.overviewIndex = index
