@@ -487,6 +487,23 @@ the accent stayed red. Both were set back to Horde. Every other window board set
 
 What only the user can do: confirm that these boards are what was wanted.
 
+## Notifications outside the window (the author, 2026-11-24)
+
+- **One AME sound** for what waits on you: a price alert firing, a craft request arriving, and (off by default) an
+  auction selling or being undercut. The brief: its own sound, not to be mistaken for the common ones (coins, a
+  bell), and not obtrusive (nothing like a "red alert"). Still to pick, by ear. It is offered through
+  LibSharedMedia's sound list, AME's own first, and picking one in Settings plays it. A shipped file needs a licence
+  that allows it; a sound already in the game needs no file.
+- **The minimap button shows that something is waiting**: a mark and a count, the same count as the bell (unread
+  notifications), cleared with it. Its tooltip lists what waits; a left-click opens AME on it.
+- **The data broker entry shows the same**: text "AME" or "AME 3", the icon swapped to the lit one, the same tooltip.
+- Drawn: `MinimapPending.dc.html`, the bell's panel `NotifyPanel.dc.html`, Settings > Notifications.
+
+Also drawn 2026-11-24: the Sell view's card for a row tipped Craft, DE or Vendor (`AHSellTips.dc.html`), Home on
+the first run (`HomeFirstRun.dc.html`), and Your alerts as the screener filtered (`MarketAlerts.dc.html`). Back and
+Forward step through opened pages as a browser does, and the cog on Settings goes back; the prototype's player
+keeps no history, so they are described on the title bar and not wired.
+
 ## Still to draw
 
 Nothing planned is left. Next is the user's read of the boards, then building screen by screen, each done when an
