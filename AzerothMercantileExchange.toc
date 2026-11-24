@@ -76,6 +76,7 @@ Core\Index.lua
 Core\Commands.lua
 Core\SelfTest.lua
 Core\API.lua
+Core\UI\Layout.lua
 Core\UI\Widgets.lua
 Core\UI\Help.lua
 Core\UI\DataTable.lua
