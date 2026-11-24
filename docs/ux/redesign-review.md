@@ -332,6 +332,9 @@ player has installed, asked at runtime (AtlasLoot has a Forever fork; reading it
 with Auctionator); drops recorded by you and your guild; and otherwise "source not known", never a guess. A hand
 table stays only for gaps that matter and that nothing else covers.
 
+Parked (2026-11-24): drop sources on recipes are left out for now. To learn keeps the sources AME already has
+(the auction house, vendors, trainers); the notes above stand for when it is picked up again.
+
 A possible next project (the author's idea, 2026-11-24): a library for item sources, as LibAMEChart is for charts.
 To keep that open, AME's source lookup is written as one module with providers behind one question ("where does
 this item come from"), with no AME types in its interface, so it can be lifted out later.
