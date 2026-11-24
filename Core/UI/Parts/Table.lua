@@ -46,6 +46,16 @@ local function columnsFor(f, specs, ctx)
     }
     if spec.item then
       col.item = true
+      -- spec.count: a row field shown dim after the name ("×43"); a row's name stands in until the item is known
+      if spec.count then
+        col.suffix = function(d)
+          local n = d[spec.count]
+          return type(n) == "number" and n > 1 and W.Dim("  " .. W.Count(n)) or ""
+        end
+      end
+      col.fallback = function(d)
+        return d.name
+      end
     end
     if spec.button then
       local def = spec.button
