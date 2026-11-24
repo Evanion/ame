@@ -598,6 +598,24 @@ the first run (`HomeFirstRun.dc.html`), and Your alerts as the screener filtered
 Forward step through opened pages as a browser does, and the cog on Settings goes back; the prototype's player
 keeps no history, so they are described on the title bar and not wired.
 
+## Build (branch feature/redesign, started 2026-11-24)
+
+The author asked for the whole redesign to be built on a feature branch, not merged until they say. The new window
+is built beside the old one: a development setting picks which one `/ame` opens, and the old views are removed only
+when every screen they carry has a new one. Order:
+
+| Step | What | State |
+|---|---|---|
+| B0 | Layout engine: registry, validator, renderer, row / column / grid / fill (`Core/UI/Layout.lua`) | done |
+| B1 | Primitive widgets registered: text, button, input, field, check, segmented, money, item link, key/value, signal badge, tag, card, panel, scroll | |
+| B2 | The new window: title bar (tabs, back / forward, market, AH buttons, cog, bell, close), status bar, AH tabs, screen router with history, the development switch | |
+| B3 | Composite widgets: DataTable (fed by a data source), Chart, KPI card, action list, price ladder, buy card, sidebar, settings card, crafting filters, queue strip, request form and answer, frame title | |
+| B4 | Screens, in this order: Home; Market (screener, views, your alerts, lists, at the AH); Item (at the AH); Portfolio (positions, sell, auctions, ledger); Crafting (five filters, takeover, sidecar frame); Guild (crafters, requests and their exchange over sync, your crafts, lists, sharing); Guide; Settings; notifications (bell, minimap, data broker, sound); vendor panel; session tracker | |
+| B5 | Cut-over: remove the old views, update the Guide, locales, specs | |
+
+Each screen is done when its layout validates in the specs, it draws in game, and an in-game screenshot matches its
+board.
+
 ## Still to draw
 
 Nothing planned is left. Next is the user's read of the boards, then building screen by screen, each done when an
