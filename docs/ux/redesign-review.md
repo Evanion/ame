@@ -522,9 +522,18 @@ Second round (same day):
 - **The narrow boards are layouts, not a prop**: each differs from its wide screen in most lines. In the addon a
   narrow window is a second layout tree over the same widgets.
 
+Third round (same day):
+
+- **Market** is one screen (`Market.dc.html`) with `ah`: the search box searches the auction house, the columns
+  change to what is on sale now, and the picked row gets a panel on the right. `MarketAH` is an instance.
+- **BuyCard** widget (on sale now, how many, Buy): Market's panel and the Item page had the same card written out
+  twice.
+- Market > Your alerts is still its own copy of Market; it is the same screen with another filter and columns, so
+  it becomes a `view` prop.
+
 Still to do, in order:
 
-1. **Market away / at the AH** as one screen with `ah` (the buy panel is the added region).
+1. **Market > Your alerts** as a view of the Market screen.
 2. **The narrow boards** rebuilt from the same widgets as their wide screens (they still hand-draw some).
 3. **PriceLadder** on the Item page's card and the sell bar.
 4. **Chart**: six boards draw their own SVG.
