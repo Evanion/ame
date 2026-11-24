@@ -206,6 +206,21 @@ game's frame; the sell bar stays for the game's and Auctionator's sell windows.
   Requests; with AME on both sides it arrives as a request, not just a whisper (ASK-2…6).
 - **Offer:** a crafter marks recipes "taking orders" and can post a short advert with links to trade or guild chat
   (HELP-2, HELP-3, HELP-6).
+- **Requests that do not need both players online (the author's idea, 2026-11-24; proposed, not yet drawn):**
+  - *Carried by the guild.* A request to an offline crafter is stored and passed on by guild members' AME (the sync
+    mesh), so it arrives when the crafter next logs in, through one or more relays. It carries an id, an expiry, and
+    a withdrawn/declined marker so old copies die out.
+  - *The crafter answers.* Accept as asked, answer with a price or fee (the asker then agrees or withdraws), decline,
+    or just whisper the asker.
+  - *Mats by mail.* The asker can choose to supply the mats. At a mailbox AME prepares the mail (crafter, subject,
+    body, the mats attached) and the player sends it; AME does not take over the mailbox.
+  - *The mail is the fallback.* Its body is the request in plain words, and its subject carries the request id, so
+    the crafter's AME picks the request up from the inbox if no relay reached them, and a crafter without AME can
+    read it. The mail and the relayed copy are matched by id.
+  - *Possible follow-on:* the crafter mails the products back, with the fee as cash on delivery; "handed over" is
+    then set by the mail as well as by a trade.
+  - To check in game: sending prepared mail from addon code on one click; reading a mail body marks it read (so the
+    id sits in the subject); mail delay between characters on Forever; attachments per mail.
 - **Enchanters:** the DE and enchant signals lead to the Guild crafters directory filtered to Enchanting (HELP-5).
 
 ### 8. Words
