@@ -311,7 +311,9 @@ then the name stays and the link goes. Drawn as a row on Missing something (a Lo
 guides the author passed on, not checked in game. Early deployable blueprints drop from low-level dungeon bosses (Anvil: Gilnid, The
 Deadmines; Fermenter: Rath'mael, Ruins of Lordaeron; and so on), so To learn needs a third source beside the auction
 house and vendors: "blueprint drops: boss, dungeon". AME cannot read drop sources from the game; this would be a
-small table kept by hand, for deployable blueprints only. Open: whether blueprints can be traded. To check in game: that the recipe's requirements say
+small table kept by hand, for deployable blueprints only. At least some blueprints can be traded, so they also sell on the auction house: a blueprint AME has seen listed
+shows as any recipe does (price, payback, Buy), and the drop line is the fallback when none is listed. AME learns
+which blueprints trade from seeing them on the auction house, not from a list. To check in game: that the recipe's requirements say
 which are items and which are met (`C_TradeSkillUI.GetRecipeRequirements`).
 
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
