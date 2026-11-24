@@ -487,6 +487,44 @@ the accent stayed red. Both were set back to Horde. Every other window board set
 
 What only the user can do: confirm that these boards are what was wanted.
 
+## The widget audit (started 2026-11-24)
+
+The boards are being taken apart into widgets, so the canvas shows the same set the addon will register. A design
+component takes data and has no children, which is the widget model: a screen is data handed to widgets. Chrome
+that wraps content (the window, a panel, a card) cannot be a component there, so it is a shared class in `ame.css`
+plus the chrome pieces that are components (title bar, status bar, the AH's tabs).
+
+What the audit found, across 80 boards:
+
+| Found | Where | Decision |
+|---|---|---|
+| The same style block copied into boards (`.fill` 37, `.lbl` 36, `.card` 22, `.ct` 19, `.in` 15, `.kv` 13...) | most screens | Done: one definition each in `ame.css`; 48 boards lost their copies |
+| Headings in three sizes (`.h` at 14 and 15, `.ct` 14, panel title 15) | Guild, Crafting, Overview | Done: `.h` is the panel title (15) everywhere; `.ct` the card title (14) |
+| Filter chips with their own colours | Market | Done: one `.chip`, colours from the tokens |
+| The AH backdrop and tabs wrapper written out nine times | every at-the-AH board | Done: `.ahwrap` |
+| Home, Home at the AH and the first run were three hand-written copies | Home | Done: one Home screen with a `state` prop; the other two boards are instances |
+| Action rows (pill, two lines, value, button) hand-written | Home x3, the bell | Done: `ActionList` widget |
+| KPI cards drawn two ways (Home's own, `KpiCard`) | Home vs Portfolio, Overview | Done: `KpiCard` everywhere |
+| Item names as `.il` spans beside the `ItemLink` widget | Home, bell, minimap | Done on Home and the bell; the minimap tooltip still to do |
+
+Still to do, in order:
+
+1. **Away / at the AH as a prop** on Market, Item, Portfolio, Guide and Market > Lists, as on Home. Market and Item
+   differ by more than data (a buy panel, the Buy card), so those are a prop that adds a region.
+2. **Narrow window as a prop** (`compact`) in place of the separate Compact boards.
+3. **PriceLadder** (Quick / Normal / Patient / Market): drawn by hand on Sell, Item at the AH, the narrow Sell and
+   the sell bar.
+4. **Chart**: six boards draw their own SVG.
+5. **KeyValue** rows and **Field** (label over an input): `.kv` and raw inputs in a dozen boards; `Card` already
+   draws label/value rows, so the hand-written cards become `Card` plus widgets where they hold more than rows.
+6. **Buttons**: `Button` (43 uses) beside raw `.btn` spans in the title bar, the action list and the tips card;
+   check that the two draw the same and keep one.
+7. **Toolbar**: the Crafting screens' filter row (`row1`, five copies) and `CraftingToolbar`.
+8. **Sidebar instances**: `CraftingNav` and `GuildNav` are a `Sidebar` with fixed entries; keep as data.
+9. The sidecar frames (`CraftQueue`, `ProfBar`), the session tracker and the vendor panel: outside the window, own
+   styles; redraw from the same widgets.
+10. `Shell` (the layout slots) is used by no board: make it the documented region layout or drop it.
+
 ## Notifications outside the window (the author, 2026-11-24)
 
 - **One AME sound** for what waits on you: a price alert firing, a craft request arriving, and (off by default) an
