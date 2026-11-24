@@ -14,6 +14,9 @@
 --     { name, note?, status?, key?, buttons = { label | {label, action}, ... } }   a player row
 --     { buttons = { { label, action, key?, off? }, ... } }    a row of buttons
 --     The default action is "setting". off: faded and not clickable (a follow-on option while its switch is off).
+--     Any row (and any button in a row of buttons): tip = what it does, in the game's tooltip on hover. A field:
+--     bar = true draws the picked option's texture (options carry texture = path) as a strip beside the dropdown,
+--     and its menu draws each option's.
 --   scrollcolumn container { gap?, pad? }   children one under another at their natural heights; the mouse wheel
 --                                           scrolls when they are taller than the box
 --   guidearticle { key?, crumb?, title, blocks, action? }     the Guide's article, scrolling when long
@@ -79,7 +82,7 @@ end
 function Menu.Draw()
   local f = Menu.frame
   local options, n = f.options or {}, math.min(#(f.options or {}), Menu.MAX)
-  local width = f.minWidth or 120
+  local width = math.max(f.minWidth or 120, f.fullWidth or 0) -- the widest in the whole list: scrolling keeps it
   for i = 1, n do
     local b = f.rows[i]
     if not b then
@@ -92,6 +95,10 @@ function Menu.Draw()
       b.hl:SetColorTexture(1, 1, 1, 0.06)
       b.text = Kit.Text(b, { size = 11, color = "soft" })
       b.text:SetPoint("LEFT", 8, 0)
+      -- an option with a texture (Bar texture's list): drawn as a strip on the right
+      b.swatch = b:CreateTexture(nil, "ARTWORK")
+      b.swatch:SetSize(56, 10)
+      b.swatch:SetPoint("RIGHT", -8, 0)
       b:SetScript("OnClick", function(self)
         local pick = Menu.onPick
         local opt = self.option
@@ -112,8 +119,14 @@ function Menu.Draw()
     b:ClearAllPoints()
     b:SetPoint("TOPLEFT", 1, -1 - (i - 1) * Menu.ROW)
     b:SetPoint("RIGHT", -1, 0)
+    b.swatch:SetShown(opt and opt.texture ~= nil)
+    if opt and opt.texture then
+      b.swatch:SetTexture(opt.texture)
+      local c = Kit.C("good")
+      b.swatch:SetVertexColor(c[1], c[2], c[3], 1)
+    end
     b:Show()
-    width = math.max(width, textWidth(b.text) + 24)
+    width = math.max(width, textWidth(b.text) + 24 + (opt and opt.texture and 70 or 0))
   end
   for i = n + 1, #f.rows do
     f.rows[i]:Hide()
@@ -130,6 +143,14 @@ function Menu.Open(owner, options, value, onPick)
   Menu.owner, Menu.onPick = owner, onPick
   f.options, f.value, f.offset = options, value, 0
   f.minWidth = owner.GetWidth and owner:GetWidth() or 120
+  -- measure every option once, the ones scrolled out of sight too, so the menu keeps one width while it scrolls
+  f.measure = f.measure or Kit.Text(f, { size = 11 })
+  f.measure:Hide()
+  f.fullWidth = 0
+  for _, o in ipairs(options) do
+    f.measure:SetText(o.label or "")
+    f.fullWidth = math.max(f.fullWidth, textWidth(f.measure) + 24 + (o.texture and 70 or 0))
+  end
   for i, o in ipairs(options) do
     if o.value == value and i > Menu.MAX then
       f.offset = math.min(i - 1, #options - Menu.MAX)
@@ -206,6 +227,36 @@ local function dropButton(parent)
   return b
 end
 
+-- what a setting does, in the game's tooltip while the mouse is over its row: the row's label as the title, the
+-- tip under it (wrapped)
+local function showTip(owner, title, tip)
+  if not (tip and tip ~= "" and GameTooltip) then
+    return
+  end
+  GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+  GameTooltip:SetText(title or "", 1, 1, 1)
+  GameTooltip:AddLine(tip, nil, nil, nil, true)
+  GameTooltip:Show()
+end
+
+local function hideTip()
+  if GameTooltip then
+    GameTooltip:Hide()
+  end
+end
+
+-- frame shows row.data's tip on hover (HookScript keeps a script the frame already has)
+local function tipOn(frame, row, title)
+  local hook = frame.HookScript and "HookScript" or "SetScript"
+  frame[hook](frame, "OnEnter", function(self)
+    local r = row.data
+    if r then
+      showTip(self, title(r), r.tip)
+    end
+  end)
+  frame[hook](frame, "OnLeave", hideTip)
+end
+
 local function checkBox(row)
   local b = CreateFrame("Button", nil, row)
   b.box = CreateFrame("Frame", nil, b, "BackdropTemplate")
@@ -240,7 +291,17 @@ local function newRow(card, kind)
       self:Draw()
       send(card, r, { value = self.checked })
     end)
+    tipOn(row.check, row, function(r)
+      return r.check
+    end)
   elseif kind == "field" or kind == "input" or kind == "person" then
+    -- the whole row answers the mouse, so its label shows the tip too
+    if row.EnableMouse then
+      row:EnableMouse(true)
+    end
+    tipOn(row, row, function(r)
+      return r.field or r.label or r.name
+    end)
     row.label = Kit.Text(row, { size = 12, color = "soft" })
     row.label:SetPoint("LEFT", 0, 0)
     row.note = Kit.Text(row, { size = 11, color = "dim" })
@@ -248,6 +309,17 @@ local function newRow(card, kind)
     if kind == "field" then
       row.button = dropButton(row)
       row.button:SetPoint("RIGHT", 0, 0)
+      tipOn(row.button, row, function(r)
+        return r.field
+      end)
+      -- bar = true: the picked bar texture drawn as a strip left of the dropdown
+      row.bar = CreateFrame("Frame", nil, row, "BackdropTemplate")
+      row.bar:SetSize(56, 10)
+      row.bar:SetPoint("RIGHT", row.button, "LEFT", -8, 0)
+      Kit.Box(row.bar, "bg", "controlLine")
+      row.bar.fill = row.bar:CreateTexture(nil, "ARTWORK")
+      row.bar.fill:SetPoint("TOPLEFT", 1, -1)
+      row.bar.fill:SetPoint("BOTTOMRIGHT", -1, 1)
       row.button:SetScript("OnClick", function(self)
         local r = row.data
         if not r or r.off then
@@ -331,6 +403,12 @@ local function drawButtons(card, row, list, fromRight, anchor)
           send(card, { action = self.spec.action or r.action, key = self.spec.key or r.key }, { button = self.index })
         end
       end)
+      if b.HookScript then
+        b:HookScript("OnEnter", function(self)
+          showTip(self, self.spec and (self.spec.label or self.spec[1]), self.spec and self.spec.tip)
+        end)
+        b:HookScript("OnLeave", hideTip)
+      end
       row.buttons[i] = b
     end
     spec = type(spec) == "table" and spec or { label = tostring(spec) }
@@ -370,6 +448,18 @@ local function drawRow(card, row, r, width)
     row.button.label:SetText(label)
     row.button:SetWidth(math.max(90, textWidth(row.button.label) + 34))
     row.button.arrow:SetShown(r.options ~= nil)
+    local texture
+    for _, o in ipairs(r.bar and r.options or {}) do
+      if o.value == r.value then
+        texture = o.texture
+      end
+    end
+    row.bar:SetShown(texture ~= nil)
+    if texture then
+      row.bar.fill:SetTexture(texture)
+      local c = Kit.C("good")
+      row.bar.fill:SetVertexColor(c[1], c[2], c[3], 1)
+    end
   elseif row.kind == "input" then
     row.label:SetText(r.label or "")
     row.note:SetText("")

@@ -73,6 +73,11 @@ local function mediaOptions(kind, own)
       out[#out + 1] = opt(name, name)
     end
   end
+  if kind == "statusbar" then -- each texture drawn beside its name (Kit.WHITE: AME's flat bar)
+    for i, o in ipairs(out) do
+      o.texture = i == 1 and (ns.Kit and ns.Kit.WHITE) or (media and media.Fetch and media:Fetch("statusbar", o.value, true)) or nil
+    end
+  end
   return out
 end
 
@@ -154,7 +159,7 @@ local function general(env)
       rows = {
         field(L["Text font"], "fontText", mediaOptions("font", L["Inter (AME)"])),
         field(L["Heading font"], "fontHeading", mediaOptions("font", L["Marcellus (AME)"])),
-        field(L["Bar texture"], "barTexture", mediaOptions("statusbar", L["Flat (AME)"])),
+        field(L["Bar texture"], "barTexture", mediaOptions("statusbar", L["Flat (AME)"]), { bar = true }),
         {
           text = L["From LibSharedMedia: fonts and bar textures from your other addons' media packs are listed here too. Korean and Chinese text uses the game's own font."],
         },
@@ -166,9 +171,9 @@ local function general(env)
         { field = L["Sound"], key = "notifySound", value = env.sound, options = sounds },
         check(L["when a price alert fires"], "alertSound", { indent = true }),
         check(L["when a craft request arrives"], "soundRequest", { indent = true }),
-        check(L["when an auction sells or is undercut"], "soundAuction", { indent = true }),
+        check(L["when an auction sells"], "soundAuction", { indent = true }),
         check(L["Mark the minimap button and the data broker when something is waiting"], "pendingMark"),
-        check(L["Announce recorded full scans in chat"], "announceScans"),
+        check(L["Tell me in my chat window when a full scan is read"], "announceScans"),
       },
     },
     {
@@ -312,7 +317,67 @@ local function sharing()
   }
 end
 
+-- what each setting does, shown in the game's tooltip on hover (by setting key, or a button's action)
+S.TIPS = {
+  windowScale = L["How big the AME window draws, apart from the game's UI scale."],
+  ahMode = L["What opens when you talk to an auctioneer: the AME window, which buys, sells and shows your auctions, or the game's own auction house window. The button on each swaps to the other, and AME remembers the last one you used."],
+  openWithAH = L["When the game's auction house window opens, AME's window opens next to it."],
+  professionMode = L["What opens with a profession: AME's Crafting tab, with its recipe list and Create, or the game's own profession window with AME's bar under it and your queue beside it."],
+  queueTracker = L["Lists what your craft queue still needs in the game's objectives tracker, counting up as you gather or buy, the way the game's Track Recipe does for one recipe."],
+  theme = L["AME's accent colour. Follow market takes the colour of the auction house you're looking at: red for Horde, blue for Alliance, gold for the goblin houses."],
+  colorBlind = L["Draws rises and falls, and good and bad numbers, in blue and orange instead of green and red."],
+  minimap = L["AME's button on the minimap. Left-click opens AME, right-click opens Settings."],
+  fontText = L["The font for all of AME's text. Inter is AME's own; fonts from your other addons are listed too."],
+  fontHeading = L["The font for titles, tabs and headings. Marcellus is AME's own."],
+  barTexture = L["How filled bars look, such as the skill bar on Crafting. Each texture in the list is drawn beside its name. Flat is AME's own."],
+  notifySound = L["The sound AME plays when something waits on you; pick when below. Picking one plays it."],
+  alertSound = L["When an item crosses an alert price you set on a watchlist."],
+  soundRequest = L["When someone in your guild asks you to craft, answers your request or agrees to make it."],
+  soundAuction = L["When the game tells you one of your auctions sold."],
+  pendingMark = L["A count on the minimap button and the data broker while alerts, requests or sold auctions wait for you. Opening the notifications clears it."],
+  announceScans = L["A line in your own chat window when a full scan starts reading and when it's saved. Only you see it; nothing is sent to anyone. Sharing scans with your guild is on the Guild tab."],
+  baganator = L["With Baganator, AME adds corners to its bag slots (signal, tip and value) and a sort by worth. Pick them in Baganator's settings."],
+  baganatorAllSignals = L["The signal corner shows BUY and SELL; with this on it shows HOLD and WAIT too."],
+  baganatorSellTip = L["The tip corner marks items to craft, disenchant or vendor; with this on it marks items to sell on the auction house too."],
+  baganatorValue = L["What the value corner shows: the whole stack's worth, or one item's."],
+  tooltip = L["Adds AME's prices, signal and what you hold to the game's item tooltips."],
+  tooltipAvgDays = L["How many days the average price in tooltips covers."],
+  tooltipDetail = L["Shows the tooltip's full block every time. Off: hold Shift to see it."],
+  chartStyle = L["Line draws the market price over time; Candles draws each day's open, close, high and low."],
+  clickModifier = L["The modified click that opens an item's chart from your bags, chat links and the auction house."],
+  showHidden = L["Lists the items you've hidden, on Market."],
+  unhideAll = L["Brings every hidden item back into the Market, Arbitrage and Portfolio lists."],
+  cutFaction = L["The share the faction auction house keeps from each sale. AME takes it off every sale price it shows."],
+  cutNeutral = L["The share the goblin auction houses keep from each sale. AME takes it off every sale price it shows there."],
+  listingHours = L["How long AME posts auctions for. A longer listing costs a bigger deposit."],
+  buyWarnPct = L["When buying in bulk, AME warns you if the game's price for the order is this much over what the listings showed."],
+  scanMode = L["Detailed reads every listing, once every 15 minutes (the game's limit). Fast reads each item's cheapest listing, any time."],
+  importAuctionator = L["Brings in the price history Auctionator has saved for this realm, so AME's charts and averages start with it."],
+  rebuild = L["Works out prices, signals and averages again from every saved scan. Use it if numbers look wrong after an update."],
+  selftest = L["Checks every part of AME in game and saves the timings, then offers a reload so the results are written to disk."],
+  outlierFactor = L["Leaves out days where an item's price is this many times above or below the days around it."],
+  goSharing = L["Opens Guild · Sharing: who you share prices with, and their requests."],
+}
+
+local function withTips(cards)
+  for _, card in ipairs(cards) do
+    for _, r in ipairs(card.rows or {}) do
+      r.tip = r.tip or S.TIPS[r.key]
+      for _, b in ipairs(r.buttons or {}) do
+        if type(b) == "table" then
+          b.tip = b.tip or S.TIPS[b.action]
+        end
+      end
+    end
+  end
+  return cards
+end
+
 function S.Cards(section, env)
+  return withTips(S.CardsFor(section, env))
+end
+
+function S.CardsFor(section, env)
   env = env or {}
   if section == "display" then
     return display(env)

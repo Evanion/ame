@@ -37,16 +37,13 @@ local function iconButton(parent, icon, size)
   return b
 end
 
--- the logo: three bars, up, down, up (the boards' 16-unit drawing)
+-- the logo: AME's own icon (the candles of the minimap button and the addon list)
 local function logo(parent)
   local f = CreateFrame("Frame", nil, parent)
   f:SetSize(16, 16)
-  for _, bar in ipairs({ { 1, 9, 6, "#4dd9c8" }, { 6, 5, 10, "#ff6b6b" }, { 11, 2, 13, "#4dd9c8" } }) do
-    local t = f:CreateTexture(nil, "ARTWORK")
-    Kit.Fill(t, bar[4])
-    t:SetSize(3, bar[3])
-    t:SetPoint("TOPLEFT", bar[1], -bar[2])
-  end
+  f.icon = f:CreateTexture(nil, "ARTWORK")
+  f.icon:SetAllPoints()
+  f.icon:SetTexture(ns.ICON)
   return f
 end
 
@@ -82,16 +79,22 @@ Layout.Register("titlebar", {
         ctx:Dispatch(name, payload)
       end
     end
-    f.back = Kit.Button(f)
-    f.back.label:SetText("‹")
-    f.back:SetSize(22, 22)
+    -- Back and Forward: the boards' line chevrons (media/Icons), tinted as the button's label would be
+    local function chevron(name)
+      local b = Kit.Button(f)
+      b.icon = b:CreateTexture(nil, "ARTWORK")
+      b.icon:SetTexture(ICONS .. name)
+      b.icon:SetSize(12, 12)
+      b.icon:SetPoint("CENTER", 0, 0)
+      b:SetSize(26, 24)
+      return b
+    end
+    f.back = chevron("Back")
     f.back:SetScript("OnClick", act("back"))
-    f.forward = Kit.Button(f)
-    f.forward.label:SetText("›")
-    f.forward:SetSize(22, 22)
+    f.forward = chevron("Forward")
     f.forward:SetScript("OnClick", act("forward"))
     f.market = Kit.Button(f)
-    f.market:SetHeight(22)
+    f.market:SetHeight(24)
     f.market:SetScript("OnClick", function(self)
       local entries = {}
       for _, h in ipairs(f.props.houses or {}) do
@@ -106,10 +109,10 @@ Layout.Register("titlebar", {
       end
     end)
     f.scan = Kit.Button(f)
-    f.scan:SetHeight(22)
+    f.scan:SetHeight(24)
     f.scan:SetScript("OnClick", act("scan"))
     f.gameAH = Kit.Button(f)
-    f.gameAH:SetHeight(22)
+    f.gameAH:SetHeight(24)
     f.gameAH:SetScript("OnClick", act("gameAH"))
     f.close = iconButton(f, "Close", 13)
     f.close:SetPoint("RIGHT", -8, 0)

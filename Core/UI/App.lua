@@ -335,6 +335,8 @@ function App:Create()
   inner:SetPoint("BOTTOMRIGHT", -1, 1)
   self.inner = inner
   self.renderer = Layout.Renderer(inner, self.ctx)
+  -- the resize grip stays above the screen (it was made first, so the screen would cover it)
+  grip:SetFrameLevel(inner:GetFrameLevel() + 50)
   f:SetScale(ns.Settings and ns.Settings:Get("windowScale") or 1)
   -- the bell's count and the notifications screen follow the notices
   if ns.AME and ns.AME.notices and ns.AME.notices.OnChange then

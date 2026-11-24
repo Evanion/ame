@@ -53,23 +53,28 @@ end
 
 local ICONS = {}
 
--- <circle cx="8" cy="8" r="2.4"/> and eight spokes, stroke 1.5
+-- a cog: <circle r="4.3" stroke-width="1.5"/>, the hole <circle r="1.6" stroke-width="1.3"/>, and eight square teeth
+-- from r 4.6 to 7 (stroke-width 2.2, butt ends)
 do
-  local w, parts = 1.5, { ring(8, 8, 2.4, 1.5) }
+  local parts = { ring(8, 8, 4.3, 1.5), ring(8, 8, 1.6, 1.3) }
   for _, s in ipairs({
-    { 8, 1.5, 8, 3.5 },
-    { 8, 12.5, 8, 14.5 },
-    { 1.5, 8, 3.5, 8 },
-    { 12.5, 8, 14.5, 8 },
-    { 3.4, 3.4, 4.8, 4.8 },
-    { 11.2, 11.2, 12.6, 12.6 },
-    { 3.4, 12.6, 4.8, 11.2 },
-    { 11.2, 4.8, 12.6, 3.4 },
+    { 8, 1, 8, 3.4 },
+    { 8, 12.6, 8, 15 },
+    { 1, 8, 3.4, 8 },
+    { 12.6, 8, 15, 8 },
+    { 11.25, 4.75, 12.95, 3.05 },
+    { 4.75, 11.25, 3.05, 12.95 },
+    { 4.75, 4.75, 3.05, 3.05 },
+    { 11.25, 11.25, 12.95, 12.95 },
   }) do
-    parts[#parts + 1] = line(s[1], s[2], s[3], s[4], w, "butt")
+    parts[#parts + 1] = line(s[1], s[2], s[3], s[4], 2.2, "butt")
   end
   ICONS.Cog = any(parts)
 end
+
+-- Back and Forward: M10.5 2.5L5 8l5.5 5.5 and its mirror, stroke 1.8, round caps and joins
+ICONS.Back = any({ line(10.5, 2.5, 5, 8, 1.8, "round"), line(5, 8, 10.5, 13.5, 1.8, "round") })
+ICONS.Forward = any({ line(5.5, 2.5, 11, 8, 1.8, "round"), line(11, 8, 5.5, 13.5, 1.8, "round") })
 
 -- M4 11V7 a4 4 0 0 1 8 0 v4 l1.2 1.5 H2.8 L4 11z  M6.5 14h3, stroke 1.5 (the arc is the top half round 8,7)
 do

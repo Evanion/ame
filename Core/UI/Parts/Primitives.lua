@@ -90,6 +90,10 @@ local function look(b)
     Kit.Box(b, hot and v ~= "disabled" and "lineSoft" or s.fill, s.line)
     Kit.SetColor(b.label, b.color or s.text)
   end
+  if b.icon then -- a button that shows an icon (the title bar's Back and Forward): tinted as its label would be
+    local r, g, bl = b.label:GetTextColor()
+    b.icon:SetVertexColor(r or 1, g or 1, bl or 1, 1)
+  end
   b:SetAlpha(v == "disabled" and 0.45 or 1)
 end
 
