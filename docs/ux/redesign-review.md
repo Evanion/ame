@@ -560,8 +560,10 @@ SignalBadge, Tag (primitives). Wrapping chrome is in `ame.css`: the window (`.am
 backdrop.
 
 Not done, and why: the Existing screens page (the released addon's boards) is left as it is, since it records what
-ships today. Guide's two boards are two articles of one screen and still two files. Portfolio's views (Positions,
-Sell, Auctions) are separate files for separate views.
+ships today. Portfolio's views (Positions, Sell, Auctions) are separate files for separate views.
+
+Guide is one screen with an `article` prop (Item, At the auction house); the at-the-AH article's board is an
+instance. Item at the auction house is taller, so the Buy card does not push the Verdict card out of the window.
 
 ## Notifications outside the window (the author, 2026-11-24)
 
