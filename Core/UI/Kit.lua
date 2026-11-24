@@ -205,14 +205,22 @@ function Kit.SetFont(fs, font, size, bold)
   font, size = font or "ui", size or 12
   local obj = fs.SetFontObject and Kit.FontObject(font, size, bold)
   if obj then
-    -- a font object brings its own colour: keep the string's
+    -- a font object brings its own colour and alignment: keep the string's
     local r, g, b, a
     if fs.GetTextColor then
       r, g, b, a = fs:GetTextColor()
     end
+    local jh = fs.GetJustifyH and fs:GetJustifyH()
+    local jv = fs.GetJustifyV and fs:GetJustifyV()
     fs:SetFontObject(obj)
     if r and fs.SetTextColor then
       fs:SetTextColor(r, g, b, a)
+    end
+    if jh and fs.SetJustifyH then
+      fs:SetJustifyH(jh)
+    end
+    if jv and fs.SetJustifyV then
+      fs:SetJustifyV(jv)
     end
   elseif fs.SetFont then
     fs:SetFont(Kit.FontPath(font, bold), size, "")

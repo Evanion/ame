@@ -36,7 +36,7 @@ describe("composite widgets", function()
   end)
 
   describe("kpi", function()
-    it("shows a label, an amount and a coloured change before its note", function()
+    it("shows a label, an amount with its coloured change after it, and its note", function()
       local tree = {
         id = "k",
         type = "kpi",
@@ -47,8 +47,18 @@ describe("composite widgets", function()
       local f = r:Frame("k")
       assert.equals("Net worth", f.label:GetText())
       assert.matches("4", f.value:GetText())
-      assert.matches("%+3%.1%%", f.note:GetText())
-      assert.matches("this week", f.note:GetText())
+      assert.matches("%+3%.1%%", f.delta:GetText()) -- after the value, as the board's KpiCard
+      assert.equals("this week", f.note:GetText())
+      assert.is_false(f.rise:IsShown())
+    end)
+
+    it("draws the breadth bar from rise and fall", function()
+      local tree = { id = "b", type = "kpi", props = { label = "Breadth", value = "51%", rise = 2502, fall = 2397, note = "up · down" } }
+      assert.same({}, Layout.Validate(tree))
+      r:Render(tree)
+      local f = r:Frame("b")
+      assert.is_true(f.rise:IsShown())
+      assert.is_true(f.fall:IsShown())
     end)
     it("shows a dash before there is a number", function()
       r:Render({ id = "k", type = "kpi", props = { label = "Market", note = "no prices yet" } })

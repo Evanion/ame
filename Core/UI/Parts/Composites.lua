@@ -46,19 +46,34 @@ Layout.Register("kpi", {
     delta = "string?",
     deltaTone = "string?",
     note = "string?",
+    rise = "number?",
+    fall = "number?",
   },
   create = function(parent)
     local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     Kit.Box(f, "panel", "line")
+    -- rise / fall: the breadth bar under the value, rising in green, falling in red
+    f.rise = f:CreateTexture(nil, "ARTWORK")
+    f.fall = f:CreateTexture(nil, "ARTWORK")
     f.top = Kit.Line(f, "TOP", "frameLit")
+    -- the board's KpiCard: a dim 11 px label, the value 17 px SemiBold with its change after it (12 px SemiBold,
+    -- in its tone), a dim 11 px note; 7 px / 10 px padding
     f.label = Kit.Text(f, { size = 11, color = "dim" })
-    f.label:SetPoint("TOPLEFT", 12, -9)
-    f.label:SetPoint("RIGHT", -12, 0)
-    f.value = Kit.Text(f, { size = 19 })
+    f.label:SetPoint("TOPLEFT", 10, -8)
+    f.label:SetPoint("RIGHT", -10, 0)
+    f.value = Kit.Text(f, { size = 17 })
+    Kit.SetFont(f.value, "ui", 17, true)
     f.value:SetPoint("TOPLEFT", f.label, "BOTTOMLEFT", 0, -4)
+    f.delta = Kit.Text(f, { size = 12 })
+    Kit.SetFont(f.delta, "ui", 12, true)
+    f.delta:SetPoint("BOTTOMLEFT", f.value, "BOTTOMRIGHT", 6, 1)
     f.note = Kit.Text(f, { size = 11, color = "dim" })
     f.note:SetPoint("TOPLEFT", f.value, "BOTTOMLEFT", 0, -4)
-    f.note:SetPoint("RIGHT", -12, 0)
+    f.note:SetPoint("RIGHT", -10, 0)
+    f.rise:SetHeight(5)
+    f.fall:SetHeight(5)
+    f.rise:SetPoint("TOPLEFT", f.value, "BOTTOMLEFT", 0, -4)
+    f.fall:SetPoint("TOPLEFT", f.rise, "TOPRIGHT", 0, 0)
     return f
   end,
   update = function(f, p)
@@ -70,11 +85,22 @@ Layout.Register("kpi", {
       v = p.value or Kit.Color("dim", "—")
     end
     f.value:SetText(v)
-    local note = p.note or ""
-    if p.delta then
-      note = Kit.Color(p.deltaTone or "dim", p.delta) .. (note ~= "" and ("  " .. note) or "")
+    f.delta:SetText(p.delta and Kit.Color(p.deltaTone or "dim", p.delta) or "")
+    f.note:SetText(p.note or "")
+    local bar = p.rise and p.fall and (p.rise + p.fall) > 0
+    f.rise:SetShown(bar)
+    f.fall:SetShown(bar)
+    f.note:ClearAllPoints()
+    f.note:SetPoint("TOPLEFT", bar and f.rise or f.value, "BOTTOMLEFT", 0, bar and -3 or -4)
+    f.note:SetPoint("RIGHT", -10, 0)
+    if bar then
+      local w = math.max(1, (f:GetWidth() or 200) - 20)
+      local r = w * p.rise / (p.rise + p.fall)
+      Kit.Fill(f.rise, "good")
+      Kit.Fill(f.fall, "bad")
+      f.rise:SetWidth(math.max(1, r))
+      f.fall:SetWidth(math.max(1, w - r))
     end
-    f.note:SetText(note)
   end,
   size = function()
     return 200, 66

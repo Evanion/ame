@@ -23,8 +23,10 @@ local function W()
   return ns.Widgets
 end
 
-local function big(c)
-  return W() and W().BigMoney and W().Plain(W().BigMoney(c or 0)) or tostring(c)
+-- money in its coins' colours (W.BigMoney: "754K g" in gold); from: shorten from this many gold (tables: 10,000,
+-- so a column's rows read alike)
+local function big(c, from)
+  return W() and W().BigMoney and W().BigMoney(c or 0, from) or tostring(c)
 end
 
 local function thousands(n)
@@ -102,6 +104,8 @@ function Overview.Kpis(o, factor, compact)
       value = moved > 0 and ("%d%%"):format(floor(100 * o.up / moved + 0.5)) or "—",
       delta = moved > 0 and (o.up >= o.down and L["rising"] or L["falling"]) or nil,
       deltaTone = "dim",
+      rise = moved > 0 and o.up or nil, -- the rising / falling bar
+      fall = moved > 0 and o.down or nil,
       note = L["%s up · %s down · %s Buy · %s Sell"]:format(
         thousands(o.up or 0),
         thousands(o.down or 0),
@@ -132,10 +136,10 @@ function Overview.Categories(o, className)
       key = "class:" .. tostring(c.classID),
       classID = not other and c.classID or nil,
       name = other and L["Other"] or (className and className(c.classID)) or tostring(c.classID),
-      value = big(c.value),
+      value = big(c.value, 10000),
       share = c.share,
       change = c.change,
-      turnover = c.turnover and ("~" .. big(c.turnover)) or "—",
+      turnover = c.turnover and ("~" .. big(c.turnover, 10000)) or "—",
     }
     max = math.max(max, c.share or 0)
   end
@@ -153,7 +157,7 @@ function Overview.Largest(top)
       count = { text = thousands(t.qty) .. " ×", color = "dim" },
       name = t.id,
       price = t.price,
-      value = t.rawValue and { text = L["capped from %s"]:format(big(t.rawValue)), color = "dim" } or big(t.value),
+      value = t.rawValue and { text = L["capped from %s"]:format(W().Plain(big(t.rawValue, 10000))), color = "dim" } or big(t.value, 10000),
     }
   end
   return rows
