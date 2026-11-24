@@ -88,7 +88,7 @@ Layout.Register("titlebar", {
     f.close = iconButton(f, "×", 18)
     f.close:SetPoint("RIGHT", -8, 0)
     f.close:SetScript("OnClick", act("close"))
-    f.bell = iconButton(f, "!", 14)
+    f.bell = iconButton(f, "|TInterface\\Icons\\INV_Misc_Bell_01:16:16:0:0:64:64:5:59:5:59|t", 14)
     f.bell:SetPoint("RIGHT", f.close, "LEFT", -4, 0)
     f.bell:SetScript("OnClick", act("bell"))
     f.badge = CreateFrame("Frame", nil, f.bell, "BackdropTemplate")
@@ -97,7 +97,7 @@ Layout.Register("titlebar", {
     Kit.Box(f.badge, "badge", false)
     f.badge.text = Kit.Text(f.badge, { size = 9, justify = "CENTER", color = "white" })
     f.badge.text:SetPoint("CENTER", 0, 0)
-    f.cog = iconButton(f, "*", 15)
+    f.cog = iconButton(f, "|TInterface\\Icons\\INV_Misc_Gear_01:16:16:0:0:64:64:5:59:5:59|t", 15)
     f.cog:SetPoint("RIGHT", f.bell, "LEFT", -4, 0)
     f.cog:SetScript("OnClick", act("settings"))
     f.tabs = {}

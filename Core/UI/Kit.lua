@@ -158,9 +158,48 @@ function Kit.SetColor(fs, color)
   fs:SetTextColor(c[1], c[2], c[3], c[4] or 1)
 end
 
+-- The game's fonts lack the boards' small symbols (▾ ▲ ▼ ▸ ★ ● ▮ → ≤ ✕): each becomes an inline texture the game
+-- has (AME's own triangles in media/Signals, the chat frame's arrow) or a character the fonts do have. Every
+-- Kit.Text font string passes its text through this, so screens write the boards' symbols as they are.
+local MEDIA = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Signals\\"
+local function tri(name, r, g, b)
+  return ("|T%s%s:8:8:0:0:32:32:0:32:0:32:%d:%d:%d|t"):format(MEDIA, name, r, g, b)
+end
+Kit.GLYPHS = {
+  ["▾"] = tri("Down", 200, 200, 200), -- a menu opens here
+  ["▴"] = tri("Up", 200, 200, 200),
+  ["▼"] = tri("Down", 255, 209, 0),
+  ["▲"] = tri("Up", 255, 209, 0),
+  ["▸"] = "|TInterface\\ChatFrame\\ChatFrameExpandArrow:10:10:0:0|t",
+  ["→"] = "|TInterface\\ChatFrame\\ChatFrameExpandArrow:10:10:0:0|t",
+  ["●"] = "|TInterface\\Buttons\\WHITE8x8:6:6:0:0:8:8:0:8:0:8:255:209:0|t",
+  ["▮"] = "|TInterface\\Buttons\\WHITE8x8:5:9:0:0:8:8:0:8:0:8:200:200:200|t",
+  ["≤"] = "<=",
+  ["✕"] = "×",
+}
+function Kit.Glyphs(text)
+  if type(text) ~= "string" or not text:find("[\226]") then
+    return text
+  end
+  return (text:gsub("[\226][\128-\191][\128-\191]", function(c)
+    if c == "★" then
+      return ns.Widgets and ns.Widgets.StarInline and ns.Widgets.StarInline(12) or nil -- the favourite star
+    end
+    return Kit.GLYPHS[c]
+  end))
+end
+
+local function glyphSetText(fs, text)
+  return fs.kitSetText(fs, Kit.Glyphs(text))
+end
+
 function Kit.Text(parent, opts)
   opts = opts or {}
   local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  if fs.SetText and not rawget(fs, "kitSetText") then
+    fs.kitSetText = fs.SetText
+    fs.SetText = glyphSetText
+  end
   Kit.SetFont(fs, opts.font, opts.size)
   Kit.SetColor(fs, opts.color or "text")
   fs:SetJustifyH(opts.justify or "LEFT")

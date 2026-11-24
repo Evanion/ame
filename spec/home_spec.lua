@@ -94,6 +94,35 @@ describe("Home", function()
     assert.equals(2, #rows)
   end)
 
+  it("Kit text swaps the symbols the game's fonts lack for textures, and keeps the ones they have", function()
+    local Kit = ns.Kit
+    local menu = Kit.Glyphs("Horde AH ▾")
+    assert.truthy(menu:find("^Horde AH |T"), menu)
+    assert.falsy(menu:find("▾", 1, true))
+    assert.are.equal("<= 3 days · 12×", Kit.Glyphs("≤ 3 days · 12✕"))
+    assert.are.equal("‹ back · plain — dash", Kit.Glyphs("‹ back · plain — dash"))
+    local fs = Kit.Text(CreateFrame("Frame"))
+    fs:SetText("Columns ▾")
+    assert.falsy(fs:GetText():find("▾", 1, true))
+  end)
+
+  it("the best refine names its recipe by id (SellOrRefine hands back the recipe itself)", function()
+    local SMELT = { id = 2659, product = 2840, reagents = { { 2770, 1 } } }
+    local m = {
+      held = { [2770] = 40, [2771] = 0 },
+      uses = { [2770] = { SMELT } },
+      craft = {
+        SellOrRefine = function(_, item, qty)
+          return { item = item, qty = qty, raw = 4000, options = { { recipe = SMELT, gain = 1200 } }, best = { recipe = SMELT, gain = 1200 } }
+        end,
+      },
+    }
+    local best = Home.BestRefine(m)
+    assert.are.same({ item = 2770, qty = 40, recipe = 2659, product = 2840, gain = 1200 }, best)
+    local rows = Home.Worth({ now = 1, hasPrices = true, bestRefine = best }, false)
+    assert.are.equal("refine:2770:2659", rows[#rows].key)
+  end)
+
   it("the first run's steps tick off what has happened", function()
     local rows = Home.Steps({
       hasPrices = false,

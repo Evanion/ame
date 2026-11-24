@@ -486,6 +486,26 @@ local function gatherWorth(f, holdings, index, q, keep)
   local __ = keep
 end
 
+-- the stack you hold that gains most from refining: { item, qty, recipe = recipeID, product, gain } or nil.
+-- m: CraftModel.Build's model (held, uses, craft). SellOrRefine's options carry the recipe itself, not its id.
+function Home.BestRefine(m)
+  local best
+  for id, n in pairs(m.held or {}) do
+    local recipes = m.uses and m.uses[id]
+    if recipes and n > 0 then
+      local r = m.craft:SellOrRefine(id, n, recipes)
+      local o = r and r.best
+      if o and o.gain and o.gain > 0 and (not best or o.gain > best.gain) then
+        local rec = type(o.recipe) == "table" and o.recipe or ns.Recipes.Get(o.recipe)
+        if rec and rec.id then
+          best = { item = id, qty = n, recipe = rec.id, product = rec.product, gain = o.gain }
+        end
+      end
+    end
+  end
+  return best
+end
+
 local function gatherCrafting(f, index)
   local m = ns.CraftModel and ns.CraftModel.Build()
   if not m then
@@ -504,18 +524,7 @@ local function gatherCrafting(f, index)
       break
     end
   end
-  local best
-  for id, n in pairs(m.held or {}) do
-    local recipes = m.uses and m.uses[id]
-    if recipes and n > 0 then
-      local r = m.craft:SellOrRefine(id, n, recipes)
-      if r and r.best and r.best.gain and r.best.gain > 0 and (not best or r.best.gain > best.gain) then
-        local rec = ns.Recipes.Get(r.best.recipe)
-        best = { item = id, qty = n, recipe = r.best.recipe, product = rec and rec.product, gain = r.best.gain }
-      end
-    end
-  end
-  f.bestRefine = best
+  f.bestRefine = Home.BestRefine(m)
   -- a recipe on the auction house one of your characters could learn
   if ns.CraftingData and ns.CraftingData.Teaches then
     local listings = {}
