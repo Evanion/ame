@@ -531,21 +531,35 @@ Third round (same day):
 - Market > Your alerts is still its own copy of Market; it is the same screen with another filter and columns, so
   it becomes a `view` prop.
 
-Still to do, in order:
+Fourth round (same day): the list above, finished.
 
-1. **Market > Your alerts** as a view of the Market screen.
-2. **The narrow boards** rebuilt from the same widgets as their wide screens (they still hand-draw some).
-3. **PriceLadder** on the Item page's card and the sell bar.
-4. **Chart**: six boards draw their own SVG.
-5. **KeyValue** rows and **Field** (label over an input): `.kv` and raw inputs in a dozen boards; `Card` already
-   draws label/value rows, so the hand-written cards become `Card` plus widgets where they hold more than rows.
-6. **Buttons**: `Button` (43 uses) beside raw `.btn` spans in the title bar, the action list and the tips card;
-   check that the two draw the same and keep one.
-7. **Toolbar**: the Crafting screens' filter row (`row1`, five copies) and `CraftingToolbar`.
-8. **Sidebar instances**: `CraftingNav` and `GuildNav` are a `Sidebar` with fixed entries; keep as data.
-9. The sidecar frames (`CraftQueue`, `ProfBar`), the session tracker and the vendor panel: outside the window, own
-   styles; redraw from the same widgets.
-10. `Shell` (the layout slots) is used by no board: make it the documented region layout or drop it.
+- **Market > Your alerts** is a view of the Market screen (`view` prop); its board is an instance.
+- **Chart** widget: one chart fed by a named series (an item's history, the price index, the small 7-day line; wide
+  and narrow). Five boards drew their own. Legends and axis labels stay the screen's.
+- **KeyValue** (a label and its value) and **Field** (a text box with its label over it): 23 hand-written label
+  rows and 9 text boxes replaced. Thirteen label rows stay written out because their value is more than money or
+  text (an item link, a link, two values). **Input** now draws as the shared text box (it had its own background).
+- **PriceLadder** has three layouts: rows (the Sell view's picker), buttons (the bar under the game's AH window),
+  lines (the Item page's summary). All four places draw from it.
+- **CraftingFilters** (search, the five filters, Leveling and Professions; `sections` adds Collapse all and the
+  game's Filter menu) and **QueueStrip** (the queue as one line): five and four copies replaced.
+- **The narrow boards** already drew from the shared widgets after the rounds above; the one raw text box left
+  (narrow Item at the AH) is an Input.
+- **Frames outside the window**: `FrameTitle` (title, note, close) on the session tracker, the vendor panel and the
+  frame beside the game's profession window; that frame is redrawn in the window's look (the window's chrome,
+  panel and card titles, tokens for every colour). `ProfBar` draws the game's own window and keeps its look.
+- **Shell** is the documented region layout: header, toolbar, sidebar, main, right panel, status, laid out by row,
+  column, grid and fill; a narrow window is a second layout of the same widgets.
+
+The widget set the canvas now draws from: TitleBar, StatusBar, AHTabs, FrameTitle (chrome); Sidebar, Segmented,
+SignalFilter, CraftingFilters (navigation and filters); DataTable, Chart, Card, KpiCard, ActionList, BuyCard,
+PriceLadder, QueueStrip, SettingsCard (content); Button, Input, Field, Check, KeyValue, ItemLink, Money,
+SignalBadge, Tag (primitives). Wrapping chrome is in `ame.css`: the window (`.ame`), a panel, a card, the AH
+backdrop.
+
+Not done, and why: the Existing screens page (the released addon's boards) is left as it is, since it records what
+ships today. Guide's two boards are two articles of one screen and still two files. Portfolio's views (Positions,
+Sell, Auctions) are separate files for separate views.
 
 ## Notifications outside the window (the author, 2026-11-24)
 
