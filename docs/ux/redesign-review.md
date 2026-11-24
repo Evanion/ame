@@ -308,7 +308,10 @@ deployable is a recipe with a cost and a price like any other. As tools, only th
 the Tools section, read from the game's requirements and never from a list of ours: an item link, with whether
 one stands at this camp, one of yours holds one, or neither. Blizzard may later make deployables spells or toys;
 then the name stays and the link goes. Drawn as a row on Missing something (a Loom). The list above is from
-guides the author passed on, not checked in game. To check in game: that the recipe's requirements say
+guides the author passed on, not checked in game. Early deployable blueprints drop from low-level dungeon bosses (Anvil: Gilnid, The
+Deadmines; Fermenter: Rath'mael, Ruins of Lordaeron; and so on), so To learn needs a third source beside the auction
+house and vendors: "blueprint drops: boss, dungeon". AME cannot read drop sources from the game; this would be a
+small table kept by hand, for deployable blueprints only. Open: whether blueprints can be traded. To check in game: that the recipe's requirements say
 which are items and which are met (`C_TradeSkillUI.GetRecipeRequirements`).
 
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
