@@ -32,6 +32,7 @@ function P.AuctionState(app, p)
     undercutOnly = p.undercut,
     char = p.char ~= "all" and p.char or nil,
     now = GetServerTime and GetServerTime() or nil,
+    scanMin = P.ScanMin(), -- not searched yet: the last scan's lowest, as Home counts
   })
   local picked
   for _, r in ipairs(rows) do
@@ -180,7 +181,7 @@ local function body(app, p)
               columns = P.Columns("auctions"),
               action = "pickRow",
               selected = picked and picked.key or nil,
-              note = L["Lowest now is as of the last search of each item: Check prices searches them all. Faded: another character's (cancel them there)."],
+              note = L["Lowest now is from the last search of each item, or the last full scan until you search it: Check prices searches them all. Faded: another character's (cancel them there)."],
               empty = p.undercut and L["None of your auctions is undercut."] or L["No auctions: post some from Sell."],
             },
             meta = { grow = 1 },

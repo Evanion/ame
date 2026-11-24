@@ -460,9 +460,16 @@ function P.FillAuctionIDs(auctions, owned, me)
   return auctions
 end
 
--- what's on sale now against one of your auctions (book: AHSearch.results[key], rows cheapest first, yours marked)
-function P.Standing(a, book)
+-- what's on sale now against one of your auctions (book: AHSearch.results[key], rows cheapest first, yours marked).
+-- Not searched yet: the last full scan's lowest (scanMin), as Home counts it - "scanUndercut" | "scanLowest".
+function P.Standing(a, book, scanMin)
   if not (book and book.rows) then
+    if scanMin and a.unit then
+      if scanMin < a.unit then
+        return { kind = "scanUndercut", lowest = scanMin, by = a.unit - scanMin }
+      end
+      return { kind = "scanLowest", lowest = scanMin }
+    end
     return { kind = "unchecked" }
   end
   local lowest, other, ahead, units = nil, nil, 0, 0
@@ -491,6 +498,10 @@ function P.StandingText(st)
     return { text = L["the only one"], color = "good" }
   elseif st.kind == "undercut" then
     return { text = L["undercut by %s · %d ahead"]:format(money(st.by), st.ahead), color = "bad" }
+  elseif st.kind == "scanUndercut" then
+    return { text = L["undercut by %s at the last scan"]:format(money(st.by)), color = "warn" }
+  elseif st.kind == "scanLowest" then
+    return { text = L["lowest at the last scan"], color = "dim" }
   end
   return { text = L["not checked"], color = "dim" }
 end
@@ -508,7 +519,18 @@ function P.TimeLeft(a, t)
   return a.timeLeftBand and P.BANDS[a.timeLeftBand] or "—"
 end
 
--- your auctions as rows. opts: { me (this character's name), atAH, undercutOnly, char (one character's), now }
+-- the last full scan's lowest price of an item, at the auction house you're looking at (what Home counts from)
+function P.ScanMin()
+  local AME = ns.AME
+  local idx = AME and AME.FactionIndex and AME:FactionIndex()
+  return function(id)
+    local s = idx and idx.items and idx.items[id]
+    return s and s.min or nil
+  end
+end
+
+-- your auctions as rows. opts: { me (this character's name), atAH, undercutOnly, char (one character's), now,
+-- scanMin (itemID -> the last full scan's lowest: the standing of an item not searched yet) }
 -- -> rows, { count, asking, undercut, chars = { names }, checked (newest search) }
 function P.AuctionRows(auctions, books, opts)
   opts = opts or {}
@@ -524,13 +546,14 @@ function P.AuctionRows(auctions, books, opts)
     if book and book.at and (not sum.checked or book.at > sum.checked) then
       sum.checked = book.at
     end
-    local st = P.Standing(a, book)
+    local st = P.Standing(a, book, opts.scanMin and opts.scanMin(a.itemID))
+    local under = st.kind == "undercut" or st.kind == "scanUndercut"
     sum.count, sum.asking = sum.count + 1, sum.asking + (a.total or 0)
-    if st.kind == "undercut" then
+    if under then
       sum.undercut = sum.undercut + 1
     end
     local mine = opts.me == nil or a.char == opts.me
-    if (not opts.undercutOnly or st.kind == "undercut") and (not opts.char or a.char == opts.char) then
+    if (not opts.undercutOnly or under) and (not opts.char or a.char == opts.char) then
       rows[#rows + 1] = {
         key = a.auctionID and ("a" .. a.auctionID) or ("a" .. i .. ":" .. tostring(a.itemID)),
         item = a.itemID,

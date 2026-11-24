@@ -686,6 +686,8 @@ function handlers.AUCTION_HOUSE_SHOW()
     ns.UI:ViewChanged()
     ns.UI:ApplyTheme()
   end
+  -- the new window (/ame new) takes over the auction house, or sits beside the game's (Core/UI/AHTakeover.lua)
+  local tookOver = ns.AHTakeover and ns.AHTakeover.OnShow()
   -- once the auction house window is up (next frame): an open AME window docks beside it, or takes its "with the
   -- auction house" place
   C_Timer.After(0, function()
@@ -693,7 +695,7 @@ function handlers.AUCTION_HOUSE_SHOW()
       ns.UI:ApplyPlacement()
     end
   end)
-  if ns.Settings:Get("openWithAH") and ns.UI and not (ns.UI.frame and ns.UI.frame:IsShown()) then
+  if not tookOver and ns.Settings:Get("openWithAH") and ns.UI and not (ns.UI.frame and ns.UI.frame:IsShown()) then
     ns.UI:Toggle()
   end
   if AME:LoadHistory() then
@@ -793,6 +795,9 @@ end
 
 function handlers.AUCTION_HOUSE_CLOSED()
   AME.ahOpen = false
+  if ns.AHTakeover then
+    ns.AHTakeover.OnClosed()
+  end
   -- opened while at the auction house (with it, or by hand): it closes with it
   if not AME.openBeforeAH and ns.UI and ns.UI.frame and ns.UI.frame:IsShown() then
     ns.UI.frame:Hide()

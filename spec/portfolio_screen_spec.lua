@@ -52,6 +52,25 @@ describe("Portfolio page", function()
     it("not searched yet", function()
       assert.equals("unchecked", P.Standing(a, nil).kind)
     end)
+    it("not searched yet, with a full scan: the scan's lowest, as Home counts it", function()
+      local st = P.Standing(a, nil, 48000)
+      assert.equals("scanUndercut", st.kind)
+      assert.equals(600, st.by)
+      assert.equals("scanLowest", P.Standing(a, nil, 48600).kind)
+      -- a search, once there is one, wins over the scan
+      assert.equals("only", P.Standing(a, { rows = { { price = 48600, qty = 5, mine = true } } }, 48000).kind)
+    end)
+    it("counts and filters undercut by the scan the same as by a search", function()
+      local rows, sum = P.AuctionRows({ { itemID = 1, unit = 500, total = 500 }, { itemID = 2, unit = 300, total = 300 } }, {}, {
+        undercutOnly = true,
+        scanMin = function(id)
+          return id == 1 and 400 or 300
+        end,
+      })
+      assert.equals(1, sum.undercut)
+      assert.equals(1, #rows)
+      assert.equals(1, rows[1].item)
+    end)
     it("only yours on sale: the only one", function()
       assert.equals("only", P.Standing(a, { rows = { { price = 48600, qty = 5, mine = true } } }).kind)
     end)

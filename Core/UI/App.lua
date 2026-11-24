@@ -187,7 +187,11 @@ App.actions.scan = function()
   end
 end
 App.actions.gameAH = function(app)
-  app:Hide()
+  if ns.AHTakeover then
+    ns.AHTakeover.UseGame() -- the game's window back in sight, this one closed; remembered for the next visit
+  else
+    app:Hide()
+  end
 end
 App.actions.ahtab = function(app, p)
   local map = { buy = "market", sell = "sell", auctions = "auctions" }
@@ -325,6 +329,12 @@ function App:Create()
     end
   end)
   table.insert(_G.UISpecialFrames or {}, "AMEWindow")
+  -- closed while it is the auction house: the visit ends with it (AHTakeover)
+  f:HookScript("OnHide", function()
+    if ns.AHTakeover then
+      ns.AHTakeover.WindowHidden()
+    end
+  end)
   f:Hide()
   self.frame = f
   self.compact = f:GetWidth() < App.COMPACT_W

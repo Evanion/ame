@@ -79,7 +79,11 @@ function Home.Kpis(f)
       note = (f.marketChange >= 0 and L["dearer this week"] or L["cheaper this week"]),
     }
   else
-    out[4] = { label = L["Market"], note = L["builds as full scans come in"] }
+    if f.marketLevel then -- not a week of scans yet: the price index, the change when a week is in
+      out[4] = { label = L["Market"], value = ("%.1f"):format(f.marketLevel), note = L["price index · the week's change after 7 days of scans"] }
+    else
+      out[4] = { label = L["Market"], note = L["builds as full scans come in"] }
+    end
   end
   return out
 end
@@ -243,7 +247,7 @@ function Home.Worth(f, atAH)
       pill = L["LEARN"],
       title = { item(l.item) },
       sub = l.sub,
-      value = l.payback and L["%d days to pay back"]:format(math.max(1, math.ceil(l.payback))) or nil,
+      value = l.payback and (math.ceil(l.payback) <= 1 and L["1 day to pay back"] or L["%d days to pay back"]:format(math.ceil(l.payback))) or nil,
       valueTone = "good",
       button = L["Open"],
       action = "goLearn",
@@ -636,6 +640,7 @@ function Home.Gather(force)
     if ns.MarketStats and index.stats then
       local s = try(ns.MarketStats.Summary, index, 7)
       f.marketChange = s and s.levelChange
+      f.marketLevel = s and s.level
     end
     local m = try(gatherCrafting, f, index)
     try(gatherCooldowns, f, now, m and m.craft)

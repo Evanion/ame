@@ -31,7 +31,7 @@ end
 -- undercut auctions, as the Auctions screen counts them
 function P.Undercut(f)
   local books = ns.AHSearch and ns.AHSearch.results or {}
-  local _, sum = P.AuctionRows(f.auctions, books, { me = UnitName and UnitName("player") })
+  local _, sum = P.AuctionRows(f.auctions, books, { me = UnitName and UnitName("player"), scanMin = P.ScanMin() })
   return sum.undercut
 end
 

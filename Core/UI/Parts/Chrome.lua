@@ -189,7 +189,7 @@ Layout.Register("titlebar", {
       self.market:ClearAllPoints()
       self.market:SetPoint("LEFT", self.forward, "RIGHT", 6, 0)
       local last = self.market
-      for _, b in ipairs({ self.back, self.forward, self.market }) do
+      for _, b in ipairs({ self.back, self.forward, self.market, self.scan, self.gameAH }) do
         b:GetScript("OnLeave")(b)
       end
       self.scan:SetShown(p.ah and true or false)
