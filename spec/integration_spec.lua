@@ -2508,6 +2508,19 @@ describe("addon in a stubbed client", function()
         -- buy: the game prices the 30, then a second click buys them
         T.selected = 2589
         T:Render()
+        -- the Buy box can be emptied while you type in it (to write 4 over 1); left empty, it gets the count back
+        local box = T.panel.qty
+        box.HasFocus = function()
+          return true
+        end
+        box:SetText("")
+        T:RenderDetail()
+        assert.are.equal("", box:GetText())
+        box.HasFocus = function()
+          return false
+        end
+        box.scripts.OnEditFocusLost(box)
+        assert.are.equal("30", box:GetText())
         T.panel.qty:SetText("30")
         T.panel.buy.scripts.OnClick(T.panel.buy)
         assert.are.same({ "start", 2589, 30 }, bought[1])

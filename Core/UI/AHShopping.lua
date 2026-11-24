@@ -545,6 +545,11 @@ function T:Create(ah)
       end
     end,
   })
+  p.qty:HookScript("OnEditFocusLost", function(qty)
+    if qty:GetText() == "" then
+      T:RenderDetail() -- left empty: back to the count to buy
+    end
+  end)
   p.qty:SetPoint("LEFT", buyLabel, "RIGHT", 6, 0)
   p.buyText = W.Text(detail, "GameFontHighlightSmall")
   p.buyText:SetPoint("LEFT", p.qty, "RIGHT", 8, 0)
@@ -870,7 +875,9 @@ function T:RenderDetail()
         missing = r.missing
       end
     end
-    if commodity and p.qty:GetText() == "" then
+    -- an empty box gets the count to buy, but not while you type in it: emptying it to write another number would
+    -- put the old one straight back (it is filled when you leave the box empty instead)
+    if commodity and p.qty:GetText() == "" and not p.qty:HasFocus() then
       p.qty:SetText(tostring(missing and missing > 0 and missing or 1))
       return self:RenderDetail() -- the listings it takes from, for that many
     end
