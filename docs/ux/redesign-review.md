@@ -507,13 +507,26 @@ What the audit found, across 80 boards:
 | KPI cards drawn two ways (Home's own, `KpiCard`) | Home vs Portfolio, Overview | Done: `KpiCard` everywhere |
 | Item names as `.il` spans beside the `ItemLink` widget | Home, bell, minimap | Done on Home and the bell; the minimap tooltip still to do |
 
+Second round (same day):
+
+- **Item** is one screen (`Main.dc.html`) with an `ah` prop: it adds the Buy card and the AH's tabs, grows the
+  window, and wakes Search and Sell. `ItemAH` is an instance.
+- **Market > Lists** is one screen (`ShoppingList.dc.html`) with `ah`: the toolbar's buttons, the price column
+  (Market or Lowest listing) and the buying bar under the table. `MarketAHList` is an instance.
+- **PriceLadder** widget, with `dense` for the narrow window (the two drawings differed only in spacing); used on
+  Sell and the narrow Sell. The Item page's "what to list at" card and the sell bar's buttons still draw their own.
+- **Button**: the widget and the raw `.btn` spans draw the same (the widget uses the same classes), so there is one
+  look; screens use the widget, and raw spans stay only inside other widgets.
+- Not pairs after all: **Guide and Guide at the AH** are two articles of one screen (a prop for the article, not for
+  the place); **Portfolio and Portfolio at the AH** are two views (Positions, Sell), and Sell only exists at the AH.
+- **The narrow boards are layouts, not a prop**: each differs from its wide screen in most lines. In the addon a
+  narrow window is a second layout tree over the same widgets.
+
 Still to do, in order:
 
-1. **Away / at the AH as a prop** on Market, Item, Portfolio, Guide and Market > Lists, as on Home. Market and Item
-   differ by more than data (a buy panel, the Buy card), so those are a prop that adds a region.
-2. **Narrow window as a prop** (`compact`) in place of the separate Compact boards.
-3. **PriceLadder** (Quick / Normal / Patient / Market): drawn by hand on Sell, Item at the AH, the narrow Sell and
-   the sell bar.
+1. **Market away / at the AH** as one screen with `ah` (the buy panel is the added region).
+2. **The narrow boards** rebuilt from the same widgets as their wide screens (they still hand-draw some).
+3. **PriceLadder** on the Item page's card and the sell bar.
 4. **Chart**: six boards draw their own SVG.
 5. **KeyValue** rows and **Field** (label over an input): `.kv` and raw inputs in a dozen boards; `Card` already
    draws label/value rows, so the hand-written cards become `Card` plus widgets where they hold more than rows.
