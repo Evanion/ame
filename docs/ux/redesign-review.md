@@ -322,6 +322,15 @@ Encounter Journal (`EJ_SelectInstance`, `C_EncounterJournal.GetLootInfoByIndex`)
 Forever 1.60.1, read once into a cache with the loot filters reset; unconfirmed is whether Forever's journal is
 filled in and lists recipe items. (2) A small hand-kept table for what the journal omits, as `Core/Disenchant.lua`
 is. (3) Optionally, the boss recorded when a player loots one (`ENCOUNTER_LOOT_RECEIVED`), shared over guild sync.
+
+Drop sources are for every recipe, not only deployable blueprints (decided 2026-11-24): one "Where from" for all
+of To learn, filled from whatever source knows. That rules out a hand-kept table as the main source: classic-era
+recipes drop from bosses, named mobs, zones and the world, come from quests and reputation vendors, and number in
+the hundreds; mob loot tables are on the server and not in the client's data. So the sources, in the order tried:
+seen on the auction house or at a vendor (AME's own data); the Encounter Journal (bosses only); a loot addon the
+player has installed, asked at runtime (AtlasLoot has a Forever fork; reading its data in game copies nothing, as
+with Auctionator); drops recorded by you and your guild; and otherwise "source not known", never a guess. A hand
+table stays only for gaps that matter and that nothing else covers.
 To check in game: that the recipe's requirements say
 which are items and which are met (`C_TradeSkillUI.GetRecipeRequirements`).
 
