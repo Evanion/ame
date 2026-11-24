@@ -1181,6 +1181,8 @@ function W.ItemLinkClicked(key)
   local modified = IsModifiedClick and (IsModifiedClick("CHATLINK") or IsModifiedClick("DRESSUP"))
   if link and modified and HandleModifiedItemClick then
     HandleModifiedItemClick(link)
+  elseif ns.App and ns.App.Enabled() and ns.App.frame and ns.App.frame:IsShown() then
+    ns.App:Go("item", { item = key }) -- the redesigned window opens it on its own Item page
   elseif ns.UI and ns.UI.ShowItem then
     ns.UI:ShowItem(key)
   end

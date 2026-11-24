@@ -54,7 +54,7 @@ local function columnsFor(f, specs, ctx)
         end
       end
       col.fallback = function(d)
-        return d.name
+        return d[spec.fallback or "name"]
       end
     end
     if spec.button then

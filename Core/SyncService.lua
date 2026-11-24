@@ -536,6 +536,11 @@ function Service:Allowed(m, distribution, sender)
     return false -- guild only (handled above)
   end
   local trusted = self:TrustActive() and self.trust:IsTrusted(sender)
+  if m.type == "craft" then
+    -- craft requests: whispered between guild members, or with a trusted player
+    local guild = self:GuildActive() and ns.CraftRequests and ns.CraftRequests.InGuild(sender)
+    return (trusted or guild) and true or false
+  end
   if m.type == "request" then
     return trusted or self:GuildActive()
   elseif
@@ -584,6 +589,15 @@ function Service:OnMessage(msg, distribution, sender)
   end
   self:Trace("in", msg, sender, distribution)
   self.trust:Heard(sender, GetServerTime(), distribution)
+  if ns.CraftRequests and ns.CraftRequests.Heard then
+    ns.CraftRequests.Heard(sender)
+  end
+  if m.type == "craft" then
+    if distribution == "WHISPER" and ns.CraftRequests then
+      ns.CraftRequests.OnMessage(m.body, sender)
+    end
+    return
+  end
   if m.type == "version" then
     self:HeardVersion(sender, m.version)
     return

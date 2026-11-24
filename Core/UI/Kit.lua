@@ -139,7 +139,11 @@ local function localeFont()
 end
 
 function Kit.FontPath(font)
-  return localeFont() or Kit.FONTS[font or "ui"] or Kit.FONTS.ui
+  -- a LibSharedMedia pick in Settings (Fonts and bars), else AME's own
+  local picked = ns.SettingsScreen
+    and ns.SettingsScreen.FontPath
+    and ns.SettingsScreen.FontPath(font == "display" and "heading" or "text")
+  return localeFont() or picked or Kit.FONTS[font or "ui"] or Kit.FONTS.ui
 end
 
 function Kit.SetFont(fs, font, size)

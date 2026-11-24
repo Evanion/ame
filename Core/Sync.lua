@@ -12,6 +12,8 @@
 --             can craft (recipe IDs per profession), for "who can make it"
 --   sources   "1|V|<shard>|<t36>|<RecipeSources.Encode>"        guild (and trusted): where recipes are sold or drop
 --   version   "1|U|<shard>|<version>"                           guild (and trusted): the AME version I run
+--   craft     "1|X|<shard>|<CraftRequests.Encode>"            whisper: a craft request, an answer to one, or an
+--             acknowledgement (guild members and trusted players)
 --
 -- Transport (chunking + pacing at BULK priority) is AceComm/ChatThrottleLib in the WoW glue. Received scans are
 -- merged with Store:AddScan, whose dedupe makes repeats harmless; announcements repeat, so dropped whispers retry
@@ -140,6 +142,11 @@ function Sync.EncodeVersion(shard, version)
   return table.concat({ Sync.PROTO, "U", shard, (tostring(version or ""):gsub("[|;]", "")) }, "|")
 end
 
+-- a craft request, its answer or an acknowledgement (Core/CraftRequests.lua: Encode, EncodeAck)
+function Sync.EncodeCraft(shard, body)
+  return table.concat({ Sync.PROTO, "X", shard, body }, "|")
+end
+
 -- "0.4.1", "v0.4.2-beta.3" -> { 0, 4, 2, stage, n }: a release sorts after its betas (alpha 1, beta 2, rc 3,
 -- release 4); nil for anything else (a development build: "dev")
 local STAGES = { alpha = 1, beta = 2, rc = 3 }
@@ -227,6 +234,8 @@ function Sync.Decode(msg)
       return { type = "sources", shard = shard, t = Codec.FromBase36(f[5]), body = f[6] }
     elseif kind == "U" and #f == 5 then
       return { type = "version", shard = shard, version = f[5] }
+    elseif kind == "X" and #f >= 5 then
+      return { type = "craft", shard = shard, body = table.concat(f, "|", 5) }
     elseif kind == "Q" and #f == 4 then
       return { type = "query", shard = shard }
     elseif kind == "H" and #f == 4 then

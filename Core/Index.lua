@@ -30,7 +30,9 @@ function AME:CheckAlerts(index)
       self.notices:Add({ kind = "alert", text = what, itemID = a.itemID }, GetServerTime())
     end
   end
-  if #fired > 0 and ns.Settings:Get("alertSound") and PlaySound and SOUNDKIT then
+  if #fired > 0 and ns.Sound then
+    ns.Sound.Play("alert")
+  elseif #fired > 0 and ns.Settings:Get("alertSound") and PlaySound and SOUNDKIT then
     PlaySound(SOUNDKIT.RAID_WARNING or SOUNDKIT.TELL_MESSAGE or 3081)
   end
   if #fired > 0 and ns.UI and ns.UI.RefreshMarket then

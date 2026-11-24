@@ -91,7 +91,12 @@ function App:Shard()
   return ns.ShardKey(ns.AME:MarketRealmName(), self:House())
 end
 
+-- the accent: the viewed market's, unless Settings picks one ("Horde" | "Alliance" | "Neutral")
 local function themeKey(house)
+  local picked = ns.Settings and ns.Settings:Get("theme")
+  if picked and picked ~= "auto" then
+    house = picked
+  end
   return house == "Neutral" and "goblin" or tostring(house):lower()
 end
 
@@ -325,6 +330,13 @@ function App:Create()
   self.compact = f:GetWidth() < App.COMPACT_W
   self.ctx = Layout.Context(handlers, { app = self, sources = {} })
   self.renderer = Layout.Renderer(f, self.ctx)
+  f:SetScale(ns.Settings and ns.Settings:Get("windowScale") or 1)
+  -- the bell's count and the notifications screen follow the notices
+  if ns.AME and ns.AME.notices and ns.AME.notices.OnChange then
+    ns.AME.notices:OnChange(function()
+      App:Redraw()
+    end)
+  end
 
   -- the auction house's own tabs hang under the window while it's open
   local tabs = CreateFrame("Frame", nil, f)

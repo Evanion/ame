@@ -14,6 +14,9 @@ function Launcher:Init()
   self:RegisterOptionsPage()
   self:CreateLauncher()
   self:CreateNoticeFeed()
+  if ns.Pending then -- the redesigned window: the minimap and data broker mark what waits on you
+    ns.Pending.Attach()
+  end
 end
 
 function Launcher:RegisterOptionsPage()
@@ -111,7 +114,8 @@ function Launcher:CreateLauncher()
     return
   end
   local launcher = LDB:NewDataObject(ADDON, {
-    type = "launcher",
+    type = "data source", -- a data source shows text in info bars: "AME", or "AME 3" when something waits
+    text = "AME",
     label = "AME",
     icon = ns.ICON,
     OnClick = function(_, button)

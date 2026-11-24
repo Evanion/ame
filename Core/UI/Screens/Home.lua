@@ -104,7 +104,7 @@ App.Screen("home", {
       app:Go("crafting")
     end,
     goSharing = function(app)
-      app:Go("settings", { section = "sharing" })
+      app:Go("sharing")
     end,
     goSettings = function(app)
       app:Go("settings")

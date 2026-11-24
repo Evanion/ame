@@ -38,6 +38,17 @@ Settings.DEFAULTS = {
   baganatorAllSignals = false, -- the signal corner shows HOLD and WAIT too (otherwise BUY and SELL only)
   baganatorSellTip = false, -- the tip corner marks items to sell too (most of a bag: off, it shows the exceptions)
   baganatorValue = "stack", -- the value corner: "stack" (all of it) or "each" (one)
+  ahMode = "ame", -- at the auction house: "ame" (AME takes over) | "game" (the game's window, AME beside it)
+  professionMode = "ame", -- opening a profession: "ame" (the Crafting tab) | "game" (the game's window and AME's frame)
+  queueTracker = true, -- the queue's missing reagents in the objectives tracker
+  fontText = "", -- LibSharedMedia picks ("" = AME's own)
+  fontHeading = "",
+  barTexture = "",
+  notifySound = "", -- the notification sound ("" = AME's default)
+  soundRequest = true, -- play it when a craft request arrives
+  soundAuction = false, -- and when an auction sells or is undercut
+  pendingMark = true, -- mark the minimap button and data broker when something waits
+  cooldownAlerts = true, -- tell me when a profession cooldown is ready
   newWindow = false, -- the redesigned window (feature/redesign, /ame new) instead of the current one
   minimap = { hide = false },
 }
