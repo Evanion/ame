@@ -54,7 +54,7 @@ end
 local MOVER_COLUMNS = {
   { key = "name", label = "", width = 140, item = true },
   { key = "market", label = "", width = 70, format = "money" },
-  { key = "change", label = "", width = 56, format = "pct" },
+  { key = "change", label = "", width = 70, format = "pct" },
 }
 
 local function heading(id, title, note)
@@ -226,7 +226,8 @@ function S.OverviewBody(app, params, opts)
         meta = { w = 400 },
         children = {
           heading("ov.categories.head", L["Categories"], L["by listed value"]),
-          categoryTable("ov.categories", false, period),
+          -- as tall as its rows (a 20 px header, 22 px rows, the note under them); the largest items take the rest
+          categoryTable("ov.categories", false, period, { h = 20 + #cats * 22 + 30 }),
           heading("ov.largest.head", L["Largest by value"], L["what the total leans on"]),
           {
             id = "ov.largest",
@@ -243,7 +244,7 @@ function S.OverviewBody(app, params, opts)
                 { key = "value", label = "", width = 100 },
               },
             },
-            meta = { h = 90 },
+            meta = { grow = 1 },
           },
         },
       },
