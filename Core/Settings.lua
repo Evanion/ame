@@ -38,6 +38,7 @@ Settings.DEFAULTS = {
   baganatorAllSignals = false, -- the signal corner shows HOLD and WAIT too (otherwise BUY and SELL only)
   baganatorSellTip = false, -- the tip corner marks items to sell too (most of a bag: off, it shows the exceptions)
   baganatorValue = "stack", -- the value corner: "stack" (all of it) or "each" (one)
+  newWindow = false, -- the redesigned window (feature/redesign, /ame new) instead of the current one
   minimap = { hide = false },
 }
 

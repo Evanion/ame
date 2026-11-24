@@ -197,7 +197,7 @@ end
 
 -- the warm gradient of the title bar and status row (top to bottom)
 function Kit.Chrome(frame)
-  local tex = frame.kitChrome or frame:CreateTexture(nil, "BACKGROUND")
+  local tex = rawget(frame, "kitChrome") or frame:CreateTexture(nil, "BACKGROUND")
   frame.kitChrome = tex
   tex:SetAllPoints()
   tex:SetTexture(WHITE)

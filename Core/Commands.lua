@@ -129,8 +129,25 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     ns.UI:Create()
     ns.UI.frame:Show()
     ns.UI:ShowTab("sync") -- Settings, Sharing
+  elseif cmd == "new" then
+    -- the redesigned window (feature/redesign): switch to it, or back to the current one
+    local on = not ns.App.Enabled()
+    ns.Settings:Set("newWindow", on)
+    if on then
+      if ns.UI.frame then
+        ns.UI.frame:Hide()
+      end
+      ns.App:Show()
+    else
+      ns.App:Hide()
+      ns.UI:Toggle()
+    end
   elseif cmd == "" then
-    ns.UI:Toggle()
+    if ns.App and ns.App.Enabled() then
+      ns.App:Toggle()
+    else
+      ns.UI:Toggle()
+    end
   elseif cmd == "help" then
     say(
       L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"]
