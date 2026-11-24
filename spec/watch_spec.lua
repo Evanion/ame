@@ -80,6 +80,17 @@ describe("Watch", function()
       assert.are.equal("above", fired[1].kind)
     end)
 
+    it("checks a price alert against the cheapest listing, not the market price", function()
+      w:SetAlert(10, { above = 1500 })
+      -- a few listed dear lift the market price over the line; the cheapest is still under it
+      assert.are.equal(0, #w:Check({ [10] = { min = 1475, market = 1600, signal = "none" } }))
+      local fired = w:Check({ [10] = { min = 1510, market = 1700, signal = "none" } })
+      assert.are.equal(1, #fired)
+      assert.are.equal(1510, fired[1].market) -- the price it fired on
+      w:SetAlert(11, { below = 1000 })
+      assert.are.equal("below", w:Check({ [11] = { min = 990, market = 1200, signal = "none" } })[1].kind)
+    end)
+
     it("doesn't fire on hold", function()
       w:SetAlert(10, { signal = true })
       assert.are.equal(0, #w:Check({ [10] = { market = 1, signal = "hold" } }))

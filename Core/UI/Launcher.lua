@@ -71,8 +71,16 @@ end
 
 -- left-click: the window; right-click: settings (the minimap button, info bars, the addon compartment)
 function Launcher.Click(button)
+  local app = ns.App and ns.App.Enabled and ns.App.Enabled() and ns.App
   if button == "RightButton" then
-    ns.Settings:Open()
+    if app then
+      app:Show()
+      app:Go("settings")
+    else
+      ns.Settings:Open()
+    end
+  elseif app then
+    app:Toggle() -- where you left it (Pending opens it on what waits, when something does)
   else
     ns.UI:Toggle()
   end

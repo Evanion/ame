@@ -607,11 +607,11 @@ when every screen they carry has a new one. Order:
 | Step | What | State |
 |---|---|---|
 | B0 | Layout engine: registry, validator, renderer, row / column / grid / fill (`Core/UI/Layout.lua`) | done |
-| B1 | Primitive widgets registered: text, button, input, field, check, segmented, money, item link, key/value, signal badge, tag, card, panel, scroll | |
-| B2 | The new window: title bar (tabs, back / forward, market, AH buttons, cog, bell, close), status bar, AH tabs, screen router with history, the development switch | |
-| B3 | Composite widgets: DataTable (fed by a data source), Chart, KPI card, action list, price ladder, buy card, sidebar, settings card, crafting filters, queue strip, request form and answer, frame title | |
-| B4 | Screens, in this order: Home; Market (screener, views, your alerts, lists, at the AH); Item (at the AH); Portfolio (positions, sell, auctions, ledger); Crafting (five filters, takeover, sidecar frame); Guild (crafters, requests and their exchange over sync, your crafts, lists, sharing); Guide; Settings; notifications (bell, minimap, data broker, sound); vendor panel; session tracker | |
-| B5 | Cut-over: remove the old views, update the Guide, locales, specs | |
+| B1 | Primitive widgets registered: text, button, input, field, check, segmented, money, item link, key/value, signal badge, tag, card, panel, scroll | done |
+| B2 | The new window: title bar (tabs, back / forward, market, AH buttons, cog, bell, close), status bar, AH tabs, screen router with history, the development switch | done |
+| B3 | Composite widgets: DataTable (fed by a data source), Chart, KPI card, action list, price ladder, buy card, sidebar, settings card, crafting filters, queue strip, request form and answer, frame title | done |
+| B4 | Screens, in this order: Home; Market (screener, views, your alerts, lists, at the AH); Item (at the AH); Portfolio (positions, sell, auctions, ledger); Crafting (five filters, takeover, sidecar frame); Guild (crafters, requests and their exchange over sync, your crafts, lists, sharing); Guide; Settings; notifications (bell, minimap, data broker, sound); vendor panel; session tracker | built 2026-11-25; to check in game with `/ame new` |
+| B5 | Cut-over: remove the old views, update the Guide, locales, specs | waits for the in-game check |
 
 Each screen is done when its layout validates in the specs, it draws in game, and an in-game screenshot matches its
 board.

@@ -142,6 +142,8 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
       ns.App:Hide()
       ns.UI:Toggle()
     end
+  elseif cmd == "session" and ns.SessionTracker then
+    ns.SessionTracker.Toggle() -- what this outing has gathered and looted
   elseif cmd == "" then
     if ns.App and ns.App.Enabled() then
       ns.App:Toggle()
@@ -153,7 +155,7 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
       L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"]
     )
     say(
-      L["/ame item <link> - print history  ·  /ame scan  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync  ·  /ame who <item>"]
+      L["/ame item <link> - print history  ·  /ame scan  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync  ·  /ame who <item>  ·  /ame session"]
     )
   elseif itemIDFrom(msg) then
     ns.UI:ShowItem(itemIDFrom(msg))

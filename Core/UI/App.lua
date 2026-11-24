@@ -352,7 +352,26 @@ end
 function App:SavePlace()
   local f, pos = self.frame, saved()
   pos.x, pos.y = f:GetLeft(), f:GetTop()
-  pos.w, pos.h = f:GetWidth(), f:GetHeight()
+  pos.w, pos.h = f:GetWidth(), self.grown or f:GetHeight() -- the AH's extra height isn't yours to keep
+end
+
+-- taller at the auction house (the Buy card, the price ladder and the AH's tabs need the room); the size you chose
+-- comes back when you leave. Never taller than the screen.
+App.AH_H = 830
+function App:FitAH(at)
+  local f = self.frame
+  if at and not self.grown then
+    local room = UIParent and UIParent.GetHeight and UIParent:GetHeight() or App.AH_H
+    local want = math.min(App.AH_H, (room or App.AH_H) / (f:GetScale() or 1) - 40)
+    local h = f:GetHeight() or App.H
+    if want > h then
+      self.grown = h
+      f:SetHeight(want)
+    end
+  elseif not at and self.grown then
+    f:SetHeight(self.grown)
+    self.grown = nil
+  end
 end
 
 function App:Render()
@@ -369,8 +388,9 @@ function App:Render()
       ns.Dev.Warn("layout: " .. problem)
     end
   end
-  self.renderer:Render(tree)
   local at = self:AtAH()
+  self:FitAH(at)
+  self.renderer:Render(tree)
   self.ahFrame:SetShown(at)
   if at then
     local id = self:Current()

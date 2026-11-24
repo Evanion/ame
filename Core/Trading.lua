@@ -381,6 +381,9 @@ function Trading:OnSystemMessage(msg)
     ns.Posting:OnOutcome(sold or expired, sold ~= nil) -- the pricing model learns how its chances held up
   end
   if sold then
+    if ns.Sound then
+      ns.Sound.Play("auction") -- off unless Settings · Sound has "an auction sells" on
+    end
     local unit = listedUnit(sold)
     self.ledger:Add({
       t = GetServerTime(),

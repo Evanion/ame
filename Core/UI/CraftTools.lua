@@ -93,8 +93,11 @@ function UI.CraftTools(recipe, env)
       local h = env.held(id)
       if h and (h.total or 0) > 0 then
         local names = {}
+        -- Holdings.Count gives a list of { name, bags, bank, ... }; a map of char -> count reads too
         for key, n in pairs(h.chars or {}) do
-          if n > 0 then
+          if type(n) == "table" then
+            names[#names + 1] = n.name
+          elseif (tonumber(n) or 0) > 0 then
             names[#names + 1] = charName(key)
           end
         end

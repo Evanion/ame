@@ -266,7 +266,7 @@ Help.GUIDE = {
   },
   {
     L["Watchlists and alerts"],
-    L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price (12 or 12g is gold; 9s 50c works too), or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound; the bell left of the tabs keeps them, with a count of the ones you haven't seen."],
+    L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: when its cheapest listing goes below or above a price (12 or 12g is gold; 9s 50c works too), or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound; the bell left of the tabs keeps them, with a count of the ones you haven't seen."],
   },
   {
     L["Reading the numbers"],

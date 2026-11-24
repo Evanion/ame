@@ -222,7 +222,7 @@ L["+%d more"] = true
 L["/ day"] = true
 L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"] = true
 L["/ame - open the window.   /ame <item link> - chart an item.   /ame item <item link> - its history in chat.   /ame scan - a full scan of the open auction house.   /ame status - data and sharing status.   /ame config - settings.   /ame sync - sharing settings.   /ame backfill - import Auctionator's history now.   /ame selftest - check everything is working.   /ame help - the commands in chat."] = true
-L["/ame item <link> - print history  ·  /ame scan  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync  ·  /ame who <item>"] = true
+L["/ame item <link> - print history  ·  /ame scan  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync  ·  /ame who <item>  ·  /ame session"] = true
 L["/day"] = true
 L["/week"] = true
 L["1 can make it"] = true
@@ -1444,7 +1444,7 @@ L["Sources go in this order: what this character carries, its bank, your other c
 L["Spent with you"] = true
 L["Spreadsheet"] = true
 L["Standing"] = true
-L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: below or above a price (12 or 12g is gold; 9s 50c works too), or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound; the bell left of the tabs keeps them, with a count of the ones you haven't seen."] = true
+L["Star items to put them on a watchlist; make more lists with \"+ New list\" in the sidebar (right-click a list to share it with your guild or delete it; guild members' shared lists appear below yours). On an item's page set an alert: when its cheapest listing goes below or above a price (12 or 12g is gold; 9s 50c works too), or when a buy/sell signal appears. Alerts are checked after every scan and posted in chat with a sound; the bell left of the tabs keeps them, with a count of the ones you haven't seen."] = true
 L["Start with \"Your first scan\""] = true
 L["State"] = true
 L["Steady demand"] = true

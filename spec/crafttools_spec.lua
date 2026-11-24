@@ -103,6 +103,18 @@ describe("Crafting tools", function()
     assert.truthy(card.rows[1].label:find("Make it: Zakzu knows it", 1, true))
   end)
 
+  it("reads who holds a tool from Trading.Held's list of characters", function()
+    local t = UI.CraftTools(
+      { tools = { "Salt Shaker" }, toolIDs = { ["Salt Shaker"] = SHAKER } },
+      env({
+        held = function()
+          return { total = 1, chars = { { name = "Tyken", bags = 1, bank = 0, auctions = 0, mail = 0 } } }
+        end,
+      })
+    )
+    assert.are.same({ "Tyken" }, t.tools[1].held.chars)
+  end)
+
   it("a vendor's tool (known by name), and where it's made", function()
     local t = UI.CraftTools({ tools = { "Blacksmith Hammer" }, at = { "Anvil" } }, env())
     local tool = t.tools[1]

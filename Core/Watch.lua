@@ -226,15 +226,18 @@ function Watch:SetAlert(itemID, fields)
   return self.db.alerts[itemID]
 end
 
--- Check every alert against market summaries (index.items: itemID -> { market, signal, ... }).
--- Returns triggered alerts: { { itemID, kind = "below"|"above"|"buy"|"sell", market, threshold }, ... }
+-- Check every alert against market summaries (index.items: itemID -> { min, market, signal, ... }). A price alert
+-- watches the cheapest listing (min), what a buyer pays next: the market price averages in dearer listings, so a few
+-- listed above the line would fire "above" while the cheapest sat under it. Without a min, the market price.
+-- Returns triggered alerts: { { itemID, kind = "below"|"above"|"buy"|"sell", market, threshold }, ... } (market: the
+-- price checked)
 function Watch:Check(items)
   local fired = {}
   for itemID, a in pairs(self.db.alerts) do
     local s = items[itemID]
     local st = a.state
-    if s and s.market then
-      local m = s.market
+    if s and (s.min or s.market) then
+      local m = s.min or s.market
       if a.below then
         if m <= a.below and not st.below then
           st.below = true

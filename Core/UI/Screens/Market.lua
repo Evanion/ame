@@ -1000,20 +1000,29 @@ local function overviewBody(app, params)
   local body
   local O = ns.ItemScreens and ns.ItemScreens.OverviewBody
   if O then
-    body = try(O, app, params)
+    body = try(O, app, params, { toolbar = false })
+  end
+  local bar = { modeSwitch(app, "overview") }
+  local tools = ns.ItemScreens and ns.ItemScreens.OverviewTools and try(ns.ItemScreens.OverviewTools, app, params)
+  if type(tools) == "table" and #tools > 0 then
+    bar[#bar + 1] = { id = "market.overviewGap", type = "spacer", meta = { grow = 1 } }
+    for _, t in ipairs(tools) do
+      bar[#bar + 1] = t
+    end
   end
   if type(body) ~= "table" then
     body = text("market.overviewSoon", L["The overview is being rebuilt."], "dim", 12, { h = 20 })
   end
   body.meta = body.meta or {}
   body.meta.grow = 1
-  S.status = ""
+  local status = ns.ItemScreens and ns.ItemScreens.OverviewStatus and try(ns.ItemScreens.OverviewStatus, app, params)
+  S.status = type(status) == "string" and status or ""
   return {
     id = "market",
     type = "column",
     props = { gap = 8 },
     children = {
-      { id = "market.bar", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = { modeSwitch(app, "overview") } },
+      { id = "market.bar", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = bar },
       body,
     },
   }
@@ -1021,7 +1030,35 @@ end
 
 -- ------------------------------------------------------------------------------------------------ build
 
+-- what another screen hands over, applied once: a category (the overview), the hidden items (Settings), a guild
+-- list (Guild · Lists: "s:<key>" a shopping list, "w:<key>" a watchlist)
+local function handOver(params)
+  if params.classID then
+    S.q.list, S.q.only = nil, nil
+    S.q.classID, S.q.subClassID = tonumber(params.classID), nil
+    params.classID = nil
+  end
+  if params.view == "hidden" then
+    S.q.classID, S.q.subClassID = nil, nil
+    S.q.list, S.q.only = "hidden", nil
+    params.view = nil
+  end
+  local g = params.guildList
+  if type(g) == "string" then
+    params.guildList = nil
+    local kind, key = g:match("^(%a):(.+)$")
+    if kind == "s" then
+      params.mode, params.list = "lists", "sg:" .. key
+    elseif kind == "w" then
+      params.mode = "screener"
+      S.q.classID, S.q.subClassID = nil, nil
+      S.q.list, S.q.only = "g:" .. key, nil
+    end
+  end
+end
+
 local function build(app, params)
+  handOver(params)
   local mode = params.mode or "screener"
   if mode == "lists" then
     return listsBody(app, params)

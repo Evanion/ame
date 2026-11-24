@@ -731,6 +731,9 @@ local function notice(r, text)
     notices:Add({ kind = "craft", text = text, itemID = r.item, who = r.side == "crafter" and r.asker or r.crafter },
       GetServerTime())
   end
+  if ns.Sound then
+    ns.Sound.Play("craft")
+  end
 end
 
 -- a craft message from SyncService (the "X" kind, whispered, from a guild member or a trusted player)
