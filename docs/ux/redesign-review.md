@@ -296,6 +296,10 @@ Sell or refine's in-and-out craft card is on Ready now; Recipes to buy is To lea
 Guild · Crafters. CraftingNav and CraftingToolbar stay until Leveling, Your professions and Guild · Crafters are
 redrawn without them.
 
+Where a tool comes from is in its tooltip (decided 2026-11-24): the Tools section shows the tool as an item link,
+whether one of your characters has it, and one short line; "Made by Engineers (250)", "Sold by ...", the schematic
+and the price are lines AME adds to the item's tooltip, so they show wherever the item is linked. No button for it.
+
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
 action with a small payload, the view handles it and changes state, and the changed state flows back as `props`.
 Widgets never change state themselves. Protected clicks may sidestep this: where the game needs the call made
