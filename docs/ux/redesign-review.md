@@ -271,7 +271,7 @@ For the whole addon, following the author's own `@evanion/widget` (https://libs.
   specs over every screen's layout. The renderer is tolerant: it skips an unknown type and warns once.
 - Takeover and sidecar frames are the same widgets in a different layout, which is why Crafting can offer both.
 
-The architecture is adapted to Lua and the game's UI, not copied from the web (proposed 2026-11-24, to confirm):
+The architecture is adapted to Lua and the game's UI, not copied from the web (confirmed 2026-11-24):
 
 | On the web | In the game |
 |---|---|
@@ -285,6 +285,10 @@ The architecture is adapted to Lua and the game's UI, not copied from the web (p
 Rules the game adds: a click that crafts, posts or buys must reach the game from the real button press, so those
 widgets call their action directly from the click; text is localised by the view before it reaches `props`; and a
 view updates `props` in place, without building a new tree on each event, to keep garbage down during scans.
+
+Retired from the canvas (2026-11-24): the old Crafting boards Top earners, Craft queue page, Recipes to buy,
+Sell or refine and the Who can make it popup; links to them now go to the one Crafting screen. CraftingNav and
+CraftingToolbar stay until Leveling, Your professions and Guild · Crafters are redrawn without them.
 
 Named actions are decided (2026-11-24), in the Flux manner the author knows from Redux: a widget dispatches a named
 action with a small payload, the view handles it and changes state, and the changed state flows back as `props`.
