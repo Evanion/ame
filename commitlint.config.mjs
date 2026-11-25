@@ -3,6 +3,9 @@
 // changelog and the next version (RELEASING.md).
 export default {
   extends: ["@commitlint/config-conventional"],
+  // release-please's release commits ("chore(release/0.5): release 0.5.0-beta.2"): it writes them, with the
+  // changelog in the body, and they must not block a release
+  ignores: [(message) => /^chore\([^)]*\): release /.test(message)],
   rules: {
     // feat, fix, perf and revert are listed in the changelog (release-please-config.json); the rest are not
     "type-enum": [
