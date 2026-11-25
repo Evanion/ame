@@ -10,6 +10,7 @@
 ## AddonCompartmentFuncOnLeave: AzerothMercantileExchange_OnAddonCompartmentLeave
 ## SavedVariables: AME_DB
 ## X-License: LGPL-3.0-or-later
+## X-Curse-Project-ID: 1812187
 
 embeds.xml
 
