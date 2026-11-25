@@ -163,7 +163,6 @@ L["%s knows %s"] = true
 L["%s latest (%s): min %s, market %s, %d units in %d auctions"] = true
 L["%s makes it"] = true
 L["%s needs %d (has %d)"] = true
-L["%s newer"] = true
 L["%s not nearby"] = true
 L["%s not yet"] = true
 L["%s of %s"] = true
@@ -1535,7 +1534,7 @@ L["The Overview is the whole auction house at a glance, like a stock exchange's 
 L["The Overview needs market statistics, which are off: switch on the market overview in Settings."] = true
 L["The Selling tab"] = true
 L["The Shopping tab"] = true
-L["The Sync activity card at the top of Sharing shows when the next announce is due, and what's being sent and received right now, each with a progress bar and the time it has left. A transfer that isn't moving says why and for how long: waiting its turn (the sender is sending other data first, a full day of prices can take half an hour) or stalled (nothing from the sender lately: offline, or they reloaded). Retry asks the sender again for what's missing; Cancel stops it, and it's asked for again later from whoever has it. Missing here lists what the players you share with announced that you don't have yet, per player and auction house: a newer full scan, hours and days, its size and how long it takes to arrive, and whether it's on its way. Sizes are learned from what was sent before, so they are estimates until a transfer starts; players send at the same time, so catching up takes as long as the slowest of them."] = true
+L["The Sync activity card at the top of Sharing shows when the next announce is due, and what's being sent and received right now, each with a progress bar and the time it has left. A transfer that isn't moving says why and for how long: waiting its turn (the sender is sending other data first, a full day of prices can take half an hour) or stalled (nothing from the sender lately: offline, or they reloaded). Retry asks the sender again for what's missing; Cancel stops it, and it's asked for again later from whoever has it. Missing here lists what the players you share with announced that you don't have yet, per player and auction house: a newer full scan (Their scan says when it was taken), hours and days, its size, how long it takes to arrive (Takes), and whether it's on its way. Sizes are learned from what was sent before, so they are estimates until a transfer starts; players send at the same time, so catching up takes as long as the slowest of them."] = true
 L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."] = true
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] = true
 L["The averages: MA 20 and the 7-day average"] = true
@@ -1594,6 +1593,7 @@ L["The whole market's daily profit at this price: you'd sell a share of it, afte
 L["The whole stack"] = true
 L["The window"] = true
 L["The worth sort sorts your bags, not the bank."] = true
+L["Their scan"] = true
 L["Theirs arrive on their own and stand in for step 1"] = true
 L["Then:"] = true
 L["Then: %s"] = true
@@ -1606,7 +1606,6 @@ L["This screen is part of the redesign and isn't built yet. /ame new switches ba
 L["This session"] = true
 L["Three steps to get going"] = true
 L["Tightening"] = true
-L["Time"] = true
 L["Time left"] = true
 L["Tip"] = true
 L["Tip corner: mark items to sell too"] = true

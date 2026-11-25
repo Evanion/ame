@@ -8,14 +8,16 @@ local L = ns.L
 local App, G = ns.App, ns.GuildScreen
 local Kit = ns.Kit
 
+-- Their scan: when the sender's full scan was taken (one newer than yours, or one you don't have); Takes: how long
+-- what's missing takes to arrive - the only wait in the row
 local MISSING_COLUMNS = {
   { key = "c1", label = L["From"], width = 110, align = "LEFT" },
   { key = "c2", label = L["Auction house"], width = 100, align = "LEFT" },
-  { key = "c3", label = L["Full scan"], width = 80 },
+  { key = "c3", label = L["Their scan"], width = 80 },
   { key = "c4", label = L["Hours"], width = 50 },
   { key = "c5", label = L["Days"], width = 44 },
   { key = "c6", label = L["Size"], width = 64 },
-  { key = "c7", label = L["Time"], width = 60 },
+  { key = "c7", label = L["Takes"], width = 60 },
   { key = "c8", label = L["State"], width = 90, align = "LEFT" },
 }
 
@@ -159,8 +161,8 @@ local function build(app)
   actKids[#actKids + 1] = {
     id = "share.miss",
     type = "table",
-    props = { source = "guild.missing", columns = MISSING_COLUMNS, bare = true, empty = act.emptyText },
-    meta = { h = 112 },
+    props = { source = "guild.missing", columns = MISSING_COLUMNS, empty = act.emptyText },
+    meta = { h = 132 }, -- the header row and four rows
   }
   if act.total then
     actKids[#actKids + 1] = {
@@ -170,7 +172,7 @@ local function build(app)
       meta = { h = 14 },
     }
   end
-  local actH = 22 + 20 * #(act.moving or {}) + 20 + 112 + (act.total and 18 or 0) + 8 * #actKids + 20
+  local actH = 22 + 20 * #(act.moving or {}) + 20 + 132 + (act.total and 18 or 0) + 8 * #actKids + 20
 
   -- guild sharing: the switches, the protocol, the counts, the players heard from
   local stats = AME_DB and AME_DB.stats or {}

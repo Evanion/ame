@@ -13,11 +13,11 @@ local ROW_H, LINE_GAP = 18, 4
 local COLUMNS = {
   { key = "from", label = L["From"], width = 110 },
   { key = "house", label = L["Auction house"], width = 90 },
-  { key = "scan", label = L["Full scan"], width = 80, right = true },
+  { key = "scan", label = L["Their scan"], width = 80, right = true },
   { key = "hours", label = L["Hours"], width = 44, right = true },
   { key = "days", label = L["Days"], width = 40, right = true },
   { key = "size", label = L["Size"], width = 64, right = true },
-  { key = "time", label = L["Time"], width = 60, right = true },
+  { key = "time", label = L["Takes"], width = 60, right = true },
   { key = "state", label = L["State"] },
 }
 local COL_GAP = 10
@@ -129,11 +129,12 @@ UI.SYNC_STATES = {
   waiting = { "dim", L["not asked yet"] },
 }
 
--- a Missing here row's cells, in COLUMNS order (text with colour codes)
-function UI.SyncMissingCells(r)
+-- a Missing here row's cells, in COLUMNS order (text with colour codes). Their scan says when it was taken ("20 min
+-- ago"), not how much newer it is than yours: a duration there read as the time it takes to arrive (Takes)
+function UI.SyncMissingCells(r, now)
   local scan = W.NONE
   if r.scan then
-    scan = (r.mine and r.mine > 0) and L["%s newer"]:format(UI.Duration(r.scan - r.mine)) or L["new"]
+    scan = W.Ago(r.scan, now or (GetServerTime and GetServerTime()) or r.scan)
   end
   local count = function(n)
     return n > 0 and W.Thousands(n) or W.NONE
