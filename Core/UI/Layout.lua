@@ -248,7 +248,7 @@ end
 
 -- grid: props.cols equal columns (or props.widths), children flow row by row; meta.span takes several columns,
 -- props.rowH (or the child's meta.h) is a row's height
-local function grid(frame, kids, w, h, props)
+local function grid(frame, kids, w, _h, props)
   local px, py = pad(props)
   local gap = props.gap or 0
   local widths = {}
@@ -360,9 +360,10 @@ end
 function Renderer:node(item, parent, seen)
   local def = type(item) == "table" and Layout.widgets[item.type]
   if not def then
-    warnOnce("type:" .. tostring(type(item) == "table" and item.type), "layout: unknown widget type " .. tostring(
-      type(item) == "table" and item.type
-    ))
+    warnOnce(
+      "type:" .. tostring(type(item) == "table" and item.type),
+      "layout: unknown widget type " .. tostring(type(item) == "table" and item.type)
+    )
     return nil
   end
   local id = item.id

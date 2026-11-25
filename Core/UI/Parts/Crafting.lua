@@ -2,7 +2,8 @@
 -- with the game's sections, the picked recipe's card, the Tools card, lines of text with item links, the queue as
 -- one line, the Make bar (Create / Create all / Queue), a button that crafts from the click, and the skill colour bar.
 --
---   crafttable { source, columns = { { key, label, width, format?, align?, item?, button = { label, action, variant? }? } },
+--   crafttable { source,
+--                columns = { { key, label, width, format?, align?, item?, button = { label, action, variant? }? } },
 --                action?, selected?, note?, empty?, flex?, bare?, sorted? }
 --     rows: { key, item?, label? (text where there's no item: an enchant, a section header), suffix?, faded?, header? }
 --   crafthead  { item?, title?, subtitle? }                  a recipe's card: the item as a link, a line under it
@@ -188,12 +189,20 @@ end
 local function signature(columns, sorted)
   local parts = { tostring(sorted) }
   for i, c in ipairs(columns) do
-    parts[i + 1] = tostring(c.key) .. ":" .. tostring(c.format) .. ":" .. tostring(c.item) .. ":" .. tostring(c.button ~= nil) .. ":" .. tostring(c.width)
+    parts[i + 1] = tostring(c.key)
+      .. ":"
+      .. tostring(c.format)
+      .. ":"
+      .. tostring(c.item)
+      .. ":"
+      .. tostring(c.button ~= nil)
+      .. ":"
+      .. tostring(c.width)
   end
   return table.concat(parts, ",")
 end
 
-local function columnsFor(f, specs, ctx, sorted)
+local function columnsFor(_f, specs, ctx, sorted)
   local out = {}
   for i, spec in ipairs(specs) do
     local col = {
@@ -242,7 +251,8 @@ local function columnsFor(f, specs, ctx, sorted)
           return v.color and Kit.Color(v.color, v.text or "") or (v.text or "")
         end
         if v == nil then
-          return (format == "money" or format == "signedMoney") and W.Dim("-") or "" -- no amount: a dim dash, as the old recipe list
+          -- no amount: a dim dash, as the old recipe list
+          return (format == "money" or format == "signedMoney") and W.Dim("-") or ""
         end
         if format == "money" then
           return W.Money(v, true)
@@ -333,7 +343,10 @@ Layout.Register("crafttable", {
 
 -- a section header's text: the fold arrow, the game's name, how many it holds
 function CraftingUI.HeaderLabel(label, count, folded)
-  return Kit.Color("dim", folded and "+ " or "– ") .. Kit.Color("heading", label) .. "  " .. Kit.Color("dim", tostring(count))
+  return Kit.Color("dim", folded and "+ " or "– ")
+    .. Kit.Color("heading", label)
+    .. "  "
+    .. Kit.Color("dim", tostring(count))
 end
 
 -- ------------------------------------------------------------------------------------------------ crafthead
@@ -531,7 +544,8 @@ Layout.Register("queuestrip", {
     f.props = p
     local parts = {}
     for _, it in ipairs(p.items) do
-      local count = it.count and (W.Thousands and W.Thousands(math.floor(it.count + 0.5)) or tostring(it.count)) .. " " or ""
+      local count = it.count and (W.Thousands and W.Thousands(math.floor(it.count + 0.5)) or tostring(it.count)) .. " "
+        or ""
       parts[#parts + 1] = count .. (it.item and W.LinkText(it.item) or (it.label or "?"))
     end
     f.text:SetText(#parts > 0 and table.concat(parts, "   ") or Kit.Color("dim", p.empty or ""))
@@ -557,7 +571,14 @@ Layout.Register("queuestrip", {
 -- ------------------------------------------------------------------------------------------------ makebar
 
 Layout.Register("makebar", {
-  props = { count = "number?", label = "string?", recipe = "number?", buttons = "table", action = "string?", noCount = "boolean?" },
+  props = {
+    count = "number?",
+    label = "string?",
+    recipe = "number?",
+    buttons = "table",
+    action = "string?",
+    noCount = "boolean?",
+  },
   create = function(parent, ctx)
     local f = CreateFrame("Frame", nil, parent)
     f.label = Kit.Text(f, { size = 11, color = "dim" })
@@ -621,7 +642,8 @@ Layout.Register("makebar", {
   end,
 })
 
--- ------------------------------------------------------------------------------------------------ craftbutton (Create, Create all, Craft next: the game is called from the click)
+-- ------------------------------------------------------------------------------------------------ craftbutton
+-- Create, Create all, Craft next: the game is called from the click
 
 Layout.Register("craftbutton", {
   props = { label = "string", variant = "string?", call = "string?", payload = "any?", action = "string?" },

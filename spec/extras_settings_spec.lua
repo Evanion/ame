@@ -109,7 +109,8 @@ describe("Settings screen", function()
   end)
 
   it("fonts, bars and sounds come from LibSharedMedia, AME's own first", function()
-    local lists = { font = { "Friz Quadrata TT", "Expressway" }, statusbar = { "Blizzard" }, sound = { "None", "Bell" } }
+    local lists =
+      { font = { "Friz Quadrata TT", "Expressway" }, statusbar = { "Blizzard" }, sound = { "None", "Bell" } }
     local media = fakeLSM(lists)
     _G.LibStub = function(name)
       return name == "LibSharedMedia-3.0" and media or nil

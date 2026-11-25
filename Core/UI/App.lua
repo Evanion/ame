@@ -54,7 +54,7 @@ function App:TabScreen(tab)
 end
 
 App.Screen("soon", {
-  Build = function(app, params)
+  Build = function(_app, _params)
     return {
       id = "soon",
       type = "panel",
@@ -321,7 +321,12 @@ function App:Tree()
         meta = { h = 40 },
       },
       { id = "app.body", type = "fill", props = { pad = 12 }, meta = { grow = 1 }, children = { body } },
-      { id = "app.status", type = "statusbar", props = { text = status, right = App.StatusRight() }, meta = { h = 26 } },
+      {
+        id = "app.status",
+        type = "statusbar",
+        props = { text = status, right = App.StatusRight() },
+        meta = { h = 26 },
+      },
     },
   }
 end

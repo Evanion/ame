@@ -16,6 +16,7 @@ exclude_files = {
 ignore = {
   "212/self", -- unused self argument (method style)
   "432/self", -- shadowing self in nested script handlers (idiomatic in WoW UI code)
+  "21./_.+", -- unused, named so on purpose: _app, _f (a callback that must take the argument)
 }
 
 -- WoW API globals we read. Extend as code starts using more of the API.
@@ -28,6 +29,8 @@ read_globals = {
   "GetGuildInfo", "GetNumGuildBankTabs", "GetCurrentGuildBankTab", "GetGuildBankTabInfo", "QueryGuildBankTab",
   "MAX_GUILDBANK_SLOTS_PER_TAB",
   "SecondsToTime", "BackdropTemplateMixin", "GameFontNormal", "GameFontHighlight",
+  "CreateFont", "GetLocale", "GetMoney", "GetQuestResetTime", "GetMouseFoci", "GetMouseFocus", "MenuUtil",
+  "GetSpellInfo", "IsPlayerSpell", "IsSpellKnown",
   "GameFontHighlightSmall", "GameFontNormalLarge", "GameFontDisableSmall", "UISpecialFrames", "GetCursorPosition",
   "StaticPopup_Show", "RELOADUI", "CANCEL", "ACCEPT", "DELETE", "UIErrorsFrame", "PlaySound", "SOUNDKIT", "C_Texture", "ERR_AUCTION_SOLD_S", "ERR_AUCTION_EXPIRED_S", "ERR_AUCTION_WON_S",
   "IsAltKeyDown", "IsModifiedClick", "IsShiftKeyDown", "IsControlKeyDown", "Item", "TooltipDataProcessor", "debugstack", "Enum", "C_TooltipInfo",

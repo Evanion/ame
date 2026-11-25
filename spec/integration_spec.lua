@@ -349,11 +349,11 @@ describe("addon in a stubbed client", function()
 
     it("the redesigned window's Home gathers from the real modules and draws", function()
       seeded()
-      local f = ns.Home.Gather(true)
+      local facts = ns.Home.Gather(true)
       assert.same({}, ns.Home.errors)
-      assert.is_true(f.hasPrices)
-      assert.is_table(f.listed)
-      assert.is_number(f.itemsValue)
+      assert.is_true(facts.hasPrices)
+      assert.is_table(facts.listed)
+      assert.is_number(facts.itemsValue)
       ns.Settings:Set("newWindow", true)
       SlashCmdList.AZEROTHMERCANTILEEXCHANGE("")
       assert.is_true(ns.App.frame:IsShown())
@@ -5103,9 +5103,12 @@ describe("addon in a stubbed client", function()
       finally(function()
         api.GetWorth = worth
       end)
-      ns.AME.jobs = ns.Jobs.New({ budgetMs = 20, clock = function()
-        return work
-      end })
+      ns.AME.jobs = ns.Jobs.New({
+        budgetMs = 20,
+        clock = function()
+          return work
+        end,
+      })
       ns.Baganator.values = {}
       ns.Baganator:Prime(true)
       local longest, ticks = 0, 0

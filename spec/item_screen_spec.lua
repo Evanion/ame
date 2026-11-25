@@ -38,7 +38,8 @@ describe("the Item page", function()
   local function series(n, base)
     local out = {}
     for i = 1, n do
-      out[i] = { day = 90 + i, market = (base or 600) + i * 25, min = (base or 600) + i * 24, qty = 1000 + i * 150, scans = 2 }
+      out[i] =
+        { day = 90 + i, market = (base or 600) + i * 25, min = (base or 600) + i * 24, qty = 1000 + i * 150, scans = 2 }
     end
     return out
   end
@@ -131,7 +132,11 @@ describe("the Item page", function()
     end)
 
     it("listings: cheapest first, the rows an order takes from picked", function()
-      local book = { commodity = true, rows = { { price = 904, qty = 60 }, { price = 910, qty = 85 }, { price = 931, qty = 120, mine = true } }, at = 0 }
+      local book = {
+        commodity = true,
+        rows = { { price = 904, qty = 60 }, { price = 910, qty = 85 }, { price = 931, qty = 120, mine = true } },
+        at = 0,
+      }
       local rows, cost, covered, units = P.Listings(book, 100, 0)
       assert.equals(60 * 904 + 40 * 910, cost)
       assert.equals(100, covered)
@@ -210,7 +215,13 @@ describe("the Item page", function()
         { classID = -1, value = 4000000, share = 0.01 },
       },
       top = { { id = 12640, qty = 1, price = 250000000, value = 250000000, rawValue = 2500000000 } },
-      series = { days = { 98, 99 }, value = { 1, 2 }, auctions = { 3, 4 }, levelDays = { 98, 99 }, level = { 100, 104.2 } },
+      series = {
+        days = { 98, 99 },
+        value = { 1, 2 },
+        auctions = { 3, 4 },
+        levelDays = { 98, 99 },
+        level = { 100, 104.2 },
+      },
     }
 
     it("headline cards with their changes; the narrow window four without notes", function()
@@ -382,7 +393,9 @@ describe("the Item page", function()
         end,
       }
       ns.AHSearch = {
-        results = { [2452] = { commodity = true, rows = { { price = 904, qty = 60 }, { price = 910, qty = 85 } }, at = 100 * DAY } },
+        results = {
+          [2452] = { commodity = true, rows = { { price = 904, qty = 60 }, { price = 910, qty = 85 } }, at = 100 * DAY },
+        },
         Push = function() end,
       }
       env.now = 100 * DAY
@@ -471,7 +484,11 @@ describe("the Item page", function()
 
     it("the status says where the prices come from", function()
       App:Show()
-      ns.AME.history = { shards = { ["Forever|Horde"] = { raw = { { k = "full", t = 100 * DAY - 7200 }, { k = "search", t = 100 * DAY - 60 } } } } }
+      ns.AME.history = {
+        shards = {
+          ["Forever|Horde"] = { raw = { { k = "full", t = 100 * DAY - 7200 }, { k = "search", t = 100 * DAY - 60 } } },
+        },
+      }
       App:Go("item", { item = 2452 })
       App:Tree()
       local status = ns.ItemScreens.Status(App, { item = 2452 })
@@ -497,7 +514,13 @@ describe("the Item page", function()
           fallers = {},
           sectors = { { classID = 7, value = 100, share = 1 } },
           top = {},
-          series = { days = { 98, 99 }, value = { 1, 2 }, auctions = { 1, 2 }, levelDays = { 98, 99 }, level = { 100, 104.2 } },
+          series = {
+            days = { 98, 99 },
+            value = { 1, 2 },
+            auctions = { 1, 2 },
+            levelDays = { 98, 99 },
+            level = { 100, 104.2 },
+          },
         }
         ns.MarketStats.Summary = function()
           return summary

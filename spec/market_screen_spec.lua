@@ -65,7 +65,9 @@ describe("Market", function()
       total = 7004,
       lists = { { name = "Watchlist", count = 0 }, { name = "Alchemy", count = 8 } },
       alerts = 3,
-      categories = { { classID = 7, name = "Trade goods", count = 399, subs = { { subClassID = 1, name = "Parts", count = 4 } } } },
+      categories = {
+        { classID = 7, name = "Trade goods", count = 399, subs = { { subClassID = 1, name = "Parts", count = 4 } } },
+      },
     }
     it("lists All items, the watchlists, + New list, Your alerts and the categories with counts", function()
       local e = Market.Sidebar(f, Market.NewQuery())
@@ -73,7 +75,10 @@ describe("Market", function()
       for _, x in ipairs(e) do
         keys[#keys + 1] = x.key or ("#" .. x.label)
       end
-      assert.same({ "all", "#Watchlists", "list:1", "list:2", "newlist", "#Alerts", "alerts", "#Categories", "class:7" }, keys)
+      assert.same(
+        { "all", "#Watchlists", "list:1", "list:2", "newlist", "#Alerts", "alerts", "#Categories", "class:7" },
+        keys
+      )
       assert.equals("7,004", e[1].count)
       assert.is_true(e[1].selected)
       assert.is_true(e[5].link)
@@ -155,10 +160,13 @@ describe("Market", function()
 
   describe("rows", function()
     it("the screener's carry the summary, what you hold, and fade when old", function()
-      local rows = Market.ScreenerRows({ { itemID = 1, market = 5, day = 90 }, { itemID = 2, market = 6, day = 100 } }, {
-        today = 100,
-        held = { [2] = 14 },
-      })
+      local rows = Market.ScreenerRows(
+        { { itemID = 1, market = 5, day = 90 }, { itemID = 2, market = 6, day = 100 } },
+        {
+          today = 100,
+          held = { [2] = 14 },
+        }
+      )
       assert.equals(1, rows[1].key)
       assert.equals(5, rows[1].market)
       assert.is_true(rows[1].faded)
@@ -166,7 +174,8 @@ describe("Market", function()
       assert.equals("", rows[1].hold)
     end)
     it("alerts: newest fired first, never last, the unread one lit", function()
-      local alerts = { [1] = { below = 650000, state = { below = true } }, [2] = { above = 1200, state = {} }, [3] = { above = 1 } }
+      local alerts =
+        { [1] = { below = 650000, state = { below = true } }, [2] = { above = 1200, state = {} }, [3] = { above = 1 } }
       local fired = { [1] = { at = 1000000, unread = true }, [2] = { at = 700000 } }
       local rows, lit = Market.AlertRows({ { itemID = 1, market = 620000 }, { itemID = 2, market = 957 } }, alerts, {
         fired = fired,
@@ -283,15 +292,22 @@ describe("Market", function()
 
   describe("arbitrage", function()
     it("routes as rows: margin, units, data age; Search only at the buy house", function()
-      local rows = Market.ArbRows({ { itemID = 1, buy = 100, sell = 200, net = 80, margin = 0.3, buyQty = 2, units = 1, age = 1 } }, {})
+      local rows = Market.ArbRows(
+        { { itemID = 1, buy = 100, sell = 200, net = 80, margin = 0.3, buyQty = 2, units = 1, age = 1 } },
+        {}
+      )
       assert.truthy(rows[1].margin:find("+30%", 1, true)) -- green / red, as the old Arbitrage tab
       assert.equals("1 of 2", rows[1].units)
       assert.equals("1 day", rows[1].age)
       assert.is_false(rows[1].search)
-      assert.equals("Search", Market.ArbRows({ { itemID = 1, buy = 1, sell = 2, margin = 1 } }, { atBuy = true })[1].search)
+      assert.equals(
+        "Search",
+        Market.ArbRows({ { itemID = 1, buy = 1, sell = 2, margin = 1 } }, { atBuy = true })[1].search
+      )
     end)
     it("the route's sums and how fresh it is", function()
-      local e = { buy = 5750000, sell = 7850000, fee = 392500, deposit = 10000, net = 1707500, buyAge = 1, soldPerDay = 1.2 }
+      local e =
+        { buy = 5750000, sell = 7850000, fee = 392500, deposit = 10000, net = 1707500, buyAge = 1, soldPerDay = 1.2 }
       local cost = Market.RouteCost(e, { buyHouse = "Goblin AH", sellHouse = "Horde AH", cutPct = 5 })
       assert.equals("Buy at the Goblin AH", cost[1].label)
       assert.equals(-392500, cost[3].copper)
@@ -300,7 +316,8 @@ describe("Market", function()
       assert.truthy(Market.RouteNote(e):find("One-day-old", 1, true))
     end)
     it("the newest full scan", function()
-      local full = Market.LastFull({ { k = "full", t = 5 }, { k = "item", t = 9 }, { k = "full", t = 7, src = "Klydig" } })
+      local full =
+        Market.LastFull({ { k = "full", t = 5 }, { k = "item", t = 9 }, { k = "full", t = 7, src = "Klydig" } })
       assert.equals("Klydig", full.src)
     end)
   end)
@@ -350,11 +367,34 @@ describe("Market", function()
       addon.load({ "Core/UI/Parts/Market.lua", "Core/UI/App.lua", "Core/UI/Screens/Market.lua" }, ns)
       App = ns.App
       local function item(id, market, signal, day)
-        return { itemID = id, market = market, avg7 = market * 1.1, avg30 = market, qty = 100, soldPerDay = 12, signal = signal, signalRank = 1, score = 50 + id, day = day or 100, scans7 = 6, days = 9 }
+        return {
+          itemID = id,
+          market = market,
+          avg7 = market * 1.1,
+          avg30 = market,
+          qty = 100,
+          soldPerDay = 12,
+          signal = signal,
+          signalRank = 1,
+          score = 50 + id,
+          day = day or 100,
+          scans7 = 6,
+          days = 9,
+        }
       end
-      index = { day = 100, count = 3, items = { [1] = item(1, 957, "sell"), [2] = item(2, 187, "buy"), [3] = item(3, 90000, "hold", 90) } }
-      other = { day = 100, count = 2, items = { [1] = { itemID = 1, min = 100, market = 120, qty = 3, day = 99 }, [2] = { itemID = 2, min = 50, market = 60, qty = 1, day = 100 } } }
-      local shards = {}
+      index = {
+        day = 100,
+        count = 3,
+        items = { [1] = item(1, 957, "sell"), [2] = item(2, 187, "buy"), [3] = item(3, 90000, "hold", 90) },
+      }
+      other = {
+        day = 100,
+        count = 2,
+        items = {
+          [1] = { itemID = 1, min = 100, market = 120, qty = 3, day = 99 },
+          [2] = { itemID = 2, min = 50, market = 60, qty = 1, day = 100 },
+        },
+      }
       ns.AME = {
         ahOpen = false,
         CurrentHouse = function()
@@ -371,7 +411,6 @@ describe("Market", function()
         end,
         history = { shards = { [ns.ShardKey("Forever", "Horde")] = { raw = { { k = "full", t = 0 } } } } },
         CachedIndex = function(_, shard)
-          shards[shard] = true
           return shard:find("Neutral") and other or index
         end,
         IndexFor = function(self, shard, cb)
@@ -462,7 +501,8 @@ describe("Market", function()
           { itemKey = { itemID = 1, itemSuffix = 0, itemLevel = 10 }, minPrice = 900, totalQuantity = 14 },
           { itemKey = { itemID = 2, itemSuffix = 0, itemLevel = 10 }, minPrice = 150, totalQuantity = 3 },
         }
-        ns.AHSearch.results[1] = { commodity = true, rows = { { price = 900, qty = 5 }, { price = 950, qty = 20 } }, at = GetServerTime() }
+        ns.AHSearch.results[1] =
+          { commodity = true, rows = { { price = 900, qty = 5 }, { price = 950, qty = 20 } }, at = GetServerTime() }
       end)
 
       it("searches the auction house: what's on sale now, and the picked row's Buy card", function()

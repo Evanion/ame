@@ -8,39 +8,54 @@ if not L then
   return
 end
 
-L["%d AH sales and purchases. AME records them from auction mail: open your mailbox to catch new ones."] = "Продаж и покупок на аукционе: %d. AME берёт их из почты аукциона: откройте почтовый ящик, чтобы учесть новые."
-L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] = "Активных аукционов на ваших персонажах: %d (на момент, когда каждый из них последний раз открывал аукцион). Продажи сразу появляются в журнале и закрываются, когда приходит письмо с аукциона."
+L["%d AH sales and purchases. AME records them from auction mail: open your mailbox to catch new ones."] =
+  "Продаж и покупок на аукционе: %d. AME берёт их из почты аукциона: откройте почтовый ящик, чтобы учесть новые."
+L["%d active auctions on your characters, as of the last time each opened the auction house. Sales show up in the ledger right away and are settled when the auction mail arrives."] =
+  "Активных аукционов на ваших персонажах: %d (на момент, когда каждый из них последний раз открывал аукцион). Продажи сразу появляются в журнале и закрываются, когда приходит письмо с аукциона."
 L["%d ahead"] = "%d впереди"
 L["%d auctions"] = "Аукционов: %d"
-L["%d customers, by gold spent with you (from auction mail)."] = "Покупателей: %d, по золоту, потраченному у вас (из почты аукциона)."
+L["%d customers, by gold spent with you (from auction mail)."] =
+  "Покупателей: %d, по золоту, потраченному у вас (из почты аукциона)."
 L["%d days"] = "%d дн."
 L["%d days ago"] = "%d дн. назад"
 L["%d days of history"] = "история за %d дн."
 L["%d h"] = "%d ч"
 L["%d h ago"] = "%d ч назад"
 L["%d h listing"] = "лот на %d ч"
-L["%d hidden (%s), not counted: unhide them under Hidden on the Market tab"] = "скрыто: %d (%s), не учтены: вернуть можно в разделе «Скрытые» на вкладке «Рынок»"
-L["%d hidden as likely gold transfers (over 2000%% margin)"] = "Скрыто %d: похоже на перевод золота (маржа больше 2000%%)"
+L["%d hidden (%s), not counted: unhide them under Hidden on the Market tab"] =
+  "скрыто: %d (%s), не учтены: вернуть можно в разделе «Скрытые» на вкладке «Рынок»"
+L["%d hidden as likely gold transfers (over 2000%% margin)"] =
+  "Скрыто %d: похоже на перевод золота (маржа больше 2000%%)"
 L["%d items"] = "%d предметов"
 L["%d items  ·  showing %d-%d"] = "%d предметов  ·  показаны %d-%d"
-L["%d items are hidden from the Market, Arbitrage and Portfolio lists. AME still records their prices."] = "Скрыто из списков «Рынок», «Арбитраж» и «Портфель»: %d. AME продолжает записывать их цены."
-L["%d items from %s listings, stored %s ms after the scan request"] = "%d предметов из %s лотов, сохранено через %s мс после запроса сканирования"
-L["%d items not searchable yet (names loading)"] = "%d предметов пока нельзя найти (загружаются названия)"
+L["%d items are hidden from the Market, Arbitrage and Portfolio lists. AME still records their prices."] =
+  "Скрыто из списков «Рынок», «Арбитраж» и «Портфель»: %d. AME продолжает записывать их цены."
+L["%d items from %s listings, stored %s ms after the scan request"] =
+  "%d предметов из %s лотов, сохранено через %s мс после запроса сканирования"
+L["%d items not searchable yet (names loading)"] =
+  "%d предметов пока нельзя найти (загружаются названия)"
 L["%d items summarized"] = "Обобщено предметов: %d"
-L["%d items summarized in %s ms wall"] = "Обобщено предметов: %d за %s мс реального времени"
+L["%d items summarized in %s ms wall"] =
+  "Обобщено предметов: %d за %s мс реального времени"
 L["%d min"] = "%d мин"
 L["%d min ago"] = "%d мин назад"
-L["%d of %d items still to buy: %s at market price"] = "Ещё купить %d из %d предметов: %s по рыночной цене"
-L["%d of %d known prices differ more than %dx from ours"] = "%d из %d известных цен отличаются от наших более чем в %d раз"
+L["%d of %d items still to buy: %s at market price"] =
+  "Ещё купить %d из %d предметов: %s по рыночной цене"
+L["%d of %d known prices differ more than %dx from ours"] =
+  "%d из %d известных цен отличаются от наших более чем в %d раз"
 L["%d outlier price ignored"] = "%d выброс цены проигнорирован"
 L["%d outlier prices ignored"] = "проигнорировано выбросов цены: %d"
 L["%d passed, %d warnings, %d failed"] = "Пройдено: %d, предупреждений: %d, ошибок: %d"
-L["%d positions on %d character. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] = "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
-L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] = "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
+L["%d positions on %d character. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
+  "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
+L["%d positions on %d characters. Bags update as you play; open your bank and the auction house to include bank items and active auctions."] =
+  "Позиций: %d на персонажах: %d. Сумки обновляются по ходу игры; откройте банк и аукцион, чтобы учесть предметы в банке и активные аукционы."
 L["%d routes"] = "Маршрутов: %d"
 L["%d scans this week"] = "сканирований за неделю: %d"
-L["%d suppliers, by gold you spent with them (from auction mail)."] = "Поставщиков: %d, по золоту, потраченному у них (из почты аукциона)."
-L["%d watched items have no price history here yet"] = "У %d отслеживаемых предметов здесь пока нет истории цен"
+L["%d suppliers, by gold you spent with them (from auction mail)."] =
+  "Поставщиков: %d, по золоту, потраченному у них (из почты аукциона)."
+L["%d watched items have no price history here yet"] =
+  "У %d отслеживаемых предметов здесь пока нет истории цен"
 L["%d without a price yet"] = "без цены: %d"
 L["%d%% above its %d-day average (%s)"] = "На %d%% выше среднего за %d дн. (%s)"
 L["%d%% below its %d-day average (%s)"] = "На %d%% ниже среднего за %d дн. (%s)"
@@ -51,21 +66,25 @@ L["%dd"] = "%d дн."
 L["%dd avg"] = "Ср. %dд"
 L["%dx off usual"] = "В %d раз от обычного"
 L["%s  ·  market data from %s"] = "%s  ·  данные рынка от %s"
-L["%s %s: min %s, market %s, qty %d (%d samples)"] = "%s %s: мин. %s, рынок %s, кол-во %d (%d замеров)"
+L["%s %s: min %s, market %s, qty %d (%d samples)"] =
+  "%s %s: мин. %s, рынок %s, кол-во %d (%d замеров)"
 L["%s items"] = "предметов: %s"
-L["%s latest (%s): min %s, market %s, %d units in %d auctions"] = "%s последнее (%s): мин. %s, рынок %s, %d шт. в %d лотах"
+L["%s latest (%s): min %s, market %s, %d units in %d auctions"] =
+  "%s последнее (%s): мин. %s, рынок %s, %d шт. в %d лотах"
 L["%s needs %d (has %d)"] = "%s: нужно %d (есть %d)"
 L["%s of %s"] = "%s из %s"
 L["%s old"] = "возраст %s"
 L["%s to %d"] = "%s до %d"
 L["%s to %s"] = "Покупка: %s, продажа: %s"
-L["%s wants to share auction prices with you. Type |cffffffff/ame config|r and open Sharing to approve."] = "%s хочет делиться с вами ценами аукциона. Введите |cffffffff/ame config|r и откройте «Обмен», чтобы одобрить."
+L["%s wants to share auction prices with you. Type |cffffffff/ame config|r and open Sharing to approve."] =
+  "%s хочет делиться с вами ценами аукциона. Введите |cffffffff/ame config|r и откройте «Обмен», чтобы одобрить."
 L["%s · makes %s"] = "%s · даёт %s"
 L["(incomplete)"] = "(неполно)"
 L["(needs LibDBIcon; included in releases)"] = "(нужен LibDBIcon; входит в релизы)"
 L["(no room)"] = "(нет места)"
 L["+ %d more"] = "+ ещё %d"
-L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"] = "/ame - открыть окно  ·  /ame <ссылка на предмет> - график предмета  ·  Shift-клик по предмету на вкладке «Предмет» - его график"
+L["/ame - open the window  ·  /ame <item link> - chart an item  ·  Shift-click an item on the Item tab - chart it"] =
+  "/ame - открыть окно  ·  /ame <ссылка на предмет> - график предмета  ·  Shift-клик по предмету на вкладке «Предмет» - его график"
 L["/day"] = "/день"
 L["/week"] = "/нед."
 L["1 day"] = "1 день"
@@ -78,34 +97,48 @@ L["7d"] = "7д"
 L["7d change"] = "Изм. 7д"
 L["; it usually moves ~%d%% a day"] = "; обычно меняется на ~%d%% в день"
 L["<1h"] = "<1 ч"
-L["A big red candle after a climb: sellers piled in and undercut each other. Check the supply bars below the candles before buying into it."] = "Большая красная свеча после роста: продавцы нахлынули и сбивали цены друг другу. Прежде чем покупать, посмотрите на столбики предложения под свечами."
+L["A big red candle after a climb: sellers piled in and undercut each other. Check the supply bars below the candles before buying into it."] =
+  "Большая красная свеча после роста: продавцы нахлынули и сбивали цены друг другу. Прежде чем покупать, посмотрите на столбики предложения под свечами."
 L["A few shapes worth knowing:"] = "Несколько фигур, которые стоит знать:"
 L["A normal price"] = "Обычная цена"
 L["A route, broken down"] = "Маршрут в деталях"
-L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] = "Продажа появляется в журнале, как только игра сообщит, что покупатель найден (ждёт письма), и рассчитывается точной суммой, когда приходит письмо с аукциона - откройте почтовый ящик, чтобы его получить. Персональные предметы не учитываются: их нельзя продать."
-L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it. Right-click a row for more: search the auction house, watchlists, an alert, a chat link, or hiding items you don't trade (they move to Hidden in the sidebar, where you can unhide them)."] = "Скринер всех предметов с историей. Выберите категорию или список наблюдения слева, ищите по названию, фильтруйте по качеству, диапазону цен или сигналу и щёлкните по столбцу для сортировки. Наведите курсор на заголовок столбца, чтобы узнать его смысл. Щёлкните по строке, чтобы открыть график; щёлкните по звезде, чтобы отслеживать предмет. ПКМ по строке открывает меню: поиск на аукционе, списки наблюдения, оповещение, ссылка в чат или скрытие предметов, которыми вы не торгуете (они перейдут в «Скрытые» на боковой панели, где их можно вернуть)."
-L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] = "Высокая верхняя тень: цена разово подскочила - часто это скан, когда ничего дешёвого не было выставлено, - и не удержалась. Не ориентируйтесь на этот всплеск при выборе цены."
-L["A vendor pays %s; listing nets %s after the cut and deposit"] = "Торговец платит %s; лот принесёт %s после комиссии и залога"
+L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
+  "Продажа появляется в журнале, как только игра сообщит, что покупатель найден (ждёт письма), и рассчитывается точной суммой, когда приходит письмо с аукциона - откройте почтовый ящик, чтобы его получить. Персональные предметы не учитываются: их нельзя продать."
+L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it. Right-click a row for more: search the auction house, watchlists, an alert, a chat link, or hiding items you don't trade (they move to Hidden in the sidebar, where you can unhide them)."] =
+  "Скринер всех предметов с историей. Выберите категорию или список наблюдения слева, ищите по названию, фильтруйте по качеству, диапазону цен или сигналу и щёлкните по столбцу для сортировки. Наведите курсор на заголовок столбца, чтобы узнать его смысл. Щёлкните по строке, чтобы открыть график; щёлкните по звезде, чтобы отслеживать предмет. ПКМ по строке открывает меню: поиск на аукционе, списки наблюдения, оповещение, ссылка в чат или скрытие предметов, которыми вы не торгуете (они перейдут в «Скрытые» на боковой панели, где их можно вернуть)."
+L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
+  "Высокая верхняя тень: цена разово подскочила - часто это скан, когда ничего дешёвого не было выставлено, - и не удержалась. Не ориентируйтесь на этот всплеск при выборе цены."
+L["A vendor pays %s; listing nets %s after the cut and deposit"] =
+  "Торговец платит %s; лот принесёт %s после комиссии и залога"
 L["A vendor pays more"] = "Торговец платит больше"
-L["A vendor pays more than the auction house nets after the cut and the deposit"] = "Торговец платит больше, чем даст аукцион после комиссии и залога"
+L["A vendor pays more than the auction house nets after the cut and the deposit"] =
+  "Торговец платит больше, чем даст аукцион после комиссии и залога"
 L["AH cut"] = "Комиссия аук."
 L["AME alert: %s %s"] = "Оповещение AME: %s %s"
-L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] = "AME слушает собственные API аукциона в игре, поэтому записывается каждое ваше сканирование и поиск - из стандартного окна аукциона или любого аддона-сканера (хорошо работает с аддонами вроде Auctionator). Ничего лишнего не сканируется. История хранится отдельно для каждого рынка (игровой мир или правила Forever) и аукциона, а члены гильдии с AME автоматически делятся полными сканированиями."
-L["AME remembers each listing you post and how fast it sold - or that it expired - and adjusts its estimates for that item. Items you sell often get advice of their own; others borrow from similar items."] = "AME запоминает каждый выставленный вами лот и как быстро он продался - или что он истёк - и уточняет оценки для этого предмета. Предметы, которые вы продаёте часто, получают собственные рекомендации; остальные опираются на похожие предметы."
+L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."] =
+  "AME слушает собственные API аукциона в игре, поэтому записывается каждое ваше сканирование и поиск - из стандартного окна аукциона или любого аддона-сканера (хорошо работает с аддонами вроде Auctionator). Ничего лишнего не сканируется. История хранится отдельно для каждого рынка (игровой мир или правила Forever) и аукциона, а члены гильдии с AME автоматически делятся полными сканированиями."
+L["AME remembers each listing you post and how fast it sold - or that it expired - and adjusts its estimates for that item. Items you sell often get advice of their own; others borrow from similar items."] =
+  "AME запоминает каждый выставленный вами лот и как быстро он продался - или что он истёк - и уточняет оценки для этого предмета. Предметы, которые вы продаёте часто, получают собственные рекомендации; остальные опираются на похожие предметы."
 L["API + database found"] = "API и база данных найдены"
-L["API found, database not readable (no backfill)"] = "API найден, база данных не читается (без дозаполнения истории)"
+L["API found, database not readable (no backfill)"] =
+  "API найден, база данных не читается (без дозаполнения истории)"
 L["Above every listing"] = "Выше всех лотов"
 L["Accept"] = "Принять"
 L["Account"] = "Учётная запись"
-L["AceComm not available: sync disabled"] = "AceComm недоступен: синхронизация отключена"
+L["AceComm not available: sync disabled"] =
+  "AceComm недоступен: синхронизация отключена"
 L["Add reagents"] = "Добавить реагенты"
 L["Add to a watchlist"] = "Добавить в список наблюдения"
 L["Add to shopping list..."] = "Добавить в список покупок..."
 L["Add to watchlist"] = "В список наблюдения"
-L["Added the reagents for %s to the shopping list %s."] = "Реагенты для «%s» добавлены в список покупок «%s»."
-L["Added the reagents for one %s to the shopping list %s."] = "Реагенты для 1 шт. «%s» добавлены в список покупок «%s»."
-L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] = "Добавляет «Обзор» рядом со «Скринером» на вкладке «Рынок»: рыночный индекс, ИПЦ, стоимость лотов, оборот и категории по всему аукциону. Пока он включён, рыночные данные обновляются чуть дольше."
-L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] = "После одного сканирования можно просматривать вкладку «Рынок» и видеть цены выставления. Сигналам, трендам и темпам продаж нужна история: они улучшаются при сканировании раз в день и наиболее показательны через неделю."
+L["Added the reagents for %s to the shopping list %s."] =
+  "Реагенты для «%s» добавлены в список покупок «%s»."
+L["Added the reagents for one %s to the shopping list %s."] =
+  "Реагенты для 1 шт. «%s» добавлены в список покупок «%s»."
+L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
+  "Добавляет «Обзор» рядом со «Скринером» на вкладке «Рынок»: рыночный индекс, ИПЦ, стоимость лотов, оборот и категории по всему аукциону. Пока он включён, рыночные данные обновляются чуть дольше."
+L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
+  "После одного сканирования можно просматривать вкладку «Рынок» и видеть цены выставления. Сигналам, трендам и темпам продаж нужна история: они улучшаются при сканировании раз в день и наиболее показательны через неделю."
 L["After your first scan"] = "После первого сканирования"
 L["Age"] = "Возраст"
 L["Alert above g"] = "Оповещение выше з"
@@ -116,36 +149,45 @@ L["All"] = "Все"
 L["All categories"] = "Все категории"
 L["All characters"] = "Все персонажи"
 L["All items"] = "Все предметы"
-L["All of AME's settings are in its own window: %s, Settings tab."] = "Все настройки AME находятся в его собственном окне: %s, вкладка «Настройки»."
+L["All of AME's settings are in its own window: %s, Settings tab."] =
+  "Все настройки AME находятся в его собственном окне: %s, вкладка «Настройки»."
 L["All time"] = "За всё время"
 L["Alliance AH"] = "Аукцион Альянса"
 L["Alliance blue"] = "Синий Альянса"
 L["Alt+Shift-click"] = "Alt+Shift-клик"
 L["Alt-click"] = "Alt-клик"
-L["Always show details (otherwise hold Shift)"] = "Всегда показывать детали (иначе удерживайте Shift)"
-L["An alert fires once when its condition comes true, and again only after the price has moved back past its line. Alerts are checked after scans, after prices arrive from guild members and at login, and show on screen as well as in chat; the sound can be turned off under Settings, General. Signal alerts fire on Buy and Sell."] = "Оповещение срабатывает один раз, когда условие выполняется, и снова - только после того, как цена вернётся за свою линию. Оповещения проверяются после сканирований, при получении цен от согильдийцев и при входе в игру и показываются на экране и в чате; звук можно выключить в «Настройки», «Общие». Оповещения о сигнале срабатывают на КУПИТЬ и ПРОДАТЬ."
-L["An opportunity ranking from -100 to +100. Higher means the item is further below its usual price, on a stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. Sort by it to find bargains quickly."] = "Рейтинг возможности от -100 до +100. Чем выше, тем сильнее предмет ниже своей обычной цены, при этом он стабилен и растёт. Около 0 - обычная цена; отрицательное значение - дороже обычного. Сортируйте по нему, чтобы быстро находить выгодные покупки."
+L["Always show details (otherwise hold Shift)"] =
+  "Всегда показывать детали (иначе удерживайте Shift)"
+L["An alert fires once when its condition comes true, and again only after the price has moved back past its line. Alerts are checked after scans, after prices arrive from guild members and at login, and show on screen as well as in chat; the sound can be turned off under Settings, General. Signal alerts fire on Buy and Sell."] =
+  "Оповещение срабатывает один раз, когда условие выполняется, и снова - только после того, как цена вернётся за свою линию. Оповещения проверяются после сканирований, при получении цен от согильдийцев и при входе в игру и показываются на экране и в чате; звук можно выключить в «Настройки», «Общие». Оповещения о сигнале срабатывают на КУПИТЬ и ПРОДАТЬ."
+L["An opportunity ranking from -100 to +100. Higher means the item is further below its usual price, on a stable item, with an upward trend. Around 0 means a normal price; negative means pricier than usual. Sort by it to find bargains quickly."] =
+  "Рейтинг возможности от -100 до +100. Чем выше, тем сильнее предмет ниже своей обычной цены, при этом он стабилен и растёт. Около 0 - обычная цена; отрицательное значение - дороже обычного. Сортируйте по нему, чтобы быстро находить выгодные покупки."
 L["Announce recorded full scans"] = "Объявлять о записанных полных сканированиях"
-L["Announced %d  ·  served %d  ·  received %d  ·  rejected %d"] = "Объявлено %d  ·  отдано %d  ·  получено %d  ·  отклонено %d"
+L["Announced %d  ·  served %d  ·  received %d  ·  rejected %d"] =
+  "Объявлено %d  ·  отдано %d  ·  получено %d  ·  отклонено %d"
 L["Any quality"] = "Любое качество"
 L["Approve"] = "Одобрить"
 L["Arbitrage"] = "Арбитраж"
 L["Arbitrage tab"] = "Вкладка «Арбитраж»"
 L["Ask to share"] = "Запросить"
-L["Asked %s to share. They'll see a request under Settings, Sharing."] = "Запрос на обмен отправлен игроку %s. Он увидит его в разделе «Настройки», «Обмен»."
+L["Asked %s to share. They'll see a request under Settings, Sharing."] =
+  "Запрос на обмен отправлен игроку %s. Он увидит его в разделе «Настройки», «Обмен»."
 L["Asking prices"] = "Цены предложения"
 L["At market price"] = "По рыночной цене"
 L["Auction house"] = "Аукцион"
-L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] = "Auctionator не установлен: импортировать нечего (сканирования всё равно записываются из игры)"
+L["Auctionator not installed: nothing to import (scans are recorded from the game either way)"] =
+  "Auctionator не установлен: импортировать нечего (сканирования всё равно записываются из игры)"
 L["Auctions"] = "Аукционы"
-L["Auctions listed at the last full scan, and the change over the chosen period. Only days with a full scan count: a day of searches sees too few items."] = "Число лотов на момент последнего полного сканирования и изменение за выбранный период. Учитываются только дни с полным сканированием: за день поисков видно слишком мало предметов."
+L["Auctions listed at the last full scan, and the change over the chosen period. Only days with a full scan count: a day of searches sees too few items."] =
+  "Число лотов на момент последнего полного сканирования и изменение за выбранный период. Учитываются только дни с полным сканированием: за день поисков видно слишком мало предметов."
 L["Average"] = "Среднее"
 L["Average cost"] = "Средняя цена покупки"
 L["Average period"] = "Период усреднения"
 L["Avg cost"] = "Ср. цена пок."
 L["BUY"] = "КУПИТЬ"
 L["BUY signal at %s"] = "Сигнал КУПИТЬ по %s"
-L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] = "КУПИТЬ: сегодняшняя цена необычно низкая для этого предмета - минимум на 1,5 стандартного отклонения ниже его собственного 30-дневного среднего. ПРОДАТЬ: необычно высокая по той же мерке. ДЕРЖАТЬ: в обычном диапазоне - держите, если есть, покупать смысла нет. ЖДАТЬ: дёшево, но продавцы сбрасывают - дождитесь дна. Нужно 7+ дней истории (до тех пор \"-\"). Фаза рынка сопоставляет недельное движение цены с предложением: дефицит, устойчивый спрос, наплыв продавцов, сжатие предложения, равновесие, нарастающее давление, уход продавцов, слабый спрос или сброс. Предмет сравнивается сам с собой, и это подсказка, а не финансовый совет."
+L["BUY: today's price is unusually low for this item - at least 1.5 standard deviations below its own 30-day average. SELL: unusually high by the same measure. HOLD: within its normal range - keep it if you own it, no edge to buy. WAIT: cheap, but sellers are dumping - wait for the bottom. Needs 7+ days of history (\"-\" until then). The market phase reads the week's price move against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It compares the item with itself, and it's a hint, not financial advice."] =
+  'КУПИТЬ: сегодняшняя цена необычно низкая для этого предмета - минимум на 1,5 стандартного отклонения ниже его собственного 30-дневного среднего. ПРОДАТЬ: необычно высокая по той же мерке. ДЕРЖАТЬ: в обычном диапазоне - держите, если есть, покупать смысла нет. ЖДАТЬ: дёшево, но продавцы сбрасывают - дождитесь дна. Нужно 7+ дней истории (до тех пор "-"). Фаза рынка сопоставляет недельное движение цены с предложением: дефицит, устойчивый спрос, наплыв продавцов, сжатие предложения, равновесие, нарастающее давление, уход продавцов, слабый спрос или сброс. Предмет сравнивается сам с собой, и это подсказка, а не финансовый совет.'
 L["Balanced"] = "Равновесие"
 L["Best recovery"] = "Лучший возврат"
 L["Best use"] = "Лучше всего"
@@ -162,10 +204,12 @@ L["Buy at the %s"] = "Покупка: %s"
 L["Buy-side data"] = "Данные покупки"
 L["By your guild officers: %s"] = "Офицерами вашей гильдии: %s"
 L["CPI"] = "ИПЦ"
-L["CPI: %d items, weighted by listed value"] = "ИПЦ: предметов %d, вес по стоимости лотов"
+L["CPI: %d items, weighted by listed value"] =
+  "ИПЦ: предметов %d, вес по стоимости лотов"
 L["CPI: %d items, weighted by spending"] = "ИПЦ: предметов %d, вес по расходам"
 L["CSV"] = "CSV"
-L["Can't be sold: it binds when made."] = "Нельзя продать: становится персональным при создании."
+L["Can't be sold: it binds when made."] =
+  "Нельзя продать: становится персональным при создании."
 L["Cancel"] = "Отмена"
 L["Candles"] = "Свечи"
 L["Categories"] = "Категории"
@@ -177,20 +221,27 @@ L["Character"] = "Персонаж"
 L["Character name"] = "Имя персонажа"
 L["Chart"] = "График"
 L["Charts"] = "Графики"
-L["Cheap, but sellers are dumping: wait for the bottom"] = "Дёшево, но продавцы сбрасывают: дождитесь дна"
+L["Cheap, but sellers are dumping: wait for the bottom"] =
+  "Дёшево, но продавцы сбрасывают: дождитесь дна"
 L["Cheap, but still falling"] = "Дёшево, но ещё падает"
 L["Cheaper than usual"] = "Дешевле обычного"
 L["Cheapest"] = "Дешевле всего"
-L["Checks every part of AME and offers a reload so the results are saved."] = "Проверяет все части AME и предлагает перезагрузку, чтобы сохранить результаты."
+L["Checks every part of AME and offers a reload so the results are saved."] =
+  "Проверяет все части AME и предлагает перезагрузку, чтобы сохранить результаты."
 L["Class %d"] = "Класс %d"
 L["Clear all"] = "Сбросить всё"
 L["Clear all filters"] = "Сбросить все фильтры"
-L["Click a row for its breakdown: where each reagent comes from, what selling nets, and how much the market takes."] = "Нажмите на строку, чтобы увидеть разбор: откуда берётся каждый реагент, сколько чистыми даёт продажа и сколько поглощает рынок."
-L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] = "Щёлкните по строке, чтобы открыть график цен. Щёлкните по звезде, чтобы добавить предмет в список наблюдения. Полоски после названия показывают, насколько можно доверять числам: 3 зелёные = много свежих сканирований, 2 жёлтые = немного, 1 красная = мало или устаревшие."
-L["Click a row to see what the route pays after the cut and the deposit, and how fresh both prices are."] = "Нажмите на строку, чтобы увидеть, сколько маршрут приносит после комиссии и залога и насколько свежи обе цены."
-L["Click to open this category in the screener."] = "Нажмите, чтобы открыть эту категорию в скринере."
+L["Click a row for its breakdown: where each reagent comes from, what selling nets, and how much the market takes."] =
+  "Нажмите на строку, чтобы увидеть разбор: откуда берётся каждый реагент, сколько чистыми даёт продажа и сколько поглощает рынок."
+L["Click a row to open its price chart. Click the star to add it to a watchlist. The bars after the name show how much to trust the numbers: 3 green = plenty of recent scans, 2 amber = some, 1 red = few or old."] =
+  "Щёлкните по строке, чтобы открыть график цен. Щёлкните по звезде, чтобы добавить предмет в список наблюдения. Полоски после названия показывают, насколько можно доверять числам: 3 зелёные = много свежих сканирований, 2 жёлтые = немного, 1 красная = мало или устаревшие."
+L["Click a row to see what the route pays after the cut and the deposit, and how fresh both prices are."] =
+  "Нажмите на строку, чтобы увидеть, сколько маршрут приносит после комиссии и залога и насколько свежи обе цены."
+L["Click to open this category in the screener."] =
+  "Нажмите, чтобы открыть эту категорию в скринере."
 L["Click to put it in your chat box"] = "Нажмите, чтобы вставить в строку чата"
-L["Climbing: green candles, each closing higher. Buyers take listings faster than sellers replace them."] = "Рост: зелёные свечи, каждая закрывается выше. Покупатели забирают лоты быстрее, чем продавцы их пополняют."
+L["Climbing: green candles, each closing higher. Buyers take listings faster than sellers replace them."] =
+  "Рост: зелёные свечи, каждая закрывается выше. Покупатели забирают лоты быстрее, чем продавцы их пополняют."
 L["Close"] = "Закрыть"
 L["Close: the market price at the end"] = "Закрытие: рыночная цена в конце"
 L["Colour-blind friendly palette"] = "Палитра для дальтоников"
@@ -202,7 +253,8 @@ L["Commands"] = "Команды"
 L["Common+"] = "Обычное+"
 L["Confidence"] = "Надёжность"
 L["Confidence %s %s"] = "Надёжность %s %s"
-L["Consumer price index: what playing costs. Only what players use up - consumables, trade goods, reagents, gems, ammo - weighted by how much gold is spent on each (sell rate x price), like a real CPI weighs what households buy. Sell rates need full scans a few hours apart; until there are enough, it weighs by listed value (the status line says which)."] = "Индекс потребительских цен: сколько стоит играть. Только то, что игроки расходуют, - расходуемые предметы, хозяйственные товары, реагенты, самоцветы, боеприпасы, - с весом по потраченному на каждое золоту (темп продаж x цена), как настоящий ИПЦ взвешивает покупки домохозяйств. Для темпа продаж нужны полные сканы с интервалом в несколько часов; пока их мало, вес берётся по стоимости лотов (строка состояния подскажет)."
+L["Consumer price index: what playing costs. Only what players use up - consumables, trade goods, reagents, gems, ammo - weighted by how much gold is spent on each (sell rate x price), like a real CPI weighs what households buy. Sell rates need full scans a few hours apart; until there are enough, it weighs by listed value (the status line says which)."] =
+  "Индекс потребительских цен: сколько стоит играть. Только то, что игроки расходуют, - расходуемые предметы, хозяйственные товары, реагенты, самоцветы, боеприпасы, - с весом по потраченному на каждое золоту (темп продаж x цена), как настоящий ИПЦ взвешивает покупки домохозяйств. Для темпа продаж нужны полные сканы с интервалом в несколько часов; пока их мало, вес берётся по стоимости лотов (строка состояния подскажет)."
 L["Cooldown ready."] = "Перезарядка готова."
 L["Copy to my shopping lists"] = "Копировать в мои списки покупок"
 L["Copy to my watchlists"] = "Копировать в мои списки"
@@ -218,46 +270,60 @@ L["Crafts"] = "Создать"
 L["Crafts (expected)"] = "Созданий (ожид.)"
 L["Created by Tyken Evanion  ·  PvP Horde, WoW Forever"] = "Автор: Tyken Evanion  ·  PvP Horde, WoW Forever"
 L["Ctrl+Alt-click"] = "Ctrl+Alt-клик"
-L["Ctrl+C copies the selected text: comma-separated values."] = "Ctrl+C копирует выделенный текст: значения через запятую."
-L["Ctrl+C copies the selected text; paste it into a spreadsheet. Tabs show as boxes here but paste as columns."] = "Ctrl+C копирует выделенный текст; вставьте его в таблицу. Табуляции здесь выглядят как квадратики, но при вставке становятся столбцами."
+L["Ctrl+C copies the selected text: comma-separated values."] =
+  "Ctrl+C копирует выделенный текст: значения через запятую."
+L["Ctrl+C copies the selected text; paste it into a spreadsheet. Tabs show as boxes here but paste as columns."] =
+  "Ctrl+C копирует выделенный текст; вставьте его в таблицу. Табуляции здесь выглядят как квадратики, но при вставке становятся столбцами."
 L["Customers"] = "Покупатели"
 L["DE"] = "РАСП"
-L["DE: the enchanting materials it disenchants into are worth more than listing it nets (and than a vendor pays) - disenchant it, or sell it to an enchanter. Worked out from the classic disenchanting rules and today's material prices."] = "РАСП: материалы для чар, которые даёт распыление, стоят больше, чем принесёт лот (и чем заплатит торговец), - распылите предмет или продайте его зачарователю. Рассчитано по классическим правилам распыления и сегодняшним ценам на материалы."
+L["DE: the enchanting materials it disenchants into are worth more than listing it nets (and than a vendor pays) - disenchant it, or sell it to an enchanter. Worked out from the classic disenchanting rules and today's material prices."] =
+  "РАСП: материалы для чар, которые даёт распыление, стоят больше, чем принесёт лот (и чем заплатит торговец), - распылите предмет или продайте его зачарователю. Рассчитано по классическим правилам распыления и сегодняшним ценам на материалы."
 L["Data"] = "Данные"
 L["Data age"] = "Возраст данных"
 L["Data is %d days old"] = "Данным %d дн."
 L["Days to sell"] = "Дней на продажу"
-L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] = "Дни, когда цена предмета во столько раз выше (или ниже) соседних дней, исключаются из скринера, сигналов, оповещений и графиков - обычно это один лот с наценкой 1000% на вялом рынке. В полном сканировании AME и так игнорирует дорогие лоты: рыночная цена берётся из самой дешёвой части предложения."
+L["Days where an item's price is this many times above (or below) its neighbouring days are left out of the screener, signals, alerts and charts - typically one listing at a 1000% markup in a thin market. Within a full scan, AME already ignores expensive listings: market price uses the cheapest part of the supply."] =
+  "Дни, когда цена предмета во столько раз выше (или ниже) соседних дней, исключаются из скринера, сигналов, оповещений и графиков - обычно это один лот с наценкой 1000% на вялом рынке. В полном сканировании AME и так игнорирует дорогие лоты: рыночная цена берётся из самой дешёвой части предложения."
 L["Decline"] = "Отклонить"
 L["Delete"] = "Удалить"
 L["Delete %s"] = "Удалить %s"
 L["Delete list..."] = "Удалить список..."
-L["Delete the watchlist \"%s\"?"] = "Удалить список наблюдения \"%s\"?"
+L['Delete the watchlist "%s"?'] = 'Удалить список наблюдения "%s"?'
 L["Deposit"] = "Залог"
 L["Deposit if unsold"] = "Залог, если не продано"
 L["Depth"] = "Глубина"
 L["Details"] = "Детали"
 L["Disenchant %d"] = "Распылить %d"
-L["Disenchanting is worth about %s; listing nets %s after the cut and deposit"] = "Распыление стоит около %s; лот принесёт %s после комиссии и залога"
-L["Dock next to the auction house when there's room"] = "Пристыковывать к аукциону, если есть место"
+L["Disenchanting is worth about %s; listing nets %s after the cut and deposit"] =
+  "Распыление стоит около %s; лот принесёт %s после комиссии и залога"
+L["Dock next to the auction house when there's room"] =
+  "Пристыковывать к аукциону, если есть место"
 L["Down"] = "Падение"
-L["Drag the title bar to move the window and the bottom-right corner to resize it. AME remembers the size, and where you put it with and without the auction house open. When the auction house opens and there's room beside it, AME docks next to it (Settings > Window)."] = "Перетащите заголовок, чтобы переместить окно, и правый нижний угол, чтобы изменить размер. AME запоминает размер и положение окна — отдельно при открытом и закрытом аукционе. Когда открывается аукцион и рядом есть место, AME пристыковывается к нему (Настройки > Окно)."
+L["Drag the title bar to move the window and the bottom-right corner to resize it. AME remembers the size, and where you put it with and without the auction house open. When the auction house opens and there's room beside it, AME docks next to it (Settings > Window)."] =
+  "Перетащите заголовок, чтобы переместить окно, и правый нижний угол, чтобы изменить размер. AME запоминает размер и положение окна — отдельно при открытом и закрытом аукционе. Когда открывается аукцион и рядом есть место, AME пристыковывается к нему (Настройки > Окно)."
 L["Dumping"] = "Сброс"
-L["Each suffix of this item (\"of the Monkey\", \"of Magic\"...) has its own prices. Shift-click one, or search its full name."] = "У каждого суффикса этого предмета («обезьяны», «магии»...) свои цены. Сделайте Shift-клик по нужному или найдите его по полному названию."
-L["Empty. Add items from any item's right-click menu, or open your profession window, pick a recipe and click Add reagents."] = "Пусто. Добавляйте предметы через меню ПКМ любого предмета или откройте окно профессии, выберите рецепт и нажмите «Добавить реагенты»."
+L['Each suffix of this item ("of the Monkey", "of Magic"...) has its own prices. Shift-click one, or search its full name.'] =
+  "У каждого суффикса этого предмета («обезьяны», «магии»...) свои цены. Сделайте Shift-клик по нужному или найдите его по полному названию."
+L["Empty. Add items from any item's right-click menu, or open your profession window, pick a recipe and click Add reagents."] =
+  "Пусто. Добавляйте предметы через меню ПКМ любого предмета или откройте окно профессии, выберите рецепт и нажмите «Добавить реагенты»."
 L["Enchant"] = "Чары"
-L["Enchants make no item to sell; valued later."] = "Чары не создают предмет на продажу; оценка появится позже."
+L["Enchants make no item to sell; valued later."] =
+  "Чары не создают предмет на продажу; оценка появится позже."
 L["Epic+"] = "Эпическое+"
-L["Everything listed at the last full scan at market price. Each item's price is capped at the outlier limit (Settings, Data) times its 30-day average, so a fantasy listing can't inflate the total. Items too new to have an average can't be capped: Largest by value shows what the total leans on."] = "Всё, что было выставлено при последнем полном сканировании, по рыночной цене. Цена каждого предмета ограничена порогом выбросов («Настройки», «Данные»), умноженным на его среднее за 30 дней, чтобы фантазийный лот не раздул итог. Слишком новые предметы без среднего ограничить нельзя: «Крупнейшие по стоимости» показывают, на чём держится итог."
+L["Everything listed at the last full scan at market price. Each item's price is capped at the outlier limit (Settings, Data) times its 30-day average, so a fantasy listing can't inflate the total. Items too new to have an average can't be capped: Largest by value shows what the total leans on."] =
+  "Всё, что было выставлено при последнем полном сканировании, по рыночной цене. Цена каждого предмета ограничена порогом выбросов («Настройки», «Данные»), умноженным на его среднее за 30 дней, чтобы фантазийный лот не раздул итог. Слишком новые предметы без среднего ограничить нельзя: «Крупнейшие по стоимости» показывают, на чём держится итог."
 L["Everything on this list is covered."] = "Всё из этого списка уже есть."
 L["Export"] = "Экспорт"
-L["Export copies the list you're looking at, as a spreadsheet (paste it into Excel or Google Sheets) or as CSV."] = "«Экспорт» копирует открытый список - как таблицу (вставьте в Excel или Google Sheets) или как CSV."
+L["Export copies the list you're looking at, as a spreadsheet (paste it into Excel or Google Sheets) or as CSV."] =
+  "«Экспорт» копирует открытый список - как таблицу (вставьте в Excel или Google Sheets) или как CSV."
 L["Export: %s"] = "Экспорт: %s"
 L["Faction AH cut"] = "Комиссия аукциона фракции"
 L["Fair numbers"] = "Честные цифры"
-L["Falling on steady supply: weak demand."] = "Падает при стабильном предложении: слабый спрос."
+L["Falling on steady supply: weak demand."] =
+  "Падает при стабильном предложении: слабый спрос."
 L["Few recent scans: scan again."] = "Мало свежих сканов: просканируйте снова."
-L["Fewer sellers, yet the price falls: may be near the bottom."] = "Продавцов меньше, но цена падает: возможно, близко дно."
+L["Fewer sellers, yet the price falls: may be near the bottom."] =
+  "Продавцов меньше, но цена падает: возможно, близко дно."
 L["Fewest crafts"] = "Меньше созданий"
 L["Fill price"] = "Подставить цену"
 L["Filtering by signal"] = "Фильтр по сигналу"
@@ -268,10 +334,12 @@ L["Follow market"] = "Следовать рынку"
 L["Following the auction house"] = "Следование за аукционом"
 L["For"] = "Для"
 L["From %d scans this week."] = "Сканов за неделю: %d."
-L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] = "С ваших продаж на аукционе: полученное после комиссии аукциона минус то, что вы заплатили за эти штуки (сначала самые старые покупки). Продажи добытых или созданных предметов учитываются полностью."
+L["From your auction sales: what you received after the AH cut, minus what you paid for those units (oldest purchases first). Sales of looted or crafted items count fully."] =
+  "С ваших продаж на аукционе: полученное после комиссии аукциона минус то, что вы заплатили за эти штуки (сначала самые старые покупки). Продажи добытых или созданных предметов учитываются полностью."
 L["Full scan by %s"] = "Полный скан: %s"
 L["Gain"] = "Выгода"
-L["Gear with a random suffix (\"of the Monkey\", \"of Magic\") is tracked per suffix, since each sells at its own price. Charts, tooltips and your portfolio use the suffix of the item in hand."] = "Снаряжение со случайным суффиксом («обезьяны», «магии») отслеживается по каждому суффиксу, ведь у каждого своя цена. Графики, подсказки и портфель используют суффикс предмета, который у вас в руках."
+L['Gear with a random suffix ("of the Monkey", "of Magic") is tracked per suffix, since each sells at its own price. Charts, tooltips and your portfolio use the suffix of the item in hand.'] =
+  "Снаряжение со случайным суффиксом («обезьяны», «магии») отслеживается по каждому суффиксу, ведь у каждого своя цена. Графики, подсказки и портфель используют суффикс предмета, который у вас в руках."
 L["General"] = "Общие"
 L["Gets back"] = "Возврат"
 L["Getting started"] = "Начало работы"
@@ -279,15 +347,20 @@ L["Glossary"] = "Глоссарий"
 L["Goblin AH"] = "Аукцион гоблинов"
 L["Goblin AH cut"] = "Комиссия аукциона гоблинов"
 L["Goblin gold"] = "Золото гоблинов"
-L["Gold changing hands per day: each item's sell rate times its price, summed. Sell rates count supply leaving the auction house between full scans, so expired and cancelled auctions count too: read it as an upper bound."] = "Золото, переходящее из рук в руки за день: темп продаж каждого предмета, умноженный на цену, в сумме. Темп продаж считает предложение, ушедшее с аукциона между полными сканами, так что истёкшие и отменённые лоты тоже учитываются: считайте это верхней оценкой."
-L["Gold received from auction sales (after the cut) and gold spent on auction purchases in the chosen period."] = "Золото, полученное с продаж на аукционе (после комиссии), и золото, потраченное на покупки на аукционе, за выбранный период."
+L["Gold changing hands per day: each item's sell rate times its price, summed. Sell rates count supply leaving the auction house between full scans, so expired and cancelled auctions count too: read it as an upper bound."] =
+  "Золото, переходящее из рук в руки за день: темп продаж каждого предмета, умноженный на цену, в сумме. Темп продаж считает предложение, ушедшее с аукциона между полными сканами, так что истёкшие и отменённые лоты тоже учитываются: считайте это верхней оценкой."
+L["Gold received from auction sales (after the cut) and gold spent on auction purchases in the chosen period."] =
+  "Золото, полученное с продаж на аукционе (после комиссии), и золото, потраченное на покупки на аукционе, за выбранный период."
 L["Good time to buy."] = "Хорошее время купить."
 L["Good time to post."] = "Хорошее время выставить."
 L["Got it"] = "Понятно"
-L["Green: the price closed higher than it opened. Red: lower. The body is the move; the wicks are how far the price strayed. AME's candles open where the previous one closed, so they join up without gaps, and the lower wick is the cheapest listing anyone posted - which is why it's often long: a cheap copy or two shows up long before the market price follows. Hover a candle for its exact open, high, low and close."] = "Зелёная: цена закрылась выше открытия. Красная: ниже. Тело - это движение; тени показывают, насколько далеко отходила цена. Свечи AME открываются там, где закрылась предыдущая, поэтому идут без разрывов, а нижняя тень - самый дешёвый лот, который кто-либо выставил, - поэтому она часто длинная: пара дешёвых экземпляров появляется задолго до того, как рыночная цена за ними последует. Наведите на свечу, чтобы увидеть точные открытие, максимум, минимум и закрытие."
+L["Green: the price closed higher than it opened. Red: lower. The body is the move; the wicks are how far the price strayed. AME's candles open where the previous one closed, so they join up without gaps, and the lower wick is the cheapest listing anyone posted - which is why it's often long: a cheap copy or two shows up long before the market price follows. Hover a candle for its exact open, high, low and close."] =
+  "Зелёная: цена закрылась выше открытия. Красная: ниже. Тело - это движение; тени показывают, насколько далеко отходила цена. Свечи AME открываются там, где закрылась предыдущая, поэтому идут без разрывов, а нижняя тень - самый дешёвый лот, который кто-либо выставил, - поэтому она часто длинная: пара дешёвых экземпляров появляется задолго до того, как рыночная цена за ними последует. Наведите на свечу, чтобы увидеть точные открытие, максимум, минимум и закрытие."
 L["Guide"] = "Справка"
-L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."] = "Согильдийцы с AME автоматически делятся полными сканированиями, так что цены у всех остаются свежими. Игроки не из вашей гильдии тоже могут делиться: добавьте их в «Доверенные игроки» — они получат запрос на подтверждение."
-L["Guild officers can block players for everyone: add a line \"%s\" to the guild info."] = "Офицеры гильдии могут блокировать игроков для всех: добавьте строку \"%s\" в информацию о гильдии."
+L["Guild members running AME share their full scans automatically, so everyone's prices stay fresh. Players outside your guild can share too: add them under Trusted players; they get a request to approve."] =
+  "Согильдийцы с AME автоматически делятся полными сканированиями, так что цены у всех остаются свежими. Игроки не из вашей гильдии тоже могут делиться: добавьте их в «Доверенные игроки» — они получат запрос на подтверждение."
+L['Guild officers can block players for everyone: add a line "%s" to the guild info.'] =
+  'Офицеры гильдии могут блокировать игроков для всех: добавьте строку "%s" в информацию о гильдии.'
 L["Guild sharing"] = "Обмен с гильдией"
 L["Guild watchlists"] = "Списки гильдии"
 L["HOLD"] = "ДЕРЖАТЬ"
@@ -297,7 +370,8 @@ L["Held by"] = "У кого"
 L["Hidden"] = "Скрытые"
 L["Hidden from lists"] = "Скрыт из списков"
 L["Hidden items"] = "Скрытые предметы"
-L["Hidden items stay out of the Market, Arbitrage and Portfolio lists and their totals. AME keeps recording them; find them under Hidden on the Market tab."] = "Скрытые предметы не попадают в списки «Рынок», «Арбитраж» и «Портфель» и в их итоги. AME продолжает их записывать; они в разделе «Скрытые» на вкладке «Рынок»."
+L["Hidden items stay out of the Market, Arbitrage and Portfolio lists and their totals. AME keeps recording them; find them under Hidden on the Market tab."] =
+  "Скрытые предметы не попадают в списки «Рынок», «Арбитраж» и «Портфель» и в их итоги. AME продолжает их записывать; они в разделе «Скрытые» на вкладке «Рынок»."
 L["Hide from lists"] = "Скрыть из списков"
 L["Hiding items"] = "Скрытие предметов"
 L["High"] = "Максимум"
@@ -306,26 +380,40 @@ L["History not loaded yet."] = "История ещё не загружена."
 L["Holdings value"] = "Стоимость позиций"
 L["Horde AH"] = "Аукцион Орды"
 L["Horde red"] = "Красный Орды"
-L["Hover the item's name or icon at the top for the game's own tooltip, with its stats."] = "Наведите курсор на название или значок предмета вверху, чтобы увидеть игровую подсказку с его характеристиками."
+L["Hover the item's name or icon at the top for the game's own tooltip, with its stats."] =
+  "Наведите курсор на название или значок предмета вверху, чтобы увидеть игровую подсказку с его характеристиками."
 L["How long history is kept"] = "Как долго хранится история"
-L["How long selling everything you hold would take at the item's current sell rate (estimate)."] = "Сколько времени займёт продажа всего, что у вас есть, при текущем темпе продаж предмета (оценка)."
+L["How long selling everything you hold would take at the item's current sell rate (estimate)."] =
+  "Сколько времени займёт продажа всего, что у вас есть, при текущем темпе продаж предмета (оценка)."
 L["How many %s will you craft?"] = "Сколько %s вы создадите?"
-L["How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: falling supply often comes before rising prices."] = "Сколько выставлено в последних данных. На странице предмета % рядом - недельный тренд предложения: падение предложения часто предшествует росту цен."
+L["How many are listed in the latest data. On the item page the % next to it is the weekly supply trend: falling supply often comes before rising prices."] =
+  "Сколько выставлено в последних данных. На странице предмета % рядом - недельный тренд предложения: падение предложения часто предшествует росту цен."
 L["How many do you need?"] = "Сколько вам нужно?"
-L["How many steadily listed items rose against how many fell over the chosen period. A rising index with weak breadth means a few items are carrying it."] = "Сколько регулярно выставляемых предметов выросло по сравнению с тем, сколько упало, за выбранный период. Растущий индекс при слабой широте означает, что его тянут немногие предметы."
-L["How many units at the buy house still pay after the cut, of how many are listed there. The first number needs the item's listings: search it at the buy house (it then stays for 6 hours)."] = "Сколько штук на аукционе покупки ещё выгодны после комиссии из всех выставленных там. Для первого числа нужны лоты предмета: найдите его на аукционе покупки (данные хранятся 6 часов)."
-L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sales/day."] = "Сколько штук можно купить на аукционе покупки, пока маршрут не перестанет окупаться, и общая прибыль: каждый лот дешевле, чем выручка за штуку после комиссии. Нужны лоты предмета, поэтому сначала найдите его на аукционе покупки (это делает кнопка «Поиск») - затем они хранятся 6 часов. Продать столько всё равно требует времени: смотрите Прод./д."
-L["How much the market price moved compared with 7 days of data ago. Green is up, red is down."] = "Насколько рыночная цена изменилась по сравнению с данными 7-дневной давности. Зелёный - рост, красный - падение."
-L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] = "Насколько цена прыгает изо дня в день (разброс дневных изменений в % за 30 дней). Низкие числа - стабильный, предсказуемый предмет; высокие - рискованные колебания и большие возможности."
+L["How many steadily listed items rose against how many fell over the chosen period. A rising index with weak breadth means a few items are carrying it."] =
+  "Сколько регулярно выставляемых предметов выросло по сравнению с тем, сколько упало, за выбранный период. Растущий индекс при слабой широте означает, что его тянут немногие предметы."
+L["How many units at the buy house still pay after the cut, of how many are listed there. The first number needs the item's listings: search it at the buy house (it then stays for 6 hours)."] =
+  "Сколько штук на аукционе покупки ещё выгодны после комиссии из всех выставленных там. Для первого числа нужны лоты предмета: найдите его на аукционе покупки (данные хранятся 6 часов)."
+L["How many units you can buy at the buy auction house before the route stops paying, and the total profit: every listing priced below what one sells for after the cut. It needs the item's listings, so search the item at the buy house first (the Search button does it) - it then stays for 6 hours. Selling that many still takes time: check Sales/day."] =
+  "Сколько штук можно купить на аукционе покупки, пока маршрут не перестанет окупаться, и общая прибыль: каждый лот дешевле, чем выручка за штуку после комиссии. Нужны лоты предмета, поэтому сначала найдите его на аукционе покупки (это делает кнопка «Поиск») - затем они хранятся 6 часов. Продать столько всё равно требует времени: смотрите Прод./д."
+L["How much the market price moved compared with 7 days of data ago. Green is up, red is down."] =
+  "Насколько рыночная цена изменилась по сравнению с данными 7-дневной давности. Зелёный - рост, красный - падение."
+L["How much the price jumps from day to day (the spread of daily % changes over 30 days). Low numbers mean a stable, predictable item; high numbers mean risky swings - and bigger opportunities."] =
+  "Насколько цена прыгает изо дня в день (разброс дневных изменений в % за 30 дней). Низкие числа - стабильный, предсказуемый предмет; высокие - рискованные колебания и большие возможности."
 L["How much to trust a number"] = "Насколько доверять цифре"
-L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."] = "Насколько можно доверять цифрам: 3 зелёных полоски = много свежих сканов, 2 жёлтых = несколько, 1 красная = мало или старые. Больше сканов предмета (полных или поисков) повышают её."
-L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."] = "Насколько стара последняя цена предмета. Строки старше 3 дней тускнеют: просканируйте снова (или дождитесь скана согильдийца), прежде чем им доверять."
-L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] = "Возраст более старой из двух цен. Свежие данные с обеих сторон делают маршрут надёжным - отсканируйте оба аукциона (твинки на этой учётной записи тоже считаются) перед покупкой."
-L["How prices across the whole auction house moved, as one number: 100 thirty days ago. Each day it moves by the average price change of steadily listed items - listed on most days, at least 3 at a time - so one-off and fantasy listings can't move it. Above 100: things got more expensive."] = "Как двигались цены на всём аукционе, одним числом: 100 тридцать дней назад. Каждый день он меняется на среднее изменение цены регулярно выставляемых предметов - выставленных в большинство дней, не меньше 3 сразу, - так что разовые и фантазийные лоты не могут его сдвинуть. Выше 100 - всё подорожало."
+L["How much to trust the numbers: 3 green bars = plenty of recent scans, 2 amber = some, 1 red = few or old. More scans of the item (full scans or searches) raise it."] =
+  "Насколько можно доверять цифрам: 3 зелёных полоски = много свежих сканов, 2 жёлтых = несколько, 1 красная = мало или старые. Больше сканов предмета (полных или поисков) повышают её."
+L["How old the latest price for this item is. Rows older than 3 days fade: scan again (or let a guildmate's scan arrive) before trusting them."] =
+  "Насколько стара последняя цена предмета. Строки старше 3 дней тускнеют: просканируйте снова (или дождитесь скана согильдийца), прежде чем им доверять."
+L["How old the older of the two prices is. Fresh data on both sides makes a route trustworthy - scan both auction houses (alts on this account count) before buying."] =
+  "Возраст более старой из двух цен. Свежие данные с обеих сторон делают маршрут надёжным - отсканируйте оба аукциона (твинки на этой учётной записи тоже считаются) перед покупкой."
+L["How prices across the whole auction house moved, as one number: 100 thirty days ago. Each day it moves by the average price change of steadily listed items - listed on most days, at least 3 at a time - so one-off and fantasy listings can't move it. Above 100: things got more expensive."] =
+  "Как двигались цены на всём аукционе, одним числом: 100 тридцать дней назад. Каждый день он меняется на среднее изменение цены регулярно выставляемых предметов - выставленных в большинство дней, не меньше 3 сразу, - так что разовые и фантазийные лоты не могут его сдвинуть. Выше 100 - всё подорожало."
 L["How sales get recorded"] = "Как записываются продажи"
 L["How the price is worked out"] = "Как рассчитывается цена"
-L["If Auctionator is installed, AME imports its recent daily prices for days it has no data for, once, when you open the auction house - your faction's only. The Import button under Settings, Data does it again."] = "Если установлен Auctionator, AME один раз при открытии аукциона импортирует его недавние дневные цены за дни, по которым у него нет данных, - только для аукциона вашей фракции. Кнопка «Импорт из Auctionator» в «Настройки», «Данные» делает это повторно."
-L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."] = "Если установлен Auctionator: импортирует его недавние дневные цены за дни, по которым у AME нет данных (аукцион фракции)."
+L["If Auctionator is installed, AME imports its recent daily prices for days it has no data for, once, when you open the auction house - your faction's only. The Import button under Settings, Data does it again."] =
+  "Если установлен Auctionator, AME один раз при открытии аукциона импортирует его недавние дневные цены за дни, по которым у него нет данных, - только для аукциона вашей фракции. Кнопка «Импорт из Auctionator» в «Настройки», «Данные» делает это повторно."
+L["If Auctionator is installed: imports its recent daily prices for days AME has no data for (faction AH)."] =
+  "Если установлен Auctionator: импортирует его недавние дневные цены за дни, по которым у AME нет данных (аукцион фракции)."
 L["Ignore outrageous prices"] = "Игнорировать несуразные цены"
 L["Import from Auctionator"] = "Импорт из Auctionator"
 L["Importing from Auctionator"] = "Импорт из Auctionator"
@@ -335,12 +423,16 @@ L["Item tab"] = "Вкладка «Предмет»"
 L["Item tooltips"] = "Подсказки к предметам"
 L["Items"] = "Предметы"
 L["Items tracked"] = "Отслеживается предметов"
-L["Items you can buy at one auction house and sell at another for a profit after the AH cut - e.g. your faction's AH and the goblin AH (cross-faction). Each auction house keeps its own history, so scan both (alts on this account count). Hover the columns for details."] = "Предметы, которые можно купить на одном аукционе и продать на другом с прибылью после комиссии - например, аукцион вашей фракции и аукцион гоблинов (межфракционный). У каждого аукциона своя история, так что сканируйте оба (твинки на этой учётной записи тоже считаются). Наведите курсор на столбцы для подробностей."
-L["Items you never trade can be hidden - drinks you buy from a vendor, for example: right-click one in the Market, Arbitrage or Portfolio list and pick Hide from lists, or use the button on its item page. Hidden items leave those lists and their totals, on every auction house and character (Portfolio says how many it left out and what they're worth), but AME keeps recording their prices, your ledger keeps every sale and purchase, and their tooltips still work. They're listed under Hidden in the Market sidebar: right-click one there to unhide it, or unhide them all under Settings, Tooltips & charts."] = "Предметы, которыми вы никогда не торгуете, можно скрыть - например, напитки, которые вы покупаете у торговца: щёлкните ПКМ по предмету в списке «Рынок», «Арбитраж» или «Портфель» и выберите «Скрыть из списков» или нажмите кнопку на странице предмета. Скрытые предметы пропадают из этих списков и их итогов на всех аукционах и у всех персонажей («Портфель» сообщает, сколько он пропустил и сколько они стоят), но AME продолжает записывать их цены, журнал хранит каждую продажу и покупку, а подсказки по-прежнему работают. Они перечислены в разделе «Скрытые» на боковой панели «Рынка»: щёлкните там ПКМ по предмету, чтобы вернуть его, или верните все в «Настройки», «Подсказки и графики»."
-L["Its enchanting materials are worth more than it sells for: disenchant it"] = "Материалы для чар дороже, чем сам предмет: распылите его"
+L["Items you can buy at one auction house and sell at another for a profit after the AH cut - e.g. your faction's AH and the goblin AH (cross-faction). Each auction house keeps its own history, so scan both (alts on this account count). Hover the columns for details."] =
+  "Предметы, которые можно купить на одном аукционе и продать на другом с прибылью после комиссии - например, аукцион вашей фракции и аукцион гоблинов (межфракционный). У каждого аукциона своя история, так что сканируйте оба (твинки на этой учётной записи тоже считаются). Наведите курсор на столбцы для подробностей."
+L["Items you never trade can be hidden - drinks you buy from a vendor, for example: right-click one in the Market, Arbitrage or Portfolio list and pick Hide from lists, or use the button on its item page. Hidden items leave those lists and their totals, on every auction house and character (Portfolio says how many it left out and what they're worth), but AME keeps recording their prices, your ledger keeps every sale and purchase, and their tooltips still work. They're listed under Hidden in the Market sidebar: right-click one there to unhide it, or unhide them all under Settings, Tooltips & charts."] =
+  "Предметы, которыми вы никогда не торгуете, можно скрыть - например, напитки, которые вы покупаете у торговца: щёлкните ПКМ по предмету в списке «Рынок», «Арбитраж» или «Портфель» и выберите «Скрыть из списков» или нажмите кнопку на странице предмета. Скрытые предметы пропадают из этих списков и их итогов на всех аукционах и у всех персонажей («Портфель» сообщает, сколько он пропустил и сколько они стоят), но AME продолжает записывать их цены, журнал хранит каждую продажу и покупку, а подсказки по-прежнему работают. Они перечислены в разделе «Скрытые» на боковой панели «Рынка»: щёлкните там ПКМ по предмету, чтобы вернуть его, или верните все в «Настройки», «Подсказки и графики»."
+L["Its enchanting materials are worth more than it sells for: disenchant it"] =
+  "Материалы для чар дороже, чем сам предмет: распылите его"
 L["Just under %d listed at %s"] = "Чуть ниже %d шт. по %s"
 L["Keep %d for a later step"] = "Оставить %d для следующего шага"
-L["Keep the AH open until AME says \"recorded full scan\"."] = "Не закрывайте аукцион, пока AME не напишет \"полное сканирование записано\"."
+L['Keep the AH open until AME says "recorded full scan".'] =
+  'Не закрывайте аукцион, пока AME не напишет "полное сканирование записано".'
 L["Keeping data honest"] = "Честные данные"
 L["Largest by value"] = "Крупнейшие по стоимости"
 L["Last"] = "Последняя"
@@ -358,14 +450,16 @@ L["LibDeflate not loaded"] = "LibDeflate не загружена"
 L["Line"] = "Линия"
 L["Link in chat"] = "Ссылка в чат"
 L["Listed"] = "Выставлено"
-L["Listed at %s each; counted at %s (the outlier limit: %dx its 30-day average)."] = "Выставлено по %s за шт.; учтено по %s (порог выбросов: %dx его среднего за 30 дней)."
+L["Listed at %s each; counted at %s (the outlier limit: %dx its 30-day average)."] =
+  "Выставлено по %s за шт.; учтено по %s (порог выбросов: %dx его среднего за 30 дней)."
 L["Listed on the AH now"] = "Сейчас на аукционе"
 L["Listed on the auction house now"] = "Сейчас выставлено на аукционе"
 L["Listed value"] = "Стоимость лотов"
 L["Listing length"] = "Длительность"
 L["Loading history..."] = "Загрузка истории..."
 L["Loading market data..."] = "Загрузка рыночных данных..."
-L["Long lower wicks, steady bodies: someone keeps listing far below the market, and those sell before the price moves. Cheap copies are worth watching for."] = "Длинные нижние тени, ровные тела: кто-то раз за разом выставляет намного ниже рынка, и такие лоты раскупают раньше, чем сдвинется цена. Дешёвые экземпляры стоит караулить."
+L["Long lower wicks, steady bodies: someone keeps listing far below the market, and those sell before the price moves. Cheap copies are worth watching for."] =
+  "Длинные нижние тени, ровные тела: кто-то раз за разом выставляет намного ниже рынка, и такие лоты раскупают раньше, чем сдвинется цена. Дешёвые экземпляры стоит караулить."
 L["Low (cheapest)"] = "Минимум (самый дешёвый)"
 L["Low: the cheapest listing seen (the wick)"] = "Минимум: самый дешёвый лот (тень)"
 L["Lowest"] = "Минимум"
@@ -374,7 +468,8 @@ L["Margin"] = "Маржа"
 L["Market"] = "Рынок"
 L["Market %s"] = "Рынок %s"
 L["Market index"] = "Рыночный индекс"
-L["Market index and CPI start at 100 thirty days ago. The market index follows every steadily listed item; the CPI only what players use up, weighted by what's spent on it. Listed value, Turnover and Auctions are the totals at the last full scan; Breadth is the share of items that rose. Each card's change is over the period picked on the right of the toolbar. Hover a card for how it's worked out."] = "Рыночный индекс и ИПЦ начинаются со 100 тридцать дней назад. Рыночный индекс следит за всеми регулярно выставляемыми предметами; ИПЦ - только за тем, что игроки расходуют, с весом по тратам на это. «Стоимость лотов», «Оборот» и «Аукционы» - итоги последнего полного сканирования; «Широта рынка» - доля подорожавших предметов. Изменение на каждой карточке - за период, выбранный справа на панели инструментов. Наведите на карточку, чтобы узнать, как она считается."
+L["Market index and CPI start at 100 thirty days ago. The market index follows every steadily listed item; the CPI only what players use up, weighted by what's spent on it. Listed value, Turnover and Auctions are the totals at the last full scan; Breadth is the share of items that rose. Each card's change is over the period picked on the right of the toolbar. Hover a card for how it's worked out."] =
+  "Рыночный индекс и ИПЦ начинаются со 100 тридцать дней назад. Рыночный индекс следит за всеми регулярно выставляемыми предметами; ИПЦ - только за тем, что игроки расходуют, с весом по тратам на это. «Стоимость лотов», «Оборот» и «Аукционы» - итоги последнего полного сканирования; «Широта рынка» - доля подорожавших предметов. Изменение на каждой карточке - за период, выбранный справа на панели инструментов. Наведите на карточку, чтобы узнать, как она считается."
 L["Market overview"] = "Обзор рынка"
 L["Market phase"] = "Фаза рынка"
 L["Market phase: %s"] = "Фаза рынка: %s"
@@ -382,16 +477,19 @@ L["Market phases"] = "Фазы рынка"
 L["Market price"] = "Рыночная цена"
 L["Market tab"] = "Вкладка «Рынок»"
 L["Material"] = "Материал"
-L["Materials you'd craft count at what they would sell for, not at their buy price: listing costs a cut, buying doesn't."] = "Материалы для создания считаются по цене продажи, а не покупки: выставление стоит комиссии, покупка - нет."
+L["Materials you'd craft count at what they would sell for, not at their buy price: listing costs a cut, buying doesn't."] =
+  "Материалы для создания считаются по цене продажи, а не покупки: выставление стоит комиссии, покупка - нет."
 L["Maximum price..."] = "Макс. цена..."
 L["Minimum price..."] = "Мин. цена..."
-L["Missing a price: scan the auction house (or it's never listed)."] = "Нет цены: просканируйте аукцион (или его никогда не выставляют)."
+L["Missing a price: scan the auction house (or it's never listed)."] =
+  "Нет цены: просканируйте аукцион (или его никогда не выставляют)."
 L["More"] = "Ещё"
 L["Mostly"] = "Чаще всего"
 L["Movers in"] = "Движение в"
 L["Moving and resizing"] = "Перемещение и размер"
 L["My materials"] = "Мои материалы"
-L["Name for the new shopping list (what it's for):"] = "Название нового списка покупок (для чего он):"
+L["Name for the new shopping list (what it's for):"] =
+  "Название нового списка покупок (для чего он):"
 L["Name for the new watchlist:"] = "Название нового списка:"
 L["Name for this view:"] = "Название вида:"
 L["Narrow windows"] = "Узкие окна"
@@ -409,48 +507,72 @@ L["No articles match"] = "Нет подходящих статей"
 L["No call yet"] = "Оценки пока нет"
 L["No data"] = "Нет данных"
 L["No edge: buy only what you need."] = "Преимущества нет: покупайте только нужное."
-L["No full scan of the %s in the last 30 days. Market totals need one: run a full scan there (any scanner)."] = "Нет полного сканирования (%s) за последние 30 дней. Для рыночных итогов оно нужно: проведите там полное сканирование (любым сканером)."
+L["No full scan of the %s in the last 30 days. Market totals need one: run a full scan there (any scanner)."] =
+  "Нет полного сканирования (%s) за последние 30 дней. Для рыночных итогов оно нужно: проведите там полное сканирование (любым сканером)."
 L["No full scan recorded yet."] = "Полное сканирование ещё не записано."
-L["No full scan yet: scan there, or trust someone who does"] = "Полного скана ещё нет: просканируйте там или доверьтесь тому, кто сканирует"
+L["No full scan yet: scan there, or trust someone who does"] =
+  "Полного скана ещё нет: просканируйте там или доверьтесь тому, кто сканирует"
 L["No history at this auction house yet."] = "На этом аукционе истории пока нет."
-L["No history for this item yet. Search for it at the auction house, or run a full scan."] = "Для этого предмета ещё нет истории. Найдите его на аукционе или выполните полное сканирование."
+L["No history for this item yet. Search for it at the auction house, or run a full scan."] =
+  "Для этого предмета ещё нет истории. Найдите его на аукционе или выполните полное сканирование."
 L["No known recipes yet."] = "Известных рецептов пока нет."
 L["No listings right now"] = "Сейчас лотов нет"
-L["No market data for your faction's auction house yet - scan there to value your holdings."] = "Рыночных данных по аукциону вашей фракции пока нет - отсканируйте его, чтобы оценить позиции."
+L["No market data for your faction's auction house yet - scan there to value your holdings."] =
+  "Рыночных данных по аукциону вашей фракции пока нет - отсканируйте его, чтобы оценить позиции."
 L["No one yet."] = "Пока никого."
-L["No price history for the %s yet: scan there (any character on this account counts) to compare."] = "Истории цен (%s) пока нет: отсканируйте там (подойдёт любой персонаж этой учётной записи), чтобы сравнить."
-L["No price history for the %s yet: scan there (any character on this account counts)."] = "Истории цен (%s) пока нет: отсканируйте там (подойдёт любой персонаж этой учётной записи)."
+L["No price history for the %s yet: scan there (any character on this account counts) to compare."] =
+  "Истории цен (%s) пока нет: отсканируйте там (подойдёт любой персонаж этой учётной записи), чтобы сравнить."
+L["No price history for the %s yet: scan there (any character on this account counts)."] =
+  "Истории цен (%s) пока нет: отсканируйте там (подойдёт любой персонаж этой учётной записи)."
 L["No professions recorded"] = "Профессии не записаны"
-L["No recipe on the auction house that your characters could learn and don't know yet."] = "На аукционе нет рецептов, которые ваши персонажи могли бы изучить и ещё не знают."
+L["No recipe on the auction house that your characters could learn and don't know yet."] =
+  "На аукционе нет рецептов, которые ваши персонажи могли бы изучить и ещё не знают."
 L["No requests."] = "Запросов нет."
-L["No sales or purchases in this period yet. AME records them from auction mail."] = "За этот период продаж и покупок пока нет. AME берёт их из почты аукциона."
-L["No scans of this item in the last 2 days. Daily history is on the other ranges."] = "За последние 2 дня этот предмет не сканировался. Дневная история - на других интервалах."
-L["No usable recipe from %d with today's data: learn more recipes or scan the AH."] = "С %d по сегодняшним данным подходящих рецептов нет: изучите больше рецептов или просканируйте аукцион."
-L["Nobody yet. Add a friend above - they need AME too, and must approve."] = "Пока никого. Добавьте друга выше - у него тоже должен быть AME, и он должен одобрить."
+L["No sales or purchases in this period yet. AME records them from auction mail."] =
+  "За этот период продаж и покупок пока нет. AME берёт их из почты аукциона."
+L["No scans of this item in the last 2 days. Daily history is on the other ranges."] =
+  "За последние 2 дня этот предмет не сканировался. Дневная история - на других интервалах."
+L["No usable recipe from %d with today's data: learn more recipes or scan the AH."] =
+  "С %d по сегодняшним данным подходящих рецептов нет: изучите больше рецептов или просканируйте аукцион."
+L["Nobody yet. Add a friend above - they need AME too, and must approve."] =
+  "Пока никого. Добавьте друга выше - у него тоже должен быть AME, и он должен одобрить."
 L["Normal"] = "Обычно"
 L["Normal %s"] = "Обычно %s"
-L["Not enough days yet: the chart fills in with a full scan a day."] = "Пока мало дней: график заполнится при полном сканировании раз в день."
-L["Not enough history to judge yet (%d of %d days)"] = "Пока мало истории для оценки (%d из %d дн.)"
-L["Nothing hidden. Right-click an item in the Market, Arbitrage or Portfolio list to hide it."] = "Ничего не скрыто. Щёлкните ПКМ по предмету в списке «Рынок», «Арбитраж» или «Портфель», чтобы скрыть его."
-L["Nothing matches these filters. Clear some (chips above) or pick All items."] = "Под эти фильтры ничего не подходит. Сбросьте часть (метки выше) или выберите «Все предметы»."
-L["Nothing your characters hold is a reagent of a recipe they know."] = "Ничто из того, что есть у ваших персонажей, не является реагентом известного им рецепта."
+L["Not enough days yet: the chart fills in with a full scan a day."] =
+  "Пока мало дней: график заполнится при полном сканировании раз в день."
+L["Not enough history to judge yet (%d of %d days)"] =
+  "Пока мало истории для оценки (%d из %d дн.)"
+L["Nothing hidden. Right-click an item in the Market, Arbitrage or Portfolio list to hide it."] =
+  "Ничего не скрыто. Щёлкните ПКМ по предмету в списке «Рынок», «Арбитраж» или «Портфель», чтобы скрыть его."
+L["Nothing matches these filters. Clear some (chips above) or pick All items."] =
+  "Под эти фильтры ничего не подходит. Сбросьте часть (метки выше) или выберите «Все предметы»."
+L["Nothing your characters hold is a reagent of a recipe they know."] =
+  "Ничто из того, что есть у ваших персонажей, не является реагентом известного им рецепта."
 L["Notifications"] = "Уведомления"
 L["Off"] = "Выкл."
-L["Off by default: loot addons use modified clicks. Without one, Shift-click an item while AME shows its Item tab."] = "По умолчанию выключено: аддоны добычи используют клики с модификаторами. Без такого аддона сделайте Shift-клик по предмету, пока AME показывает вкладку «Предмет»."
-L["On a narrow window the tabs switch to a compact layout: sidebars become a dropdown or a Details button. Window scale changes AME's size without touching the rest of your UI."] = "В узком окне вкладки переходят в компактный вид: боковые панели превращаются в выпадающий список или кнопку «Детали». «Масштаб окна» меняет размер AME, не затрагивая остальной интерфейс."
-L["On a watchlist - click to change"] = "В списке наблюдения - щёлкните, чтобы изменить"
+L["Off by default: loot addons use modified clicks. Without one, Shift-click an item while AME shows its Item tab."] =
+  "По умолчанию выключено: аддоны добычи используют клики с модификаторами. Без такого аддона сделайте Shift-клик по предмету, пока AME показывает вкладку «Предмет»."
+L["On a narrow window the tabs switch to a compact layout: sidebars become a dropdown or a Details button. Window scale changes AME's size without touching the rest of your UI."] =
+  "В узком окне вкладки переходят в компактный вид: боковые панели превращаются в выпадающий список или кнопку «Детали». «Масштаб окна» меняет размер AME, не затрагивая остальной интерфейс."
+L["On a watchlist - click to change"] =
+  "В списке наблюдения - щёлкните, чтобы изменить"
 L["On cooldown for %s."] = "Перезарядка: ещё %s."
 L["On the AH now"] = "Сейчас на аукционе"
-L["One side is %d days old: scan both auction houses before you buy."] = "Одной стороне %d дн.: просканируйте оба аукциона перед покупкой."
-L["Only items listed at least 3 at a time on most days count for the indexes, risers and fallers, so one item reposted every day can't move them. Listed value caps each price at the outlier limit (Settings, Data) times its 30-day average. Totals come only from days with a full scan."] = "В индексах, лидерах роста и падения учитываются только предметы, выставленные не меньше 3 сразу в большинство дней, так что один предмет, перевыставляемый каждый день, не может их сдвинуть. «Стоимость лотов» ограничивает каждую цену порогом выбросов («Настройки», «Данные»), умноженным на её среднее за 30 дней. Итоги берутся только из дней с полным сканированием."
+L["One side is %d days old: scan both auction houses before you buy."] =
+  "Одной стороне %d дн.: просканируйте оба аукциона перед покупкой."
+L["Only items listed at least 3 at a time on most days count for the indexes, risers and fallers, so one item reposted every day can't move them. Listed value caps each price at the outlier limit (Settings, Data) times its 30-day average. Totals come only from days with a full scan."] =
+  "В индексах, лидерах роста и падения учитываются только предметы, выставленные не меньше 3 сразу в большинство дней, так что один предмет, перевыставляемый каждый день, не может их сдвинуть. «Стоимость лотов» ограничивает каждую цену порогом выбросов («Настройки», «Данные»), умноженным на её среднее за 30 дней. Итоги берутся только из дней с полным сканированием."
 L["Open"] = "Открытие"
 L["Open AME settings"] = "Открыть настройки AME"
 L["Open chart"] = "Открыть график"
 L["Open charts with"] = "Открывать графики"
-L["Open each of your professions once - on every character - so AME knows what they can craft. It records them as you do."] = "Откройте каждую профессию по разу - на каждом персонаже, - чтобы AME знал, что они могут создавать. Он запишет это по ходу."
-L["Open the window with /ame, the minimap button, or set it to open with the auction house (Settings > Window)."] = "Открывайте окно командой /ame, кнопкой у миникарты или настройте его открытие вместе с аукционом (Настройки > Окно)."
+L["Open each of your professions once - on every character - so AME knows what they can craft. It records them as you do."] =
+  "Откройте каждую профессию по разу - на каждом персонаже, - чтобы AME знал, что они могут создавать. Он запишет это по ходу."
+L["Open the window with /ame, the minimap button, or set it to open with the auction house (Settings > Window)."] =
+  "Открывайте окно командой /ame, кнопкой у миникарты или настройте его открытие вместе с аукционом (Настройки > Окно)."
 L["Open with the auction house"] = "Открывать вместе с аукционом"
-L["Open: where the previous candle closed"] = "Открытие: где закрылась предыдущая свеча"
+L["Open: where the previous candle closed"] =
+  "Открытие: где закрылась предыдущая свеча"
 L["Opening AME"] = "Как открыть AME"
 L["Other"] = "Прочее"
 L["Other auction houses"] = "Другие аукционы"
@@ -459,23 +581,30 @@ L["Overview"] = "Обзор"
 L["Patient"] = "Терпеливо"
 L["Patient %s"] = "Терпеливо %s"
 L["Phase"] = "Фаза"
-L["Pick a goal: Cheapest counts only what you spend; Best recovery subtracts what the results sell for (only as many as the market takes in about three days; the rest go to a vendor, or are disenchanted if one of your characters has Enchanting); Fewest crafts saves time; My materials uses what the character holds first. Results a later step needs are kept for it, and big reagent buys are priced along the listings when AME has recorded them."] = "Выберите цель: «Дешевле всего» учитывает только расходы; «Лучший возврат» вычитает выручку за результаты (только столько, сколько рынок поглотит примерно за три дня; остальное - торговцу или на распыление, если у кого-то из ваших персонажей есть Наложение чар); «Меньше созданий» экономит время; «Мои материалы» сначала использует то, что есть у персонажа. Результаты, нужные на следующем шаге, оставляются для него, а крупные закупки реагентов считаются по лотам, если AME их записал."
-L["Pick a section on the left: General (the window and notifications), Tooltips & charts, Selling, Sharing and Data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored)."] = "Выберите раздел слева: «Общие» (окно и уведомления), «Подсказки и графики», «Продажа», «Обмен» и «Данные» (импорт из Auctionator, перестройка рыночных данных, самопроверка и отбрасывание нелепых цен)."
-L["Pick a signal to see only those items. Active filters show as chips under the toolbar: click one to remove it, or Clear all."] = "Выберите сигнал, чтобы видеть только такие предметы. Активные фильтры показаны метками под панелью инструментов: нажмите на метку, чтобы убрать её, или «Сбросить всё»."
-L["Pick an item: search above, Shift-click one anywhere, or click a row on the Market tab."] = "Выберите предмет: найдите выше, Shift-клик по нему где угодно или нажмите на строку на вкладке «Рынок»."
+L["Pick a goal: Cheapest counts only what you spend; Best recovery subtracts what the results sell for (only as many as the market takes in about three days; the rest go to a vendor, or are disenchanted if one of your characters has Enchanting); Fewest crafts saves time; My materials uses what the character holds first. Results a later step needs are kept for it, and big reagent buys are priced along the listings when AME has recorded them."] =
+  "Выберите цель: «Дешевле всего» учитывает только расходы; «Лучший возврат» вычитает выручку за результаты (только столько, сколько рынок поглотит примерно за три дня; остальное - торговцу или на распыление, если у кого-то из ваших персонажей есть Наложение чар); «Меньше созданий» экономит время; «Мои материалы» сначала использует то, что есть у персонажа. Результаты, нужные на следующем шаге, оставляются для него, а крупные закупки реагентов считаются по лотам, если AME их записал."
+L["Pick a section on the left: General (the window and notifications), Tooltips & charts, Selling, Sharing and Data (importing from Auctionator, rebuilding market data, the self-test, and how outrageous prices are ignored)."] =
+  "Выберите раздел слева: «Общие» (окно и уведомления), «Подсказки и графики», «Продажа», «Обмен» и «Данные» (импорт из Auctionator, перестройка рыночных данных, самопроверка и отбрасывание нелепых цен)."
+L["Pick a signal to see only those items. Active filters show as chips under the toolbar: click one to remove it, or Clear all."] =
+  "Выберите сигнал, чтобы видеть только такие предметы. Активные фильтры показаны метками под панелью инструментов: нажмите на метку, чтобы убрать её, или «Сбросить всё»."
+L["Pick an item: search above, Shift-click one anywhere, or click a row on the Market tab."] =
+  "Выберите предмет: найдите выше, Shift-клик по нему где угодно или нажмите на строку на вкладке «Рынок»."
 L["Pick two different auction houses."] = "Выберите два разных аукциона."
 L["Player"] = "Игрок"
 L["Players heard from"] = "Игроки на связи"
 L["Portfolio"] = "Портфель"
 L["Portfolio tab"] = "Вкладка «Портфель»"
 L["Positions"] = "Позиции"
-L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."] = "«Позиции» - то, что у вас есть. «Журнал» перечисляет ваши продажи и покупки на аукционе. «Аукционы» - то, что выставлено прямо сейчас у каждого персонажа. «Покупатели» и «Поставщики» показывают, с кем вы торгуете больше всего, - только если в письме с аукциона указан другой игрок (в некоторых клиентах аукцион скрывает имена)."
+L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."] =
+  "«Позиции» - то, что у вас есть. «Журнал» перечисляет ваши продажи и покупки на аукционе. «Аукционы» - то, что выставлено прямо сейчас у каждого персонажа. «Покупатели» и «Поставщики» показывают, с кем вы торгуете больше всего, - только если в письме с аукциона указан другой игрок (в некоторых клиентах аукцион скрывает имена)."
 L["Post anyway at %s"] = "Всё равно выставить по %s"
 L["Post at"] = "Выставить по"
 L["Post at %s"] = "Выставить по %s"
-L["Posting nets ~%s after cut and deposit; a vendor pays %s."] = "Лот принесёт ~%s после комиссии и залога; торговец платит %s."
+L["Posting nets ~%s after cut and deposit; a vendor pays %s."] =
+  "Лот принесёт ~%s после комиссии и залога; торговец платит %s."
 L["Posting price"] = "Цена выставления"
-L["Posting price: not enough data on this item yet."] = "Цена выставления: по этому предмету пока мало данных."
+L["Posting price: not enough data on this item yet."] =
+  "Цена выставления: по этому предмету пока мало данных."
 L["Pressure building"] = "Нарастающее давление"
 L["Price"] = "Цена"
 L["Price %s vs its 30-day average"] = "Цена %s к среднему за 30 дней"
@@ -485,7 +614,8 @@ L["Prices from %s's full scan %s"] = "Цены из полного скана %s
 L["Prices from your full scan %s"] = "Цены из вашего полного скана, %s"
 L["Pricier than usual"] = "Дороже обычного"
 L["Profit"] = "Прибыль"
-L["Profit as a share of what you paid. 50% means every 10g spent comes back as 15g."] = "Прибыль как доля от уплаченного. 50% значит, что каждые потраченные 10 з возвращаются как 15 з."
+L["Profit as a share of what you paid. 50% means every 10g spent comes back as 15g."] =
+  "Прибыль как доля от уплаченного. 50% значит, что каждые потраченные 10 з возвращаются как 15 з."
 L["Profit per craft"] = "Прибыль с создания"
 L["Purchases"] = "Покупки"
 L["Qty"] = "Кол-во"
@@ -495,7 +625,8 @@ L["Random-suffix gear"] = "Снаряжение со случайным суфф
 L["Ranges"] = "Периоды"
 L["Rare+"] = "Редкое+"
 L["Rarely sells (under 1 a day)."] = "Продаётся редко (меньше 1 в день)."
-L["Read candles together with the supply bars underneath: a price move on rising supply means sellers are piling in; on falling supply, it's buyers clearing the shelf. The verdict in the sidebar does that reading for you."] = "Читайте свечи вместе со столбиками предложения под ними: движение цены при растущем предложении означает наплыв продавцов; при падающем - покупатели сметают полки. Вывод на боковой панели делает это за вас."
+L["Read candles together with the supply bars underneath: a price move on rising supply means sellers are piling in; on falling supply, it's buyers clearing the shelf. The verdict in the sidebar does that reading for you."] =
+  "Читайте свечи вместе со столбиками предложения под ними: движение цены при растущем предложении означает наплыв продавцов; при падающем - покупатели сметают полки. Вывод на боковой панели делает это за вас."
 L["Reading candles"] = "Как читать свечи"
 L["Reading scan %s / %s"] = "Чтение скана %s / %s"
 L["Reading the numbers"] = "Как читать цифры"
@@ -505,9 +636,11 @@ L["Realized profit  ·  %s"] = "Реализованная прибыль  ·  %
 L["Rebuild market data"] = "Перестроить рыночные данные"
 L["Recipe"] = "Рецепт"
 L["Recipes to buy"] = "Рецепты на покупку"
-L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."] = "Пересчитывает 30-дневные сводки для скринера, подсказок и оповещений."
+L["Recomputes the 30-day summaries behind the screener, tooltips and alerts."] =
+  "Пересчитывает 30-дневные сводки для скринера, подсказок и оповещений."
 L["Recorded: %s"] = "Записано: %s"
-L["Records auction house prices from every scan and search you run (native APIs; works with any scanning addon), per realm and auction house."] = "Записывает цены аукциона из каждого вашего сканирования и поиска (родные API; работает с любым аддоном-сканером), отдельно для каждого игрового мира и аукциона."
+L["Records auction house prices from every scan and search you run (native APIs; works with any scanning addon), per realm and auction house."] =
+  "Записывает цены аукциона из каждого вашего сканирования и поиска (родные API; работает с любым аддоном-сканером), отдельно для каждого игрового мира и аукциона."
 L["Reload UI"] = "Перезагрузить UI"
 L["Remove from list"] = "Убрать из списка"
 L["Remove from watchlist"] = "Убрать из списка наблюдения"
@@ -516,36 +649,50 @@ L["Requests"] = "Запросы"
 L["Results"] = "Результаты"
 L["Results get back"] = "Возврат с результатов"
 L["Right at its %d-day average"] = "Ровно на уровне среднего за %d дней"
-L["Right-click a guild member's shared list to copy it into your own watchlists."] = "Щёлкните ПКМ по общему списку согильдийца, чтобы скопировать его в свои списки наблюдения."
-L["Right-click a list to add a recipe's reagents, rename it, share it with your guild or delete it. Guild members' shared lists appear under yours: right-click one to copy it into your own."] = "Щёлкните ПКМ по списку, чтобы добавить реагенты рецепта, переименовать его, поделиться с гильдией или удалить. Общие списки согильдийцев показаны под вашими: щёлкните ПКМ по такому, чтобы скопировать его к себе."
-L["Right-click an item on the list to change the quantity, set the most you'd pay for one (a star marks items at or under it right now) or remove it. Search the AH searches the open auction house for everything still needed - all at once with Auctionator."] = "Щёлкните ПКМ по предмету в списке, чтобы изменить количество, задать максимальную цену за штуку (звёздочка отмечает предметы, которые сейчас стоят столько или дешевле) или убрать его. «Искать на аукционе» ищет на открытом аукционе всё, что ещё нужно, - с Auctionator всё сразу."
-L["Right-click it in the sidebar to delete it."] = "Щёлкните по нему ПКМ на боковой панели, чтобы удалить."
-L["Right-click the minimap button for Settings; hover it for the last full scan and the top buy signals."] = "ПКМ по кнопке у миникарты открывает настройки; наведите на неё курсор, чтобы увидеть последний полный скан и лучшие сигналы покупки."
+L["Right-click a guild member's shared list to copy it into your own watchlists."] =
+  "Щёлкните ПКМ по общему списку согильдийца, чтобы скопировать его в свои списки наблюдения."
+L["Right-click a list to add a recipe's reagents, rename it, share it with your guild or delete it. Guild members' shared lists appear under yours: right-click one to copy it into your own."] =
+  "Щёлкните ПКМ по списку, чтобы добавить реагенты рецепта, переименовать его, поделиться с гильдией или удалить. Общие списки согильдийцев показаны под вашими: щёлкните ПКМ по такому, чтобы скопировать его к себе."
+L["Right-click an item on the list to change the quantity, set the most you'd pay for one (a star marks items at or under it right now) or remove it. Search the AH searches the open auction house for everything still needed - all at once with Auctionator."] =
+  "Щёлкните ПКМ по предмету в списке, чтобы изменить количество, задать максимальную цену за штуку (звёздочка отмечает предметы, которые сейчас стоят столько или дешевле) или убрать его. «Искать на аукционе» ищет на открытом аукционе всё, что ещё нужно, - с Auctionator всё сразу."
+L["Right-click it in the sidebar to delete it."] =
+  "Щёлкните по нему ПКМ на боковой панели, чтобы удалить."
+L["Right-click the minimap button for Settings; hover it for the last full scan and the top buy signals."] =
+  "ПКМ по кнопке у миникарты открывает настройки; наведите на неё курсор, чтобы увидеть последний полный скан и лучшие сигналы покупки."
 L["Right-click: open it in the Guide's glossary"] = "ПКМ: открыть в глоссарии справки"
-L["Rising on steady supply: strong demand."] = "Растёт при стабильном предложении: сильный спрос."
-L["Routes compare two auction houses' prices. Scan both (alts count), then search the buy house before buying: the Units column shows how many units still pay."] = "Маршруты сравнивают цены двух аукционов. Просканируйте оба (твинки тоже считаются), затем перед покупкой выполните поиск на аукционе покупки: столбец «Штук» показывает, сколько штук ещё выгодны."
+L["Rising on steady supply: strong demand."] =
+  "Растёт при стабильном предложении: сильный спрос."
+L["Routes compare two auction houses' prices. Scan both (alts count), then search the buy house before buying: the Units column shows how many units still pay."] =
+  "Маршруты сравнивают цены двух аукционов. Просканируйте оба (твинки тоже считаются), затем перед покупкой выполните поиск на аукционе покупки: столбец «Штук» показывает, сколько штук ещё выгодны."
 L["Run self-test"] = "Запустить самопроверку"
 L["SELL"] = "ПРОДАТЬ"
 L["SELL signal at %s"] = "Сигнал ПРОДАТЬ по %s"
 L["Sales per day there"] = "Продаж в день там"
 L["Save these filters as a view..."] = "Сохранить фильтры как вид..."
 L["Scale"] = "Масштаб"
-L["Scans from these players are ignored."] = "Сканирования этих игроков игнорируются."
-L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."] = "Сканирования, сильно расходящиеся с вашими ценами, отклоняются, и вы можете блокировать игроков. Офицеры гильдии могут заблокировать игрока для всей гильдии строкой в информации о гильдии. Карточки вверху показывают, насколько свежи данные каждого аукциона и кто их отсканировал."
+L["Scans from these players are ignored."] =
+  "Сканирования этих игроков игнорируются."
+L["Scans that disagree wildly with your own prices are rejected, and you can block players. Guild officers can block players for the whole guild with a line in the guild info. The cards at the top show how fresh each auction house's data is and who scanned it."] =
+  "Сканирования, сильно расходящиеся с вашими ценами, отклоняются, и вы можете блокировать игроков. Офицеры гильдии могут заблокировать игрока для всей гильдии строкой в информации о гильдии. Карточки вверху показывают, насколько свежи данные каждого аукциона и кто их отсканировал."
 L["Score"] = "Оценка"
 L["Screener"] = "Скринер"
-L["Scroll to zoom  ·  drag to pan  ·  double-click to reset"] = "Колесо - масштаб  ·  перетаскивание - сдвиг  ·  двойной клик - сброс"
+L["Scroll to zoom  ·  drag to pan  ·  double-click to reset"] =
+  "Колесо - масштаб  ·  перетаскивание - сдвиг  ·  двойной клик - сброс"
 L["Search"] = "Поиск"
 L["Search at the %s"] = "Поиск: %s"
-L["Search for it at the auction house, or run a full scan."] = "Найдите его на аукционе или запустите полный скан."
+L["Search for it at the auction house, or run a full scan."] =
+  "Найдите его на аукционе или запустите полный скан."
 L["Search item, or Shift-click one"] = "Найдите предмет или Shift-клик"
 L["Search items..."] = "Поиск предметов..."
 L["Search the AH"] = "Искать на аукционе"
-L["Search the buy house to see how many units still pay (Depth)."] = "Выполните поиск на аукционе покупки, чтобы увидеть, сколько штук ещё выгодны («Глубина»)."
+L["Search the buy house to see how many units still pay (Depth)."] =
+  "Выполните поиск на аукционе покупки, чтобы увидеть, сколько штук ещё выгодны («Глубина»)."
 L["Search the guide..."] = "Поиск по справке..."
-L["Searches the open auction house for everything the list still needs."] = "Ищет на открытом аукционе всё, чего ещё не хватает в списке."
+L["Searches the open auction house for everything the list still needs."] =
+  "Ищет на открытом аукционе всё, чего ещё не хватает в списке."
 L["Select a route"] = "Выберите маршрут"
-L["Select a route to see what it pays after the cut and the deposit, and how fresh each side's price is. Routes paying over 2000% are gold transfers between factions, not trades: they're hidden and counted."] = "Выберите маршрут, чтобы увидеть, сколько он приносит после комиссии и залога и насколько свежи цены с каждой стороны. Маршруты с доходом свыше 2000% - это перевод золота между фракциями, а не торговля: они скрыты и подсчитаны."
+L["Select a route to see what it pays after the cut and the deposit, and how fresh each side's price is. Routes paying over 2000% are gold transfers between factions, not trades: they're hidden and counted."] =
+  "Выберите маршрут, чтобы увидеть, сколько он приносит после комиссии и залога и насколько свежи цены с каждой стороны. Маршруты с доходом свыше 2000% - это перевод золота между фракциями, а не торговля: они скрыты и подсчитаны."
 L["Select a row"] = "Выберите строку"
 L["Select a step"] = "Выберите шаг"
 L["Sell"] = "Продажа"
@@ -555,9 +702,11 @@ L["Sell it raw"] = "Продать как есть"
 L["Sell or refine"] = "Продать или переработать"
 L["Sell raw"] = "Как есть"
 L["Sell-side data"] = "Данные продажи"
-L["Sellers dumping: price falling, supply growing."] = "Сброс: цена падает, предложение растёт."
+L["Sellers dumping: price falling, supply growing."] =
+  "Сброс: цена падает, предложение растёт."
 L["Sellers piling in"] = "Наплыв продавцов"
-L["Sellers piling in at high prices: a drop often follows."] = "Наплыв продавцов на высоких ценах: часто следует падение."
+L["Sellers piling in at high prices: a drop often follows."] =
+  "Наплыв продавцов на высоких ценах: часто следует падение."
 L["Sellers withdrawing"] = "Уход продавцов"
 L["Selling"] = "Продажа"
 L["Selling: posting prices"] = "Продажа: цены выставления"
@@ -592,10 +741,12 @@ L["Show the Market overview"] = "Показывать обзор рынка"
 L["Show them"] = "Показать"
 L["Signal"] = "Сигнал"
 L["Signals"] = "Сигналы"
-L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] = "Сигналы и оценка сравнивают предмет с его собственной историей, поэтому для осмысленного результата нужна неделя данных или больше. Выше всех оцениваются дешёвые И стабильные (низкая волатильность) предметы. Падение предложения при неизменной цене часто бывает хорошим ранним признаком. Всё это не совет - рынки могут вести себя странно довольно долго."
+L["Signals and score compare an item with its own history, so they need a week or more of data to mean anything. Items that are cheap AND stable (low volatility) score highest. Supply falling while the price is flat is often a good early sign. None of this is advice - markets can stay weird for a while."] =
+  "Сигналы и оценка сравнивают предмет с его собственной историей, поэтому для осмысленного результата нужна неделя данных или больше. Выше всех оцениваются дешёвые И стабильные (низкая волатильность) предметы. Падение предложения при неизменной цене часто бывает хорошим ранним признаком. Всё это не совет - рынки могут вести себя странно довольно долго."
 L["Skill"] = "Навык"
 L["Skill-up chance"] = "Шанс роста навыка"
-L["Small bodies, short wicks: a quiet, steady market. Its market price is a safe guide."] = "Маленькие тела, короткие тени: тихий, стабильный рынок. На его рыночную цену можно опираться."
+L["Small bodies, short wicks: a quiet, steady market. Its market price is a safe guide."] =
+  "Маленькие тела, короткие тени: тихий, стабильный рынок. На его рыночную цену можно опираться."
 L["Sold / bought"] = "Продано / куплено"
 L["Sold / bought  ·  %s"] = "Продано / куплено  ·  %s"
 L["Sound when an alert fires"] = "Звук при оповещении"
@@ -606,43 +757,68 @@ L["Stop sharing with my guild"] = "Перестать делиться с гил
 L["Style"] = "Вид"
 L["Suppliers"] = "Поставщики"
 L["Supply"] = "Предложение"
-L["Supply building at a steady price: pressure on the price."] = "Предложение копится при стабильной цене: давление на цену."
-L["Supply shrinking at a steady price: may start to rise."] = "Предложение сокращается при стабильной цене: цена может пойти вверх."
-L["Supply shrinking, price rising: a shortage."] = "Предложение сокращается, цена растёт: дефицит."
+L["Supply building at a steady price: pressure on the price."] =
+  "Предложение копится при стабильной цене: давление на цену."
+L["Supply shrinking at a steady price: may start to rise."] =
+  "Предложение сокращается при стабильной цене: цена может пойти вверх."
+L["Supply shrinking, price rising: a shortage."] =
+  "Предложение сокращается, цена растёт: дефицит."
 L["Swap"] = "Поменять"
-L["Swap scans with friends, or your own characters on other accounts."] = "Обменивайтесь сканами с друзьями или своими персонажами на других учётных записях."
-L["Swap turns the route around. Minimum profit, margin and data age narrow the list. At the buy auction house, Search (or Shift-clicking a row) searches the item there, which also fills in how many units still pay; Chart opens it on the Item tab."] = "«Поменять» разворачивает маршрут. Минимальная прибыль, маржа и возраст данных сужают список. На аукционе покупки «Поиск» (или Shift-клик по строке) ищет предмет там, заодно заполняя, сколько штук ещё выгодны; «График» открывает его на вкладке «Предмет»."
-L["Switch to the Item tab for what you put up for sale"] = "Переключаться на вкладку «Предмет» для выставляемого товара"
-L["Sync is off: turn on guild or trusted sharing below"] = "Синхронизация выключена: включите ниже обмен с гильдией или с доверенными игроками"
+L["Swap scans with friends, or your own characters on other accounts."] =
+  "Обменивайтесь сканами с друзьями или своими персонажами на других учётных записях."
+L["Swap turns the route around. Minimum profit, margin and data age narrow the list. At the buy auction house, Search (or Shift-clicking a row) searches the item there, which also fills in how many units still pay; Chart opens it on the Item tab."] =
+  "«Поменять» разворачивает маршрут. Минимальная прибыль, маржа и возраст данных сужают список. На аукционе покупки «Поиск» (или Shift-клик по строке) ищет предмет там, заодно заполняя, сколько штук ещё выгодны; «График» открывает его на вкладке «Предмет»."
+L["Switch to the Item tab for what you put up for sale"] =
+  "Переключаться на вкладку «Предмет» для выставляемого товара"
+L["Sync is off: turn on guild or trusted sharing below"] =
+  "Синхронизация выключена: включите ниже обмен с гильдией или с доверенными игроками"
 L["Sync is on"] = "Синхронизация включена"
-L["Sync is unavailable: the AceComm library didn't load."] = "Синхронизация недоступна: библиотека AceComm не загрузилась."
+L["Sync is unavailable: the AceComm library didn't load."] =
+  "Синхронизация недоступна: библиотека AceComm не загрузилась."
 L["Tabs"] = "Вкладки"
 L["Takes"] = "Срок"
 L["Teaches %s"] = "Обучает: %s"
 L["That nets"] = "Чистыми"
-L["That's one of your characters: they already share AME's data"] = "Это ваш персонаж: он уже делится данными AME"
-L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] = "Аукцион даст %s за шт. после комиссии и залога %s  ·  торговец платит %s"
-L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Screener on the Market tab's toolbar. Market data takes a little longer to update while it's on."] = "«Обзор» показывает весь аукцион с первого взгляда, как биржевые индексы: дорожает ли рынок или дешевеет, сколько выставлено и где сосредоточено золото. По умолчанию он выключен: включите его в «Настройки», «Общие», и «Обзор» появится рядом со «Скринером» на панели инструментов вкладки «Рынок». Пока он включён, рыночные данные обновляются чуть дольше."
-L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."] = "Комиссии аукциона и длительность лота в разделе «Продажа» учитываются везде, где считаются деньги: залоги, сигналы ТОРГОВЕЦ, цены выставления и арбитраж."
-L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] = "Средняя дневная рыночная цена за выбранный период (Настройки > Период усреднения, по умолчанию 7 дней). Сравните её с сегодняшней рыночной ценой, чтобы понять, дёшев предмет сейчас или дорог."
+L["That's one of your characters: they already share AME's data"] =
+  "Это ваш персонаж: он уже делится данными AME"
+L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] =
+  "Аукцион даст %s за шт. после комиссии и залога %s  ·  торговец платит %s"
+L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Screener on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
+  "«Обзор» показывает весь аукцион с первого взгляда, как биржевые индексы: дорожает ли рынок или дешевеет, сколько выставлено и где сосредоточено золото. По умолчанию он выключен: включите его в «Настройки», «Общие», и «Обзор» появится рядом со «Скринером» на панели инструментов вкладки «Рынок». Пока он включён, рыночные данные обновляются чуть дольше."
+L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."] =
+  "Комиссии аукциона и длительность лота в разделе «Продажа» учитываются везде, где считаются деньги: залоги, сигналы ТОРГОВЕЦ, цены выставления и арбитраж."
+L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
+  "Средняя дневная рыночная цена за выбранный период (Настройки > Период усреднения, по умолчанию 7 дней). Сравните её с сегодняшней рыночной ценой, чтобы понять, дёшев предмет сейчас или дорог."
 L["The bar under the sell window"] = "Полоса под окном продажи"
-L["The button next to AME's title picks which auction house you're looking at: yours, the other faction's or the goblin AH. Each keeps its own history; scan there (any character on this account counts) to fill it."] = "Кнопка рядом с заголовком AME выбирает, какой аукцион вы смотрите: свой, другой фракции или аукцион гоблинов. У каждого своя история; сканируйте там (подойдёт любой персонаж этой учётной записи), чтобы её заполнить."
-L["The buy price is a day or more old: search it before you travel."] = "Цене покупки день или больше: проверьте её поиском, прежде чем отправляться."
+L["The button next to AME's title picks which auction house you're looking at: yours, the other faction's or the goblin AH. Each keeps its own history; scan there (any character on this account counts) to fill it."] =
+  "Кнопка рядом с заголовком AME выбирает, какой аукцион вы смотрите: свой, другой фракции или аукцион гоблинов. У каждого своя история; сканируйте там (подойдёт любой персонаж этой учётной записи), чтобы её заполнить."
+L["The buy price is a day or more old: search it before you travel."] =
+  "Цене покупки день или больше: проверьте её поиском, прежде чем отправляться."
 L["The cards"] = "Карточки"
 L["The chart"] = "График"
-L["The cheapest listing at the auction house you buy from - what the first units cost you."] = "Самый дешёвый лот на аукционе, где вы покупаете, - столько стоят первые штуки."
-L["The cheapest single listing seen in the latest data."] = "Самый дешёвый отдельный лот в последних данных."
-L["The cheapest way to raise a profession from where a character is to the skill you pick, recalculated from today's prices. For every skill point AME picks the recipe with the lowest expected cost per point: how many crafts a point takes (always one while a recipe is orange, more as it turns yellow and green) times what a craft costs, minus what its result gets back."] = "Самый дешёвый способ поднять профессию с текущего уровня персонажа до выбранного навыка, пересчитанный по сегодняшним ценам. Для каждого очка навыка AME выбирает рецепт с наименьшей ожидаемой стоимостью за очко: сколько созданий нужно на очко (всегда одно, пока рецепт оранжевый, больше, когда он становится жёлтым и зелёным), умноженное на стоимость создания, минус то, что возвращает результат."
-L["The guild info line looks like this: AME block: Name, Name (any line, several allowed)."] = "Строка в информации о гильдии выглядит так: AME block: Name, Name (любая строка, можно несколько)."
+L["The cheapest listing at the auction house you buy from - what the first units cost you."] =
+  "Самый дешёвый лот на аукционе, где вы покупаете, - столько стоят первые штуки."
+L["The cheapest single listing seen in the latest data."] =
+  "Самый дешёвый отдельный лот в последних данных."
+L["The cheapest way to raise a profession from where a character is to the skill you pick, recalculated from today's prices. For every skill point AME picks the recipe with the lowest expected cost per point: how many crafts a point takes (always one while a recipe is orange, more as it turns yellow and green) times what a craft costs, minus what its result gets back."] =
+  "Самый дешёвый способ поднять профессию с текущего уровня персонажа до выбранного навыка, пересчитанный по сегодняшним ценам. Для каждого очка навыка AME выбирает рецепт с наименьшей ожидаемой стоимостью за очко: сколько созданий нужно на очко (всегда одно, пока рецепт оранжевый, больше, когда он становится жёлтым и зелёным), умноженное на стоимость создания, минус то, что возвращает результат."
+L["The guild info line looks like this: AME block: Name, Name (any line, several allowed)."] =
+  "Строка в информации о гильдии выглядит так: AME block: Name, Name (любая строка, можно несколько)."
 L["The item menu"] = "Меню предмета"
-L["The most you'd pay for one, in gold (empty: no limit):"] = "Максимальная цена за штуку в золоте (пусто - без ограничения):"
-L["The sidebar opens with the call and why, in plain words: the price against its average, what supply is doing, how fast it sells and how much data it rests on."] = "Боковая панель начинается с вывода и его причин простыми словами: цена относительно среднего, что происходит с предложением, как быстро продаётся и на скольких данных это основано."
-L["The sidebar's Post at card gives the same choices as the sell bar - Normal, Quick and Patient - with how long each takes to sell and what you net after the cut."] = "Карточка «Выставить по» на боковой панели даёт те же варианты, что и полоса продажи, - «Обычно», «Быстро» и «Терпеливо» - с тем, сколько займёт продажа и сколько вы получите чистыми после комиссии."
+L["The most you'd pay for one, in gold (empty: no limit):"] =
+  "Максимальная цена за штуку в золоте (пусто - без ограничения):"
+L["The sidebar opens with the call and why, in plain words: the price against its average, what supply is doing, how fast it sells and how much data it rests on."] =
+  "Боковая панель начинается с вывода и его причин простыми словами: цена относительно среднего, что происходит с предложением, как быстро продаётся и на скольких данных это основано."
+L["The sidebar's Post at card gives the same choices as the sell bar - Normal, Quick and Patient - with how long each takes to sell and what you net after the cut."] =
+  "Карточка «Выставить по» на боковой панели даёт те же варианты, что и полоса продажи, - «Обычно», «Быстро» и «Терпеливо» - с тем, сколько займёт продажа и сколько вы получите чистыми после комиссии."
 L["The status row"] = "Строка состояния"
-L["The status row at the bottom says where the numbers come from, how old they are, and when a scan is being read or market data is being updated."] = "Строка состояния внизу показывает, откуда взяты цифры, насколько они стары и когда читается скан или обновляются рыночные данные."
+L["The status row at the bottom says where the numbers come from, how old they are, and when a scan is being read or market data is being updated."] =
+  "Строка состояния внизу показывает, откуда взяты цифры, насколько они стары и когда читается скан или обновляются рыночные данные."
 L["The verdict"] = "Вывод"
-L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping."] = "Движение цены за неделю в сравнении с предложением: дефицит, устойчивый спрос, наплыв продавцов, сжатие предложения, равновесие, нарастающее давление, уход продавцов, слабый спрос или сброс."
-L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It shows beside the signal."] = "Движение цены за неделю в сравнении с предложением: дефицит, устойчивый спрос, наплыв продавцов, сжатие предложения, равновесие, нарастающее давление, уход продавцов, слабый спрос или сброс. Показывается рядом с сигналом."
+L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping."] =
+  "Движение цены за неделю в сравнении с предложением: дефицит, устойчивый спрос, наплыв продавцов, сжатие предложения, равновесие, нарастающее давление, уход продавцов, слабый спрос или сброс."
+L["The week's price move read against supply: shortage, steady demand, sellers piling in, tightening, balanced, pressure building, sellers withdrawing, weak demand or dumping. It shows beside the signal."] =
+  "Движение цены за неделю в сравнении с предложением: дефицит, устойчивый спрос, наплыв продавцов, сжатие предложения, равновесие, нарастающее давление, уход продавцов, слабый спрос или сброс. Показывается рядом с сигналом."
 L["The window"] = "Окно"
 L["This character"] = "Этот персонаж"
 L["This list is empty."] = "Этот список пуст."
@@ -651,7 +827,8 @@ L["Time left"] = "Осталось времени"
 L["Tip"] = "Совет"
 L["To buy"] = "Купить"
 L["Today"] = "Сегодня"
-L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."] = "Сегодняшняя рыночная цена в сравнении со средней за выбранный период (Настройки > Период усреднения). -20% - на 20% дешевле обычного."
+L["Today's market price against the average over the chosen period (Settings > Average period). -20% means 20% cheaper than usual."] =
+  "Сегодняшняя рыночная цена в сравнении со средней за выбранный период (Настройки > Период усреднения). -20% - на 20% дешевле обычного."
 L["Tooltips"] = "Подсказки"
 L["Tooltips & charts"] = "Подсказки и графики"
 L["Top buy signals"] = "Лучшие сигналы покупки"
@@ -662,7 +839,8 @@ L["Total"] = "Итого"
 L["Trading"] = "Торговля"
 L["Train %s at your trainer"] = "Изучить %s у учителя"
 L["Train %s · trainer, about %d"] = "Изучить %s · учитель, около %d"
-L["Trained at a trainer; the game data has no training level for it, so the level here is estimated."] = "Изучается у учителя; в игровых данных нет уровня обучения, поэтому уровень здесь примерный."
+L["Trained at a trainer; the game data has no training level for it, so the level here is estimated."] =
+  "Изучается у учителя; в игровых данных нет уровня обучения, поэтому уровень здесь примерный."
 L["Trusted players"] = "Доверенные игроки"
 L["Turnover"] = "Оборот"
 L["Turnover (estimate)"] = "Оборот (оценка)"
@@ -675,13 +853,16 @@ L["Unhide all"] = "Вернуть все"
 L["Units"] = "Штук"
 L["Unrealized"] = "Нереализов."
 L["Unrealized profit"] = "Нереализованная прибыль"
-L["Unusually cheap for this item, given how much its price usually moves"] = "Необычно дёшево для этого предмета с учётом его обычных колебаний цены"
-L["Unusually expensive for this item, given how much its price usually moves"] = "Необычно дорого для этого предмета с учётом его обычных колебаний цены"
+L["Unusually cheap for this item, given how much its price usually moves"] =
+  "Необычно дёшево для этого предмета с учётом его обычных колебаний цены"
+L["Unusually expensive for this item, given how much its price usually moves"] =
+  "Необычно дорого для этого предмета с учётом его обычных колебаний цены"
 L["Up"] = "Рост"
 L["Updating market data…"] = "Обновление рыночных данных…"
 L["Usually"] = "Обычно"
 L["VENDOR"] = "ТОРГОВЕЦ"
-L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."] = "ТОРГОВЕЦ: после комиссии аукциона и залога аукцион даст меньше, чем торговец, - продайте торговцу."
+L["VENDOR: after the AH cut and the listing deposit, the auction house pays less than a vendor would - sell it to a vendor."] =
+  "ТОРГОВЕЦ: после комиссии аукциона и залога аукцион даст меньше, чем торговец, - продайте торговцу."
 L["Value"] = "Стоимость"
 L["Vendor %d"] = "Продать %d торговцу"
 L["Vendor it instead."] = "Лучше продать торговцу."
@@ -690,10 +871,13 @@ L["Vendor it: a vendor pays more"] = "Продайте торговцу: он п
 L["Verdict"] = "Вывод"
 L["Views"] = "Виды"
 L["Views and columns"] = "Виды и столбцы"
-L["Views saves the filters you use often and brings them back in one click. Columns picks which columns show; the button says how many are hidden."] = "«Виды» сохраняют часто используемые фильтры и возвращают их одним кликом. «Столбцы» выбирают, какие столбцы показывать; на кнопке видно, сколько скрыто."
+L["Views saves the filters you use often and brings them back in one click. Columns picks which columns show; the button says how many are hidden."] =
+  "«Виды» сохраняют часто используемые фильтры и возвращают их одним кликом. «Столбцы» выбирают, какие столбцы показывать; на кнопке видно, сколько скрыто."
 L["Views..."] = "Виды..."
-L["Visit the %s to search and buy it there."] = "Посетите %s, чтобы найти и купить его там."
-L["Volatile: its price swings a lot from day to day"] = "Волатильно: цена сильно скачет изо дня в день"
+L["Visit the %s to search and buy it there."] =
+  "Посетите %s, чтобы найти и купить его там."
+L["Volatile: its price swings a lot from day to day"] =
+  "Волатильно: цена сильно скачет изо дня в день"
 L["Volatility"] = "Волатильность"
 L["WAIT"] = "ЖДАТЬ"
 L["Wait for it to settle."] = "Подождите, пока цена устоится."
@@ -703,18 +887,25 @@ L["Watchlists"] = "Списки наблюдения"
 L["Watchlists and alerts"] = "Списки наблюдения и оповещения"
 L["Watchlists..."] = "Списки наблюдения..."
 L["Weak demand"] = "Слабый спрос"
-L["What all your characters hold, valued at your faction's market, with cost and unrealized profit for what you bought on the AH, the Buy/Hold/Sell signal and how long it would take to sell. The ledger lists your AH sales and purchases - recorded from auction mail when you open your mailbox."] = "Всё, что есть у ваших персонажей, по ценам рынка вашей фракции, с ценой покупки и нереализованной прибылью для купленного на аукционе, сигналом Купить/Держать/Продать и временем на продажу. В журнале - ваши продажи и покупки на аукционе, записанные по почте аукциона, когда вы открываете почтовый ящик."
-L["What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and lose it if it doesn't - so a high deposit on a slow seller is real risk."] = "Сколько стоит выставить одну штуку на аукционе продажи сразу: доля цены продажи торговцу (аукцион фракции 5/20/60% за 2/8/24 часа, аукцион гоблинов - в пять раз больше), минимум 1 серебряная. Залог возвращается при продаже и теряется, если предмет не продан, - так что высокий залог на медленно продающемся предмете - реальный риск."
-L["What the item typically sells for right now. From full listing data it's the average of the cheapest 15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the lowest price."] = "За сколько предмет обычно продаётся прямо сейчас. По полным данным лотов это среднее самых дешёвых 15-30% предложения на аукционе, что отсекает несколько дешёвых или абсурдных лотов. По сводке просмотра (что многие сканеры делают по умолчанию) известен только самый дешёвый лот, поэтому тогда это минимальная цена."
-L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."] = "Сколько вы заплатили за штуку для купленных на аукционе штук (первыми продаются самые старые покупки). У добытых или созданных предметов нет цены покупки."
+L["What all your characters hold, valued at your faction's market, with cost and unrealized profit for what you bought on the AH, the Buy/Hold/Sell signal and how long it would take to sell. The ledger lists your AH sales and purchases - recorded from auction mail when you open your mailbox."] =
+  "Всё, что есть у ваших персонажей, по ценам рынка вашей фракции, с ценой покупки и нереализованной прибылью для купленного на аукционе, сигналом Купить/Держать/Продать и временем на продажу. В журнале - ваши продажи и покупки на аукционе, записанные по почте аукциона, когда вы открываете почтовый ящик."
+L["What listing one at the sell house costs up front: a share of the item's vendor price (faction AH 5/20/60% for 2/8/24 hours, goblin AH five times that), at least 1 silver. You get it back when it sells and lose it if it doesn't - so a high deposit on a slow seller is real risk."] =
+  "Сколько стоит выставить одну штуку на аукционе продажи сразу: доля цены продажи торговцу (аукцион фракции 5/20/60% за 2/8/24 часа, аукцион гоблинов - в пять раз больше), минимум 1 серебряная. Залог возвращается при продаже и теряется, если предмет не продан, - так что высокий залог на медленно продающемся предмете - реальный риск."
+L["What the item typically sells for right now. From full listing data it's the average of the cheapest 15-30% of the supply on the auction house, which ignores a few cheap or absurd listings. From a browse summary (what many scanners do by default) only the cheapest listing is known, so then it's the lowest price."] =
+  "За сколько предмет обычно продаётся прямо сейчас. По полным данным лотов это среднее самых дешёвых 15-30% предложения на аукционе, что отсекает несколько дешёвых или абсурдных лотов. По сводке просмотра (что многие сканеры делают по умолчанию) известен только самый дешёвый лот, поэтому тогда это минимальная цена."
+L["What you paid per unit for the units you bought on the auction house (oldest purchases are sold first). Items you looted or crafted have no cost."] =
+  "Сколько вы заплатили за штуку для купленных на аукционе штук (первыми продаются самые старые покупки). У добытых или созданных предметов нет цены покупки."
 L["What's left to buy"] = "Что осталось купить"
 L["When"] = "Когда"
 L["Where the data comes from"] = "Откуда берутся данные"
 L["Whose, and since when"] = "Чьи и с какого времени"
 L["Window"] = "Окно"
-L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] = "Когда обзор рынка включён («Настройки», «Общие»), первые кнопки панели инструментов переключают вкладку «Рынок» между «Скринером» (этим списком) и «Обзором» - индексами и итогами по всему аукциону (см. «Обзор рынка»)."
-L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."] = "При открытом аукционе Shift-клик по строке ищет её там. Пока поле поиска активно, Shift-клик по ссылке на предмет где угодно ищет его по названию."
-L["With your profession window open, adds the reagents of the selected recipe - as many times as you'll craft it."] = "При открытом окне профессии добавляет реагенты выбранного рецепта - столько раз, сколько вы будете создавать."
+L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
+  "Когда обзор рынка включён («Настройки», «Общие»), первые кнопки панели инструментов переключают вкладку «Рынок» между «Скринером» (этим списком) и «Обзором» - индексами и итогами по всему аукциону (см. «Обзор рынка»)."
+L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."] =
+  "При открытом аукционе Shift-клик по строке ищет её там. Пока поле поиска активно, Shift-клик по ссылке на предмет где угодно ищет его по названию."
+L["With your profession window open, adds the reagents of the selected recipe - as many times as you'll craft it."] =
+  "При открытом окне профессии добавляет реагенты выбранного рецепта - столько раз, сколько вы будете создавать."
 L["Within its usual range"] = "В обычном диапазоне"
 L["You bought"] = "Ваши покупки"
 L["You haven't blocked anyone."] = "Вы никого не заблокировали."
@@ -723,14 +914,17 @@ L["You sold"] = "Ваши продажи"
 L["You spent"] = "Ваши траты"
 L["You'd receive (after the cut)"] = "Вы получите (после комиссии)"
 L["You're not in a guild."] = "Вы не состоите в гильдии."
-L["Your active auctions on all characters, as of the last time each opened the auction house."] = "Ваши активные аукционы на всех персонажах (на момент, когда каждый из них последний раз открывал аукцион)."
-L["Your auction mail doesn't name the other player on this client (the auction house keeps them anonymous), so there's no one to list."] = "Письма аукциона в этом клиенте не называют другого игрока (аукцион сохраняет анонимность), так что показать некого."
+L["Your active auctions on all characters, as of the last time each opened the auction house."] =
+  "Ваши активные аукционы на всех персонажах (на момент, когда каждый из них последний раз открывал аукцион)."
+L["Your auction mail doesn't name the other player on this client (the auction house keeps them anonymous), so there's no one to list."] =
+  "Письма аукциона в этом клиенте не называют другого игрока (аукцион сохраняет анонимность), так что показать некого."
 L["Your price: %s"] = "Ваша цена: %s"
 L["a list needs a name"] = "у списка должно быть название"
 L["a list with that name already exists"] = "список с таким названием уже есть"
 L["a week+"] = "неделя+"
 L["an enchant"] = "чары"
-L["announced %d, served %d, received %d, rejected %d"] = "объявлено %d, отдано %d, получено %d, отклонено %d"
+L["announced %d, served %d, received %d, rejected %d"] =
+  "объявлено %d, отдано %d, получено %d, отклонено %d"
 L["auctionator history import"] = "импорт истории из Auctionator"
 L["awaiting mail"] = "ждёт письма"
 L["backfill"] = "дозаполнение истории"
@@ -739,53 +933,65 @@ L["blocked"] = "заблокирован"
 L["blocked %s"] = "%s заблокирован"
 L["bought"] = "куплено"
 L["buy"] = "купить"
-L["buy at the %s (%d%% cut), sell at the %s (%d%% cut)"] = "покупка: %s (комиссия %d%%), продажа: %s (комиссия %d%%)"
+L["buy at the %s (%d%% cut), sell at the %s (%d%% cut)"] =
+  "покупка: %s (комиссия %d%%), продажа: %s (комиссия %d%%)"
 L["by listed value"] = "по стоимости лотов"
 L["can learn it (%d)"] = "может изучить (%d)"
 L["chart library + window"] = "библиотека графиков + окно"
 L["codec+compress 6.4k items"] = "кодек+сжатие 6.4k предметов"
 L["could not load %s: %s"] = "не удалось загрузить %s: %s"
 L["could not load history addon"] = "не удалось загрузить аддон истории"
-L["couldn't start an auction house search for %s"] = "не удалось начать поиск на аукционе для %s"
+L["couldn't start an auction house search for %s"] =
+  "не удалось начать поиск на аукционе для %s"
 L["craft it"] = "создать"
-L["deposits for %d h listings counted in net"] = "залог за лоты на %d ч учтён в чистой сумме"
+L["deposits for %d h listings counted in net"] =
+  "залог за лоты на %d ч учтён в чистой сумме"
 L["disenchant %d"] = "распылить %d"
 L["done"] = "готово"
 L["done %s"] = "готово %s"
 L["dropped to %s (alert at %s)"] = "упала до %s (оповещение при %s)"
-L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] = "кодирование %.0f мс, сжатие %.0f мс, распаковка+декодирование %.0f мс, %d КБ -> %d КБ"
+L["encode %.0f ms, compress %.0f ms, unpack+decode %.0f ms, %d KB -> %d KB"] =
+  "кодирование %.0f мс, сжатие %.0f мс, распаковка+декодирование %.0f мс, %d КБ -> %d КБ"
 L["ended?"] = "завершён?"
 L["enter a character name"] = "введите имя персонажа"
 L["few or old scans: treat with care"] = "мало или старые сканы: осторожно"
 L["from %s"] = "от %s"
 L["guild"] = "гильдию"
 L["guild sync"] = "синхронизация гильдии"
-L["guild sync: %s, announced %d, served %d, received %d, rejected %d"] = "синхронизация гильдии: %s, объявлено %d, отдано %d, получено %d, отклонено %d"
+L["guild sync: %s, announced %d, served %d, received %d, rejected %d"] =
+  "синхронизация гильдии: %s, объявлено %d, отдано %d, получено %d, отклонено %d"
 L["heard %s"] = "на связи %s"
 L["high"] = "высокая"
 L["history addon"] = "аддон истории"
 L["history import from Auctionator failed: %s"] = "импорт истории из Auctionator не удался: %s"
-L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] = "импорт истории из Auctionator выполняется только на аукционе вашей фракции (его данные смешивают все аукционы)."
+L["history import from Auctionator is only done at your faction's auction house (its data mixes all houses)."] =
+  "импорт истории из Auctionator выполняется только на аукционе вашей фракции (его данные смешивают все аукционы)."
 L["history lookup (cold)"] = "запрос истории (холодный)"
-L["history: %d raw scans, %d days, %.0f KB"] = "история: %d сырых сканирований, %d дн., %.0f КБ"
+L["history: %d raw scans, %d days, %.0f KB"] =
+  "история: %d сырых сканирований, %d дн., %.0f КБ"
 L["idle"] = "нет"
-L["imported %d days of price history from Auctionator into %s"] = "импортировано %d дн. истории цен из Auctionator в %s"
+L["imported %d days of price history from Auctionator into %s"] =
+  "импортировано %d дн. истории цен из Auctionator в %s"
 L["index: %d steady items"] = "индекс: стабильных предметов %d"
 L["item %d: %d points in %.1f ms"] = "предмет %d: %d точек за %.1f мс"
-L["item from latest scan has no daily points"] = "у предмета из последнего сканирования нет дневных точек"
-L["item not loaded yet - try again in a moment"] = "предмет ещё не загружен - попробуйте чуть позже"
+L["item from latest scan has no daily points"] =
+  "у предмета из последнего сканирования нет дневных точек"
+L["item not loaded yet - try again in a moment"] =
+  "предмет ещё не загружен - попробуйте чуть позже"
 L["just now"] = "только что"
 L["keep %d"] = "оставить %d"
 L["known"] = "известен"
 L["last error (%s, %s): %s"] = "последняя ошибка (%s, %s): %s"
 L["last full scan"] = "последнее полное сканирование"
 L["last full scan %s"] = "последний полный скан %s"
-L["last full scan: %d items, %s ago"] = "последнее полное сканирование: %d предметов, %s назад"
+L["last full scan: %d items, %s ago"] =
+  "последнее полное сканирование: %d предметов, %s назад"
 L["last seen %s (%s)"] = "последний раз %s (%s)"
 L["libraries"] = "библиотеки"
 L["listed"] = "в продаже"
 L["loaded"] = "загружено"
-L["loaded in %s ms, %d shard(s), %.0f KB of daily history"] = "загружено за %s мс, фрагментов: %d, %.0f КБ дневной истории"
+L["loaded in %s ms, %d shard(s), %.0f KB of daily history"] =
+  "загружено за %s мс, фрагментов: %d, %.0f КБ дневной истории"
 L["loading history..."] = "загрузка истории..."
 L["loading item names %d/%d"] = "загрузка названий предметов %d/%d"
 L["low"] = "низкая"
@@ -796,44 +1002,56 @@ L["medium"] = "средняя"
 L["min g"] = "мин. g"
 L["min margin %"] = "мин. маржа %"
 L["min profit g"] = "мин. прибыль g"
-L["more is listed than sells in one listing time: only the lowest price sells soon"] = "выставлено больше, чем продаётся за время лота: скоро продастся только самая низкая цена"
+L["more is listed than sells in one listing time: only the lowest price sells soon"] =
+  "выставлено больше, чем продаётся за время лота: скоро продастся только самая низкая цена"
 L["needs %d"] = "нужно %d"
 L["needs %d, has %d"] = "нужно %d, есть %d"
 L["never"] = "никогда"
-L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"] = "полное сканирование ещё не записано: откройте аукцион и выполните полное сканирование (вашего аддона-сканера или игры)"
+L["no full scan recorded yet: open the AH and run a full scan (your scanning addon's or the game's)"] =
+  "полное сканирование ещё не записано: откройте аукцион и выполните полное сканирование (вашего аддона-сканера или игры)"
 L["no history for %s in %s"] = "нет истории для %s в %s"
 L["no scans in this shard yet"] = "в этом фрагменте ещё нет сканирований"
 L["none"] = "нет"
-L["none yet: open the AH and run a full scan, then rerun /ame selftest"] = "пока нет: откройте аукцион и выполните полное сканирование, затем снова запустите /ame selftest"
+L["none yet: open the AH and run a full scan, then rerun /ame selftest"] =
+  "пока нет: откройте аукцион и выполните полное сканирование, затем снова запустите /ame selftest"
 L["not built yet (needs history)"] = "ещё не построен (нужна история)"
 L["not enough data yet"] = "пока мало данных"
 L["not heard yet"] = "ещё не на связи"
 L["not in a guild"] = "вы не в гильдии"
 L["not loaded"] = "не загружено"
-L["nothing imported here (only with Auctionator data, at your faction's auction house)"] = "здесь ничего не импортировано (только с данными Auctionator, на аукционе вашей фракции)"
+L["nothing imported here (only with Auctionator data, at your faction's auction house)"] =
+  "здесь ничего не импортировано (только с данными Auctionator, на аукционе вашей фракции)"
 L["off"] = "выкл."
 L["on"] = "вкл."
 L["open the auction house first"] = "сначала откройте аукцион"
-L["open your profession window and select a recipe first"] = "сначала откройте окно профессии и выберите рецепт"
+L["open your profession window and select a recipe first"] =
+  "сначала откройте окно профессии и выберите рецепт"
 L["per unit"] = "за шт."
 L["plenty of recent scans"] = "много свежих сканов"
 L["prices: your faction's auction house"] = "цены: аукцион вашей фракции"
-L["reading full scan (%d listings) in the background..."] = "чтение полного сканирования (%d лотов) в фоне..."
-L["received a full scan from %s via sync (%d items, %s)"] = "получено полное сканирование от %s через синхронизацию (%d предметов, %s)"
+L["reading full scan (%d listings) in the background..."] =
+  "чтение полного сканирования (%d лотов) в фоне..."
+L["received a full scan from %s via sync (%d items, %s)"] =
+  "получено полное сканирование от %s через синхронизацию (%d предметов, %s)"
 L["recipe on the AH"] = "рецепт на аукционе"
-L["recorded full scan: %d items from %d listings (%s)"] = "полное сканирование записано: %d предметов из %d лотов (%s)"
+L["recorded full scan: %d items from %d listings (%s)"] =
+  "полное сканирование записано: %d предметов из %d лотов (%s)"
 L["rising"] = "растут"
 L["rose to %s (alert at %s)"] = "выросла до %s (оповещение при %s)"
 L["round trip mismatch"] = "несовпадение при обратном преобразовании"
-L["scan pipeline: %d requests, %d events (%d since last request), read %s, aborted %d; ingest requested=%s reading=%s"] = "конвейер сканирования: %d запросов, %d событий (%d после последнего запроса), чтение %s, прервано %d; приём requested=%s reading=%s"
+L["scan pipeline: %d requests, %d events (%d since last request), read %s, aborted %d; ingest requested=%s reading=%s"] =
+  "конвейер сканирования: %d запросов, %d событий (%d после последнего запроса), чтение %s, прервано %d; приём requested=%s reading=%s"
 L["scan read failed:"] = "ошибка чтения сканирования:"
 L["search"] = "поиск"
 L["searched %s"] = "поиск %s"
 L["searches"] = "поиски"
 L["seen %s"] = "замечено %s"
-L["selftest finished:\n%s\n\nReload the UI now to save the results?"] = "самопроверка завершена:\n%s\n\nПерезагрузить интерфейс сейчас, чтобы сохранить результаты?"
-L["selftest starting (this may pause the game for a moment)"] = "запуск самопроверки (игра может ненадолго замереть)"
-L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] = "самопроверка: пройдено %d, предупреждений %d, ошибок %d. Перезагрузитесь, чтобы сохранить результаты (/reload)."
+L["selftest finished:\n%s\n\nReload the UI now to save the results?"] =
+  "самопроверка завершена:\n%s\n\nПерезагрузить интерфейс сейчас, чтобы сохранить результаты?"
+L["selftest starting (this may pause the game for a moment)"] =
+  "запуск самопроверки (игра может ненадолго замереть)"
+L["selftest: %d passed, %d warnings, %d failed. Reload to save the results (/reload)."] =
+  "самопроверка: пройдено %d, предупреждений %d, ошибок %d. Перезагрузитесь, чтобы сохранить результаты (/reload)."
 L["sell %d"] = "продать %d"
 L["sells in %s"] = "продаётся за %s"
 L["shard"] = "фрагмент"
@@ -844,7 +1062,8 @@ L["steadily listed items"] = "регулярно выставляемые пре
 L["still building in the background"] = "ещё строится в фоне"
 L["storing %s scan failed:"] = "не удалось сохранить сканирование (%s):"
 L["sync errors: %d (last: %s)"] = "ошибки синхронизации: %d (последняя: %s)"
-L["the AH closed before AME finished reading the full scan; it wasn't recorded."] = "аукцион закрылся до того, как AME дочитал полное сканирование; оно не записано."
+L["the AH closed before AME finished reading the full scan; it wasn't recorded."] =
+  "аукцион закрылся до того, как AME дочитал полное сканирование; оно не записано."
 L["to %d"] = "до %d"
 L["today"] = "сегодня"
 L["totals from the full scan of %s"] = "итоги полного сканирования от %s"
@@ -853,9 +1072,11 @@ L["trusted"] = "доверенный"
 L["turned off in settings"] = "отключено в настройках"
 L["under a day"] = "меньше дня"
 L["unknown command, try /ame help"] = "неизвестная команда, попробуйте /ame help"
-L["unlikely to sell soon: consider holding"] = "вряд ли продастся скоро: лучше придержать"
+L["unlikely to sell soon: consider holding"] =
+  "вряд ли продастся скоро: лучше придержать"
 L["up to %s"] = "до %s"
-L["usage: /ame item <item link or itemID>"] = "использование: /ame item <ссылка на предмет или itemID>"
+L["usage: /ame item <item link or itemID>"] =
+  "использование: /ame item <ссылка на предмет или itemID>"
 L["vendor"] = "торговец"
 L["vendor %d"] = "торговцу %d"
 L["vendor pays %s"] = "торговец платит %s"
@@ -874,7 +1095,8 @@ L["yesterday"] = "вчера"
 L["you"] = "вы"
 L["you hold it"] = "есть у вас"
 L["you net %s after the %d%% cut"] = "вам %s чистыми после комиссии %d%%"
-L["you're at the buy AH: Search (or Shift-click a row) to buy"] = "вы на аукционе покупки: «Поиск» (или Shift-клик по строке), чтобы купить"
+L["you're at the buy AH: Search (or Shift-click a row) to buy"] =
+  "вы на аукционе покупки: «Поиск» (или Shift-клик по строке), чтобы купить"
 L["your scan"] = "ваш скан"
 L["~%d days"] = "~%d дн."
 L["~%dh"] = "~%d ч"

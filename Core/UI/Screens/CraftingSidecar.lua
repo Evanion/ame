@@ -301,14 +301,24 @@ local MAT_COLS = {
 function Side.Tree()
   local f = Screen.Facts()
   local kids = {
-    { id = "side.title", type = "frametitle", props = { title = L["Crafting"], note = L["beside the game's profession window"] }, meta = { h = 22 } },
+    {
+      id = "side.title",
+      type = "frametitle",
+      props = { title = L["Crafting"], note = L["beside the game's profession window"] },
+      meta = { h = 22 },
+    },
     {
       id = "side.pickedHead",
       type = "row",
       props = { gap = 6, align = "center" },
       meta = { h = 24 },
       children = {
-        { id = "side.pickedTitle", type = "text", props = { text = L["Picked in the window"], font = "display", size = 14 }, meta = { grow = 1 } },
+        {
+          id = "side.pickedTitle",
+          type = "text",
+          props = { text = L["Picked in the window"], font = "display", size = 14 },
+          meta = { grow = 1 },
+        },
         { id = "side.open", type = "button", props = { label = L["Open in AME"], action = "openInAME" } },
       },
     },
@@ -326,7 +336,11 @@ function Side.Tree()
       meta = { h = 18 },
       children = {
         { id = "side.link", type = "itemlink", props = { item = recipe.product, size = 13 }, meta = { grow = 1 } },
-        { id = "side.rate", type = "text", props = { text = L["%s sold/day"]:format(PB.RateText and PB.RateText(s.sellRate) or "?"), color = "dim" } },
+        {
+          id = "side.rate",
+          type = "text",
+          props = { text = L["%s sold/day"]:format(PB.RateText and PB.RateText(s.sellRate) or "?"), color = "dim" },
+        },
         { id = "side.signal", type = "signal", props = { signal = s.signal ~= "none" and s.signal or nil } },
       },
     }
@@ -334,7 +348,11 @@ function Side.Tree()
       id = "side.money",
       type = "text",
       props = {
-        text = moneyText(L["Cost to craft"], s.cost) .. "   " .. moneyText(L["Sells for"], s.sells) .. "   " .. moneyText(L["Profit"], s.profit, true),
+        text = moneyText(L["Cost to craft"], s.cost)
+          .. "   "
+          .. moneyText(L["Sells for"], s.sells)
+          .. "   "
+          .. moneyText(L["Profit"], s.profit, true),
         size = 12,
       },
       meta = { h = 18 },
@@ -346,12 +364,20 @@ function Side.Tree()
       more[#more + 1] = { key = "sideSearch", label = L["Search the AH"] }
     end
     more[#more + 1] = { key = "sideItem", label = L["Open item"] }
-    kids[#kids + 1] = { id = "side.make", type = "makebar", props = { count = count, recipe = recipe.id, buttons = primary, action = "sideMake" }, meta = { h = 24 } }
+    kids[#kids + 1] = {
+      id = "side.make",
+      type = "makebar",
+      props = { count = count, recipe = recipe.id, buttons = primary, action = "sideMake" },
+      meta = { h = 24 },
+    }
     kids[#kids + 1] = {
       id = "side.batch",
       type = "text",
       props = {
-        text = Kit.Color("dim", ("×%d: "):format(count)) .. moneyText(L["profit"], s.profit and s.profit * count, true) .. Kit.Color("dim", " · ") .. moneyText(L["to buy"], s.toBuy),
+        text = Kit.Color("dim", ("×%d: "):format(count))
+          .. moneyText(L["profit"], s.profit and s.profit * count, true)
+          .. Kit.Color("dim", " · ")
+          .. moneyText(L["to buy"], s.toBuy),
       },
       meta = { h = 18 },
     }
@@ -364,7 +390,12 @@ function Side.Tree()
     kids[#kids + 1] = {
       id = "side.note",
       type = "text",
-      props = { text = L["Profit after the AH cut, reagents at market. Search the AH shows only at the auction house."], color = "dim", size = 11, wrap = true },
+      props = {
+        text = L["Profit after the AH cut, reagents at market. Search the AH shows only at the auction house."],
+        color = "dim",
+        size = 11,
+        wrap = true,
+      },
       meta = { h = 28 },
     }
   else
@@ -384,8 +415,19 @@ function Side.Tree()
     props = { gap = 6, align = "center" },
     meta = { h = 22 },
     children = {
-      { id = "side.queueTitle", type = "text", props = { text = L["Craft queue"], font = "display", size = 15 }, meta = { grow = 1 } },
-      { id = "side.queueTotals", type = "text", props = { text = moneyText(L["profit"], q.profit, true) .. Kit.Color("dim", " · ") .. moneyText(L["to buy"], q.toBuy) } },
+      {
+        id = "side.queueTitle",
+        type = "text",
+        props = { text = L["Craft queue"], font = "display", size = 15 },
+        meta = { grow = 1 },
+      },
+      {
+        id = "side.queueTotals",
+        type = "text",
+        props = {
+          text = moneyText(L["profit"], q.profit, true) .. Kit.Color("dim", " · ") .. moneyText(L["to buy"], q.toBuy),
+        },
+      },
     },
   }
   if #q.steps == 0 then
@@ -399,10 +441,27 @@ function Side.Tree()
     Side:Source("side.steps", Screen.StepRows(q))
     Side:Source("side.mats", q.mats)
     local nextStep = PB and PB.NextStep and select(2, pcall(PB.NextStep, PB))
-    local nextName = type(nextStep) == "table" and (nextStep.item and f.itemName(nextStep.item) or f.recipeName(nextStep.recipe)) or nil
-    kids[#kids + 1] = { id = "side.order", type = "text", props = { text = L["In order"], font = "display", size = 14 }, meta = { h = 18 } }
-    kids[#kids + 1] = { id = "side.steps", type = "crafttable", props = { source = "side.steps", columns = STEP_COLS, bare = true, flex = "item" }, meta = { h = 6 + 20 * #q.steps } }
-    kids[#kids + 1] = { id = "side.matsTitle", type = "text", props = { text = L["Materials"], font = "display", size = 14 }, meta = { h = 18 } }
+    local nextName = type(nextStep) == "table"
+        and (nextStep.item and f.itemName(nextStep.item) or f.recipeName(nextStep.recipe))
+      or nil
+    kids[#kids + 1] = {
+      id = "side.order",
+      type = "text",
+      props = { text = L["In order"], font = "display", size = 14 },
+      meta = { h = 18 },
+    }
+    kids[#kids + 1] = {
+      id = "side.steps",
+      type = "crafttable",
+      props = { source = "side.steps", columns = STEP_COLS, bare = true, flex = "item" },
+      meta = { h = 6 + 20 * #q.steps },
+    }
+    kids[#kids + 1] = {
+      id = "side.matsTitle",
+      type = "text",
+      props = { text = L["Materials"], font = "display", size = 14 },
+      meta = { h = 18 },
+    }
     kids[#kids + 1] = {
       id = "side.mats",
       type = "crafttable",

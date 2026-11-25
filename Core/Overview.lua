@@ -73,7 +73,8 @@ function Overview.Kpis(o, factor, compact)
   local out = {}
   local function add(label, value, change, note, term)
     local d, tone = Overview.Delta(change)
-    out[#out + 1] = { label = label, value = value, delta = d, deltaTone = tone, note = not compact and note or nil, term = term }
+    out[#out + 1] =
+      { label = label, value = value, delta = d, deltaTone = tone, note = not compact and note or nil, term = term }
   end
   add(
     compact and L["Price index"] or L["AME price index"],
@@ -130,7 +131,8 @@ function Overview.Movers(list, period)
   local key = Overview.CHANGE_KEY[period] or "change7"
   local rows = {}
   for i, s in ipairs(list or {}) do
-    rows[i] = { key = "item:" .. tostring(s.itemID), item = s.itemID, name = s.itemID, market = s.market, change = s[key] }
+    rows[i] =
+      { key = "item:" .. tostring(s.itemID), item = s.itemID, name = s.itemID, market = s.market, change = s[key] }
   end
   return rows
 end
@@ -165,7 +167,8 @@ function Overview.Largest(top)
       count = { text = thousands(t.qty) .. " ×", color = "dim" },
       name = t.id,
       price = t.price,
-      value = t.rawValue and { text = L["capped from %s"]:format(W().Plain(big(t.rawValue, 10000))), color = "dim" } or big(t.value, 10000),
+      value = t.rawValue and { text = L["capped from %s"]:format(W().Plain(big(t.rawValue, 10000))), color = "dim" }
+        or big(t.value, 10000),
     }
   end
   return rows
@@ -198,7 +201,9 @@ function Overview.Message(why, house)
   if why == "empty" then
     return L["No price history for the %s yet: scan there (any character on this account counts)."]:format(house)
   elseif why == "noscan" then
-    return L["No full scan of the %s in the last 30 days. Market totals need one: run a full scan there (any scanner)."]:format(house)
+    return L["No full scan of the %s in the last 30 days. Market totals need one: run a full scan there (any scanner)."]:format(
+      house
+    )
   elseif why == "off" then
     return L["The Overview needs market statistics, which are off: switch on the market overview in Settings."]
   elseif why == "building" then
@@ -212,7 +217,8 @@ function Overview.Status(o, compact, now)
   if not o then
     return ""
   end
-  local when = o.day and (W() and W().DaysAgo and W().DaysAgo(o.day, floor((now or 0) / DAY)) or date and date("%b %d", o.day * DAY))
+  local when = o.day
+    and (W() and W().DaysAgo and W().DaysAgo(o.day, floor((now or 0) / DAY)) or date and date("%b %d", o.day * DAY))
   if compact then
     return L["Totals from the full scan of %s"]:format(when or "")
   end
@@ -236,8 +242,16 @@ local function memoKey(index, period)
   local w = ns.AME and ns.AME.watch
   local hide = w and w:Hidden() or nil
   local count = w and w.HiddenCount and w:HiddenCount() or 0
-  return tostring(index) .. ":" .. tostring(period) .. ":" .. tostring(hide) .. ":" .. tostring(count) .. ":"
-    .. tostring(ns.Settings and ns.Settings:Get("outlierFactor")), hide
+  return tostring(index)
+    .. ":"
+    .. tostring(period)
+    .. ":"
+    .. tostring(hide)
+    .. ":"
+    .. tostring(count)
+    .. ":"
+    .. tostring(ns.Settings and ns.Settings:Get("outlierFactor")),
+    hide
 end
 
 function Overview.Summary(index, period, step)

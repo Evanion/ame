@@ -13,7 +13,8 @@
 --   CP.Strip(facts, atAH) -> props                the queue as one line
 --   CP.Learn(facts) -> rows                       recipes one of your characters could learn
 --   CP.ProfessionRows(chars, rows, now, unrecorded), CP.LevelingChoices(chars), CP.LevelingRows(plan)
--- A row's key says what it is: "r:<recipeID>", "sec:<skillLine>:<categoryID>", "step:<recipeID>", "learn:<item>:<spell>".
+-- A row's key says what it is: "r:<recipeID>", "sec:<skillLine>:<categoryID>", "step:<recipeID>",
+-- "learn:<item>:<spell>".
 local _, ns = ...
 local L = ns.L
 
@@ -351,10 +352,12 @@ function CP.Professions(chars)
   local best = {}
   for key, c in pairs(chars or {}) do
     for skillLine, p in pairs(c.professions or {}) do
-      if not CP.GATHERING[skillLine] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
+      -- a gathering profession with recipes (Forever) counts
+      if not CP.GATHERING[skillLine] or next(p.learned or {}) then
         local b = best[skillLine]
         if not b or (p.skill or 0) > (b.skill or 0) or ((p.skill or 0) == (b.skill or 0) and key < b.key) then
-          best[skillLine] = { key = key, skillLine = skillLine, name = p.name or tostring(skillLine), skill = p.skill, max = p.max }
+          best[skillLine] =
+            { key = key, skillLine = skillLine, name = p.name or tostring(skillLine), skill = p.skill, max = p.max }
         end
       end
     end
@@ -419,7 +422,8 @@ function CP.Needs(f, recipe, count)
     local have = f.held and f.held[g[1]] or 0
     local short = math.max(0, need - have)
     local price = short > 0 and f.craft and f.craft:Price(g[1])
-    out[#out + 1] = { key = "need:" .. g[1], item = g[1], need = need, have = have, toBuy = price and price * short or nil }
+    out[#out + 1] =
+      { key = "need:" .. g[1], item = g[1], need = need, have = have, toBuy = price and price * short or nil }
   end
   return out
 end
@@ -621,7 +625,8 @@ function CP.SourceTag(m, stepIndex)
     if src.kind ~= "carried" then
       onlyBags = false
     end
-    local s = { kind = src.kind, char = src.char, cost = src.cost, stepIndex = src.step and stepIndex and stepIndex[src.step] }
+    local s =
+      { kind = src.kind, char = src.char, cost = src.cost, stepIndex = src.step and stepIndex and stepIndex[src.step] }
     local where = (SOURCE[src.kind] and SOURCE[src.kind](s) or src.kind):gsub("%s+$", "")
     parts[#parts + 1] = src.kind == "carried" and where or (src.qty .. " · " .. where)
     if src.kind == "ah" then
@@ -639,7 +644,11 @@ function CP.TodoParts(t, me)
   local q = tostring(t.qty or 0) .. " "
   local on = t.char and t.char ~= me and t.kind == "craft" and (L["On %s: "]:format(charName(t.char))) or ""
   if t.kind == "buy" then
-    return { L["Buy "] .. q, item, { text = " " .. L["on the AH"] .. (t.cost and (" " .. money(t.cost)) or ""), tone = "dim" } }
+    return {
+      L["Buy "] .. q,
+      item,
+      { text = " " .. L["on the AH"] .. (t.cost and (" " .. money(t.cost)) or ""), tone = "dim" },
+    }
   elseif t.kind == "vendor" then
     return { L["Buy "] .. q, item, { text = " " .. L["from a vendor"], tone = "dim" } }
   elseif t.kind == "bank" then
@@ -687,19 +696,24 @@ function CP.Queue(f)
           end
         end
       end
-      whoText = { text = forStep and L["%s · a part for step %d"]:format(who, forStep) or L["%s · a part"]:format(who), color = "dim" }
+      whoText = {
+        text = forStep and L["%s · a part for step %d"]:format(who, forStep) or L["%s · a part"]:format(who),
+        color = "dim",
+      }
       -- made, since one of yours can; where buying is cheaper the step says so and Buy is lit: your call
       if s.choice ~= "buy" and s.saved and s.saved < 0 then
         profit = { text = L["buying saves %s"]:format(money(-s.saved)), color = "warn" }
         cheaper = true
       else
-        profit = s.saved and s.saved > 0 and { text = L["making saves %s"]:format(money(s.saved)), color = "good" } or { text = "", color = "dim" }
+        profit = s.saved and s.saved > 0 and { text = L["making saves %s"]:format(money(s.saved)), color = "good" }
+          or { text = "", color = "dim" }
       end
       button = L["Buy"]
     else
       whoText = who
       out.crafts = out.crafts + (s.count or 0)
-      profit = s.profit and { text = signed(s.profit), color = s.profit >= 0 and "good" or "bad" } or { text = "—", color = "dim" }
+      profit = s.profit and { text = signed(s.profit), color = s.profit >= 0 and "good" or "bad" }
+        or { text = "—", color = "dim" }
       button = "✕"
     end
     out.steps[#out.steps + 1] = {
@@ -746,7 +760,11 @@ function CP.Strip(f, atAH)
   local items = {}
   for _, q in ipairs(f.queue and f.queue.items or {}) do
     local r = f.recipe and f.recipe(q.recipe)
-    items[#items + 1] = { item = r and r.product or nil, count = q.count * (r and r.made or 1), label = f.recipeName and f.recipeName(q.recipe) }
+    items[#items + 1] = {
+      item = r and r.product or nil,
+      count = q.count * (r and r.made or 1),
+      label = f.recipeName and f.recipeName(q.recipe),
+    }
   end
   local toBuy = f.plan and f.plan.toBuy or 0
   -- nothing missing (every reagent held, or made by a step): nothing to buy and no button (board QueueStrip, ready)
@@ -785,7 +803,8 @@ function CP.Learn(f, opts)
       if r.via == "vendor" then
         where = { text = L["pattern %s, %s"]:format(money(r.price), r.where or L["a vendor"]), color = "vendor" }
       else
-        local pays = r.payback and (r.payback < 1 and L["pays back in a day"] or L["pays back in %d days"]:format(math.ceil(r.payback)))
+        local pays = r.payback
+          and (r.payback < 1 and L["pays back in a day"] or L["pays back in %d days"]:format(math.ceil(r.payback)))
         where = { text = L["%s on the AH"]:format(money(r.price)) .. (pays and (" · " .. pays) or ""), color = "link" }
       end
       local row = {
@@ -800,7 +819,11 @@ function CP.Learn(f, opts)
         faded = not r.ready or nil,
         r = r,
       }
-      if not opts.search or opts.search == "" or matches({ name = row.label, item = row.item }, opts.search, f.itemName) then
+      if
+        not opts.search
+        or opts.search == ""
+        or matches({ name = row.label, item = row.item }, opts.search, f.itemName)
+      then
         out[#out + 1] = row
       end
     end
@@ -825,7 +848,8 @@ function CP.LearnDetail(f, row)
   rows[#rows + 1] = { label = L["Profit per craft"], copper = r.eval and r.eval.profit, signed = true }
   rows[#rows + 1] = {
     label = L["Pays back, at best"],
-    text = r.payback and (r.payback < 1 and L["under a day"] or L["%d days"]:format(math.ceil(r.payback))) or L["not worked out"],
+    text = r.payback and (r.payback < 1 and L["under a day"] or L["%d days"]:format(math.ceil(r.payback)))
+      or L["not worked out"],
     total = true,
   }
   local guild = f.guildCrafters and f.guildCrafters(r.spell) or 0
@@ -836,7 +860,9 @@ function CP.LearnDetail(f, row)
   }
   local note
   if r.eval and r.eval.sellRate then
-    note = L["At best: if you sold all the market takes (about %s a day)."]:format(("%.0f"):format(math.max(1, r.eval.sellRate)))
+    note = L["At best: if you sold all the market takes (about %s a day)."]:format(
+      ("%.0f"):format(math.max(1, r.eval.sellRate))
+    )
   end
   if guild == 0 then
     note = (note and (note .. " ") or "") .. L["Nobody in your guild makes it: learning it fills a gap."]
@@ -895,7 +921,9 @@ function CP.ProfessionRows(chars, earners, now, unrecorded)
         max = p.max,
         skillText = ("%d / %d"):format(p.skill or 0, p.max or 0),
         known = not CP.GATHERING[skillLine] and known or nil,
-        cooldown = ready and { text = L["ready"], color = "good" } or wait and { text = L["in %s"]:format(CP.Duration(wait)), color = "dim" } or { text = "—", color = "dim" },
+        cooldown = ready and { text = L["ready"], color = "good" }
+          or wait and { text = L["in %s"]:format(CP.Duration(wait)), color = "dim" }
+          or { text = "—", color = "dim" },
         ready = ready,
         earners = best[key .. ":" .. tostring(skillLine)] or {},
       }
@@ -949,7 +977,8 @@ function CP.LevelingChoices(chars)
   local out = {}
   for key, c in pairs(chars or {}) do
     for profession, p in pairs(c.professions or {}) do
-      if not CP.GATHERING[profession] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
+      -- a gathering profession with recipes (Forever) counts
+      if not CP.GATHERING[profession] or next(p.learned or {}) then
         out[#out + 1] = { key = key, profession = profession, p = p }
       end
     end
@@ -1016,7 +1045,10 @@ function CP.LevelingRows(plan, recipeName)
     rows[#rows + 1] = {
       key = "lv:stuck",
       skill = { text = tostring(plan.stuck), color = "warn" },
-      label = ns.Kit and ns.Kit.Color("warn", L["No usable recipe from here with today's data: learn more recipes or scan the AH."]) or "",
+      label = ns.Kit and ns.Kit.Color(
+        "warn",
+        L["No usable recipe from here with today's data: learn more recipes or scan the AH."]
+      ) or "",
       crafts = "",
     }
   end
@@ -1029,7 +1061,10 @@ function CP.LevelingDetail(st)
     return nil
   end
   local c = st.entry
-  local known = c.known and L["known"] or c.itemPrice and L["recipe on the AH"] or c.estimated and L["trainer, level estimated"] or ""
+  local known = c.known and L["known"]
+    or c.itemPrice and L["recipe on the AH"]
+    or c.estimated and L["trainer, level estimated"]
+    or ""
   local yellow, grey = c.yellow or st.from, c.grey or st.to
   local green = math.floor((yellow + grey) / 2)
   local lo = math.min(st.from, c.learnAt or st.from, yellow)
@@ -1060,13 +1095,26 @@ function CP.Status(f, filter, profession, counts)
     if #q.steps == 0 then
       return L["Nothing queued · the queue is kept per account"]
     end
-    return L["%d crafts queued in %d steps on %d characters · the queue is kept per account"]:format(q.crafts, #q.steps, math.max(1, q.chars))
+    return L["%d crafts queued in %d steps on %d characters · the queue is kept per account"]:format(
+      q.crafts,
+      #q.steps,
+      math.max(1, q.chars)
+    )
   elseif filter == "learn" then
-    return L["%d recipes your characters could learn · seen in scans of the last %d days, and at vendors"]:format(counts.shown or 0, CP.LISTING_DAYS)
+    return L["%d recipes your characters could learn · seen in scans of the last %d days, and at vendors"]:format(
+      counts.shown or 0,
+      CP.LISTING_DAYS
+    )
   elseif filter == "ready" then
-    return L["%d recipes ready now · counted from bags, bank and mail on %d characters"]:format(counts.shown or 0, chars)
+    return L["%d recipes ready now · counted from bags, bank and mail on %d characters"]:format(
+      counts.shown or 0,
+      chars
+    )
   elseif filter == "missing" then
-    return L["%d recipes are one thing short · counted from bags, bank and mail on %d characters"]:format(counts.shown or 0, chars)
+    return L["%d recipes are one thing short · counted from bags, bank and mail on %d characters"]:format(
+      counts.shown or 0,
+      chars
+    )
   end
   if profession then
     local p = CP.ProfessionOf(f, profession)
@@ -1074,8 +1122,10 @@ function CP.Status(f, filter, profession, counts)
       p and p.name or "?",
       p and charName(p.key) or "?",
       tostring(p and p.skill or 0),
-      counts.sections and counts.sections > 0 and L["%d recipes in %d sections"]:format(counts.total or 0, counts.sections)
-        or L["%d recipes"]:format(counts.total or 0),
+      counts.sections and counts.sections > 0 and L["%d recipes in %d sections"]:format(
+        counts.total or 0,
+        counts.sections
+      ) or L["%d recipes"]:format(counts.total or 0),
       L["%d ready now"]:format(counts.ready or 0),
     }
     if (counts.queued or 0) > 0 then
@@ -1176,7 +1226,12 @@ local function learnRows(m)
   end
   local listings, via = {}, {}
   for id, s in pairs(m.index.items or {}) do
-    if data:Teaches(id) and s.min and (s.qty or 0) > 0 and (not m.index.day or not s.day or m.index.day - s.day <= CP.LISTING_DAYS) then
+    if
+      data:Teaches(id)
+      and s.min
+      and (s.qty or 0) > 0
+      and (not m.index.day or not s.day or m.index.day - s.day <= CP.LISTING_DAYS)
+    then
       listings[#listings + 1] = { item = id, price = s.min }
       via[id] = { via = "ah" }
     end
@@ -1369,10 +1424,12 @@ function CP.LevelingPlans(f, choice, target)
   for _, c in pairs(m.chars or {}) do
     enchanter = enchanter or (c.professions and c.professions[333]) ~= nil
   end
-  local deValue = enchanter and function(id)
-    local de = ns.ItemCache.Get(id).name and m.quote:Disenchant(id)
-    return de and de.value
-  end or nil
+  local deValue = enchanter
+      and function(id)
+        local de = ns.ItemCache.Get(id).name and m.quote:Disenchant(id)
+        return de and de.value
+      end
+    or nil
   local shard = ns.AME and ns.AME.FactionShard and ns.AME:FactionShard()
   local buyCost = function(id, units)
     local book = shard and ns.AME.BookFor and ns.AME:BookFor(shard, id, 2 * 86400)

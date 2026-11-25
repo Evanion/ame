@@ -192,7 +192,6 @@ Layout.Register("titlebar", {
         self.scan:SetWidth(math.ceil(self.scan.label:GetStringWidth() or 0) + 20)
         self.scan:ClearAllPoints()
         self.scan:SetPoint("LEFT", last, "RIGHT", 6, 0)
-        last = self.scan
       end
       -- the buttons' look, once their labels are set (it places each label: done earlier, it measured the wrong text)
       for _, b in ipairs({ self.back, self.forward, self.market, self.scan }) do

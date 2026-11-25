@@ -271,11 +271,13 @@ function GuildPage.WorthRows(r, each, price)
   if each then
     rows[#rows + 1] = { label = L["%d sell for"]:format(r.count or 1), copper = each * (r.count or 1) }
   end
-  rows[#rows + 1] = { label = L["The mats, at market"], copper = priced and mats or nil, text = not priced and "—" or nil }
+  rows[#rows + 1] =
+    { label = L["The mats, at market"], copper = priced and mats or nil, text = not priced and "—" or nil }
   if each and priced then
     rows[#rows + 1] = { label = L["The craft adds"], copper = each * (r.count or 1) - mats, signed = true }
   end
-  rows[#rows + 1] = { label = r.side == "crafter" and L["Offered tip"] or L["Your tip"], copper = r.tip or 0, total = true }
+  rows[#rows + 1] =
+    { label = r.side == "crafter" and L["Offered tip"] or L["Your tip"], copper = r.tip or 0, total = true }
   return rows
 end
 
@@ -292,10 +294,11 @@ function GuildPage.Actions(r)
         { L["Accept as asked"], "accept" },
         { L["Decline"], "decline" },
       }
-      rule = L["Answer opens the request: accept it as asked, or change your price for the mats or the tip and send it back for %s to approve. Once agreed it goes on %s's queue; trading it over marks it handed over."]:format(
-        them,
-        r.crafter
-      )
+      rule =
+        L["Answer opens the request: accept it as asked, or change your price for the mats or the tip and send it back for %s to approve. Once agreed it goes on %s's queue; trading it over marks it handed over."]:format(
+          them,
+          r.crafter
+        )
     elseif s == "answered" then
       b = { { L["Decline"], "decline" } }
       rule = L["You changed the terms: %s approves them, changes them, or withdraws."]:format(them)
@@ -313,12 +316,14 @@ function GuildPage.Actions(r)
         { L["Accept"], "accept" },
         { L["Withdraw"], "decline" },
       }
-      rule = L["%s changed the terms. Review shows what changed: accept them, change them back, or withdraw."]:format(them)
+      rule =
+        L["%s changed the terms. Review shows what changed: accept them, change them back, or withdraw."]:format(them)
     elseif s == "new" or s == "answered" then
       b = { { L["Change it"], "change" }, { L["Withdraw"], "decline" } }
-      rule = L["Waiting for %s to answer. A request also goes out as a whisper, so a crafter without AME still sees it."]:format(
-        them
-      )
+      rule =
+        L["Waiting for %s to answer. A request also goes out as a whisper, so a crafter without AME still sees it."]:format(
+          them
+        )
     elseif s == "accepted" then
       b = { { L["Withdraw"], "decline" } }
       rule = L["Agreed: %s makes it and tells you when it is ready."]:format(them)
@@ -539,7 +544,10 @@ function GuildPage.RecipeInfo(recipeID)
   local r = ns.Recipes and ns.Recipes.Get(recipeID)
   local d = not r and ns.CraftingData and ns.CraftingData.Recipe and ns.CraftingData:Recipe(recipeID)
   local prof = (r and r.profession) or (d and d.profession)
-  return { item = (r and r.product) or (d and d.product) or nil, profession = prof and GuildPage.ProfessionName(prof) or "" }
+  return {
+    item = (r and r.product) or (d and d.product) or nil,
+    profession = prof and GuildPage.ProfessionName(prof) or "",
+  }
 end
 
 -- the name to show for a request with no product (an enchant)

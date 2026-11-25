@@ -37,7 +37,10 @@ describe("Portfolio page", function()
       assert.equals("Kke · bank", P.Where(11, { chars = { ["Forever:Kke"] = 6 } }, holdings))
     end)
     it("several characters: the first's place and count, then the others", function()
-      assert.equals("Tyken · bags 10, Kke 8", P.Where(10, { chars = { ["Forever:Tyken"] = 10, ["Forever:Kke"] = 8 } }, holdings))
+      assert.equals(
+        "Tyken · bags 10, Kke 8",
+        P.Where(10, { chars = { ["Forever:Tyken"] = 10, ["Forever:Kke"] = 8 } }, holdings)
+      )
     end)
   end)
 
@@ -61,12 +64,16 @@ describe("Portfolio page", function()
       assert.equals("only", P.Standing(a, { rows = { { price = 48600, qty = 5, mine = true } } }, 48000).kind)
     end)
     it("counts and filters undercut by the scan the same as by a search", function()
-      local rows, sum = P.AuctionRows({ { itemID = 1, unit = 500, total = 500 }, { itemID = 2, unit = 300, total = 300 } }, {}, {
-        undercutOnly = true,
-        scanMin = function(id)
-          return id == 1 and 400 or 300
-        end,
-      })
+      local rows, sum = P.AuctionRows(
+        { { itemID = 1, unit = 500, total = 500 }, { itemID = 2, unit = 300, total = 300 } },
+        {},
+        {
+          undercutOnly = true,
+          scanMin = function(id)
+            return id == 1 and 400 or 300
+          end,
+        }
+      )
       assert.equals(1, sum.undercut)
       assert.equals(1, #rows)
       assert.equals(1, rows[1].item)
@@ -75,7 +82,10 @@ describe("Portfolio page", function()
       assert.equals("only", P.Standing(a, { rows = { { price = 48600, qty = 5, mine = true } } }).kind)
     end)
     it("cheaper listings than yours: undercut, by how much, how many ahead", function()
-      local st = P.Standing(a, { rows = { { price = 48100, qty = 4 }, { price = 48300, qty = 10 }, { price = 48600, qty = 5, mine = true } } })
+      local st = P.Standing(
+        a,
+        { rows = { { price = 48100, qty = 4 }, { price = 48300, qty = 10 }, { price = 48600, qty = 5, mine = true } } }
+      )
       assert.equals("undercut", st.kind)
       assert.equals(500, st.by)
       assert.equals(2, st.ahead)
@@ -83,7 +93,10 @@ describe("Portfolio page", function()
       assert.equals(48100, st.lowest)
     end)
     it("yours the cheapest: lowest", function()
-      local st = P.Standing({ unit = 2600 }, { rows = { { price = 2600, qty = 40, mine = true }, { price = 2700, qty = 3 } } })
+      local st = P.Standing(
+        { unit = 2600 },
+        { rows = { { price = 2600, qty = 40, mine = true }, { price = 2700, qty = 3 } } }
+      )
       assert.equals("lowest", st.kind)
       assert.equals(2600, st.lowest)
     end)
@@ -109,8 +122,13 @@ describe("Portfolio page", function()
   end)
 
   it("FillAuctionIDs: this character's saved auctions take the game's IDs, each once", function()
-    local auctions = { { itemID = 1, qty = 5, unit = 100, char = "Tyken" }, { itemID = 1, qty = 5, unit = 100, char = "Tyken" } }
-    P.FillAuctionIDs(auctions, { { auctionID = 3, key = 1, qty = 5, unit = 100 }, { auctionID = 4, key = 1, qty = 5, unit = 100 } }, "Tyken")
+    local auctions =
+      { { itemID = 1, qty = 5, unit = 100, char = "Tyken" }, { itemID = 1, qty = 5, unit = 100, char = "Tyken" } }
+    P.FillAuctionIDs(
+      auctions,
+      { { auctionID = 3, key = 1, qty = 5, unit = 100 }, { auctionID = 4, key = 1, qty = 5, unit = 100 } },
+      "Tyken"
+    )
     assert.equals(3, auctions[1].auctionID)
     assert.equals(4, auctions[2].auctionID)
   end)
@@ -166,7 +184,13 @@ describe("Portfolio page", function()
       key = 10,
       qty = 25,
       summary = { market = 300 },
-      craft = { product = 20, each = 420, raw = 284, crafter = "Tyken", recipe = { id = 5, made = 1, reagents = { { 10, 4 } } } },
+      craft = {
+        product = 20,
+        each = 420,
+        raw = 284,
+        crafter = "Tyken",
+        recipe = { id = 5, made = 1, reagents = { { 10, 4 } } },
+      },
     })
     assert.equals(6, c.crafts)
     assert.equals(1, c.left)
@@ -238,7 +262,16 @@ describe("Portfolio page", function()
       facts = {
         chars = 2,
         positions = {
-          { itemID = 10, qty = 18, chars = { ["Forever:Tyken"] = 10, ["Forever:Kke"] = 8 }, market = 352, value = 6336, signal = "hold", soldPerDay = 3392, daysToSell = 0.1 },
+          {
+            itemID = 10,
+            qty = 18,
+            chars = { ["Forever:Tyken"] = 10, ["Forever:Kke"] = 8 },
+            market = 352,
+            value = 6336,
+            signal = "hold",
+            soldPerDay = 3392,
+            daysToSell = 0.1,
+          },
         },
         totals = { value = 6336, unrealized = 0 },
         listed = { count = 2, value = 140000 },
@@ -248,7 +281,16 @@ describe("Portfolio page", function()
         customers = { { name = "Bob", trades = 2, amount = 900, units = 4, last = 1000, favourite = "Silk" } },
         suppliers = {},
         auctions = {
-          { itemID = 10, qty = 5, unit = 48600, total = 243000, char = "Tyken", auctionID = 7, timeLeft = 36000, seen = env.now },
+          {
+            itemID = 10,
+            qty = 5,
+            unit = 48600,
+            total = 243000,
+            char = "Tyken",
+            auctionID = 7,
+            timeLeft = 36000,
+            seen = env.now,
+          },
           { itemID = 11, qty = 60, unit = 3600, total = 216000, char = "Zakzu" },
         },
         holdingsAll = {},
@@ -275,8 +317,30 @@ describe("Portfolio page", function()
       }
       P.SellEntries = function()
         local list = {
-          { key = 1, qty = 43, where = "ah", worth = 482000, commodity = true, summary = { market = 12000, signal = "buy", soldPerDay = 140 }, locs = { {} } },
-          { key = 2, qty = 25, signal = "vendor", where = "ah", worth = 7500, summary = { market = 300 }, craft = { product = 20, each = 420, raw = 284, crafter = "Tyken", recipe = { id = 5, made = 1, reagents = { { 2, 4 } } } } },
+          {
+            key = 1,
+            qty = 43,
+            where = "ah",
+            worth = 482000,
+            commodity = true,
+            summary = { market = 12000, signal = "buy", soldPerDay = 140 },
+            locs = { {} },
+          },
+          {
+            key = 2,
+            qty = 25,
+            signal = "vendor",
+            where = "ah",
+            worth = 7500,
+            summary = { market = 300 },
+            craft = {
+              product = 20,
+              each = 420,
+              raw = 284,
+              crafter = "Tyken",
+              recipe = { id = 5, made = 1, reagents = { { 2, 4 } } },
+            },
+          },
           { key = 3, qty = 1, signal = "disenchant", where = "ah", worth = 9000, summary = { soldPerDay = 0.11 } },
           { key = 4, qty = 8, signal = "vendor", where = "vendor", worth = 480, summary = { market = 40 } },
         }
@@ -284,7 +348,12 @@ describe("Portfolio page", function()
         return P.bags
       end
       P.Suggest = function()
-        return { quick = { price = 11400, hours = 0.5 }, normal = { price = 11800, hours = 6 }, patient = { price = 12400, hours = 24 }, market = { price = 12000 } }
+        return {
+          quick = { price = 11400, hours = 0.5 },
+          normal = { price = 11800, hours = 6 },
+          patient = { price = 12400, hours = 24 },
+          market = { price = 12000 },
+        }
       end
       P.cached, P.bagsAt = nil, nil
     end)
@@ -356,7 +425,7 @@ describe("Portfolio page", function()
     it("Post runs the game's posting from the button's click", function()
       ns.AME.ahOpen = true
       local posted
-      _G.C_AuctionHouse.PostCommodity = function(loc, duration, qty, price)
+      _G.C_AuctionHouse.PostCommodity = function(_loc, _duration, qty, price)
         posted = { qty = qty, price = price }
       end
       App:Show()

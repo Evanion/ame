@@ -7,7 +7,8 @@
 --   Kit.SetTheme("horde" | "alliance" | "goblin"), Kit.SetFaction("horde" | "alliance")
 --   Kit.Accent(), Kit.Selected(), Kit.Primary(), Kit.Row()   the accent and its shades
 --   Kit.Box(frame, fill, line)              a flat box: a token fill and a 1 px line (or false for none)
---   Kit.Text(parent, opts)                  a font string: opts.font "ui" | "display", opts.size, opts.color, opts.justify
+--   Kit.Text(parent, opts)                  a font string: opts.font "ui" | "display", opts.size, opts.color,
+--                                           opts.justify
 --   Kit.SetFont(fs, font, size)             change one
 --   Kit.Chrome(frame)                       the warm gradient of the title bar and status row
 local _, ns = ...
@@ -261,12 +262,14 @@ function Kit.Glyphs(text)
   if type(text) ~= "string" or not text:find("[\226]") then
     return text
   end
-  return (text:gsub("[\226][\128-\191][\128-\191]", function(c)
-    if c == "★" then
-      return ns.Widgets and ns.Widgets.StarInline and ns.Widgets.StarInline(12) or nil -- the favourite star
-    end
-    return Kit.GLYPHS[c]
-  end))
+  return (
+    text:gsub("[\226][\128-\191][\128-\191]", function(c)
+      if c == "★" then
+        return ns.Widgets and ns.Widgets.StarInline and ns.Widgets.StarInline(12) or nil -- the favourite star
+      end
+      return Kit.GLYPHS[c]
+    end)
+  )
 end
 
 local function glyphSetText(fs, text)

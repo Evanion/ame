@@ -97,7 +97,11 @@ function Home.Kpis(f)
       note = (f.marketChange >= 0 and L["dearer this week"] or L["cheaper this week"]),
     }
   elseif f.marketLevel then -- not a week of scans yet: the price index, the change when a week is in
-    out[4] = { label = L["Market"], value = ("%.1f"):format(f.marketLevel), note = L["price index · the week's change after 7 days of scans"] }
+    out[4] = {
+      label = L["Market"],
+      value = ("%.1f"):format(f.marketLevel),
+      note = L["price index · the week's change after 7 days of scans"],
+    }
   else
     out[4] = { label = L["Market"], note = L["builds as full scans come in"] }
   end
@@ -287,7 +291,9 @@ function Home.Worth(f, atAH)
       pill = L["LEARN"],
       title = { item(l.item) },
       sub = l.sub,
-      value = l.payback and (math.ceil(l.payback) <= 1 and L["1 day to pay back"] or L["%d days to pay back"]:format(math.ceil(l.payback))) or nil,
+      value = l.payback and (math.ceil(l.payback) <= 1 and L["1 day to pay back"] or L["%d days to pay back"]:format(
+        math.ceil(l.payback)
+      )) or nil,
       valueTone = "good",
       button = L["Open"],
       action = "goLearn",
@@ -378,7 +384,8 @@ function Home.Mail(holdings, keep, now)
       if (box.items or 0) > 0 then
         what[#what + 1] = box.items == 1 and L["1 item"] or L["%d items"]:format(box.items)
       end
-      local row = { label = c.name .. (#what > 0 and (" · " .. table.concat(what, ", ")) or ""), copper = box.money or 0 }
+      local row =
+        { label = c.name .. (#what > 0 and (" · " .. table.concat(what, ", ")) or ""), copper = box.money or 0 }
       if box.firstOut then
         local left = (box.firstOut - now) / DAY
         if left < 0 then
@@ -466,7 +473,7 @@ function Home.Know()
       key = "know:ah",
       pill = L["AH"],
       title = L["AME's window opens at the auction house"],
-      sub = L["\"Use the game's AH\" in the title bar swaps back"],
+      sub = L['"Use the game\'s AH" in the title bar swaps back'],
       button = L["Settings"],
       action = "goSettings",
     },
@@ -488,7 +495,7 @@ function Home.Know()
       key = "know:guide",
       pill = L["GUIDE"],
       title = L["Every screen is explained in the Guide"],
-      sub = L["Start with \"Your first scan\""],
+      sub = L['Start with "Your first scan"'],
       button = L["Guide"],
       action = "goGuide",
     },
@@ -628,8 +635,7 @@ local function gatherWorth(f, holdings, index, q, keep)
   f.itemsValue = totals and totals.value or 0
   AME_DB.worthLog = AME_DB.worthLog or {}
   f.worthWeekAgo = Home.WeekAgo(AME_DB.worthLog, ns.Today(f.now), (f.gold or 0) + f.itemsValue)
-  local _ = holdings
-  local __ = keep
+  local _, _ = holdings, keep
 end
 
 -- the stacks you hold that gain from refining, the most first: { { item, qty, recipe = recipeID, product, gain } }.
@@ -694,7 +700,10 @@ local function gatherCrafting(index)
         recipe = e.recipe.id,
         product = e.recipe.product,
         profit = e.eval.profit,
-        sub = char and L["%s · sells about %s"]:format(tostring(char):match(":(.+)$") or char, ns.Widgets.Rate(e.eval.sellRate)) or nil,
+        sub = char and L["%s · sells about %s"]:format(
+          tostring(char):match(":(.+)$") or char,
+          ns.Widgets.Rate(e.eval.sellRate)
+        ) or nil,
       }
       if #crafts >= Home.PER_KIND then
         break
@@ -706,7 +715,12 @@ local function gatherCrafting(index)
   if ns.CraftingData and ns.CraftingData.Teaches then
     local listings = {}
     for id, s in pairs(index.items) do
-      if ns.CraftingData:Teaches(id) and s.min and (s.qty or 0) > 0 and (not index.day or not s.day or index.day - s.day <= 2) then
+      if
+        ns.CraftingData:Teaches(id)
+        and s.min
+        and (s.qty or 0) > 0
+        and (not index.day or not s.day or index.day - s.day <= 2)
+      then
         listings[#listings + 1] = { item = id, price = s.min }
       end
     end
@@ -755,7 +769,11 @@ local function gatherBuy(f, index)
         seen[id] = true
         local under = 1 - s.market / usual
         if under >= 0.1 and affordable(f, s.market) then
-          buys[#buys + 1] = { item = id, under = under, sub = L["On your watchlist · %s sell a day"]:format(ns.Widgets.Rate(s.soldPerDay or s.sellRate)) }
+          buys[#buys + 1] = {
+            item = id,
+            under = under,
+            sub = L["On your watchlist · %s sell a day"]:format(ns.Widgets.Rate(s.soldPerDay or s.sellRate)),
+          }
         end
       end
     end
@@ -976,7 +994,12 @@ function Home.Gather(force)
     -- names in the ledger to item IDs: they resolve against what you hold and the market's items, so it runs again
     -- when the ledger, the index or what your characters hold changes
     if ns.Trading.ResolveLedger then
-      Home.Piece("resolveLedger", ledgerKey() .. "|" .. tostring(index) .. "|" .. heldKey(holdings, nil, { "bags", "bank", "auctions" }), ns.Trading.ResolveLedger, ns.Trading)
+      Home.Piece(
+        "resolveLedger",
+        ledgerKey() .. "|" .. tostring(index) .. "|" .. heldKey(holdings, nil, { "bags", "bank", "auctions" }),
+        ns.Trading.ResolveLedger,
+        ns.Trading
+      )
     end
     f.ledger = AME.ledger and AME.ledger:Summary(now - 7 * DAY) or nil
     if ns.MarketStats and index.stats then

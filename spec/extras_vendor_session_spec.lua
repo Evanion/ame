@@ -59,13 +59,16 @@ describe("frames outside the window", function()
       { key = 6, count = 1, quality = 0, sellPrice = 0, bag = 1, slot = 3 },
     }
 
-    it("lists what a vendor pays more for, then junk; never what the auction house pays more for or has no price for", function()
-      local rows = V.Rows(slots, worth, { keep = { [5] = true } })
-      assert.equals(2, #rows)
-      assert.same({ 1, "vendor", 10, 5000 }, { rows[1].key, rows[1].why, rows[1].count, rows[1].pays })
-      assert.equals(2, #rows[1].slots)
-      assert.same({ 4, "junk", 5400 }, { rows[2].key, rows[2].why, rows[2].pays })
-    end)
+    it(
+      "lists what a vendor pays more for, then junk; never what the auction house pays more for or has no price for",
+      function()
+        local rows = V.Rows(slots, worth, { keep = { [5] = true } })
+        assert.equals(2, #rows)
+        assert.same({ 1, "vendor", 10, 5000 }, { rows[1].key, rows[1].why, rows[1].count, rows[1].pays })
+        assert.equals(2, #rows[1].slots)
+        assert.same({ 4, "junk", 5400 }, { rows[2].key, rows[2].why, rows[2].pays })
+      end
+    )
 
     it("the button sells junk only with Junk too, and no more than the buyback holds", function()
       local rows = V.Rows(slots, worth)
@@ -136,7 +139,8 @@ describe("frames outside the window", function()
 
     it("the tracker's tree is valid with finds and without", function()
       local T = ns.SessionTracker
-      local sum = { elapsed = 4320, total = 382000, perHour = 318000, top = { { key = 13463, count = 40, value = 196000 } } }
+      local sum =
+        { elapsed = 4320, total = 382000, perHour = 318000, top = { { key = 13463, count = 40, value = 196000 } } }
       assert.same({}, ns.Layout.Validate(T.Tree(sum, { value = 1420000, free = 9 })))
       assert.same({}, ns.Layout.Validate(T.Tree({ elapsed = 0, total = 0, perHour = 0, top = {} }, {})))
       local root = CreateFrame("Frame", nil, UIParent)

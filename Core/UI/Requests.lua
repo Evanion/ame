@@ -44,10 +44,20 @@ end
 -- what's being made: the product's link, or (an enchant) the recipe's name
 local function whatItem(id, item, recipe, size)
   if item then
-    return { id = id, type = "itemlink", props = { item = item, size = size or 13, bold = true }, meta = { grow = 1, h = 18 } }
+    return {
+      id = id,
+      type = "itemlink",
+      props = { item = item, size = size or 13, bold = true },
+      meta = { grow = 1, h = 18 },
+    }
   end
   local name = ns.Crafters and ns.Crafters.RecipeName and ns.Crafters.RecipeName(recipe) or tostring(recipe)
-  return { id = id, type = "text", props = { text = name or "?", color = "white", size = size or 13 }, meta = { grow = 1, h = 18 } }
+  return {
+    id = id,
+    type = "text",
+    props = { text = name or "?", color = "white", size = size or 13 },
+    meta = { grow = 1, h = 18 },
+  }
 end
 
 local function text(id, s, opts)
@@ -113,13 +123,18 @@ function Q.FormTree(d, s)
           },
         },
         text(p .. ".need", tostring(row.need), { justify = "RIGHT", size = 12 }),
-        row.soulbound and text(p .. ".bring", "—", { justify = "RIGHT", color = "dim" })
-          or {
-            id = p .. ".bring",
-            type = "input",
-            props = { value = tostring(row.bring or 0), hint = L["How many you bring"], numeric = true, action = "bring", payload = i },
-            meta = { h = 24 },
+        row.soulbound and text(p .. ".bring", "—", { justify = "RIGHT", color = "dim" }) or {
+          id = p .. ".bring",
+          type = "input",
+          props = {
+            value = tostring(row.bring or 0),
+            hint = L["How many you bring"],
+            numeric = true,
+            action = "bring",
+            payload = i,
           },
+          meta = { h = 24 },
+        },
       },
     }
   end
@@ -133,7 +148,8 @@ function Q.FormTree(d, s)
     end
     supplyParts[#supplyParts + 1] = " · " .. L["%s at market"]:format(g(d.market))
   end
-  rows[#rows + 1] = { id = "rf.supply", type = "linktext", props = { parts = supplyParts, wrap = true }, meta = { h = 16 } }
+  rows[#rows + 1] =
+    { id = "rf.supply", type = "linktext", props = { parts = supplyParts, wrap = true }, meta = { h = 16 } }
 
   local offerNote = L["the market price; %s can change it"]:format(crafter)
   if d.offerSet and d.offer ~= R.Round(d.market or 0) then
@@ -184,10 +200,18 @@ function Q.FormTree(d, s)
         meta = { h = 24 * 3 + 20 },
         children = {
           text("rf.offer.l", L["For %s's mats"]:format(crafter), { color = "dim" }),
-          { id = "rf.offer", type = "input", props = { value = typed(d.offer), hint = L["For the mats"], action = "offer", money = true } },
+          {
+            id = "rf.offer",
+            type = "input",
+            props = { value = typed(d.offer), hint = L["For the mats"], action = "offer", money = true },
+          },
           text("rf.offer.n", offerNote, { color = "dim" }),
           text("rf.tip.l", L["Tip"], { color = "dim" }),
-          { id = "rf.tip", type = "input", props = { value = typed(d.tip), hint = L["Tip"], action = "tip", money = true } },
+          {
+            id = "rf.tip",
+            type = "input",
+            props = { value = typed(d.tip), hint = L["Tip"], action = "tip", money = true },
+          },
           {
             id = "rf.tip.n",
             type = "row",
@@ -214,10 +238,20 @@ function Q.FormTree(d, s)
         meta = { h = 16 },
         children = {
           text("rf.msg.l", L["Message · AME puts the item link in front"], { color = "dim", meta = { grow = 1 } }),
-          { id = "rf.msg.reset", type = "keyvalue", props = { text = L["Reset"], action = "reset" }, meta = { w = 60, h = 16 } },
+          {
+            id = "rf.msg.reset",
+            type = "keyvalue",
+            props = { text = L["Reset"], action = "reset" },
+            meta = { w = 60, h = 16 },
+          },
         },
       },
-      { id = "rf.msg", type = "textarea", props = { value = d.message, hint = L["Your message"], action = "message" }, meta = { h = 52 } },
+      {
+        id = "rf.msg",
+        type = "textarea",
+        props = { value = d.message, hint = L["Your message"], action = "message" },
+        meta = { h = 52 },
+      },
       { id = "rf.gap", type = "spacer", meta = { grow = 1 } },
       {
         id = "rf.buttons",
@@ -228,7 +262,11 @@ function Q.FormTree(d, s)
           {
             id = "rf.send",
             type = "button",
-            props = { label = s.change and L["Send it back"] or L["Send request"], variant = "primary", action = "send" },
+            props = {
+              label = s.change and L["Send it back"] or L["Send request"],
+              variant = "primary",
+              action = "send",
+            },
           },
           { id = "rf.cancel", type = "button", props = { label = L["Cancel"], action = "close" } },
           { id = "rf.fill", type = "spacer", meta = { grow = 1 } },
@@ -294,7 +332,8 @@ function Q.AnswerTree(r, a, s)
     elseif not crafter and changed.bring[i] then
       sub, tone = L["changed"], "warn"
     end
-    local nameKids = { { id = p .. ".item", type = "itemlink", props = { item = m.item, size = 12 }, meta = { h = 17 } } }
+    local nameKids =
+      { { id = p .. ".item", type = "itemlink", props = { item = m.item, size = 12 }, meta = { h = 17 } } }
     if sub then
       nameKids[2] = text(p .. ".sub", sub, { color = tone or "dim", meta = { h = 14 } })
     end
@@ -330,7 +369,11 @@ function Q.AnswerTree(r, a, s)
   local grid = {
     { id = "ra.m.h0", type = "spacer" },
     text("ra.m.h1", crafter and L["Offered"] or L["You offered"], { color = "dim", justify = "RIGHT" }),
-    text("ra.m.h2", crafter and L["Your answer"] or L["%s asks"]:format(r.crafter), { color = "dim", justify = "RIGHT" }),
+    text(
+      "ra.m.h2",
+      crafter and L["Your answer"] or L["%s asks"]:format(r.crafter),
+      { color = "dim", justify = "RIGHT" }
+    ),
     { id = "ra.m.h3", type = "spacer" },
   }
   for _, m in ipairs(money) do
@@ -347,8 +390,11 @@ function Q.AnswerTree(r, a, s)
     grid[#grid + 1] = text("ra.m." .. m.key .. ".l", m.label, { color = "dim" })
     grid[#grid + 1] = { id = "ra.m." .. m.key .. ".o", type = "money", props = { copper = o } }
     if crafter then
-      grid[#grid + 1] =
-        { id = "ra.m." .. m.key .. ".a", type = "input", props = { value = typed(v), hint = m.label, action = m.key, money = true } }
+      grid[#grid + 1] = {
+        id = "ra.m." .. m.key .. ".a",
+        type = "input",
+        props = { value = typed(v), hint = m.label, action = m.key, money = true },
+      }
     else
       grid[#grid + 1] = { id = "ra.m." .. m.key .. ".a", type = "money", props = { copper = v, bold = diff ~= 0 } }
     end
@@ -358,7 +404,8 @@ function Q.AnswerTree(r, a, s)
   local anyChange = lines[1] or lines[2]
   grid[#grid + 1] = text("ra.m.t.l", crafter and L["You receive"] or L["You pay"], { color = "text", size = 12 })
   grid[#grid + 1] = { id = "ra.m.t.o", type = "money", props = { copper = offered.offer + offered.tip } }
-  grid[#grid + 1] = { id = "ra.m.t.a", type = "money", props = { copper = answer.offer + answer.tip, size = 14, bold = true } }
+  grid[#grid + 1] =
+    { id = "ra.m.t.a", type = "money", props = { copper = answer.offer + answer.tip, size = 14, bold = true } }
   grid[#grid + 1] = { id = "ra.m.t.n", type = "spacer" }
 
   local theirs = crafter and r.message or r.note
@@ -397,7 +444,8 @@ function Q.AnswerTree(r, a, s)
     },
   }
   if theirs and theirs ~= "" then
-    kids[#kids + 1] = text("ra.theirs", ('%s: "%s"'):format(them, theirs), { color = "soft", wrap = true, meta = { h = 30 } })
+    kids[#kids + 1] =
+      text("ra.theirs", ('%s: "%s"'):format(them, theirs), { color = "soft", wrap = true, meta = { h = 30 } })
   end
   if crafter then
     kids[#kids + 1] = text("ra.yours.l", L["Your message · optional"], { color = "dim", meta = { h = 14 } })
@@ -411,22 +459,34 @@ function Q.AnswerTree(r, a, s)
   local rule, buttons
   if crafter then
     rule = anyChange
-        and L["You changed a figure, so this goes back to %s to approve. Nothing is queued until you both agree."]:format(r.asker)
+        and L["You changed a figure, so this goes back to %s to approve. Nothing is queued until you both agree."]:format(
+          r.asker
+        )
       or L["As asked: accepting puts it on your queue."]
     buttons = {}
     if anyChange then
-      buttons[#buttons + 1] = { id = "ra.b.send", type = "button", props = { label = L["Send your answer"], variant = "primary", action = "sendAnswer" } }
-      buttons[#buttons + 1] = { id = "ra.b.accept", type = "button", props = { label = L["Accept as asked"], action = "accept" } }
-    else
+      buttons[#buttons + 1] = {
+        id = "ra.b.send",
+        type = "button",
+        props = { label = L["Send your answer"], variant = "primary", action = "sendAnswer" },
+      }
       buttons[#buttons + 1] =
-        { id = "ra.b.accept", type = "button", props = { label = L["Accept as asked"], variant = "primary", action = "accept" } }
+        { id = "ra.b.accept", type = "button", props = { label = L["Accept as asked"], action = "accept" } }
+    else
+      buttons[#buttons + 1] = {
+        id = "ra.b.accept",
+        type = "button",
+        props = { label = L["Accept as asked"], variant = "primary", action = "accept" },
+      }
     end
-    buttons[#buttons + 1] = { id = "ra.b.decline", type = "button", props = { label = L["Decline"], action = "decline" } }
+    buttons[#buttons + 1] =
+      { id = "ra.b.decline", type = "button", props = { label = L["Decline"], action = "decline" } }
   else
-    rule = L["Accept agrees to %s's terms and %s can start. Change it opens your request with these figures, to answer back."]:format(
-      r.crafter,
-      r.crafter
-    )
+    rule =
+      L["Accept agrees to %s's terms and %s can start. Change it opens your request with these figures, to answer back."]:format(
+        r.crafter,
+        r.crafter
+      )
     buttons = {
       { id = "ra.b.accept", type = "button", props = { label = L["Accept"], variant = "primary", action = "accept" } },
       { id = "ra.b.change", type = "button", props = { label = L["Change it"], action = "change" } },
@@ -670,12 +730,13 @@ function Q.Create()
   local handlers = setmetatable({}, {
     __index = function(_, name)
       local fn = A[name]
-      return fn and function(payload)
-        local ok, err = pcall(fn, payload or {})
-        if not ok and ns.Dev and ns.Dev.Warn then
-          ns.Dev.Warn("requests: " .. tostring(err))
+      return fn
+        and function(payload)
+          local ok, err = pcall(fn, payload or {})
+          if not ok and ns.Dev and ns.Dev.Warn then
+            ns.Dev.Warn("requests: " .. tostring(err))
+          end
         end
-      end
     end,
   })
   Q.ctx = Layout.Context(handlers, { sources = {} })

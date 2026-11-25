@@ -267,7 +267,9 @@ local function build()
         frame = math.floor(frameMs),
         ame = ms and math.floor(ms * 10 + 0.5) / 10,
         -- lastName stays after the queue empties
-        job = (state.loading or state.settle > 0) and "loading screen" or jobs and jobs:Busy() and jobs.lastName or "none",
+        job = (state.loading or state.settle > 0) and "loading screen"
+          or jobs and jobs:Busy() and jobs.lastName
+          or "none",
         queue = queueNames(),
         memKB = math.floor(mem - lastMem),
         gc = gc or nil,

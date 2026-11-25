@@ -61,9 +61,11 @@ function G.FreshKpis()
       if f.items then
         note = note .. " · " .. L["%s items"]:format(ns.Widgets.Thousands(f.items))
       end
-      out[#out + 1] = { label = label, value = Kit.Color(tone, L["%s old"]:format(ns.Widgets.Age(f.t, now))), note = note }
+      out[#out + 1] =
+        { label = label, value = Kit.Color(tone, L["%s old"]:format(ns.Widgets.Age(f.t, now))), note = note }
     else
-      out[#out + 1] = { label = label, value = Kit.Color("dim", L["No data"]), note = L["Scan there, or trust someone who does"] }
+      out[#out + 1] =
+        { label = label, value = Kit.Color("dim", L["No data"]), note = L["Scan there, or trust someone who does"] }
     end
   end
   return out
@@ -78,7 +80,14 @@ function G.Activity()
   if ok and d then
     return d
   end
-  return { next = L["Sharing is off"], moving = {}, rows = {}, emptyText = L["Nothing: you're up to date."], receivingFrom = 0, catchUp = 0 }
+  return {
+    next = L["Sharing is off"],
+    moving = {},
+    rows = {},
+    emptyText = L["Nothing: you're up to date."],
+    receivingFrom = 0,
+    catchUp = 0,
+  }
 end
 
 local function plainNext(text)
@@ -103,7 +112,12 @@ local function build(app)
         { id = "share.act.t", type = "text", props = { text = L["Sync activity"], color = "gold", size = 13 } },
         { id = "share.act.fill", type = "spacer", meta = { grow = 1 } },
         { id = "share.act.next", type = "text", props = { text = plainNext(act.next), color = "dim", size = 11 } },
-        { id = "share.act.now", type = "button", props = { label = L["Sync now"], action = "syncNow" }, meta = { h = 22 } },
+        {
+          id = "share.act.now",
+          type = "button",
+          props = { label = L["Sync now"], action = "syncNow" },
+          meta = { h = 22 },
+        },
       },
     },
   }
@@ -113,13 +127,23 @@ local function build(app)
       id = "share.mv" .. i,
       type = "text",
       props = {
-        text = ("%s   %s   %s   %s"):format(m.mine and Kit.Color("dim", m.who) or m.who, m.what or "", pct, tostring(m.left or "")),
+        text = ("%s   %s   %s   %s"):format(
+          m.mine and Kit.Color("dim", m.who) or m.who,
+          m.what or "",
+          pct,
+          tostring(m.left or "")
+        ),
         size = 12,
       },
       meta = { h = 18 },
     }
     if m.why then
-      actKids[#actKids + 1] = { id = "share.mv" .. i .. ".why", type = "text", props = { text = m.why, color = "dim", size = 11 }, meta = { h = 14 } }
+      actKids[#actKids + 1] = {
+        id = "share.mv" .. i .. ".why",
+        type = "text",
+        props = { text = m.why, color = "dim", size = 11 },
+        meta = { h = 14 },
+      }
     end
   end
   actKids[#actKids + 1] = G.Heading("share.miss.h", L["Missing here"], L["what others have that you don't"])
@@ -139,9 +163,14 @@ local function build(app)
     meta = { h = 112 },
   }
   if act.total then
-    actKids[#actKids + 1] = { id = "share.miss.total", type = "text", props = { text = act.total, color = "dim", size = 11 }, meta = { h = 14 } }
+    actKids[#actKids + 1] = {
+      id = "share.miss.total",
+      type = "text",
+      props = { text = act.total, color = "dim", size = 11 },
+      meta = { h = 14 },
+    }
   end
-  local actH = 22 + 20 * #(act.moving or {}) + 20 + 112 + (act.total and 18 or 0) + 8 * (#actKids) + 20
+  local actH = 22 + 20 * #(act.moving or {}) + 20 + 112 + (act.total and 18 or 0) + 8 * #actKids + 20
 
   -- guild sharing: the switches, the protocol, the counts, the players heard from
   local stats = AME_DB and AME_DB.stats or {}
@@ -171,7 +200,12 @@ local function build(app)
       {
         id = "share.g.scans",
         type = "check",
-        props = { label = L["Share full scans with my guild"], checked = ns.Settings:Get("syncGuild") and true or false, action = "setting", payload = "syncGuild" },
+        props = {
+          label = L["Share full scans with my guild"],
+          checked = ns.Settings:Get("syncGuild") and true or false,
+          action = "setting",
+          payload = "syncGuild",
+        },
         meta = { h = 18 },
       },
       {
@@ -225,14 +259,16 @@ local function build(app)
   -- trusted players: the switch, asking someone, the trusted and those who ask
   local trustRows = {}
   for _, p in ipairs(trust and others(svc, trust:PendingList()) or {}) do
-    trustRows[#trustRows + 1] = { key = "p:" .. p.name, name = p.name, state = { text = L["asks to share"], color = "warn" }, act = L["Approve"] }
+    trustRows[#trustRows + 1] =
+      { key = "p:" .. p.name, name = p.name, state = { text = L["asks to share"], color = "warn" }, act = L["Approve"] }
   end
   for _, e in ipairs(trust and others(svc, trust:TrustedList()) or {}) do
     local heard = trust:LastHeard(e.name)
     trustRows[#trustRows + 1] = {
       key = "t:" .. e.name,
       name = e.name,
-      state = e.mutual and (L["trusted"] .. " · " .. (heard and L["heard %s"]:format(ago(heard)) or L["not heard yet"]))
+      state = e.mutual
+          and (L["trusted"] .. " · " .. (heard and L["heard %s"]:format(ago(heard)) or L["not heard yet"]))
         or { text = L["waiting for them to approve"], color = "dim" },
       act = L["Remove"],
     }
@@ -244,11 +280,20 @@ local function build(app)
     props = { title = L["Trusted players"], gap = 4 },
     meta = { grow = 1 },
     children = {
-      G.Text("share.t.text", L["Swap scans with friends, or your own characters on other accounts."], { meta = { h = 14 } }),
+      G.Text(
+        "share.t.text",
+        L["Swap scans with friends, or your own characters on other accounts."],
+        { meta = { h = 14 } }
+      ),
       {
         id = "share.t.on",
         type = "check",
-        props = { label = L["Share with trusted players"], checked = ns.Settings:Get("syncTrusted") and true or false, action = "setting", payload = "syncTrusted" },
+        props = {
+          label = L["Share with trusted players"],
+          checked = ns.Settings:Get("syncTrusted") and true or false,
+          action = "setting",
+          payload = "syncTrusted",
+        },
         meta = { h = 18 },
       },
       {
@@ -257,7 +302,12 @@ local function build(app)
         props = { gap = 6 },
         meta = { h = 24 },
         children = {
-          { id = "share.t.name", type = "input", props = { value = app.trustName or "", hint = L["Character name"], action = "trustName" }, meta = { grow = 1 } },
+          {
+            id = "share.t.name",
+            type = "input",
+            props = { value = app.trustName or "", hint = L["Character name"], action = "trustName" },
+            meta = { grow = 1 },
+          },
           { id = "share.t.ask", type = "button", props = { label = L["Ask to share"], action = "trustAdd" } },
         },
       },
@@ -279,11 +329,14 @@ local function build(app)
     blockedText = blockedText .. L["By your guild officers: %s"]:format(table.concat(guildBlocked, ", "))
   else
     blockedText = blockedText
-      .. L['Guild officers can block players for everyone: add a line "%s" to the guild info.']:format("AME block: Name, Name")
+      .. L['Guild officers can block players for everyone: add a line "%s" to the guild info.']:format(
+        "AME block: Name, Name"
+      )
   end
   local blockRows = {}
   for _, b in ipairs(trust and others(svc, trust:BlockedList()) or {}) do
-    blockRows[#blockRows + 1] = { key = "b:" .. b.name, name = b.name, state = L["blocked %s"]:format(ago(b.at)), act = L["Unblock"] }
+    blockRows[#blockRows + 1] =
+      { key = "b:" .. b.name, name = b.name, state = L["blocked %s"]:format(ago(b.at)), act = L["Unblock"] }
   end
   app:Source("guild.blocked", blockRows)
   local blockCard = {
@@ -293,7 +346,12 @@ local function build(app)
     meta = { h = 130 },
     children = {
       G.Text("share.b.text", blockedText, { wrap = true, meta = { h = 28 } }),
-      { id = "share.b.list", type = "table", props = { source = "guild.blocked", columns = PEER_COLUMNS, bare = true }, meta = { grow = 1 } },
+      {
+        id = "share.b.list",
+        type = "table",
+        props = { source = "guild.blocked", columns = PEER_COLUMNS, bare = true },
+        meta = { grow = 1 },
+      },
     },
   }
   local main = {
@@ -301,7 +359,13 @@ local function build(app)
     type = "column",
     props = { gap = 8 },
     children = {
-      { id = "share.kpis", type = "grid", props = { cols = math.max(1, #kpis), gap = 8, rowH = 66 }, meta = { h = 66 }, children = kpis },
+      {
+        id = "share.kpis",
+        type = "grid",
+        props = { cols = math.max(1, #kpis), gap = 8, rowH = 66 },
+        meta = { h = 66 },
+        children = kpis,
+      },
       { id = "share.act", type = "card", props = { gap = 4 }, meta = { h = actH }, children = actKids },
       {
         id = "share.cards",
@@ -310,7 +374,13 @@ local function build(app)
         meta = { grow = 1 },
         children = {
           guildCard,
-          { id = "share.col2", type = "column", props = { gap = 8 }, meta = { grow = 1 }, children = { trustCard, blockCard } },
+          {
+            id = "share.col2",
+            type = "column",
+            props = { gap = 8 },
+            meta = { grow = 1 },
+            children = { trustCard, blockCard },
+          },
         },
       },
     },
@@ -326,7 +396,12 @@ local function status()
   local act = G.Activity()
   local text = L["Sync is on"]
   if (act.receivingFrom or 0) > 0 then
-    text = text .. " · " .. (act.receivingFrom == 1 and L["receiving from 1 player"] or L["receiving from %d players"]:format(act.receivingFrom))
+    text = text
+      .. " · "
+      .. (
+        act.receivingFrom == 1 and L["receiving from 1 player"]
+        or L["receiving from %d players"]:format(act.receivingFrom)
+      )
   end
   if (act.catchUp or 0) > 0 and ns.UI and ns.UI.Duration then
     text = text .. " · " .. L["caught up in ~%s"]:format(ns.UI.Duration(act.catchUp))

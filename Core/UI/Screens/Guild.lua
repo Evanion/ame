@@ -54,7 +54,13 @@ function G.Text(id, text, opts)
   return {
     id = id,
     type = "text",
-    props = { text = text or "", color = opts.color or "dim", size = opts.size or 11, wrap = opts.wrap, justify = opts.justify },
+    props = {
+      text = text or "",
+      color = opts.color or "dim",
+      size = opts.size or 11,
+      wrap = opts.wrap,
+      justify = opts.justify,
+    },
     meta = opts.meta,
   }
 end
@@ -141,7 +147,8 @@ local function crafters(app, params)
           action = "pickRecipe",
           selected = picked and tostring(picked.recipe) or nil,
           note = L["Your guild, trusted players and your own characters, as their profession windows recorded them."],
-          empty = d.search == "" and L["Type part of an item or enchant name. Your guildmates' recipes arrive with sync; open each of your professions once so yours count too."]
+          empty = d.search == ""
+              and L["Type part of an item or enchant name. Your guildmates' recipes arrive with sync; open each of your professions once so yours count too."]
             or L["Nobody you share with knows a recipe by that name yet."],
         },
         meta = { grow = 1 },
@@ -151,8 +158,18 @@ local function crafters(app, params)
   local rightKids = {}
   if picked then
     local whatKid = d.info.item
-        and { id = "guild.what.item", type = "itemlink", props = { item = d.info.item, size = 13, bold = true }, meta = { h = 18 } }
-      or { id = "guild.what.item", type = "text", props = { text = picked.name, color = "white", size = 13 }, meta = { h = 18 } }
+        and {
+          id = "guild.what.item",
+          type = "itemlink",
+          props = { item = d.info.item, size = 13, bold = true },
+          meta = { h = 18 },
+        }
+      or {
+        id = "guild.what.item",
+        type = "text",
+        props = { text = picked.name, color = "white", size = 13 },
+        meta = { h = 18 },
+      }
     rightKids[#rightKids + 1] = {
       id = "guild.what",
       type = "card",
@@ -166,11 +183,19 @@ local function crafters(app, params)
     rightKids[#rightKids + 1] = {
       id = "guild.crafters",
       type = "table",
-      props = { source = "guild.crafters", columns = CRAFTER_COLUMNS, action = "pickCrafter", selected = params.crafter },
+      props = {
+        source = "guild.crafters",
+        columns = CRAFTER_COLUMNS,
+        action = "pickCrafter",
+        selected = params.crafter,
+      },
       meta = { grow = 1 },
     }
-    rightKids[#rightKids + 1] =
-      G.Text("guild.askhint", L["Ask opens the request: tick the reagents you bring, set the tip, and send."], { wrap = true, meta = { h = 28 } })
+    rightKids[#rightKids + 1] = G.Text(
+      "guild.askhint",
+      L["Ask opens the request: tick the reagents you bring, set the tip, and send."],
+      { wrap = true, meta = { h = 28 } }
+    )
     if d.formula then
       rightKids[#rightKids + 1] = {
         id = "guild.formula",
@@ -180,7 +205,12 @@ local function crafters(app, params)
           {
             id = "guild.formula.kv",
             type = "keyvalue",
-            props = { item = d.formula.item, label = L["on the AH"], copper = d.formula.price, text = not d.formula.price and L["not on the AH"] or nil },
+            props = {
+              item = d.formula.item,
+              label = L["on the AH"],
+              copper = d.formula.price,
+              text = not d.formula.price and L["not on the AH"] or nil,
+            },
             meta = { h = 18 },
           },
         },
@@ -235,7 +265,9 @@ App.Screen("guild", {
   Status = function()
     local c = ns.Crafters and ns.Crafters.Shared()
     local n = c and c:Players() or 0
-    return L["Recipes from %d players: your guild, trusted players and your characters · they arrive with guild sync"]:format(n)
+    return L["Recipes from %d players: your guild, trusted players and your characters · they arrive with guild sync"]:format(
+      n
+    )
   end,
   actions = G.Actions({
     search = function(app, p)

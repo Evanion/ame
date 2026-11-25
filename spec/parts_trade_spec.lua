@@ -100,7 +100,9 @@ describe("the trade widgets", function()
 
     before_each(function()
       AH = {
-        results = { [2452] = { commodity = true, rows = { { price = 904, qty = 60 }, { price = 910, qty = 85 } }, at = 0 } },
+        results = {
+          [2452] = { commodity = true, rows = { { price = 904, qty = 60 }, { price = 910, qty = 85 } }, at = 0 },
+        },
         calls = {},
       }
       function AH:Buy(key, qty)
@@ -123,7 +125,15 @@ describe("the trade widgets", function()
     local function card(extra)
       local rows = ns.ItemPage.Listings(AH.results[2452], 100, 0)
       ctx.sources.listings = rows
-      local props = { summary = "145 on sale · just now", listings = "listings", qty = "100", total = 90640, itemKey = 2452, action = "bought", qtyAction = "qty" }
+      local props = {
+        summary = "145 on sale · just now",
+        listings = "listings",
+        qty = "100",
+        total = 90640,
+        itemKey = 2452,
+        action = "bought",
+        qtyAction = "qty",
+      }
       for k, v in pairs(extra or {}) do
         props[k] = v
       end

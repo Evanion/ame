@@ -320,7 +320,8 @@ local function chartFor(f, kind)
       Chart.Legend(f)
     end)
   elseif kind == "spark" then
-    c = L2:New(f.plot, { panes = { { axis = "y", weight = 1 } }, padding = { left = 2, right = 2, top = 4, bottom = 4 } })
+    c =
+      L2:New(f.plot, { panes = { { axis = "y", weight = 1 } }, padding = { left = 2, right = 2, top = 4, bottom = 4 } })
     c:SetAxisFormatter("y", function()
       return ""
     end)
@@ -444,7 +445,9 @@ function Chart.Draw(f)
   if p.kind == "item" then
     local pts = data.points or {}
     if #pts == 0 then
-      c:SetMessage(data.message or L["No history for this item yet. Search for it at the auction house, or run a full scan."])
+      c:SetMessage(
+        data.message or L["No history for this item yet. Search for it at the auction house, or run a full scan."]
+      )
       Chart.Legend(f)
       return
     end

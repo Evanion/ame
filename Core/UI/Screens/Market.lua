@@ -110,8 +110,13 @@ local function text(id, value, color, size, meta)
 end
 
 -- money: the amount drawn in its coins' colours while it isn't being typed in
-local function input(id, value, hint, action, w, money)
-  return { id = id, type = "input", props = { value = value or "", hint = hint, action = action, money = money or nil }, meta = { w = w, h = 24 } }
+local function input(id, value, hint, action, w, isMoney)
+  return {
+    id = id,
+    type = "input",
+    props = { value = value or "", hint = hint, action = action, money = isMoney or nil },
+    meta = { w = w, h = 24 },
+  }
 end
 
 local function gap(id, w)
@@ -145,9 +150,12 @@ end
 
 local function loadingText(app, why)
   if why == "empty" then
-    return L["No price history for the %s yet: scan there (any character on this account counts)."]:format(houseLabel(app:House()))
+    return L["No price history for the %s yet: scan there (any character on this account counts)."]:format(
+      houseLabel(app:House())
+    )
   end
-  return ns.AME and ns.AME.HistoryLoaded and ns.AME:HistoryLoaded() and L["Building market index..."] or L["Loading history..."]
+  return ns.AME and ns.AME.HistoryLoaded and ns.AME:HistoryLoaded() and L["Building market index..."]
+    or L["Loading history..."]
 end
 
 -- what you hold, by key (the screener's You hold): your characters on this market, counted lazily
@@ -167,7 +175,11 @@ local function modeSwitch(app, mode)
   if app.compact then
     return btn("market.mode", Market.ModeLabel(mode) .. arrow(), "modeMenu")
   end
-  return { id = "market.mode", type = "segmented", props = { options = Market.ModeOptions(), selected = mode, action = "mode" } }
+  return {
+    id = "market.mode",
+    type = "segmented",
+    props = { options = Market.ModeOptions(), selected = mode, action = "mode" },
+  }
 end
 
 -- the table widget takes confidence bars once it knows them (a proposed prop); until then they're left out
@@ -331,7 +343,8 @@ local function screenerToolbar(app, params, hidden, ah)
     kids[#kids + 1] = btn("market.category", current .. arrow(), "categoryMenu")
   end
   if ah then
-    kids[#kids + 1] = input("market.search", S.ah.text, L["Search the auction house..."], "ahText", app.compact and 150 or 200)
+    kids[#kids + 1] =
+      input("market.search", S.ah.text, L["Search the auction house..."], "ahText", app.compact and 150 or 200)
     kids[#kids + 1] = btn("market.go", L["Search"], "ahSearch", "primary")
     if not app.compact then
       local n = ns.AHBrowse and ns.AHBrowse.Count and ns.AHBrowse.Count(S.ah.filters) or 0
@@ -358,7 +371,7 @@ local function screenerToolbar(app, params, hidden, ah)
   return { id = "market.bar", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = kids }
 end
 
-local function filterRow(app, params, ah)
+local function filterRow(_app, params, ah)
   local q = S.q
   local names = chipNames(q, S.side or { lists = {}, guild = {} })
   names.ahText = ah and S.ah.text or nil
@@ -393,7 +406,8 @@ local function buyCard(app, key)
   elseif #listings == 0 then
     summary = L["none listed"]
   else
-    summary = L["%s on sale · %s"]:format(W().Count and W().Count(onSale) or onSale, W().Ago and W().Ago(book.at, now()) or "")
+    summary =
+      L["%s on sale · %s"]:format(W().Count and W().Count(onSale) or onSale, W().Ago and W().Ago(book.at, now()) or "")
   end
   local def = Layout.Get("buycard")
   if not def then -- the Item area's widget isn't there yet: say so rather than draw nothing
@@ -448,7 +462,12 @@ local function pickPanel(app, key, idx)
         props = { gap = 3 },
         meta = { h = 82 },
         children = {
-          { id = "market.pickItem", type = "itemlink", props = { item = key, size = 14, bold = true }, meta = { h = 20 } },
+          {
+            id = "market.pickItem",
+            type = "itemlink",
+            props = { item = key, size = 14, bold = true },
+            meta = { h = 20 },
+          },
           {
             id = "market.pickLine",
             type = "row",
@@ -459,7 +478,16 @@ local function pickPanel(app, key, idx)
               { id = "market.pickMarket", type = "money", props = { copper = s.market, size = 11 } },
               text("market.pickDot", "·", "dim", 11),
               { id = "market.pickSignal", type = "signal", props = { signal = s.signal } },
-              text("market.pickRate", s.soldPerDay and ("· " .. L["%s sells/day"]:format(W().Rate and W().Rate(s.soldPerDay):gsub("/d$", "") or tostring(s.soldPerDay))) or "", "dim", 11),
+              text(
+                "market.pickRate",
+                s.soldPerDay
+                    and ("· " .. L["%s sells/day"]:format(
+                      W().Rate and W().Rate(s.soldPerDay):gsub("/d$", "") or tostring(s.soldPerDay)
+                    ))
+                  or "",
+                "dim",
+                11
+              ),
             },
           },
           text("market.pickNote", table.concat(line2, " · "), "dim", 11, { h = 16 }),
@@ -491,9 +519,12 @@ local function screenerBody(app, params)
   S.side = f
   resolveList(q, f)
   local chosen = ns.Settings and ns.Settings:Table("marketColumns") or {}
-  local state = ah and (app.compact and "ahcompact" or "ah") or alerts and "alerts" or app.compact and "compact" or "screener"
+  local state = ah and (app.compact and "ahcompact" or "ah")
+    or alerts and "alerts"
+    or app.compact and "compact"
+    or "screener"
   local columns, hidden = Market.Columns(state, chosen, avgDays())
-  local rows, empty, note, selected = {}, nil, nil, nil
+  local rows, empty, note, selected = {}
   local hold = heldQty("owned", "market")
   -- a list or a category picked at the auction house, not searched yet: its items from your scans, as away (a click
   -- searches the row's item); the toolbar keeps the auction house's search box
@@ -505,10 +536,21 @@ local function screenerBody(app, params)
   if ah and not listed then
     local B = ns.AHBrowse
     local found = (B and S.ah.at) and B.Rows(B.results, S.ah.filters, idx and idx.items) or {}
-    rows = Market.AHRows(found, idx and idx.items, { minQuality = q.minQuality, minPrice = q.minPrice, maxPrice = q.maxPrice, signal = q.signal, classID = q.classID, subClassID = q.subClassID, only = q.only }, info, avgDays())
-    S.status = Market.AHStatus(houseLabel(app:House()), #rows, B and B.active, S.ah.at and W().Ago and W().Ago(S.ah.at, now()))
-    empty = S.ah.at and L["Nothing on sale matches these filters."] or L["Search the auction house: type a name and press Enter."]
-    note = app.compact and L["On sale now, from the auction house. Click a row to open the item: its listings, and Buy. Lists and categories are in the first dropdown."]
+    rows = Market.AHRows(found, idx and idx.items, {
+      minQuality = q.minQuality,
+      minPrice = q.minPrice,
+      maxPrice = q.maxPrice,
+      signal = q.signal,
+      classID = q.classID,
+      subClassID = q.subClassID,
+      only = q.only,
+    }, info, avgDays())
+    S.status =
+      Market.AHStatus(houseLabel(app:House()), #rows, B and B.active, S.ah.at and W().Ago and W().Ago(S.ah.at, now()))
+    empty = S.ah.at and L["Nothing on sale matches these filters."]
+      or L["Search the auction house: type a name and press Enter."]
+    note = app.compact
+        and L["On sale now, from the auction house. Click a row to open the item: its listings, and Buy. Lists and categories are in the first dropdown."]
       or L["On sale now. Click a row: its listings and Buy show on the right. The item's name opens its page."]
     selected = params.pick or nil
   elseif not idx then
@@ -534,7 +576,8 @@ local function screenerBody(app, params)
     selected = lit
     S.status = Market.AlertStatus(Market.Size(set), Market.FiredToday(fired, now()))
     empty = L["No alerts yet. Set one on an item's page, or from its right-click menu."]
-    note = L["Click a row to open the item; right-click to change or remove its alert. A lit row has fired and not been opened yet."]
+    note =
+      L["Click a row to open the item; right-click to change or remove its alert. A lit row has fired and not been opened yet."]
   else
     local list, unnamed = screenerList(idx, q, { only = q.only, hidden = f.sets.hidden, hiddenN = f.hidden })
     if S.cache.rows == nil or S.cache.rowsFor ~= S.cache.sig then
@@ -545,7 +588,8 @@ local function screenerBody(app, params)
     local ago, by = scanFacts(app)
     S.status = Market.ScreenerStatus({ total = #rows, scanAgo = ago, scanBy = by, unnamed = unnamed })
     empty = L["Nothing matches these filters. Clear some (chips above) or pick All items."]
-    note = app.compact and L["Narrow window: the category list is the first dropdown, and Supply and Score are hidden (Columns, in More)."]
+    note = app.compact
+        and L["Narrow window: the category list is the first dropdown, and Supply and Score are hidden (Columns, in More)."]
       or L["Click a row to open the item; right-click for its menu. Faded rows: data older than 3 days."]
   end
   app:Source("market.rows", rows)
@@ -561,7 +605,9 @@ local function screenerBody(app, params)
       note = note,
       empty = empty,
       confidence = not ah and not alerts or nil,
-      sort = (not ah and not alerts) and { key = Market.SortColumn(q.sortKey or "score"), ascending = q.ascending or false } or nil,
+      sort = (not ah and not alerts)
+          and { key = Market.SortColumn(q.sortKey or "score"), ascending = q.ascending or false }
+        or nil,
       sortAction = (not ah and not alerts) and "sort" or nil,
     }),
     meta = { grow = 1 },
@@ -630,7 +676,8 @@ local function listSideFacts(held, items)
     f.guild[#f.guild + 1] = { key = g.key, name = g.name, owner = g.owner, count = Market.Size(g.items), kind = "shop" }
   end
   for _, g in ipairs(w and w:GuildLists() or {}) do
-    f.guild[#f.guild + 1] = { key = g.key, name = g.name, owner = g.owner, count = Market.Size(g.items), kind = "watch" }
+    f.guild[#f.guild + 1] =
+      { key = g.key, name = g.name, owner = g.owner, count = Market.Size(g.items), kind = "watch" }
   end
   return f
 end
@@ -650,16 +697,15 @@ local function listsBody(app, params)
   S.listRows = progress
   -- drawn as the old Shopping tab: what you have green once it covers the need, a price at or under your top price
   -- with a green "*"
-  local W = ns.Widgets
   local shown = {}
   for i, r in ipairs(rows) do
     local d = {}
     for k, v in pairs(r) do
       d[k] = v
     end
-    d.have = r.covered and { text = W.Count(r.have or 0), color = "good" } or W.Count(r.have or 0)
+    d.have = r.covered and { text = W().Count(r.have or 0), color = "good" } or W().Count(r.have or 0)
     if type(r.price) == "number" then
-      d.price = W.Money(r.price, true) .. (r.under and ("  " .. W.Color("good", "*")) or "")
+      d.price = W().Money(r.price, true) .. (r.under and ("  " .. W().Color("good", "*")) or "")
     end
     shown[i] = d
   end
@@ -670,14 +716,16 @@ local function listsBody(app, params)
     { key = "need", label = L["Need"], width = 54, format = "count" },
     { key = "have", label = L["Have"], width = 54 }, -- green once it covers the need
     { key = "tobuy", label = L["To buy"], width = 190 },
-    { key = "price", label = ah and L["Lowest listing"] or L["Market"], width = 100 }, -- money, "*" at or under your top price
+    -- money, "*" at or under your top price
+    { key = "price", label = ah and L["Lowest listing"] or L["Market"], width = 100 },
     { key = "max", label = L["Top price"], width = 86, format = "money" },
     { key = "cost", label = L["Cost"], width = 90, format = "money" },
   }
   local header = {}
   local note
   if sel then
-    header[#header + 1] = text("market.listName", sel.name .. (sel.owner and ("  (" .. sel.owner .. ")") or ""), "gold", 14)
+    header[#header + 1] =
+      text("market.listName", sel.name .. (sel.owner and ("  (" .. sel.owner .. ")") or ""), "gold", 14)
     if ah then
       local S2 = ns.AHSearch
       if S2 and S2.Busy and S2:Busy() then
@@ -686,7 +734,8 @@ local function listsBody(app, params)
         note = L["%d still to buy"]:format(totals and totals.missing or 0)
       end
     else
-      note = sel.own and L["right-click the list in the sidebar to rename, share or delete it"] or L["right-click the list in the sidebar to copy it"]
+      note = sel.own and L["right-click the list in the sidebar to rename, share or delete it"]
+        or L["right-click the list in the sidebar to copy it"]
     end
     header[#header + 1] = text("market.listNote", note, "dim", 11)
   else
@@ -694,14 +743,29 @@ local function listsBody(app, params)
   end
   header[#header + 1] = gap("market.listGap")
   if ah then
-    header[#header + 1] = { id = "market.onlyTop", type = "check", props = { label = L["Only at or under my top price"], checked = S.lists.onlyTop, action = "onlyTop" } }
+    header[#header + 1] = {
+      id = "market.onlyTop",
+      type = "check",
+      props = { label = L["Only at or under my top price"], checked = S.lists.onlyTop, action = "onlyTop" },
+    }
     header[#header + 1] = btn("market.searchAll", L["Search all"], "searchAll", sel and nil or "disabled")
   else
-    header[#header + 1] = btn("market.reagents", L["Add a recipe's reagents"] .. arrow(), "reagents", (sel and sel.own) and nil or "disabled")
+    header[#header + 1] = btn(
+      "market.reagents",
+      L["Add a recipe's reagents"] .. arrow(),
+      "reagents",
+      (sel and sel.own) and nil or "disabled"
+    )
     header[#header + 1] = btn("market.searchAH", L["Search the AH"], "searchAH", "primary")
   end
   local right = {
-    { id = "market.listHead", type = "row", props = { gap = 8, align = "center" }, meta = { h = 24 }, children = header },
+    {
+      id = "market.listHead",
+      type = "row",
+      props = { gap = 8, align = "center" },
+      meta = { h = 24 },
+      children = header,
+    },
     {
       id = "market.listTable",
       type = "table",
@@ -709,9 +773,11 @@ local function listsBody(app, params)
         source = "market.list",
         columns = columns,
         action = "listRow",
-        note = ah and L["Click a row to open the item and its listings. Dearer than your top price: skipped while the box above is ticked."]
+        note = ah
+            and L["Click a row to open the item and its listings. Dearer than your top price: skipped while the box above is ticked."]
           or L["Right-click an item to change the quantity, set a top price or remove it."],
-        empty = sel and (sel.own and L["Empty. Add items from any item's right-click menu, or a recipe's reagents."] or L["This list is empty."])
+        empty = sel
+            and (sel.own and L["Empty. Add items from any item's right-click menu, or a recipe's reagents."] or L["This list is empty."])
           or L["Make a shopping list with + New shopping list."],
       },
       meta = { grow = 1 },
@@ -721,7 +787,8 @@ local function listsBody(app, params)
     local nextBuy, after = Market.NextBuy(progress, results, { onlyTop = S.lists.onlyTop, skip = S.lists.skip })
     local bar = { action = "bought", skipAction = "buySkip", cancelAction = "buyCancel" }
     if nextBuy then
-      bar.key, bar.item, bar.count, bar.copper, bar.qty, bar.commodity = nextBuy.key, nextBuy.key, nextBuy.qty, nextBuy.cost, nextBuy.qty, nextBuy.commodity
+      bar.key, bar.item, bar.count, bar.copper, bar.qty, bar.commodity =
+        nextBuy.key, nextBuy.key, nextBuy.qty, nextBuy.cost, nextBuy.qty, nextBuy.commodity
       if nextBuy.max and nextBuy.allUnder then
         bar.note = L["from %d listings, all under your top price of %s"]:format(nextBuy.listings, money(nextBuy.max))
       else
@@ -729,7 +796,8 @@ local function listsBody(app, params)
       end
       bar.after = after and itemName(after) or nil
     else
-      bar.empty = (totals and totals.done) and L["Nothing left to buy on this list."] or L["Search all to find listings for what's still short."]
+      bar.empty = (totals and totals.done) and L["Nothing left to buy on this list."]
+        or L["Search all to find listings for what's still short."]
     end
     right[#right + 1] = { id = "market.buybar", type = "buybar", props = bar, meta = { h = 40 } }
   end
@@ -743,7 +811,8 @@ local function listsBody(app, params)
       meta = { w = 190 },
     }
   end
-  main[#main + 1] = { id = "market.listMain", type = "column", props = { gap = 8 }, meta = { grow = 1 }, children = right }
+  main[#main + 1] =
+    { id = "market.listMain", type = "column", props = { gap = 8 }, meta = { grow = 1 }, children = right }
   local top = { modeSwitch(app, "lists") }
   if app.compact then
     top[#top + 1] = btn("market.listPick", (sel and sel.name or L["Lists"]) .. arrow(), "listMenu")
@@ -895,21 +964,30 @@ local function arbitrageBody(app, params)
   elseif not r then
     message = L["Loading market data..."]
   elseif r.missing then
-    message = L["No price history for the %s yet: scan there (any character on this account counts) to compare."]:format(r.missing)
+    message =
+      L["No price history for the %s yet: scan there (any character on this account counts) to compare."]:format(
+        r.missing
+      )
   else
-    summary = L["%d routes · buy cut %d%% at the %s, sell cut %d%% at the %s · deposits for %d h listings counted in net"]:format(
-      #list,
-      math.floor((ns.Quote.Cut and ns.Quote.Cut(a.buy) or 0) * 100 + 0.5),
-      houseLabel(a.buy),
-      math.floor((r.cut or 0) * 100 + 0.5),
-      houseLabel(a.sell),
-      ns.Settings and ns.Settings:Get("listingHours") or 24
-    )
+    summary =
+      L["%d routes · buy cut %d%% at the %s, sell cut %d%% at the %s · deposits for %d h listings counted in net"]:format(
+        #list,
+        math.floor((ns.Quote.Cut and ns.Quote.Cut(a.buy) or 0) * 100 + 0.5),
+        houseLabel(a.buy),
+        math.floor((r.cut or 0) * 100 + 0.5),
+        houseLabel(a.sell),
+        ns.Settings and ns.Settings:Get("listingHours") or 24
+      )
     if (r.transfers or 0) > 0 then
       summary = summary .. " · " .. L["%d hidden as likely gold transfers (over 2000%% margin)"]:format(r.transfers)
     end
   end
-  S.status = r and not r.missing and (L["%d routes"]:format(#list) .. " · " .. houseLabel(a.buy) .. " " .. sideData(a.buy) .. " · " .. houseLabel(a.sell) .. " " .. sideData(a.sell)) or ""
+  S.status = r
+      and not r.missing
+      and (L["%d routes"]:format(#list) .. " · " .. houseLabel(a.buy) .. " " .. sideData(a.buy) .. " · " .. houseLabel(
+        a.sell
+      ) .. " " .. sideData(a.sell))
+    or ""
   -- the picked route: kept while it's still a route, else the first
   local pick
   for _, e in ipairs(list) do
@@ -922,12 +1000,25 @@ local function arbitrageBody(app, params)
   local w = app.compact and 220 or 260
   if pick then
     local units, _, profit = depthRoute(pick, a)
-    local unitsText = units and (units == 0 and "0" or L["%d at this price"]:format(units) .. (profit and ("  " .. (W().SignedMoney and W().SignedMoney(profit) or "")) or "")) or L["search the buy house"]
+    local unitsText = units
+        and (units == 0 and "0" or L["%d at this price"]:format(units) .. (profit and ("  " .. (W().SignedMoney and W().SignedMoney(
+          profit
+        ) or "")) or ""))
+      or L["search the buy house"]
     local cutPct = math.floor((r.cut or 0) * 100 + 0.5)
-    local cost = Market.RouteCost(pick, { buyHouse = houseLabel(a.buy), sellHouse = houseLabel(a.sell), cutPct = cutPct })
-    local data = Market.RouteData(pick, { buyData = sideData(a.buy, pick.buyAge), sellData = sideData(a.sell, pick.sellAge), units = unitsText })
+    local cost =
+      Market.RouteCost(pick, { buyHouse = houseLabel(a.buy), sellHouse = houseLabel(a.sell), cutPct = cutPct })
+    local data = Market.RouteData(
+      pick,
+      { buyData = sideData(a.buy, pick.buyAge), sellData = sideData(a.sell, pick.sellAge), units = unitsText }
+    )
     local dataKids = kvRows("market.routeData", data)
-    dataKids[#dataKids + 1] = { id = "market.routeNote", type = "text", props = { text = Market.RouteNote(pick), color = "dim", size = 11, wrap = true }, meta = { h = 30 } }
+    dataKids[#dataKids + 1] = {
+      id = "market.routeNote",
+      type = "text",
+      props = { text = Market.RouteNote(pick), color = "dim", size = 11, wrap = true },
+      meta = { h = 30 },
+    }
     side = {
       {
         id = "market.routeHead",
@@ -935,13 +1026,36 @@ local function arbitrageBody(app, params)
         props = { gap = 2 },
         meta = { h = 58 },
         children = {
-          { id = "market.routeItem", type = "itemlink", props = { item = pick.itemID, bold = true }, meta = { h = 18 } },
+          {
+            id = "market.routeItem",
+            type = "itemlink",
+            props = { item = pick.itemID, bold = true },
+            meta = { h = 18 },
+          },
           text("market.routeWay", L["%s → %s"]:format(houseLabel(a.buy), houseLabel(a.sell)), "dim", 11, { h = 16 }),
         },
       },
-      { id = "market.routeCost", type = "card", props = { gap = 4 }, meta = { h = 20 + #cost * 22 }, children = kvRows("market.routeCost", cost) },
-      { id = "market.routeDataCard", type = "card", props = { gap = 4 }, meta = { h = 20 + #data * 22 + 34 }, children = dataKids },
-      btn("market.routeSearch", L["Search at the %s"]:format(houseLabel(a.buy)), "arbSearch", here and "primary" or "disabled", pick.itemID),
+      {
+        id = "market.routeCost",
+        type = "card",
+        props = { gap = 4 },
+        meta = { h = 20 + #cost * 22 },
+        children = kvRows("market.routeCost", cost),
+      },
+      {
+        id = "market.routeDataCard",
+        type = "card",
+        props = { gap = 4 },
+        meta = { h = 20 + #data * 22 + 34 },
+        children = dataKids,
+      },
+      btn(
+        "market.routeSearch",
+        L["Search at the %s"]:format(houseLabel(a.buy)),
+        "arbSearch",
+        here and "primary" or "disabled",
+        pick.itemID
+      ),
       {
         id = "market.routeActions",
         type = "row",
@@ -967,8 +1081,21 @@ local function arbitrageBody(app, params)
     btn("market.sellAt", houseLabel(a.sell) .. arrow(), "arbSell"),
   }
   if not app.compact then
-    bar[#bar + 1] = input("market.minProfit", a.minProfit and a.minProfit > 1 and gold(a.minProfit) or "", L["min profit g"], "arbMinProfit", 86, true)
-    bar[#bar + 1] = input("market.minMargin", a.minMargin and tostring(math.floor(a.minMargin * 100 + 0.5)) or "", L["min margin %"], "arbMinMargin", 86)
+    bar[#bar + 1] = input(
+      "market.minProfit",
+      a.minProfit and a.minProfit > 1 and gold(a.minProfit) or "",
+      L["min profit g"],
+      "arbMinProfit",
+      86,
+      true
+    )
+    bar[#bar + 1] = input(
+      "market.minMargin",
+      a.minMargin and tostring(math.floor(a.minMargin * 100 + 0.5)) or "",
+      L["min margin %"],
+      "arbMinMargin",
+      86
+    )
     bar[#bar + 1] = btn("market.age", Market.AgeLabel(a.maxAge) .. arrow(), "arbAge")
     bar[#bar + 1] = gap("market.gap2")
     bar[#bar + 1] = btn("market.columns", Market.ColumnsLabel(hidden), "arbColumns")
@@ -1244,9 +1371,15 @@ end
 local function itemMenu(app, key, extra)
   local UI = ns.UI
   if UI and UI.ItemMenu then
-    try(UI.ItemMenu, UI, app.frame, key, { hide = true, extra = extra and function()
-      return extra
-    end or nil })
+    try(
+      UI.ItemMenu,
+      UI,
+      app.frame,
+      key,
+      { hide = true, extra = extra and function()
+        return extra
+      end or nil }
+    )
     S.cache.sig = nil -- hiding or watching it changes the list
   end
 end
@@ -1286,7 +1419,10 @@ A.side = function(app, p)
   if what == "newlist" then
     prompt("AME_NEW_LIST", L["Name for the new watchlist:"], function(name)
       local w = watch()
-      local i, why = w and w:AddList(name)
+      local i, why
+      if w then
+        i, why = w:AddList(name) -- "and" would keep only the first value: the reason would be lost
+      end
       if not i and why then
         say("%s", why)
       end
@@ -1409,9 +1545,15 @@ end
 
 A.ahFilters = function(app)
   local f = S.ah.filters
-  local entries = { { text = L["Any category"], checked = f.category == nil, func = function()
-    f.category = nil
-  end } }
+  local entries = {
+    {
+      text = L["Any category"],
+      checked = f.category == nil,
+      func = function()
+        f.category = nil
+      end,
+    },
+  }
   for i, c in ipairs(_G.AuctionCategories or {}) do
     if c.name then
       entries[#entries + 1] = {
@@ -1425,14 +1567,22 @@ A.ahFilters = function(app)
     end
   end
   entries[#entries + 1] = { separator = true }
-  entries[#entries + 1] = { text = L["Exact name"], checked = f.exact or false, func = function()
-    f.exact = not f.exact or nil
-    redraw()
-  end }
-  entries[#entries + 1] = { text = L["Usable by you"], checked = f.usable or false, func = function()
-    f.usable = not f.usable or nil
-    redraw()
-  end }
+  entries[#entries + 1] = {
+    text = L["Exact name"],
+    checked = f.exact or false,
+    func = function()
+      f.exact = not f.exact or nil
+      redraw()
+    end,
+  }
+  entries[#entries + 1] = {
+    text = L["Usable by you"],
+    checked = f.usable or false,
+    func = function()
+      f.usable = not f.usable or nil
+      redraw()
+    end,
+  }
   menu(app, entries)
 end
 
@@ -1552,19 +1702,29 @@ A.listSide = function(app, p)
     end
   elseif key:match("^sg:") then
     if p.button == "RightButton" and shop then
-      menu(app, { { text = L["Copy to my shopping lists"], func = function()
-        shop:CopyGuildList(key:sub(4))
-        redraw()
-      end } }, true)
+      menu(app, {
+        {
+          text = L["Copy to my shopping lists"],
+          func = function()
+            shop:CopyGuildList(key:sub(4))
+            redraw()
+          end,
+        },
+      }, true)
     else
       app:Set({ list = key })
     end
   elseif key:match("^wg:") then
     if p.button == "RightButton" and w then
-      menu(app, { { text = L["Copy to my watchlists"], func = function()
-        w:CopyGuildList(key:sub(4))
-        redraw()
-      end } }, true)
+      menu(app, {
+        {
+          text = L["Copy to my watchlists"],
+          func = function()
+            w:CopyGuildList(key:sub(4))
+            redraw()
+          end,
+        },
+      }, true)
     else
       S.q.list, S.q.classID, S.q.subClassID = "g:" .. key:sub(4), nil, nil
       app:Go("market", { mode = "screener" })
@@ -1574,7 +1734,10 @@ A.listSide = function(app, p)
     app:Go("market", { mode = "screener" })
   elseif key == "newshop" then
     prompt("AME_NEW_SHOP", L["Name for the new shopping list (what it's for):"], function(name)
-      local i, why = shop and shop:AddList(name)
+      local i, why
+      if shop then
+        i, why = shop:AddList(name)
+      end
       if i then
         app:Set({ list = "shop:" .. i })
       elseif why then
@@ -1618,23 +1781,32 @@ A.listRow = function(app, p)
     local shop, i, key = shopping(), sel.own, p.key
     menu(app, {
       { item = key },
-      { text = L["Set quantity..."], func = function()
-        askQuantity(i, key)
-      end },
-      { text = L["Set top price..."], func = function()
-        prompt("AME_SHOP_MAX", L["The most you'd pay for one, in gold (empty: no limit):"], function(t)
-          local g = tonumber(t)
-          local cur = shop:Lists()[i] and shop:Lists()[i].items[key]
-          if cur then
-            shop:SetItem(i, key, cur.need, g and g > 0 and g * 10000 or false)
-          end
+      {
+        text = L["Set quantity..."],
+        func = function()
+          askQuantity(i, key)
+        end,
+      },
+      {
+        text = L["Set top price..."],
+        func = function()
+          prompt("AME_SHOP_MAX", L["The most you'd pay for one, in gold (empty: no limit):"], function(t)
+            local g = tonumber(t)
+            local cur = shop:Lists()[i] and shop:Lists()[i].items[key]
+            if cur then
+              shop:SetItem(i, key, cur.need, g and g > 0 and g * 10000 or false)
+            end
+            redraw()
+          end)
+        end,
+      },
+      {
+        text = L["Remove from list"],
+        func = function()
+          shop:SetItem(i, key, 0)
           redraw()
-        end)
-      end },
-      { text = L["Remove from list"], func = function()
-        shop:SetItem(i, key, 0)
-        redraw()
-      end },
+        end,
+      },
     }, true)
     return
   end

@@ -291,20 +291,16 @@ describe("Pricing", function()
       local params = flat(25, 3, 0.5)
       params.swing = 0.3
       local book = { prices = { 942, 944, 949, 9900 }, qtys = { 5, 124, 150, 29 } }
-      local a = P.Suggest(
-        book,
-        params,
-        {
-          qty = 60,
-          hours = 24,
-          now = MONDAY_NOON,
-          cut = 0.05,
-          deposit = 7200,
-          vendor = 200,
-          reference = 972,
-          ceiling = 1944,
-        }
-      )
+      local a = P.Suggest(book, params, {
+        qty = 60,
+        hours = 24,
+        now = MONDAY_NOON,
+        cut = 0.05,
+        deposit = 7200,
+        vendor = 200,
+        reference = 972,
+        ceiling = 1944,
+      })
       assert.are.equal(math.floor(942 * (1 - 0.8 * 0.3 * math.sqrt(4 / 24))), a.quick.price)
       assert.are.equal(941, a.normal.price)
       assert.are.equal(math.floor(942 * 1.24), a.patient.price)
@@ -312,20 +308,16 @@ describe("Pricing", function()
       assert.is_true(a.quick.hours < a.normal.hours) -- cheaper sells faster: dip buyers
       -- a steady item: nothing above where it peaks, even when everything ahead would sell
       params.swing = 0.05
-      local calm = P.Suggest(
-        { prices = { 10000, 10050, 10200 }, qtys = { 40, 60, 100 } },
-        params,
-        {
-          qty = 1,
-          hours = 24,
-          now = MONDAY_NOON,
-          cut = 0.05,
-          deposit = 300,
-          vendor = 500,
-          reference = 10000,
-          ceiling = 15000,
-        }
-      )
+      local calm = P.Suggest({ prices = { 10000, 10050, 10200 }, qtys = { 40, 60, 100 } }, params, {
+        qty = 1,
+        hours = 24,
+        now = MONDAY_NOON,
+        cut = 0.05,
+        deposit = 300,
+        vendor = 500,
+        reference = 10000,
+        ceiling = 15000,
+      })
       assert.is_true(calm.patient.price <= 10400)
       assert.is_true(calm.normal.price <= calm.patient.price)
     end)

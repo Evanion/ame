@@ -53,7 +53,8 @@ local function snapshot()
   local s = { ids = ids, min = {}, market = {}, median = {}, qty = {}, auctions = {} }
   for i = 1, ITEMS do
     local p = math.random(100, 5000000)
-    s.min[i], s.market[i], s.median[i], s.qty[i], s.auctions[i] = p, p + 50, p + 80, math.random(1, 2000), math.random(1, 60)
+    s.min[i], s.market[i], s.median[i], s.qty[i], s.auctions[i] =
+      p, p + 50, p + 80, math.random(1, 2000), math.random(1, 60)
   end
   return s
 end

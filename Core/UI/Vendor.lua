@@ -146,7 +146,12 @@ function Vendor.Tree(_, total, count, junk)
               variant = count > 0 and "primary" or "disabled",
             },
           },
-          { id = "vendor.junk", type = "check", props = { label = L["Junk too"], checked = junk, action = "junk" }, meta = { h = 18 } },
+          {
+            id = "vendor.junk",
+            type = "check",
+            props = { label = L["Junk too"], checked = junk, action = "junk" },
+            meta = { h = 18 },
+          },
         },
       },
       {

@@ -2,7 +2,8 @@
 -- RequestAnswer).
 --
 --   heading       { title, note? }                        a panel title in the game's font with a dim note beside it
---   linktext      { parts, color?, size?, wrap? }         a line with item links in it (Kit.Parts): tooltip, Shift-click
+--   linktext      { parts, color?, size?, wrap? }         a line with item links in it (Kit.Parts): tooltip,
+--                                                         Shift-click
 --   statestrip    { steps = { label, ... }, current, ended? }   new › answered › accepted › ... the current one lit
 --   textarea      { value?, hint?, action?, payload? }    a box of several lines; action gets { text } as you type
 --                                                          (on focus lost too)

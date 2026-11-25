@@ -53,7 +53,11 @@ describe("composite widgets", function()
     end)
 
     it("draws the breadth bar from rise and fall", function()
-      local tree = { id = "b", type = "kpi", props = { label = "Breadth", value = "51%", rise = 2502, fall = 2397, note = "up · down" } }
+      local tree = {
+        id = "b",
+        type = "kpi",
+        props = { label = "Breadth", value = "51%", rise = 2502, fall = 2397, note = "up · down" },
+      }
       assert.same({}, Layout.Validate(tree))
       r:Render(tree)
       local f = r:Frame("b")

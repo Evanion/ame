@@ -30,10 +30,18 @@ describe("Crafting", function()
       SalesPerDay = function()
         return 2
       end,
-      SellOrRefine = function(_, item, qty)
+      SellOrRefine = function(_, _item, qty)
         return {
           raw = qty * 50,
-          options = { { sold = { n = qty, copper = qty * 80 }, net = qty * 80, gain = qty * 30, others = {}, left = { n = 0, copper = 0 } } },
+          options = {
+            {
+              sold = { n = qty, copper = qty * 80 },
+              net = qty * 80,
+              gain = qty * 30,
+              others = {},
+              left = { n = 0, copper = 0 },
+            },
+          },
         }
       end,
     }
@@ -44,7 +52,11 @@ describe("Crafting", function()
       },
       materials = {
         { item = 2001, need = 4, sources = { { kind = "carried", qty = 4 } } },
-        { item = 2002, need = 2, sources = { { kind = "alt", qty = 1, char = "Zakzu" }, { kind = "ah", qty = 1, cost = 100 } } },
+        {
+          item = 2002,
+          need = 2,
+          sources = { { kind = "alt", qty = 1, char = "Zakzu" }, { kind = "ah", qty = 1, cost = 100 } },
+        },
         { item = 1003, need = 4, sources = { { kind = "made", qty = 4 } }, part = 103, choice = "make" },
       },
       todo = {
@@ -60,19 +72,44 @@ describe("Crafting", function()
     facts = {
       me = "R:Kke",
       chars = {
-        ["R:Kke"] = { professions = { [171] = { name = "Alchemy", skill = 110, max = 150, learned = { [101] = true, [102] = true, [104] = true } } } },
+        ["R:Kke"] = {
+          professions = {
+            [171] = { name = "Alchemy", skill = 110, max = 150, learned = { [101] = true, [102] = true, [104] = true } },
+          },
+        },
         ["R:Zakzu"] = {
           professions = {
-            [164] = { name = "Blacksmithing", skill = 200, max = 225, learned = { [103] = true }, cooldowns = { [103] = 1 } },
+            [164] = {
+              name = "Blacksmithing",
+              skill = 200,
+              max = 225,
+              learned = { [103] = true },
+              cooldowns = { [103] = 1 },
+            },
             [171] = { name = "Alchemy", skill = 50, max = 75, learned = {} },
             [182] = { name = "Herbalism", skill = 300, max = 300, learned = {} },
           },
         },
       },
       entries = {
-        { recipe = recipes[101], crafters = { "R:Kke" }, profession = 171, eval = { profit = 500, cost = 100, revenue = 600, perDay = 900 } },
-        { recipe = recipes[102], crafters = { "R:Kke" }, profession = 171, eval = { profit = 9000, cost = 500, revenue = 9500 } },
-        { recipe = recipes[103], crafters = { "R:Zakzu" }, profession = 164, eval = { profit = -100, cost = 200, revenue = 100 } },
+        {
+          recipe = recipes[101],
+          crafters = { "R:Kke" },
+          profession = 171,
+          eval = { profit = 500, cost = 100, revenue = 600, perDay = 900 },
+        },
+        {
+          recipe = recipes[102],
+          crafters = { "R:Kke" },
+          profession = 171,
+          eval = { profit = 9000, cost = 500, revenue = 9500 },
+        },
+        {
+          recipe = recipes[103],
+          crafters = { "R:Zakzu" },
+          profession = 164,
+          eval = { profit = -100, cost = 200, revenue = 100 },
+        },
         { recipe = recipes[104], crafters = { "R:Kke" }, profession = 171, eval = { why = "enchant" } },
       },
       held = { [2001] = 10, [2002] = 0, [2003] = 5 },
@@ -193,7 +230,10 @@ describe("Crafting", function()
         by[r.id] = r
       end
       assert.equals(102, rows[1].id) -- by profit
-      assert.equals("missing 1 Item 2002", (by[101].ready.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H[^|]*|h", ""):gsub("|h", ""))) -- amber count, the item in its colour
+      assert.equals(
+        "missing 1 Item 2002",
+        (by[101].ready.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H[^|]*|h", ""):gsub("|h", ""))
+      ) -- amber count, the item in its colour
       assert.equals(2, by[101].queued)
       assert.equals("orange", by[101].diff)
       assert.equals("missing a tool: Salt Shaker", by[102].ready.text)
@@ -278,11 +318,16 @@ describe("Crafting", function()
     it("a place is the game's word, with whether you are near one", function()
       local t = CP.ToolLine(facts, { name = "Forge", kind = "place", met = false })
       assert.same({ place = "Forge", name = "Forge", have = "not nearby", tone = "warn" }, t)
-      assert.equals("no Loom here · you hold one", CP.ReadyText({ n = 0, needs = { { name = "Loom", kind = "place", id = 5, held = 1, met = false } } }).text)
+      assert.equals(
+        "no Loom here · you hold one",
+        CP.ReadyText({ n = 0, needs = { { name = "Loom", kind = "place", id = 5, held = 1, met = false } } }).text
+      )
     end)
 
     it("UI.CraftTools' ways in one short line", function()
-      local w = CP.WaysLine({ ways = { { kind = "make", profession = "Engineering", skill = 250 }, { kind = "ah", price = 450000 } } })
+      local w = CP.WaysLine({
+        ways = { { kind = "make", profession = "Engineering", skill = 250 }, { kind = "ah", price = 450000 } },
+      })
       assert.equals("Made by Engineering (250) · on the auction house", w.line)
       assert.equals(450000, w.price)
     end)
@@ -319,7 +364,8 @@ describe("Crafting", function()
 
     it("the strip with nothing missing: nothing to buy, no button", function()
       local plan = facts.plan
-      facts.plan = { toBuy = 0, steps = plan.steps, materials = { { item = 1, sources = { { kind = "bags", qty = 3 } } } } }
+      facts.plan =
+        { toBuy = 0, steps = plan.steps, materials = { { item = 1, sources = { { kind = "bags", qty = 3 } } } } }
       local s = CP.Strip(facts, true)
       facts.plan = plan
       assert.is_true(s.ready)
@@ -360,10 +406,25 @@ describe("Crafting", function()
     end)
 
     it("Leveling: steps with a learn line before a bought recipe, and a train line", function()
-      local entry = { recipe = { id = 101, product = 1001, reagents = { { 2001, 2 } } }, known = false, recipeItem = 4001, learnAt = 100, yellow = 100, grey = 140 }
+      local entry = {
+        recipe = { id = 101, product = 1001, reagents = { { 2001, 2 } } },
+        known = false,
+        recipeItem = 4001,
+        learnAt = 100,
+        yellow = 100,
+        grey = 140,
+      }
       local plan = {
         steps = {
-          { from = 100, to = 120, entry = entry, crafts = 22, net = -500, learn = 8400, results = { sell = 12, vendor = 10 } },
+          {
+            from = 100,
+            to = 120,
+            entry = entry,
+            crafts = 22,
+            net = -500,
+            learn = 8400,
+            results = { sell = 12, vendor = 10 },
+          },
           { train = "Expert", from = 150 },
         },
       }
@@ -380,7 +441,10 @@ describe("Crafting", function()
     end)
 
     it("status lines", function()
-      assert.equals("2 crafts queued in 2 steps on 2 characters · the queue is kept per account", CP.Status(facts, "queued"))
+      assert.equals(
+        "2 crafts queued in 2 steps on 2 characters · the queue is kept per account",
+        CP.Status(facts, "queued")
+      )
       assert.equals(
         "Alchemy · Kke · 110 · 3 recipes in 2 sections · 1 ready now · 1 queued",
         CP.Status(facts, "all", 171, { total = 3, sections = 2, ready = 1, queued = 1 })
@@ -516,7 +580,11 @@ describe("Crafting", function()
       ns.CraftingSidecar = side
       assert.is_not_nil(b)
       assert.equals("Use the game's window", b.props.label)
-      ns.CraftingSidecar = setmetatable({ UseGameWindow = function() used = true end }, { __index = side })
+      ns.CraftingSidecar = setmetatable({
+        UseGameWindow = function()
+          used = true
+        end,
+      }, { __index = side })
       App.ctx:Dispatch(b.props.action)
       ns.CraftingSidecar = side
       assert.is_true(used)
@@ -539,9 +607,17 @@ describe("Crafting", function()
       local catalog = AME_DB.crafting.catalog
       AME_DB.crafting.catalog = { [171] = { name = "Alchemy", recipes = { [101] = true } } }
       local pb = ns.ProfessionBar
-      ns.ProfessionBar = { KnowsHere = function(line, id) return line == 171 and id == 101 end }
+      ns.ProfessionBar = {
+        KnowsHere = function(line, id)
+          return line == 171 and id == 101
+        end,
+      }
       local trading = ns.Trading
-      ns.Trading = { CharKey = function() return facts.me end }
+      ns.Trading = {
+        CharKey = function()
+          return facts.me
+        end,
+      }
       valid("crafting", { filter = "all", selected = "r:101", count = 2 })
       local bar = App.renderer:Frame("craft.d.make")
       local create = bar.buttons[1]
@@ -569,8 +645,15 @@ describe("Crafting", function()
     it("Leveling draws, with and without a plan", function()
       valid("leveling", {})
       facts.m = {}
-      local entry = { recipe = { id = 101, product = 1001, reagents = { { 2001, 2 } } }, known = true, yellow = 100, grey = 140 }
-      local plan = { steps = { { from = 110, to = 130, entry = entry, crafts = 20, net = -100, results = { sell = 20 } } }, cost = 100, back = 0, net = -100, crafts = 20 }
+      local entry =
+        { recipe = { id = 101, product = 1001, reagents = { { 2001, 2 } } }, known = true, yellow = 100, grey = 140 }
+      local plan = {
+        steps = { { from = 110, to = 130, entry = entry, crafts = 20, net = -100, results = { sell = 20 } } },
+        cost = 100,
+        back = 0,
+        net = -100,
+        crafts = 20,
+      }
       CP.LevelingPlans = function()
         return { cheapest = plan, recovery = plan, fewest = plan, materials = plan }
       end

@@ -149,16 +149,20 @@ function Bag.Compute(api, link, step)
   if step then
     step()
   end
-  e.tip = Bag.Tip({
-    GetSignal = function()
-      return e.signal or nil
-    end,
-    GetWorth = function()
-      return e.each, e.where
-    end,
-  }, link, function(key)
-    return Bag.Instead(key, step)
-  end) or false
+  e.tip = Bag.Tip(
+    {
+      GetSignal = function()
+        return e.signal or nil
+      end,
+      GetWorth = function()
+        return e.each, e.where
+      end,
+    },
+    link,
+    function(key)
+      return Bag.Instead(key, step)
+    end
+  ) or false
   return e
 end
 

@@ -134,11 +134,24 @@ local function build(app, params)
           meta = { h = 54 },
           children = {
             G.Text("lists.card.name", l.name, { color = "white", size = 13, meta = { h = 18 } }),
-            G.Text("lists.card.sub", L["%s · shared by %s · %d items"]:format(kindText, l.by, count(l.items)), { meta = { h = 14 } }),
+            G.Text(
+              "lists.card.sub",
+              L["%s · shared by %s · %d items"]:format(kindText, l.by, count(l.items)),
+              { meta = { h = 14 } }
+            ),
           },
         },
-        { id = "lists.items", type = "table", props = { source = "guild.listitems", columns = ITEM_COLUMNS }, meta = { grow = 1 } },
-        G.Text("lists.hint", L["Search it at the auction house as it is, or copy it to count your own bags against it."], { wrap = true, meta = { h = 28 } }),
+        {
+          id = "lists.items",
+          type = "table",
+          props = { source = "guild.listitems", columns = ITEM_COLUMNS },
+          meta = { grow = 1 },
+        },
+        G.Text(
+          "lists.hint",
+          L["Search it at the auction house as it is, or copy it to count your own bags against it."],
+          { wrap = true, meta = { h = 28 } }
+        ),
         {
           id = "lists.buttons",
           type = "row",
@@ -148,12 +161,20 @@ local function build(app, params)
             {
               id = "lists.copy",
               type = "button",
-              props = { label = L["Copy to my lists"], variant = l.guild and "primary" or "disabled", action = "copyList" },
+              props = {
+                label = L["Copy to my lists"],
+                variant = l.guild and "primary" or "disabled",
+                action = "copyList",
+              },
             },
             {
               id = "lists.search",
               type = "button",
-              props = { label = at and L["Search the AH"] or L["At the AH"], variant = at and "normal" or "disabled", action = "searchList" },
+              props = {
+                label = at and L["Search the AH"] or L["At the AH"],
+                variant = at and "normal" or "disabled",
+                action = "searchList",
+              },
             },
           },
         },

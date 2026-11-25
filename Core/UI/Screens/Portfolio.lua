@@ -52,7 +52,11 @@ function P.ViewControl(app, id, selected)
         label = v[2]
       end
     end
-    return { id = id, type = "menubutton", props = { label = label, options = views, selected = selected, action = "view" } }
+    return {
+      id = id,
+      type = "menubutton",
+      props = { label = label, options = views, selected = selected, action = "view" },
+    }
   end
   return { id = id, type = "segmented", props = { options = views, selected = selected, action = "view" } }
 end
@@ -109,11 +113,26 @@ local function body(app, p)
   end
   local scope, range
   if app.compact then
-    scope = { id = "pf.scope", type = "menubutton", props = { label = P.SCOPES[p.scope == "char" and 2 or 1][2], options = P.SCOPES, selected = p.scope, action = "scope" } }
-    range = { id = "pf.range", type = "menubutton", props = { label = P.RangeLabel(p.range), options = P.RANGES, selected = p.range, action = "range" } }
+    scope = {
+      id = "pf.scope",
+      type = "menubutton",
+      props = {
+        label = P.SCOPES[p.scope == "char" and 2 or 1][2],
+        options = P.SCOPES,
+        selected = p.scope,
+        action = "scope",
+      },
+    }
+    range = {
+      id = "pf.range",
+      type = "menubutton",
+      props = { label = P.RangeLabel(p.range), options = P.RANGES, selected = p.range, action = "range" },
+    }
   else
-    scope = { id = "pf.scope", type = "segmented", props = { options = P.SCOPES, selected = p.scope, action = "scope" } }
-    range = { id = "pf.range", type = "segmented", props = { options = P.RANGES, selected = p.range, action = "range" } }
+    scope =
+      { id = "pf.scope", type = "segmented", props = { options = P.SCOPES, selected = p.scope, action = "scope" } }
+    range =
+      { id = "pf.range", type = "segmented", props = { options = P.RANGES, selected = p.range, action = "range" } }
   end
   return {
     id = "portfolio",
@@ -131,7 +150,12 @@ local function body(app, p)
           scope,
           { id = "pf.barGap2", type = "spacer", meta = { w = 8 } },
           range,
-          { id = "pf.export", type = "button", props = { label = L["Export CSV"], action = "export" }, meta = { w = 80 } },
+          {
+            id = "pf.export",
+            type = "button",
+            props = { label = L["Export CSV"], action = "export" },
+            meta = { w = 80 },
+          },
         },
       },
       { id = "pf.kpis", type = "grid", props = { cols = 5, gap = 8, rowH = 52 }, meta = { h = 52 }, children = kpis },
@@ -153,7 +177,8 @@ local function body(app, p)
   }
 end
 
-local VIEW_TITLE = { positions = L["Positions"], ledger = L["Ledger"], customers = L["Customers"], suppliers = L["Suppliers"] }
+local VIEW_TITLE =
+  { positions = L["Positions"], ledger = L["Ledger"], customers = L["Customers"], suppliers = L["Suppliers"] }
 
 App.Screen("portfolio", {
   tab = "portfolio",
@@ -161,7 +186,7 @@ App.Screen("portfolio", {
   Title = function(_, p)
     return VIEW_TITLE[p.view or "positions"] or L["Portfolio"]
   end,
-  Status = function(app, p)
+  Status = function(_app, p)
     p = params(p)
     local f = P.Facts(p.scope, p.range)
     return P.Status(p.view, f, P.Rows(p.view, f))

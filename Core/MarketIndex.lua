@@ -178,7 +178,8 @@ function MarketIndex.Encode(index, checkpoint)
       checkpoint()
     end
   end
-  return ("%d|%d|%d|"):format(index.day, index.days, index.outliers or 0) .. ns.Codec.Encode(columnNames(), cols, checkpoint)
+  return ("%d|%d|%d|"):format(index.day, index.days, index.outliers or 0)
+    .. ns.Codec.Encode(columnNames(), cols, checkpoint)
 end
 
 -- string -> index (as MarketIndex.Build makes it)

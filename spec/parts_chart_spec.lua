@@ -46,7 +46,8 @@ describe("the chart widget", function()
   local function points(n)
     local out = {}
     for i = 1, n do
-      out[i] = { x = (90 + i) * DAY + DAY / 2, market = 900 + i * 10, min = 880 + i * 10, qty = 100 + i, avg = 900 + i * 5 }
+      out[i] =
+        { x = (90 + i) * DAY + DAY / 2, market = 900 + i * 10, min = 880 + i * 10, qty = 100 + i, avg = 900 + i * 5 }
     end
     return out
   end
@@ -63,23 +64,26 @@ describe("the chart widget", function()
     return r:Frame("ch")
   end
 
-  it("draws an item's history as lines: market, lowest, the 7-day average, supply; and says so in the legend", function()
-    local f = draw({ kind = "item", range = "30D" }, { points = points(10), now = now })
-    local c = f.charts.item
-    assert.is_not_nil(c.series.market)
-    assert.is_not_nil(c.series.min)
-    assert.is_not_nil(c.series.sma)
-    assert.is_nil(c.series.sma.dash) -- the 7-day average is a solid line (the boards, and the old window)
-    assert.is_not_nil(c.series.qty)
-    assert.is_nil(c.series.candles)
-    local labels = {}
-    for _, e in ipairs(f.legend) do
-      labels[#labels + 1] = e[2] or e.note
+  it(
+    "draws an item's history as lines: market, lowest, the 7-day average, supply; and says so in the legend",
+    function()
+      local f = draw({ kind = "item", range = "30D" }, { points = points(10), now = now })
+      local c = f.charts.item
+      assert.is_not_nil(c.series.market)
+      assert.is_not_nil(c.series.min)
+      assert.is_not_nil(c.series.sma)
+      assert.is_nil(c.series.sma.dash) -- the 7-day average is a solid line (the boards, and the old window)
+      assert.is_not_nil(c.series.qty)
+      assert.is_nil(c.series.candles)
+      local labels = {}
+      for _, e in ipairs(f.legend) do
+        labels[#labels + 1] = e[2] or e.note
+      end
+      assert.equals("Market", labels[1])
+      assert.equals("Lowest", labels[2])
+      assert.is_true(f.legendBox:IsShown())
     end
-    assert.equals("Market", labels[1])
-    assert.equals("Lowest", labels[2])
-    assert.is_true(f.legendBox:IsShown())
-  end)
+  )
 
   it("candles in place of the lines when the style says so", function()
     local f = draw({ kind = "item", style = "candles" }, { points = points(10), now = now })

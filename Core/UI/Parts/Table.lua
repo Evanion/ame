@@ -18,7 +18,13 @@ local Layout, Kit, W = ns.Layout, ns.Kit, ns.Widgets
 local function signature(columns)
   local parts = {}
   for i, c in ipairs(columns) do
-    parts[i] = tostring(c.key) .. ":" .. tostring(c.format) .. ":" .. tostring(c.item) .. ":" .. tostring(c.button ~= nil)
+    parts[i] = tostring(c.key)
+      .. ":"
+      .. tostring(c.format)
+      .. ":"
+      .. tostring(c.item)
+      .. ":"
+      .. tostring(c.button ~= nil)
   end
   return table.concat(parts, ",")
 end
@@ -32,7 +38,7 @@ local function rows(ctx, source)
 end
 
 -- the data columns as the table's own column definitions
-local function columnsFor(f, specs, ctx)
+local function columnsFor(_f, specs, ctx)
   local out = {}
   for i, spec in ipairs(specs) do
     local col = {
@@ -67,7 +73,7 @@ local function columnsFor(f, specs, ctx)
         shown = function(d)
           return d[spec.key] ~= false
         end,
-        variant = function(d)
+        variant = function(_d)
           return def.variant
         end,
         onClick = function(d)

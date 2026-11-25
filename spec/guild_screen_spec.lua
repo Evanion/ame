@@ -135,7 +135,10 @@ describe("Guild", function()
       assert.equals("2", rows[1].key)
       assert.equals("Kke, Tyken", rows[1].yours)
       assert.equals("suggested", rows[1].tip.text)
-      local month = GuildPage.Month({ req({ side = "crafter", state = "handed", at = 1000 }), req({ side = "crafter", at = 1000 }) }, 2000)
+      local month = GuildPage.Month(
+        { req({ side = "crafter", state = "handed", at = 1000 }), req({ side = "crafter", at = 1000 }) },
+        2000
+      )
       assert.equals("2", month[1].text)
       assert.equals("1", month[2].text)
       assert.equals(50000, month[3].copper)
@@ -152,7 +155,9 @@ describe("Guild", function()
 
     it("guild lists: theirs newest first with Copy, yours last with Stop sharing", function()
       local rows = GuildPage.ListRows({
-        watch = { { key = "Klydig/Herbs", owner = "Klydig", name = "Herbs", items = { [1] = true, [2] = true }, t = 100 } },
+        watch = {
+          { key = "Klydig/Herbs", owner = "Klydig", name = "Herbs", items = { [1] = true, [2] = true }, t = 100 },
+        },
         shopping = { { key = "Zakzu/Raid", owner = "Zakzu", name = "Raid", items = { [3] = { need = 40 } }, t = 200 } },
         mineWatch = { { i = 1, name = "Alchemy", n = 8 } },
       }, 300)
@@ -227,7 +232,9 @@ describe("Guild", function()
         SyncActivityData = function()
           return {
             next = "Next announce in 8 min",
-            moving = { { who = "From Klydig", what = "Goblin AH: full scan", frac = 0.4, left = "~6 min left", why = "slow" } },
+            moving = {
+              { who = "From Klydig", what = "Goblin AH: full scan", frac = 0.4, left = "~6 min left", why = "slow" },
+            },
             rows = { { "Klydig", "Goblin AH", "1 day newer", "14", "—", "~186 KB", "~14 min", "receiving" } },
             total = "In all: full scan",
             receivingFrom = 1,
@@ -238,7 +245,8 @@ describe("Guild", function()
       AME_DB.crafting.chars["Forever:Kke"] = {
         professions = { [171] = { name = "Alchemy", skill = 300, learned = { [17580] = true } } },
       }
-      AME_DB.crafters.Sela = { owner = "sela", t = env.now, profs = { [171] = { skill = 300, ids = { [17580] = true } } } }
+      AME_DB.crafters.Sela =
+        { owner = "sela", t = env.now, profs = { [171] = { skill = 300, ids = { [17580] = true } } } }
       ns.Crafters.RecipeName = function()
         return "Major Mana Potion"
       end
@@ -284,7 +292,14 @@ describe("Guild", function()
       draws("requests")
       local db = R.DB()
       db.list.a = req({ id = "a", side = "crafter", changed = 300 })
-      db.list.b = req({ id = "b", side = "asker", state = "answered", by = "crafter", changed = 200, prev = { offer = 1, tip = 1, bring = { 15, 0 } } })
+      db.list.b = req({
+        id = "b",
+        side = "asker",
+        state = "answered",
+        by = "crafter",
+        changed = 200,
+        prev = { offer = 1, tip = 1, bring = { 15, 0 } },
+      })
       db.list.c = req({ id = "c", side = "crafter", state = "handed", changed = 100 })
       for _, id in ipairs({ "a", "b", "c" }) do
         local tree = draws("requests", { request = id })
@@ -300,7 +315,14 @@ describe("Guild", function()
     it("the answer frame draws for the crafter and the asker", function()
       local db = R.DB()
       db.list.a = req({ id = "a", side = "crafter" })
-      db.list.b = req({ id = "b", side = "asker", state = "answered", by = "crafter", note = "Vials are short", prev = { offer = 4000, tip = 50000, bring = { 15, 0 } } })
+      db.list.b = req({
+        id = "b",
+        side = "asker",
+        state = "answered",
+        by = "crafter",
+        note = "Vials are short",
+        prev = { offer = 4000, tip = 50000, bring = { 15, 0 } },
+      })
       local Q = ns.Requests
       for _, id in ipairs({ "a", "b" }) do
         Q.Answer(id)
