@@ -48,10 +48,17 @@ Layout.Register("kpi", {
     note = "string?",
     rise = "number?",
     fall = "number?",
+    term = "string?",
   },
   create = function(parent)
     local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     Kit.Box(f, "panel", "line")
+    -- term: what the figure means, from the Guide's glossary, on hover (right-click opens it in the Guide)
+    if ns.Help and ns.Help.Explain then
+      ns.Help.Explain(f, function(self)
+        return self.props and self.props.term
+      end)
+    end
     -- rise / fall: the breadth bar under the value, rising in green, falling in red
     f.rise = f:CreateTexture(nil, "ARTWORK")
     f.fall = f:CreateTexture(nil, "ARTWORK")
@@ -77,6 +84,7 @@ Layout.Register("kpi", {
     return f
   end,
   update = function(f, p)
+    f.props = p
     f.label:SetText(p.label)
     local v
     if p.copper then

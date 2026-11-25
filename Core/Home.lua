@@ -462,10 +462,13 @@ local function gatherBags(f, holdings, index, q)
   local me = ns.Trading.CharKey()
   local bags = holdings[me] and holdings[me].bags or {}
   local count, value, first, firstQty, best = 0, 0, nil, nil, 0
+  -- items you've hidden (kept for your own use, like a mana drink) aren't suggested for posting, as on Sell
+  local watch = ns.AME and ns.AME.watch
   for key, qty in pairs(bags) do
     local net, where = q:BestSale(key)
     local s = index.items[ns.BaseID and ns.BaseID(key) or key]
-    if where == "ah" and net and net > 0 and s and s.signal ~= "vendor" then
+    local hidden = watch and watch.IsHidden and watch:IsHidden(key)
+    if where == "ah" and net and net > 0 and s and s.signal ~= "vendor" and not hidden then
       local worth = net * qty
       count, value = count + 1, value + worth
       if worth > best then

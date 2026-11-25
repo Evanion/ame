@@ -193,8 +193,13 @@ function Help.Explain(frame, key)
   -- right-click: the term's glossary entry on the Guide tab
   frame:HookScript("OnMouseUp", function(self, button)
     local k = keyOf(self)
-    if button == "RightButton" and Help.TERMS[k or ""] and ns.UI and ns.UI.ShowGuide then
-      ns.UI:ShowGuide(k)
+    if button == "RightButton" and Help.TERMS[k or ""] then
+      local app = ns.App
+      if app and app.Enabled and app.Enabled() and app.frame and app.frame:IsShown() then
+        app:Go("guide", { article = k }) -- the new window's Guide
+      elseif ns.UI and ns.UI.ShowGuide then
+        ns.UI:ShowGuide(k)
+      end
     end
   end)
 end

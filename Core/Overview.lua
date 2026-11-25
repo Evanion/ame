@@ -68,21 +68,23 @@ end
 -- the headline figures: price index, listed value, turnover, auctions, breadth (compact: the first four, no notes)
 function Overview.Kpis(o, factor, compact)
   local out = {}
-  local function add(label, value, change, note)
+  local function add(label, value, change, note, term)
     local d, tone = Overview.Delta(change)
-    out[#out + 1] = { label = label, value = value, delta = d, deltaTone = tone, note = not compact and note or nil }
+    out[#out + 1] = { label = label, value = value, delta = d, deltaTone = tone, note = not compact and note or nil, term = term }
   end
   add(
     compact and L["Price index"] or L["AME price index"],
     o.level and ("%.1f"):format(o.level) or "—",
     o.levelChange,
-    L["%s steadily listed items · 30 days ago = 100"]:format(thousands(o.basket or 0))
+    L["%s steadily listed items · 30 days ago = 100"]:format(thousands(o.basket or 0)),
+    "mxIndex"
   )
   add(
     L["Listed value"],
     big(o.value),
     o.valueChange,
-    (factor and factor > 1) and L["each price capped at %d× its 30-day average"]:format(factor) or nil
+    (factor and factor > 1) and L["each price capped at %d× its 30-day average"]:format(factor) or nil,
+    "mxValue"
   )
   out[#out + 1] = {
     label = compact and L["Turnover"] or L["Turnover (estimate)"],
@@ -90,17 +92,20 @@ function Overview.Kpis(o, factor, compact)
     delta = compact and L["/day"] or L["/ day"],
     deltaTone = "dim",
     note = not compact and L["supply leaving the AH × price"] or nil,
+    term = "mxTurnover",
   }
   add(
     L["Auctions"],
     thousands(o.auctions),
     o.auctionsChange,
-    L["%s items · %s units"]:format(thousands(o.items or 0), W() and W().Count(o.units or 0) or tostring(o.units))
+    L["%s items · %s units"]:format(thousands(o.items or 0), W() and W().Count(o.units or 0) or tostring(o.units)),
+    "mxAuctions"
   )
   if not compact then
     local moved = (o.up or 0) + (o.down or 0)
     out[#out + 1] = {
       label = L["Breadth"],
+      term = "mxBreadth",
       value = moved > 0 and ("%d%%"):format(floor(100 * o.up / moved + 0.5)) or "—",
       delta = moved > 0 and (o.up >= o.down and L["rising"] or L["falling"]) or nil,
       deltaTone = "dim",
