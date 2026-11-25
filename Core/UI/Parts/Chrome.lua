@@ -61,6 +61,7 @@ Layout.Register("titlebar", {
     forward = "boolean?",
     unread = "number?",
     settings = "boolean?",
+    scan = "table?", -- { label, off }: the scan button as the scan stands (App.ScanButtonState)
   },
   create = function(parent, ctx)
     local f = CreateFrame("Frame", nil, parent)
@@ -154,6 +155,16 @@ Layout.Register("titlebar", {
         f:Draw()
       end
     end)
+    -- the scan's state between draws (every half second, from App): its label and whether it can start
+    function f:SetScan(scan)
+      if not (self.props and self.props.ah) or self.foldAH or not scan then
+        return
+      end
+      if self.scan.label:GetText() ~= scan.label or self.scan.variant ~= (scan.off and "disabled" or "normal") then
+        self.props.scan = scan
+        self:Draw()
+      end
+    end
     function f:Draw()
       local p = self.props
       Kit.Fill(self.mark, Kit.Accent())
@@ -192,7 +203,9 @@ Layout.Register("titlebar", {
       self.scan:SetShown(p.ah and true or false)
       self.gameAH:SetShown(p.ah and not self.foldAH and true or false)
       if p.ah then
-        self.scan.label:SetText(self.foldAH and L["AH ▾"] or L["Full scan"])
+        local scan = p.scan or { label = L["Full scan"] }
+        self.scan.label:SetText(self.foldAH and L["AH ▾"] or scan.label)
+        self.scan.variant = (scan.off and not self.foldAH) and "disabled" or "normal"
         self.scan:SetWidth(math.ceil(self.scan.label:GetStringWidth() or 0) + 20)
         self.scan:ClearAllPoints()
         self.scan:SetPoint("LEFT", last, "RIGHT", 6, 0)

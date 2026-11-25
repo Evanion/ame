@@ -139,9 +139,11 @@ local function general(env)
     {
       title = L["Window"],
       rows = {
+        check(L["Use the new window (preview)"], "newWindow"),
         field(L["Scale"], "windowScale", scales),
         field(L["At the auction house"], "ahMode", where),
         check(L["With the game's window: open AME beside it"], "openWithAH", { indent = true, off = S.Get("ahMode") ~= "game" }),
+        check(L["Search the auction house for the item on screen"], "autoSearch", { indent = true }),
         field(L["Opening a profession"], "professionMode", where),
         check(L["Show the queue's missing reagents in the objectives tracker"], "queueTracker"),
         field(L["Colours"], "theme", {
@@ -319,9 +321,11 @@ end
 
 -- what each setting does, shown in the game's tooltip on hover (by setting key, or a button's action)
 S.TIPS = {
+  newWindow = L["AME's redesigned window. Untick it to go back to the old window; its Settings has the same box to come back. /ame new swaps too."],
   windowScale = L["How big the AME window draws, apart from the game's UI scale."],
   ahMode = L["What opens when you talk to an auctioneer: the AME window, which buys, sells and shows your auctions, or the game's own auction house window. The button on each swaps to the other, and AME remembers the last one you used."],
   openWithAH = L["When the game's auction house window opens, AME's window opens next to it."],
+  autoSearch = L["At the auction house, Sell and the Item page look up what's on sale for the item you're on, to price it. Off: they wait until you press Search. Full scans only ever start from Full scan."],
   professionMode = L["What opens with a profession: AME's Crafting tab, with its recipe list and Create, or the game's own profession window with AME's bar under it and your queue beside it."],
   queueTracker = L["Lists what your craft queue still needs in the game's objectives tracker, counting up as you gather or buy, the way the game's Track Recipe does for one recipe."],
   theme = L["AME's accent colour. Follow market takes the colour of the auction house you're looking at: red for Horde, blue for Alliance, gold for the goblin houses."],
@@ -421,6 +425,12 @@ local function fontsChanged()
 end
 
 S.EFFECTS = {
+  -- unticked: back to the old window (its Settings has the same box to come back)
+  newWindow = function(on)
+    if ns.App and ns.App.UseNew then
+      ns.App.UseNew(on)
+    end
+  end,
   fontText = fontsChanged,
   fontHeading = fontsChanged,
   barTexture = fontsChanged,

@@ -179,12 +179,37 @@ end
 App.actions.bell = function(app)
   app:Go("notifications")
 end
-App.actions.scan = function()
-  if ns.ScanButton and ns.ScanButton.Start then
-    ns.ScanButton.Start()
+App.actions.scan = function(app)
+  local Scan = ns.ScanButton
+  if Scan and Scan.Start then
+    local ok, why = Scan:Start()
+    if not ok and why and ns.AME and ns.AME.Say then
+      ns.AME.Say("%s", why)
+    end
   elseif ns.AME and ns.AME.FullScan then
     ns.AME:FullScan()
   end
+  app:Redraw()
+end
+
+-- the title bar's scan button, as the old window's: Full scan / Fast scan, Scanning..., Full scan in 12:34 (greyed
+-- while it can't start)
+function App.ScanButtonState()
+  local Scan = ns.ScanButton
+  if not (Scan and Scan.State) then
+    return { label = L["Full scan"] }
+  end
+  local ok, state, left = pcall(Scan.State, Scan)
+  if not ok then
+    return { label = L["Full scan"] }
+  end
+  if state == "scanning" then
+    return { label = L["Scanning..."], off = true }
+  elseif state == "wait" then
+    local m = math.floor((left or 0) / 60)
+    return { label = L["Full scan in %s"]:format(("%d:%02d"):format(m, (left or 0) % 60)), off = true }
+  end
+  return { label = Scan.Fast and Scan.Fast() and L["Fast scan"] or L["Full scan"] }
 end
 App.actions.gameAH = function(app)
   if ns.AHTakeover then
@@ -268,6 +293,7 @@ function App:Tree()
           forward = #self.ahead > 0,
           unread = unread,
           settings = id == "settings",
+          scan = App.ScanButtonState(),
         },
         meta = { h = 40 },
       },
@@ -287,14 +313,20 @@ end
 -- the status row's right side: what AME is busy with ("Storing scan…", "Reading scan 1,200 / 30,000", "Updating
 -- market data…"), a newer version a guild member runs, then the version (the old window's own words, UI:FooterRight)
 function App.StatusRight()
+  local Scan = ns.ScanButton
+  local progress
+  if Scan and Scan.Progress and ns.AME and ns.AME.ahOpen then
+    local ok, text = pcall(Scan.Progress, Scan)
+    progress = ok and text or nil
+  end
   local UI = ns.UI
   if UI and UI.FooterRight then
     local ok, text = pcall(UI.FooterRight, UI)
     if ok and text then
-      return text
+      return progress and (ns.Kit.Color("warn", progress) .. "    " .. text) or text
     end
   end
-  return "v" .. tostring(ns.VERSION)
+  return (progress and (ns.Kit.Color("warn", progress) .. "    ") or "") .. "v" .. tostring(ns.VERSION)
 end
 
 function App:Create()
@@ -377,6 +409,10 @@ function App:Create()
     if bar and bar.right then
       bar.right:SetText(App.StatusRight())
     end
+    local title = App.renderer and App.renderer:Frame("app.title")
+    if title and title.SetScan and App:AtAH() then
+      title:SetScan(App.ScanButtonState())
+    end
   end)
   -- the resize grip stays above the screen (it was made first, so the screen would cover it)
   grip:SetFrameLevel(inner:GetFrameLevel() + 50)
@@ -397,6 +433,25 @@ function App:Create()
   self.ahRenderer = Layout.Renderer(tabs, self.ctx)
   Kit.SetFaction(UnitFactionGroup and UnitFactionGroup("player"))
   return f
+end
+
+-- The preview switch (Settings in both windows, /ame new): the new window on, the old one closed - or back
+function App.UseNew(on)
+  on = on and true or false
+  ns.Settings:Set("newWindow", on)
+  local UI = ns.UI
+  if on then
+    if UI and UI.frame then
+      UI.frame:Hide()
+    end
+    App:Show()
+  else
+    App:Hide()
+    if UI and UI.Create then
+      UI:Create()
+      UI.frame:Show()
+    end
+  end
 end
 
 function App:SavePlace()

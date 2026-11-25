@@ -470,6 +470,9 @@ local function watchSearch(app, key)
     return
   end
   AH.onChange = redraw(app)
+  if ns.Settings and ns.Settings:Get("autoSearch") == false then
+    return -- Settings: searched only when you ask (Search again)
+  end
   if not AH.results[key] and not searched[key] and AH.Push then
     searched[key] = true
     pcall(AH.Push, AH, key, redraw(app))

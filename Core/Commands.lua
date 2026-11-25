@@ -131,17 +131,7 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     ns.UI:ShowTab("sync") -- Settings, Sharing
   elseif cmd == "new" then
     -- the redesigned window (feature/redesign): switch to it, or back to the current one
-    local on = not ns.App.Enabled()
-    ns.Settings:Set("newWindow", on)
-    if on then
-      if ns.UI.frame then
-        ns.UI.frame:Hide()
-      end
-      ns.App:Show()
-    else
-      ns.App:Hide()
-      ns.UI:Toggle()
-    end
+    ns.App.UseNew(not ns.App.Enabled())
   elseif cmd == "session" and ns.SessionTracker then
     ns.SessionTracker.Toggle() -- what this outing has gathered and looted
   elseif cmd == "" then

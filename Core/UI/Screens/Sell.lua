@@ -42,6 +42,9 @@ local function search(app, key)
   if not (key and app:AtAH() and ns.AHSearch and ns.AHSearch.Push) then
     return
   end
+  if ns.Settings and ns.Settings:Get("autoSearch") == false then
+    return -- Settings: searched only when you ask
+  end
   local last = P.searched[key]
   if last and clock() - last < P.SEARCH_AGE then
     return

@@ -153,6 +153,7 @@ function UI:CreateSettingsView(parent, contentArea)
       end,
     },
     { check = L["Open with the auction house"], key = "openWithAH" },
+
     { check = L["Switch to the Item tab for what you put up for sale"], key = "sellSwitchesTab" },
     field(L["Colours"], 110, themes, function(value)
       ns.Settings:Set("theme", value)
@@ -170,6 +171,15 @@ function UI:CreateSettingsView(parent, contentArea)
       check = L["Show minimap button"],
       onChange = function(on)
         ns.Launcher:SetMinimap(on)
+      end,
+    },    {
+      -- the redesigned window, as a preview: tick it to switch (its Settings has the same box to come back)
+      check = L["Try the new window (preview)"],
+      key = "newWindow",
+      onChange = function(on)
+        if ns.App and ns.App.UseNew then
+          ns.App.UseNew(on)
+        end
       end,
     },
   }, 0)
