@@ -649,6 +649,18 @@ Screen.actions = {
         ns.CraftingSidecar.UseGameWindow()
       end
       return
+    elseif p.key == "book" then
+      -- the game's profession book (K): this client's own way to open it, else say where it is
+      local opened = false
+      if _G.ToggleProfessionsBook then
+        opened = pcall(_G.ToggleProfessionsBook)
+      elseif _G.ToggleSpellBook then
+        opened = pcall(_G.ToggleSpellBook, _G.BOOKTYPE_PROFESSION or "professions")
+      end
+      if not opened and ns.AME and ns.AME.Say then
+        ns.AME.Say("%s", L["Your professions are in the game's spellbook: press K."])
+      end
+      return
     end
     local skillLine = tonumber(tostring(p.key):match("^prof:(%d+)$"))
     app:Set({ profession = skillLine or false, selected = false })

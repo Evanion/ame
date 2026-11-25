@@ -250,8 +250,9 @@ describe("Crafting", function()
       assert.is_true(e[3].selected)
       assert.equals("Zakzu", e[4].label)
       assert.equals("Blacksmithing", e[5].label)
-      assert.equals("gamewindow", e[#e].key) -- no Herbalism: it has no window
-      assert.equals(6, #e)
+      assert.equals("gamewindow", e[#e - 1].key) -- no Herbalism: it has no recipes here
+      assert.equals("book", e[#e].key) -- the game's profession book, always (unlearning a profession)
+      assert.equals(7, #e)
     end)
   end)
 

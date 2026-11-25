@@ -396,6 +396,8 @@ function CP.Sidebar(f, selected, gameWindow)
   if gameWindow then
     entries[#entries + 1] = { key = "gamewindow", label = L["The game's window"], link = true }
   end
+  -- always there: the game's profession book (K), where a profession is unlearned
+  entries[#entries + 1] = { key = "book", label = L["Your professions in the game"], link = true }
   return entries
 end
 
