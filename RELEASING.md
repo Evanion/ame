@@ -18,16 +18,18 @@ or a `release/*` branch directly.
 - A fix for a released line goes to its release branch by pull request, and to `main` too (cherry-pick, or a second
   pull request), so the next line has it.
 
-Both are protected by the "Protect main" ruleset: a pull request, the `format`, `lint-and-test` and `pr-title`
-checks, and an approval from the code owner. The owner's own pull requests can be merged without an approval; nobody,
+Both are protected by the "Protect main" ruleset: a pull request, the `format`, `lint-and-test` and `commitlint`
+checks, rebase merging only, and an approval from the code owner. The owner's own pull requests can be merged without an approval; nobody,
 the owner included, can push to these branches directly.
 
 ## Commits
 
-Pull requests are squash-merged, so a pull request's title becomes its commit, and must be a
-[conventional commit](https://www.conventionalcommits.org/) (`pr-title` checks it):
+Pull requests are rebase-merged: every commit lands on the branch as it is, and release-please reads each one. So
+every commit must be a [conventional commit](https://www.conventionalcommits.org/) (`commitlint` checks them all,
+with `commitlint.config.mjs`): a header of at most 100 characters, body lines of at most 120. Tidy a branch with an
+interactive rebase before it merges; a "wip" or "fix typo" commit fails the check.
 
-| Title | Changelog | Version |
+| Commit | Changelog | Version |
 |---|---|---|
 | `feat: ...` | New | next beta |
 | `fix: ...` | Fixes | next beta |
@@ -35,7 +37,8 @@ Pull requests are squash-merged, so a pull request's title becomes its commit, a
 | `revert: ...` | Reverted | next beta |
 | `docs:`, `style:`, `refactor:`, `test:`, `build:`, `ci:`, `chore:` | not listed | none |
 
-Write the subject for players: it is the line they read in the changelog on CurseForge.
+Write the subject of a `feat`, `fix` or `perf` commit for players: it is a line they read in the changelog on
+CurseForge.
 
 ## Cutting a release line
 
