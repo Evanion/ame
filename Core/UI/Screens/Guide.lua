@@ -35,7 +35,7 @@ local function ahArticle()
       H(L["Your auctions"]),
       L["Portfolio > Auctions shows each auction against what's on sale now: lowest, undercut and by how much, or not checked yet. Check prices searches them all. Cancel takes one auction back; it returns by mail and its deposit is lost."],
       H(L["The game's own window"]),
-      L["Use the game's AH, in the title bar, swaps to the game's auction house window, with Auctionator in it when you have that installed. Its Open in AME button swaps back. AME opens the auction house the way you last left it."],
+      L["Use the game's AH, at the right end of the Buy, Sell and Auctions tabs, swaps to the game's auction house window, with Auctionator in it when you have that installed. Its Open in AME button swaps back. AME opens the auction house the way you last left it."],
     },
   }
 end

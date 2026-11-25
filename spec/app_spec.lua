@@ -131,6 +131,17 @@ describe("the redesigned window", function()
     assert.is_true(App.ahFrame:IsShown())
     assert.equals("buy", App.ahRenderer.top.item.props.active)
     assert.is_true(title().props.ah)
+    -- the title bar keeps Full scan; "Use the game's AH" is at the tabs' right end
+    assert.is_nil(title().gameAH)
+    local tabs = App.ahRenderer:Frame("ah.tabs")
+    local swapped
+    App.actions.gameAH, App.actions.realGameAH = function()
+      swapped = true
+    end, App.actions.gameAH
+    tabs.gameAH:GetScript("OnClick")(tabs.gameAH)
+    App.actions.gameAH = App.actions.realGameAH
+    App.actions.realGameAH = nil
+    assert.is_true(swapped)
   end)
 
   it("folds the title bar in a narrow window", function()

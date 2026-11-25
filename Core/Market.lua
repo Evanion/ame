@@ -64,8 +64,8 @@ Market.Size = size
 
 function Market.ModeOptions()
   return {
-    { "screener", L["Screener"] },
     { "overview", L["Overview"] },
+    { "screener", L["Screener"] },
     { "arbitrage", L["Arbitrage"] },
     { "lists", L["Lists"] },
   }

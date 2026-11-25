@@ -285,7 +285,6 @@ L["A vendor pays more than the auction house nets after the cut and the deposit"
 L["AH"] = true
 L["AH %s"] = true
 L["AH cut"] = true
-L["AH ▾"] = true
 L["ALERT"] = true
 L["AME (default)"] = true
 L["AME alert: %s %s"] = true
@@ -1661,7 +1660,7 @@ L["Updating the chart…"] = true
 L["Usable by you"] = true
 L["Usable only"] = true
 L["Use the game's AH"] = true
-L["Use the game's AH, in the title bar, swaps to the game's auction house window, with Auctionator in it when you have that installed. Its Open in AME button swaps back. AME opens the auction house the way you last left it."] = true
+L["Use the game's AH, at the right end of the Buy, Sell and Auctions tabs, swaps to the game's auction house window, with Auctionator in it when you have that installed. Its Open in AME button swaps back. AME opens the auction house the way you last left it."] = true
 L["Use the new window (preview)"] = true
 L["Used in"] = true
 L["Using an info bar addon (Titan Panel, ChocolateBar, Bazooka and others that read LibDataBroker)? Add its \"Notifications\" entry: it shows how many you haven't seen, the newest on hover, and opens the list on a click."] = true
