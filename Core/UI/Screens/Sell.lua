@@ -379,7 +379,8 @@ local function body(app, p)
               {
                 id = "sell.chart",
                 type = "chart",
-                props = { source = "sell.chart", kind = "item", range = range, style = style },
+                -- compact: the legend folds into its corner button (the full one would cover this smaller chart)
+                props = { source = "sell.chart", kind = "item", range = range, style = style, compact = true },
                 meta = { grow = 1 },
               },
             },

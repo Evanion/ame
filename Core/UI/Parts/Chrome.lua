@@ -189,9 +189,6 @@ Layout.Register("titlebar", {
       self.market:ClearAllPoints()
       self.market:SetPoint("LEFT", self.forward, "RIGHT", 6, 0)
       local last = self.market
-      for _, b in ipairs({ self.back, self.forward, self.market, self.scan, self.gameAH }) do
-        b:GetScript("OnLeave")(b)
-      end
       self.scan:SetShown(p.ah and true or false)
       self.gameAH:SetShown(p.ah and not self.foldAH and true or false)
       if p.ah then
@@ -206,6 +203,10 @@ Layout.Register("titlebar", {
           self.gameAH:ClearAllPoints()
           self.gameAH:SetPoint("LEFT", self.scan, "RIGHT", 6, 0)
         end
+      end
+      -- the buttons' look, once their labels are set (it places each label: done earlier, it measured the wrong text)
+      for _, b in ipairs({ self.back, self.forward, self.market, self.scan, self.gameAH }) do
+        b:GetScript("OnLeave")(b)
       end
       -- the tabs, from the right (left of the cog)
       local anchor = self.cog
