@@ -174,12 +174,12 @@ function UI:CreateSettingsView(parent, contentArea)
       end,
     },
     {
-      -- the redesigned window, as a preview: tick it to switch (its Settings has the same box to come back)
-      check = L["Try the new window (preview)"],
-      key = "newWindow",
+      -- this is the old window: untick it for the new one (its Settings has the same box to come back)
+      check = L["Use the old window"],
+      key = "oldWindow",
       onChange = function(on)
         if ns.App and ns.App.UseNew then
-          ns.App.UseNew(on)
+          ns.App.UseNew(not on)
         end
       end,
     },

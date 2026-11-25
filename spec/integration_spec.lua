@@ -22,6 +22,10 @@ describe("addon in a stubbed client", function()
       opts.pre(ns)
     end
     env:fire("ADDON_LOADED", "AzerothMercantileExchange")
+    -- most of these drive the old window (ns.UI); a test of the new one switches oldWindow off
+    if AME_DB and AME_DB.settings and AME_DB.settings.oldWindow == nil then
+      AME_DB.settings.oldWindow = true
+    end
     env:fire("PLAYER_LOGIN")
   end
 
@@ -354,7 +358,7 @@ describe("addon in a stubbed client", function()
       assert.is_true(facts.hasPrices)
       assert.is_table(facts.listed)
       assert.is_number(facts.itemsValue)
-      ns.Settings:Set("newWindow", true)
+      ns.Settings:Set("oldWindow", false)
       SlashCmdList.AZEROTHMERCANTILEEXCHANGE("")
       assert.is_true(ns.App.frame:IsShown())
       assert.equals("home", ns.App:Current())
@@ -362,9 +366,22 @@ describe("addon in a stubbed client", function()
       assert.is_not_nil(ns.App.renderer:Frame("home.kpi1"))
     end)
 
+    it("the new window is the default; /ame old swaps to the previous one and /ame new back", function()
+      seeded()
+      AME_DB.settings.oldWindow = nil
+      assert.is_true(ns.App.Enabled())
+      SlashCmdList.AZEROTHMERCANTILEEXCHANGE("old")
+      assert.is_false(ns.App.Enabled())
+      assert.is_true(ns.UI.frame:IsShown())
+      SlashCmdList.AZEROTHMERCANTILEEXCHANGE("new")
+      assert.is_true(ns.App.Enabled())
+      assert.is_false(ns.UI.frame:IsShown())
+      assert.is_true(ns.App.frame:IsShown())
+    end)
+
     it("the redesigned window idles: Home and Market are built again only when what they show changes", function()
       seeded()
-      ns.Settings:Set("newWindow", true)
+      ns.Settings:Set("oldWindow", false)
       SlashCmdList.AZEROTHMERCANTILEEXCHANGE("")
       env:advance(1)
       local trees, gathers, seen = 0, 0, ns.Home.errors
