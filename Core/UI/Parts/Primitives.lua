@@ -3,7 +3,8 @@
 --
 --   text      { text, color?, font? "ui"|"display", size?, justify?, wrap? }
 --   button    { label, action?, payload?, variant? "normal"|"primary"|"selected"|"disabled", color? }
---   input     { value?, hint?, action?, numeric? }          action gets { text = } on Enter and on focus lost
+--   input     { value?, hint?, action?, numeric?, doubleAction? }   action gets { text = } on Enter and on focus
+--             lost; a double-click empties the box and sends doubleAction (a search box: clear the search)
 --   field     { label, value?, hint?, action?, numeric? }   a label over an input
 --   check     { label?, checked?, action?, payload? }       action gets { checked = , payload }
 --   segmented { options = { {key, label, color?}, ... }, selected?, action? }  action gets { key = }
@@ -246,6 +247,8 @@ local function suggest(box, ctx)
   end
 end
 
+local DOUBLE_CLICK = 0.4
+
 local function newInput(parent, ctx)
   local box = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
   Kit.Box(box, "bg", "controlLine")
@@ -259,7 +262,7 @@ local function newInput(parent, ctx)
   box.coins:SetPoint("LEFT", 7, 0)
   box.coins:Hide()
   local function send(self)
-    if self.props and self.props.action then
+    if self.props and self.props.action and not self.clearing then
       dispatch(ctx, self.props, { text = self:GetText() or "" })
     end
   end
@@ -308,6 +311,25 @@ local function newInput(parent, ctx)
     Kit.Box(self, "bg", "controlLine")
     drawCoins(self)
   end)
+  -- a double-click (two clicks within DOUBLE_CLICK seconds): empty the box, without sending the emptied text
+  box:HookScript("OnMouseUp", function(self)
+    local p = self.props
+    if not (p and p.doubleAction) then
+      return
+    end
+    local t = GetTime and GetTime() or 0
+    if self.lastClick and t - self.lastClick <= DOUBLE_CLICK then
+      self.lastClick = nil
+      self.clearing = true
+      self:SetText("")
+      self:ClearFocus()
+      self.clearing = nil
+      hideSuggestions(self)
+      ctx:Dispatch(p.doubleAction, p.payload)
+    else
+      self.lastClick = t
+    end
+  end)
   if box.SetScript then
     -- a money tip on hover, as the old window's money boxes give
     box:SetScript("OnEnter", function(self)
@@ -355,6 +377,7 @@ Layout.Register("input", {
     numeric = "boolean?",
     money = "boolean?",
     suggest = "boolean?",
+    doubleAction = "string?",
   },
   create = newInput,
   update = setInput,

@@ -206,8 +206,15 @@ function Market.FilterQuery(q, opts)
     out.sortKey = "name" -- every alert stays in (a sort key drops rows without it); sorted by when they fired
     return out
   end
-  out.minQuality = (q.minQuality or 0) > 0 and q.minQuality or nil
-  out.classID, out.subClassID = q.classID, q.subClassID
+  if q.list then
+    -- a watchlist (yours, a guild member's) or Hidden: every item on it, whatever the filters say; the name search
+    -- still narrows it
+    out.minPrice, out.maxPrice, out.signal = nil, nil, nil
+    out.minLevel, out.maxLevel, out.minItemLevel, out.maxItemLevel, out.usable = nil, nil, nil, nil, nil
+  else
+    out.minQuality = (q.minQuality or 0) > 0 and q.minQuality or nil
+    out.classID, out.subClassID = q.classID, q.subClassID
+  end
   out.only = opts.only
   if q.list ~= "hidden" then
     out.hide = opts.hidden
@@ -358,16 +365,19 @@ function Market.Chips(q, f, view)
   if q.text and q.text ~= "" then
     add("text", '"' .. q.text .. '"')
   end
-  if view ~= "alerts" and (q.minQuality or 0) ~= 1 then
+  -- a watchlist shows every item on it: no filter applies (see FilterQuery); your alerts keep the price range
+  local listed = view ~= "alerts" and q.list ~= nil
+  local filters = view ~= "alerts" and not listed
+  if filters and (q.minQuality or 0) ~= 1 then
     add("quality", Market.QualityLabel(q.minQuality))
   end
-  if q.minPrice then
+  if q.minPrice and not listed then
     add("min", L["from %s"]:format(money(q.minPrice)))
   end
-  if q.maxPrice then
+  if q.maxPrice and not listed then
     add("max", L["up to %s"]:format(money(q.maxPrice)))
   end
-  if view ~= "alerts" then
+  if filters then
     local level = Market.RangeText(q.minLevel, q.maxLevel)
     if level then
       add("level", L["lvl %s"]:format(level))
