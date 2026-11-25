@@ -268,16 +268,102 @@ local function tipCard(app, s)
   return kids
 end
 
+-- The wide window's card is landscape (board AHSell): the item and its market on one line, then two columns -
+-- the price list on the left, the quantity, price, duration, deposit, net and Post on the right (226 px, where
+-- they fit side by side). A Craft, DE or Vendor tip keeps the same shape: what it's worth on the left, its
+-- buttons and note on the right.
+local function byId(kids)
+  local out = {}
+  for _, k in ipairs(kids) do
+    out[k.id] = k
+  end
+  return out
+end
+
+local function headLine(e)
+  local h = header(e, 14)
+  local item, sub = h[1], h[2]
+  item.meta, sub.meta = nil, { grow = 1 } -- the market line takes the rest of the width
+  return { id = "sell.head", type = "row", props = { gap = 8, align = "center" }, meta = { h = 20 }, children = { item, sub } }
+end
+
+local function ladderWide(app, s)
+  local k = byId(ladderCard(app, s, false))
+  local left = { k["sell.ladder"] or k["sell.noLadder"] }
+  if left[1] and left[1].type == "priceladder" then
+    left[1].props.dense = true
+    left[1].meta = { h = 130 }
+  end
+  local right = { k["sell.inputs"], k["sell.deposit"], k["sell.net"], { id = "sell.push", type = "spacer", meta = { grow = 1 } }, k["sell.buttons"] }
+  if k["sell.then"] then
+    right[#right + 1] = k["sell.then"]
+  end
+  return {
+    headLine(s.e),
+    {
+      id = "sell.cols",
+      type = "row",
+      props = { gap = 12 },
+      meta = { grow = 1 },
+      children = {
+        { id = "sell.left", type = "column", props = { gap = 6 }, meta = { grow = 1 }, children = left },
+        { id = "sell.right", type = "column", props = { gap = 6 }, meta = { w = 226 }, children = right },
+      },
+    },
+  }
+end
+
+local function tipWide(app, s)
+  local kids = tipCard(app, s)
+  local left, right = {}, {}
+  for i, kid in ipairs(kids) do
+    if i == 1 or kid.id == "sell.tipSub" then
+      -- the item and its line go on top
+    elseif kid.id == "sell.buttons" or kid.id == "sell.note" or kid.id == "sell.findDE" or kid.id == "sell.push" then
+      right[#right + 1] = kid
+    else
+      left[#left + 1] = kid
+    end
+  end
+  local top = { kids[1] }
+  kids[1].meta = nil
+  for _, kid in ipairs(kids) do
+    if kid.id == "sell.tipSub" then
+      kid.meta = nil
+      top[#top + 1] = kid
+    end
+  end
+  return {
+    { id = "sell.head", type = "row", props = { gap = 8, align = "center" }, meta = { h = 20 }, children = top },
+    {
+      id = "sell.cols",
+      type = "row",
+      props = { gap = 12 },
+      meta = { grow = 1 },
+      children = {
+        { id = "sell.left", type = "column", props = { gap = 6 }, meta = { grow = 1 }, children = left },
+        { id = "sell.right", type = "column", props = { gap = 6 }, meta = { w = 250 }, children = right },
+      },
+    },
+  }
+end
+
 local function card(app, s, compact)
   local kids
   if not s.e then
     kids = { { id = "sell.none", type = "text", props = { text = L["Nothing in your bags can be listed here."], color = "dim", wrap = true }, meta = { h = 40 } } }
-  elseif s.ladder then
-    kids = ladderCard(app, s, compact)
+  elseif compact then
+    kids = s.ladder and ladderCard(app, s, true) or tipCard(app, s)
   else
-    kids = tipCard(app, s)
+    kids = s.ladder and ladderWide(app, s) or tipWide(app, s)
   end
-  return { id = "sell.card", type = "card", props = { gap = compact and 5 or 8 }, meta = { w = compact and 300 or 290 }, children = kids }
+  return {
+    id = "sell.card",
+    type = "card",
+    props = { gap = compact and 5 or 8 },
+    meta = compact and { w = 300 } or { grow = 1.7 }, -- wide: beside what's on sale now, 1.7 to its 1
+    children = kids,
+  }
 end
 
 -- ------------------------------------------------------------------------------------------------ the screen
@@ -345,20 +431,33 @@ local function body(app, p)
     app:Source("sell.sale", P.SaleRows(key and book(key), GetServerTime and GetServerTime()))
     local b = key and book(key)
     local saleEmpty = not key and L["Pick an item on the left."] or (not b and L["searching..."]) or L["none listed"]
+    local sale = {
+      id = "sell.sale",
+      type = "table",
+      props = {
+        source = "sell.sale",
+        columns = P.Columns("sale"),
+        action = "under",
+        note = L["Click a listing to price just under it."],
+        empty = saleEmpty,
+      },
+      meta = { grow = 1 },
+    }
     main = {
       bags,
-      card(app, s, false),
       {
         id = "sell.market",
         type = "column",
         props = { gap = 8 },
         meta = { grow = 1 },
         children = {
+          -- on top, beside the top of the bags (the least mouse travel): the card and what's on sale now
+          { id = "sell.top", type = "row", props = { gap = 8 }, meta = { h = 192 }, children = { card(app, s, false), sale } },
           {
             id = "sell.chartCard",
             type = "card",
             props = { gap = 6 },
-            meta = { grow = 3 }, -- the most room: three parts to the listings' two (board AHSell)
+            meta = { grow = 1 }, -- the rest of the height, under the card and the listings (board AHSell)
             children = {
               {
                 id = "sell.chartHead",
@@ -384,18 +483,6 @@ local function body(app, p)
                 meta = { grow = 1 },
               },
             },
-          },
-          {
-            id = "sell.sale",
-            type = "table",
-            props = {
-              source = "sell.sale",
-              columns = P.Columns("sale"),
-              action = "under",
-              note = L["Click a listing to price just under it."],
-              empty = saleEmpty,
-            },
-            meta = { grow = 2 },
           },
         },
       },
