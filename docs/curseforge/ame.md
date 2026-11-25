@@ -1,60 +1,69 @@
-**Azeroth Mercantile Exchange (AME)** turns the auction house into a trading floor: price history, charts and buy and sell signals for every item, posting prices that sell, arbitrage between auction houses, your portfolio, and what your professions earn.
+**Azeroth Mercantile Exchange (AME)** keeps a price history for everything you scan at the auction house, and uses it for charts, buy and sell signals and posting prices. It also tracks what you own on every character, compares the Alliance, Horde and goblin auction houses, and works out which of your recipes make money.
 
-Most auction addons tell you what an item costs right now. AME tells you where the price has been, where it's heading, whether you'll be able to sell, what your stock is worth, and what's worth crafting. Scan or search the auction house the way you already do, and AME builds the market picture in the background.
+You scan or search the way you already do, with the default auction house or with Auctionator, and AME records it in the background. The longer you use it, the more history each item has.
 
-## What you can do with AME
+## Market data
 
-### Read the market
+Every item gets a price and volume chart, built from your scans and your guild's. You can look at the last two days scan by scan, the last week hour by hour, or the item's whole history, as a line or as candlesticks, with MA 20 and the 7-day average on top. Hover a point to see its price and volume.
 
-- **Read the chart before you buy.** Price and volume charts for any item, built from every scan you and your guild make. See the last two days scan by scan, a week hour by hour, or the item's whole history. Switch between lines and candlesticks, add MA 20 and the 7-day average, and hover any point for its price and volume.
-- **Know when to buy and when to sell.** Every item gets a signal: Buy, Hold or Sell against its own history; Wait when sellers are dumping; Vendor when a vendor pays more than the auction house after the cut; DE when gear is worth more disenchanted.
-- **See what the market is doing.** AME reads price against supply to tell a real shortage from sellers piling in, or a quiet market from someone dumping stock.
-- **Find the deals you didn't know to look for.** The market screener ranks everything on the auction house. Filter by category, quality, price and signal, save your views, and sort by any column.
-- **Count what really sells.** Scans can't tell a sale from an expired listing, so AME learns from real auction outcomes, yours and your guild's. An item reposted every day that never sells no longer looks like a bestseller.
-- **Get the big picture** (optional). The market overview shows the whole auction house like a stock exchange: a market index, a CPI, turnover, and the biggest risers and fallers.
+Each item also gets a signal. Buy, Hold and Sell compare today's price with the item's own history. Wait means sellers are dumping. Vendor means a vendor pays more than the auction house would after the cut, and DE means the item is worth more disenchanted.
 
-### Buy and sell
+AME also compares price with supply, so it can tell a real shortage from a flood of new listings, or a quiet market from someone dumping stock.
 
-- **Post at a price that sells.** Instead of undercutting by 1c, AME suggests Quick, Normal and Patient prices from the listings ahead of you, how fast the item sells and how often it gets undercut. A bar under the sell window fills in the price with one click.
-- **Shop and sell from AME's own auction house tabs.** Without Auctionator, the auction house gets a Shopping tab (filtered search with AME's signals on every result, your shopping lists, and a warning when a bulk buy costs more than the listings shown) and a Selling tab (what in your bags is worth listing, with AME's prices and one-click posting).
-- **Don't get stuck with stock.** See roughly how many of an item sell each day and how long your stack would take to move. Before you buy in bulk, see what 20 units would actually cost, not just the cheapest one.
-- **Shopping lists that count down.** List what you need for a goal. AME subtracts what all your characters already hold, crosses off what you buy, and searches the auction house for the rest. At a vendor that sells something on your lists, a panel beside the merchant buys the right amount in one click.
-- **Trade between auction houses.** Compare the Alliance, Horde and goblin auction houses side by side. Profits are shown after the auction house cut and deposit, along with how many units you can buy before the deal runs out ("buy 37, +12g").
+The screener lists everything on the auction house with these numbers attached. Filter by category, quality, price and signal, sort by any column, and save the views you use often.
 
-### Craft for profit
+Sales counts come from real auction outcomes, yours and your guild's, because a scan can't tell a sale from an expired listing. An item someone reposts every day without selling won't show up as a bestseller.
 
-- **See what your professions earn.** AME learns your recipes from your profession windows, on every character, and ranks them by profit at today's prices.
-- **Sell or refine?** For the materials you hold: sell them raw, or craft them into something worth more first.
-- **Recipes worth buying.** Recipes on the auction house that one of your characters could learn, ranked by how fast they pay back, with a check of who in your guild already knows each one.
-- **Level up for less.** The cheapest way to raise a profession to the skill you pick, recalculated from today's prices.
-- **Profit in the profession window.** Profit on every recipe, a craft queue that works out the parts first and where each material comes from (bags, bank, an alt, a guild bank, a vendor or the auction house), and a Craft next button.
-- **Find a crafter.** Search an item or enchant to see who in your guild, or among your trusted players, can make it, and whisper them with the recipe linked.
+If you want the whole market at a glance, the optional overview has a market index, a CPI, turnover, and the day's biggest risers and fallers.
 
-### Keep track
+## Buying and selling
 
-- **Track your portfolio.** AME reads your auction mail to log what you bought and sold, counts what you hold across bags, bank, mailbox and auctions on every character, and shows your profit or loss on each item.
-- **Tooltips that answer the question.** Market price each and for all you have, what you hold on every character and guild bank, the disenchant value, how fast it sells and its signal. Hold Shift for more.
-- **Keep watchlists and set alerts.** Follow the items you trade and get an alert when they cross a price or turn Buy or Sell. Alerts wait under a bell in the window, and on your info bar (LibDataBroker).
-- **Know how much to trust a number.** Every item shows a high, medium or low confidence marker, based on how much recent data AME has for it.
+When you post, AME suggests a Quick, Normal and Patient price, based on the listings ahead of you, how fast the item sells and how often it gets undercut. A bar under the sell window fills the price in with one click.
 
-### Trade together
+If you don't use Auctionator, AME adds two tabs to the auction house. Shopping is a filtered search with signals on every result, your shopping lists, and a warning when a bulk buy will cost more than the listings on screen. Selling shows what in your bags is worth listing and posts it in one click.
 
-- **Share with your guild.** When a guildmate or trusted friend with AME scans, everyone's prices update. Players who were offline catch up when they log in.
-- **Share lists and recipes.** Share watchlists and shopping lists with your guild, and see who can craft what.
-- **Sync that stays out of the way.** Sync pauses in combat and never freezes your game. Data from others never overwrites your own, and suspicious prices are filtered out.
+Before you buy a lot of something, check roughly how many sell per day and how long your stack would take to move. AME also shows what buying 20 would cost across the listings, since the cheapest one rarely tells the whole story.
+
+Shopping lists subtract what your characters already hold, cross off what you buy, and search the auction house for the rest. At a vendor that sells something on one of your lists, a panel next to the merchant buys the right amount.
+
+To trade between auction houses, compare Alliance, Horde and goblin prices side by side. Profits are shown after the cut and deposit, with how many you can buy before the margin is gone ("buy 37, +12g").
+
+## Crafting
+
+Open each profession once per character and AME remembers the recipes. From there it ranks them by profit at current prices, tells you whether the materials you hold are worth more raw or crafted, and finds the cheapest way to reach a skill level you pick. It also lists recipes on the auction house that one of your characters could learn, ranked by how fast they pay back, and checks who in your guild already knows each one.
+
+In the profession window you get the profit on every recipe and a craft queue. The queue makes the parts first, tells you where each material comes from (bags, bank, an alt, a guild bank, a vendor or the auction house), and has a Craft next button.
+
+Need something made? Search an item or enchant to see which guildmates or trusted players can craft it, and whisper them with the recipe linked.
+
+## Your gold and stock
+
+AME reads your auction mail to log what you bought and sold, counts what you hold in bags, bank, mailbox and auctions on every character, and shows your profit or loss per item.
+
+Item tooltips show the market price (each, and for everything you have), what you hold across characters and guild banks, the disenchant value, how fast it sells and its signal. Hold Shift for more.
+
+Put the items you trade on a watchlist and AME can alert you when one crosses a price or turns Buy or Sell. Alerts collect under the bell in the AME window and on your info bar (LibDataBroker).
+
+Every item has a high, medium or low confidence marker, depending on how much recent data AME has for it.
+
+## Guild sharing
+
+When a guildmate or trusted friend with AME scans, your prices update too, and if you were offline you catch up when you log in. You can share watchlists and shopping lists with the guild and see who crafts what.
+
+Sync pauses in combat and doesn't freeze the game. Other players' data never overwrites your own, and suspicious prices are filtered out.
 
 ## Getting started
 
-1. Install AME and log in. AME Crafting Data is installed with it: it holds the recipe data and loads only when you open the Crafting tab.
-2. Visit the auction house and scan or search as usual. AME works with the default auction house and with scanning addons like Auctionator. Without one, use the **Full scan** button AME adds to the auction house window.
-3. Type `/ame` to open the exchange, or `/ame <item link>` to chart an item. You can also set a modifier click to open any item's chart (Settings, General).
+1. Install AME and log in. AME Crafting Data comes with it. It holds the recipe data and only loads when you open the Crafting tab.
+2. Go to the auction house and scan or search as usual. AME works with the default auction house and with scanning addons like Auctionator. Without one, use the **Full scan** button AME adds to the auction house window.
+3. Type `/ame` to open the exchange, or `/ame <item link>` to chart an item. You can also set a modifier click that opens any item's chart (Settings, General).
 4. Open each of your professions once on every character, so AME knows what they can craft.
 
-Already use Auctionator? AME can import your existing price history the first time you run it, so your charts aren't empty on day one.
+If you already use Auctionator, AME can import your existing price history the first time you run it, so your charts have data from day one.
 
-The more often you scan, the sharper your charts and signals get. Prices are tracked separately for each realm and each auction house.
+Scanning more often gives you better charts and signals. Prices are tracked separately for each realm and each auction house.
 
-The window's **Guide** tab covers every feature, with a glossary of every number AME shows.
+The **Guide** tab in the AME window explains every feature and has a glossary of every number AME shows.
 
 ## Commands
 
@@ -69,14 +78,14 @@ The window's **Guide** tab covers every feature, with a glossary of every number
 
 ## Good to know
 
-- AME only knows what has been scanned. Signals, sales per day and profits are estimates based on that data, not guarantees. You're always the one who decides what to buy.
-- AME never scans on its own and needs no desktop app.
+- AME only knows what has been scanned. Signals, sales per day and profits are estimates from that data. What you buy is still up to you.
+- AME never scans on its own and doesn't need a desktop app.
 - Available in English, German, French, Spanish, Russian, Portuguese, Italian, Korean and Chinese (simplified and traditional).
-- AME is in beta. Things may change between versions, and your feedback shapes what comes next.
+- AME is in beta, so expect things to change between versions.
 
 ## Feedback and source code
 
-Found a bug or have an idea? Open an issue on GitHub: **https://github.com/Evanion/ame**
+Bug reports and ideas go to GitHub: **https://github.com/Evanion/ame**
 
 ## License
 
