@@ -96,6 +96,9 @@ local function look(b)
     b.icon:SetVertexColor(r or 1, g or 1, bl or 1, 1)
   end
   b:SetAlpha(v == "disabled" and 0.45 or 1)
+  if b.Snap then
+    b:Snap() -- the label may have changed: back on a whole pixel
+  end
 end
 
 function ns.Kit.Button(parent)
@@ -113,6 +116,31 @@ function ns.Kit.Button(parent)
   Kit.OnTheme(function()
     look(b)
   end)
+  -- b:Fit(minW, pad): as wide as its label plus pad (20) each side together, at least minW, and the label on a whole
+  -- pixel (centred on a half pixel, thin strokes like "ll" blur into coloured fringes)
+  function b:Fit(minW, pad)
+    local tw = math.ceil(self.label:GetStringWidth() or 0)
+    local w = math.max(tw + (pad or 20), minW or 0)
+    self:SetWidth(w)
+    self:Snap()
+    return w
+  end
+  -- the label centred on a whole pixel at the button's own width (a dropdown's label sits by its arrow instead)
+  function b:Snap()
+    if self.arrow or not self.GetWidth then
+      return
+    end
+    local w, tw = self:GetWidth() or 0, math.ceil(self.label:GetStringWidth() or 0)
+    if w > 0 then
+      self.label:ClearAllPoints()
+      self.label:SetPoint("LEFT", math.floor((w - tw) / 2), 0)
+    end
+  end
+  if b.HookScript then
+    b:HookScript("OnSizeChanged", function(self)
+      self:Snap()
+    end)
+  end
   return b
 end
 

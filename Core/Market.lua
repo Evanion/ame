@@ -32,6 +32,15 @@ local function count(n)
   return ns.Widgets and ns.Widgets.Count and ns.Widgets.Count(n) or tostring(n)
 end
 
+-- a whole percentage, green / red as the old Arbitrage tab drew it
+local function percent(x)
+  return ns.Widgets and ns.Widgets.Percent and ns.Widgets.Percent(x, 0) or ("%+d%%"):format(math.floor(x * 100 + 0.5))
+end
+
+local function dim(text)
+  return ns.Widgets and ns.Widgets.Dim and ns.Widgets.Dim(text) or text
+end
+
 local function thousands(n)
   if ns.Widgets and ns.Widgets.Thousands then
     return ns.Widgets.Thousands(n)
@@ -729,6 +738,7 @@ function Market.ListRows(progress, opts)
       item = r.itemID,
       need = r.need,
       have = r.held or r.have,
+      covered = (r.held or r.have or 0) >= (r.need or 0) and (r.need or 0) > 0 or nil, -- drawn green
       max = r.max,
     }
     if r.missing <= 0 then
@@ -763,6 +773,7 @@ function Market.ListRows(progress, opts)
         row.cost = r.cost
       end
     end
+    row.under = type(row.price) == "number" and r.max and row.price <= r.max or nil -- at or under your top price: "*"
     rows[i] = row
   end
   return rows, totals
@@ -873,8 +884,8 @@ function Market.ArbRows(routes, f)
       buy = e.buy,
       sell = e.sell,
       net = e.net or e.profit,
-      margin = ("%d%%"):format(math.floor((e.margin or 0) * 100 + 0.5)),
-      units = L["%s of %s"]:format(e.units and count(e.units) or "?", count(e.buyQty or 0)),
+      margin = percent(e.margin or 0),
+      units = L["%s of %s"]:format(e.units and count(e.units) or dim("?"), count(e.buyQty or 0)),
       soldPerDay = e.soldPerDay,
       age = Market.AgeText(e.age),
       search = f.atBuy and L["Search"] or false,

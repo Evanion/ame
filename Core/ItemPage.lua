@@ -344,10 +344,11 @@ function ItemPage.PostLadder(advice, qty, hours, cut, net)
     label = L["You net for %s, after the cut"]:format(count(qty)),
     copper = net or floor(n.price * qty * (1 - (cut or 0.05)) - (advice.deposit or 0)),
   }
+  -- notes in their tone, as the old Item tab: holding red, a cheap price amber
   if advice.hold then
-    out.notes[#out.notes + 1] = L["unlikely to sell soon: consider holding"]
+    out.notes[#out.notes + 1] = { text = L["unlikely to sell soon: consider holding"], tone = "bad" }
   elseif advice.cheap then
-    out.notes[#out.notes + 1] = L["well below its usual price"]
+    out.notes[#out.notes + 1] = { text = L["well below its usual price"], tone = "warn" }
   end
   return out
 end

@@ -958,27 +958,26 @@ function CP.LevelingRows(plan, recipeName)
         }
       end
       if c then
+        -- each result in its own colour: sell green, vendor, disenchant, keep
         local res, parts = st.results or {}, {}
-        if (res.sell or 0) > 0 then
-          parts[#parts + 1] = L["sell %d"]:format(res.sell)
+        local function add(n, label, role)
+          if (n or 0) > 0 then
+            parts[#parts + 1] = ns.Color(role, label:format(n))
+          end
         end
-        if (res.vendor or 0) > 0 then
-          parts[#parts + 1] = L["vendor %d"]:format(res.vendor)
-        end
-        if (res.de or 0) > 0 then
-          parts[#parts + 1] = L["disenchant %d"]:format(res.de)
-        end
-        if (res.keep or 0) > 0 then
-          parts[#parts + 1] = L["keep %d"]:format(res.keep)
-        end
+        add(res.sell, L["sell %d"], "good")
+        add(res.vendor, L["vendor %d"], "vendor")
+        add(res.de, L["disenchant %d"], "brand")
+        add(res.keep, L["keep %d"], "wait")
         rows[#rows + 1] = {
           key = "lv:" .. i,
           skill = ("%d–%d"):format(st.from, st.to),
           item = c.recipe.product,
           label = not c.recipe.product and recipeName and recipeName(c.recipe.id) or nil,
           crafts = "~" .. tostring(st.crafts),
-          net = st.net,
-          results = { text = table.concat(parts, ", "), color = "good" },
+          -- the whole amount tinted, a dim 0 for nothing (as the ledger)
+          net = ns.Widgets.SignedMoney(st.net or 0, { tint = true, zero = "0" }),
+          results = table.concat(parts, "  "),
           st = st,
         }
       end

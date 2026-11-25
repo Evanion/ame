@@ -216,7 +216,7 @@ local function columnsFor(f, specs, ctx, sorted)
           return v.color and Kit.Color(v.color, v.text or "") or (v.text or "")
         end
         if v == nil then
-          return format and "" or ""
+          return (format == "money" or format == "signedMoney") and W.Dim("-") or "" -- no amount: a dim dash, as the old recipe list
         end
         if format == "money" then
           return W.Money(v, true)

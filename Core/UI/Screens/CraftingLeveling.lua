@@ -54,12 +54,12 @@ local COLS = {
   { key = "skill", label = L["Skill"], width = 64 },
   { key = "item", label = L["Craft"], width = 230, item = true },
   { key = "crafts", label = L["Crafts"], width = 110, align = "LEFT" },
-  { key = "net", label = L["Net"], width = 80, format = "signedMoney" },
+  { key = "net", label = L["Net"], width = 80 }, -- tinted green / red (CP.LevelingRows)
   { key = "results", label = L["Results"], width = 130, align = "LEFT" },
 }
 local MAT_COLS = {
   { key = "item", label = L["Item"], width = 150, item = true },
-  { key = "cost", label = L["Cost"], width = 80, format = "signedMoney" },
+  { key = "cost", label = L["Cost"], width = 80 }, -- tinted red, a dim "-" without a price
 }
 
 local function bigCard(id, label, value)
@@ -157,7 +157,7 @@ function Lv.Build(app, params)
     local mats = {}
     for i, m in ipairs(d.mats) do
       local price = f.craft and f.craft:Price(m.item)
-      mats[i] = { key = m.key, item = m.item, suffix = ns.Kit.Color("dim", "  ×" .. m.count), cost = price and -(price * m.count) or nil }
+      mats[i] = { key = m.key, item = m.item, suffix = ns.Kit.Color("dim", "  ×" .. m.count), cost = price and ns.Widgets.SignedMoney(-(price * m.count), { tint = true }) or ns.Widgets.Dim("-") }
     end
     app:Source("lv.mats", mats)
     right = {

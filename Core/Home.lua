@@ -75,7 +75,7 @@ function Home.Kpis(f)
   if f.marketChange then
     out[4] = {
       label = L["Market"],
-      value = pct(f.marketChange),
+      value = ns.Widgets.Percent(f.marketChange), -- green / red
       note = (f.marketChange >= 0 and L["dearer this week"] or L["cheaper this week"]),
     }
   else

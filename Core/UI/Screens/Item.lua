@@ -217,7 +217,8 @@ local function postCard(f)
     kids[#kids + 1] = kv("item.post.net", { label = p.net.label, copper = p.net.copper })
   end
   for i, n in ipairs(p.notes) do
-    kids[#kids + 1] = text("item.post.note" .. i, { text = n, color = "dim", size = 11, wrap = true }, { h = 28 })
+    local note = type(n) == "table" and n or { text = n }
+    kids[#kids + 1] = text("item.post.note" .. i, { text = note.text, color = note.tone or "dim", size = 11, wrap = true }, { h = 28 })
   end
   local h = 20 + 18 + (#p.picks > 0 and 18 * #p.picks + 2 or 0) + (p.net and 20 or 0) + #p.notes * 30
   return card("item.post", nil, kids, { h = h })

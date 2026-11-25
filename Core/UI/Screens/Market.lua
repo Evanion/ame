@@ -647,14 +647,29 @@ local function listsBody(app, params)
   local results = ns.AHSearch and ns.AHSearch.results or {}
   local rows, at = Market.ListRows(progress, { ah = ah, results = results, onlyTop = S.lists.onlyTop })
   S.listRows = progress
-  app:Source("market.list", rows)
+  -- drawn as the old Shopping tab: what you have green once it covers the need, a price at or under your top price
+  -- with a green "*"
+  local W = ns.Widgets
+  local shown = {}
+  for i, r in ipairs(rows) do
+    local d = {}
+    for k, v in pairs(r) do
+      d[k] = v
+    end
+    d.have = r.covered and { text = W.Count(r.have or 0), color = "good" } or W.Count(r.have or 0)
+    if type(r.price) == "number" then
+      d.price = W.Money(r.price, true) .. (r.under and ("  " .. W.Color("good", "*")) or "")
+    end
+    shown[i] = d
+  end
+  app:Source("market.list", shown)
   S.status = Market.ListStatus(totals, ah and at or nil, houseLabel(app:House()))
   local columns = {
     { key = "name", label = L["Item"], width = 220, item = true },
     { key = "need", label = L["Need"], width = 54, format = "count" },
-    { key = "have", label = L["Have"], width = 54, format = "count" },
-    { key = "tobuy", label = L["To buy"], width = 150 },
-    { key = "price", label = ah and L["Lowest listing"] or L["Market"], width = 90, format = "money" },
+    { key = "have", label = L["Have"], width = 54 }, -- green once it covers the need
+    { key = "tobuy", label = L["To buy"], width = 190 },
+    { key = "price", label = ah and L["Lowest listing"] or L["Market"], width = 100 }, -- money, "*" at or under your top price
     { key = "max", label = L["Top price"], width = 86, format = "money" },
     { key = "cost", label = L["Cost"], width = 90, format = "money" },
   }

@@ -284,7 +284,7 @@ describe("Market", function()
   describe("arbitrage", function()
     it("routes as rows: margin, units, data age; Search only at the buy house", function()
       local rows = Market.ArbRows({ { itemID = 1, buy = 100, sell = 200, net = 80, margin = 0.3, buyQty = 2, units = 1, age = 1 } }, {})
-      assert.equals("30%", rows[1].margin)
+      assert.truthy(rows[1].margin:find("+30%", 1, true)) -- green / red, as the old Arbitrage tab
       assert.equals("1 of 2", rows[1].units)
       assert.equals("1 day", rows[1].age)
       assert.is_false(rows[1].search)
