@@ -244,10 +244,56 @@ Layout.Register("sidebar", {
     Kit.Box(f, "panel", "line")
     f.rows = {}
     f.ctx = ctx
+    -- longer than its box (a category opened into its subcategories): it clips to the box and the mouse wheel
+    -- scrolls it, a thin thumb on the right showing where you are
+    if f.SetClipsChildren then
+      f:SetClipsChildren(true)
+    end
+    f.offset = 0
+    f.thumb = f:CreateTexture(nil, "OVERLAY")
+    f.thumb:SetWidth(3)
+    f.thumb:Hide()
+    if f.EnableMouseWheel then
+      f:EnableMouseWheel(true)
+    end
+    f:SetScript("OnMouseWheel", function(self, delta)
+      self.offset = (self.offset or 0) - delta * SIDE_ROW * 3
+      self:Place()
+    end)
+    f:SetScript("OnSizeChanged", function(self)
+      if self.props then
+        self:Place()
+      end
+    end)
+    -- the rows at the scroll offset (clamped to what there is to scroll), and the thumb
+    function f:Place()
+      local visible = (self:GetHeight() or 0) - 12
+      local total = (self.natural or 0) - 12
+      local most = math.max(0, total - visible)
+      self.offset = math.max(0, math.min(most, self.offset or 0))
+      for i, b in ipairs(self.rows) do
+        if b:IsShown() and b.y then
+          b:ClearAllPoints()
+          b:SetPoint("TOPLEFT", 4, -(b.y - self.offset))
+          b:SetPoint("RIGHT", -4, 0)
+        end
+      end
+      local show = most > 0 and visible > 0
+      self.thumb:SetShown(show)
+      if show then
+        local c = Kit.C("controlLine")
+        self.thumb:SetColorTexture(c[1], c[2], c[3], 1)
+        local h = math.max(16, visible * visible / total)
+        self.thumb:SetHeight(h)
+        self.thumb:ClearAllPoints()
+        self.thumb:SetPoint("TOPRIGHT", -1, -6 - (visible - h) * self.offset / most)
+      end
+    end
     return f
   end,
   update = function(f, p, ctx)
     local y = 6
+    local selectedY
     for i, e in ipairs(p.entries) do
       local b = f.rows[i]
       if not b then
@@ -272,10 +318,11 @@ Layout.Register("sidebar", {
       end
       b.key = not e.heading and e.key or nil
       local h = e.heading and SIDE_HEAD or SIDE_ROW
-      b:ClearAllPoints()
-      b:SetPoint("TOPLEFT", 4, -y)
-      b:SetPoint("RIGHT", -4, 0)
+      b.y = y
       b:SetHeight(h)
+      if e.selected then
+        selectedY = y
+      end
       y = y + h
       b.text:SetText(e.label or "")
       if e.heading then
@@ -295,7 +342,14 @@ Layout.Register("sidebar", {
     for i = #p.entries + 1, #f.rows do
       f.rows[i]:Hide()
     end
-    f.props, f.natural = p, y + 6
+    local first = f.props == nil or f.lastEntries ~= #p.entries
+    f.props, f.natural, f.lastEntries = p, y + 6, #p.entries
+    -- the picked row in view when the list changes (a category opened): scrolled to, if it's below the box
+    local visible = (f:GetHeight() or 0) - 12
+    if first and selectedY and visible > 0 and (selectedY - f.offset > visible - SIDE_ROW or selectedY < f.offset) then
+      f.offset = selectedY - math.floor(visible / 3)
+    end
+    f:Place()
   end,
   size = function(f)
     return 190, f.natural or 0

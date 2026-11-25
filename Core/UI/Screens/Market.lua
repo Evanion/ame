@@ -501,7 +501,14 @@ local function screenerBody(app, params)
   local columns, hidden = Market.Columns(state, chosen, avgDays())
   local rows, empty, note, selected = {}, nil, nil, nil
   local hold = heldQty("owned", "market")
-  if ah then
+  -- a list or a category picked at the auction house, not searched yet: its items from your scans, as away (a click
+  -- searches the row's item); the toolbar keeps the auction house's search box
+  local listed = ah and (q.list ~= nil or q.classID ~= nil) and not S.ah.at
+  if listed then
+    state = app.compact and "compact" or "screener"
+    columns, hidden = Market.Columns(state, chosen, avgDays())
+  end
+  if ah and not listed then
     local B = ns.AHBrowse
     local found = (B and S.ah.at) and B.Rows(B.results, S.ah.filters, idx and idx.items) or {}
     rows = Market.AHRows(found, idx and idx.items, { minQuality = q.minQuality, minPrice = q.minPrice, maxPrice = q.maxPrice, signal = q.signal, classID = q.classID, subClassID = q.subClassID, only = q.only }, info, avgDays())
@@ -1075,7 +1082,15 @@ end
 
 local function build(app, params)
   handOver(params)
-  local mode = params.mode or "screener"
+  -- the Market tab opens on the mode you last used (Overview the first time); a view (your alerts, hidden items)
+  -- is the screener's
+  if not params.mode then
+    params.mode = params.view and "screener" or (ns.Settings and ns.Settings:Get("appMarketMode")) or "overview"
+  end
+  local mode = params.mode
+  if ns.Settings then
+    ns.Settings:Set("appMarketMode", mode)
+  end
   if mode == "lists" then
     return listsBody(app, params)
   elseif mode == "arbitrage" then
@@ -1269,6 +1284,9 @@ A.openItem = function(app, p)
 end
 
 A.side = function(app, p)
+  if app:AtAH() then
+    S.ah.at = nil
+  end
   local f = S.side or sideFacts(nil)
   local what = Market.PickEntry(S.q, p.key, f.sets)
   if what == "newlist" then

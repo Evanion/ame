@@ -50,6 +50,7 @@ Settings.DEFAULTS = {
   pendingMark = true, -- mark the minimap button and data broker when something waits
   cooldownAlerts = true, -- tell me when a profession cooldown is ready
   sellRange = "7D", -- the Sell page's chart span (2D, 7D, 30D, 90D, 1Y, All), as last picked
+  appMarketMode = "overview", -- the new window's Market mode when it opens (screener, overview, arbitrage, lists), as last used
   newWindow = false, -- the redesigned window (feature/redesign, /ame new) instead of the current one
   minimap = { hide = false },
 }
