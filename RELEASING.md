@@ -1,7 +1,14 @@
 # Releasing
 
-Every release goes through CI from a release branch. Nobody uploads to CurseForge by hand, and nobody pushes to
-`main` or a `release/*` branch directly.
+The repository holds two CurseForge projects, each named by its TOC's `## X-Curse-Project-ID`:
+
+- **AME** (`AzerothMercantileExchange.toc`; its zip also carries `AzerothMercantileExchange_History` and the embedded
+  `LibAMEChart-1.0`), released from release branches by release-please.
+- **AME Crafting Data** (`AzerothMercantileExchange_Crafting`), the recipe data from the game, released on its own
+  whenever the game's data changes (see Crafting data below).
+
+Every release goes through a pull request and CI. Nobody uploads to CurseForge by hand, and nobody pushes to `main`
+or a `release/*` branch directly.
 
 ## Branches
 
@@ -50,13 +57,25 @@ Betas: the line releases `x.y.0-beta.N` while `prerelease` is `true` in `release
 line as stable, set `"prerelease": false` on its release branch by pull request; the next release pull request
 proposes `x.y.0`.
 
+## Crafting data
+
+Hands-off: **Crafting data** (`.github/workflows/crafting-data.yml`) asks wago.tools once a day for the latest WoW
+Forever build. When the generated data differs from main's, it checks it, opens a pull request (`fix(data): crafting
+data for WoW Forever build ...`, with the generator's summary), waits for its checks and merges it. The merge runs
+**Crafting data release** (`.github/workflows/crafting-data-release.yml`): the next `data-v1.0.N` tag on main's
+commit, the upload to the data project with the summary as its changelog, and an issue to archive the older data
+files. Data the same as the latest `data-v*` tag releases nothing; a failure opens an issue instead.
+
+The data folder is left out of AME's changelog and versions (`exclude-paths` in `release-please-config.json`).
+
 ## One-time setup
 
 - Secret `CURSEFORGE_CI_API_TOKEN`: a CurseForge API token (authors dashboard > API tokens).
 - Secret `RELEASE_PLEASE_TOKEN`: a fine-grained GitHub token for this repository only, with Contents, Pull requests
   and Workflows read/write. release-please opens its pull requests with it, so they run CI (pull requests opened with
-  the default token don't), and "Cut release branch" pushes with it, so the new branch starts **Release**.
-- Variable `CURSEFORGE_PROJECT_ID`: AME's CurseForge project ID (public, on the project page).
+  the default token don't), "Cut release branch" pushes with it, so the new branch starts **Release**, and the
+  crafting data job opens and merges its pull requests with it (as yours: no approval needed).
+- Each addon's CurseForge project ID in its TOC: `## X-Curse-Project-ID: <id>` (public, on the project page).
 
 `scripts/release.sh --check` (with a local `.env`) verifies the CurseForge token and lists the game versions that
 match the TOC's interface.

@@ -4,6 +4,7 @@
     ".": {
       "release-type": "simple",
       "package-name": "AzerothMercantileExchange",
+      "exclude-paths": ["AzerothMercantileExchange_Crafting"],
       "include-v-in-tag": true,
       "include-component-in-tag": false,
       "versioning": "prerelease",
