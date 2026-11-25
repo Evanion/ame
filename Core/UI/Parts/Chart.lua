@@ -512,6 +512,7 @@ Layout.Register("chart", {
     action = "string?",
     hint = "string?",
     format = "string?",
+    bare = "boolean?", -- inside a card: no box of its own (the card is the frame)
   },
   create = function(parent, ctx)
     local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
@@ -548,6 +549,15 @@ Layout.Register("chart", {
     end
     f.dataId = id
     f.props, f.data, f.ctx = p, data, ctx
+    if f.bare ~= (p.bare and true or false) then
+      f.bare = p.bare and true or false
+      if f.bare then
+        Kit.Box(f, { 0, 0, 0, 0 }, false)
+      else
+        local bg = W and W.COLORS and W.COLORS.chart and W.COLORS.chart.bg
+        Kit.Box(f, bg or "bg", "line")
+      end
+    end
     f.hint:SetText(p.hint or "")
     f.hint:SetShown(p.hint ~= nil and not p.compact)
     Chart.Draw(f)

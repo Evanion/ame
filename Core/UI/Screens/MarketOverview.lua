@@ -131,7 +131,7 @@ local function chartPanel(params, compact)
       {
         id = "ov.chart",
         type = "chart",
-        props = { source = "overview.chart", kind = "index", range = 30, format = Overview.ChartData(nil, compact and "index" or mode).format },
+        props = { source = "overview.chart", kind = "index", range = 30, format = Overview.ChartData(nil, compact and "index" or mode).format, bare = true },
         meta = { grow = 1 },
       },
     },
