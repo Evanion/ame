@@ -235,3 +235,80 @@ describe("ItemCache with random-suffix variants", function()
     assert.are.equal("Raider Shortsword of Magic", C.Get(key).name)
   end)
 end)
+
+describe("ItemCache: usable by you", function()
+  local ns, C, saved
+  local tips
+
+  before_each(function()
+    saved = {
+      C_Item = _G.C_Item,
+      CreateFrame = _G.CreateFrame,
+      C_Timer = _G.C_Timer,
+      C_TooltipInfo = _G.C_TooltipInfo,
+      UnitLevel = _G.UnitLevel,
+    }
+    local items = {
+      [1] = { "Low Cap", 2, 20, 10, 4 }, -- name, quality, item level, required level, class
+      [2] = { "High Cap", 2, 50, 45, 4 },
+      [3] = { "Plate Helm", 2, 30, 25, 4 },
+      [4] = { "Linen Cloth", 1, 5, 0, 7 },
+    }
+    _G.C_Item = {
+      GetItemInfo = function(id)
+        local i = items[id]
+        if i then
+          return i[1], nil, i[2], i[3], i[4], nil, nil, nil, nil, 134400, 1
+        end
+      end,
+      GetItemInfoInstant = function(id)
+        local i = items[id]
+        if i then
+          return id, "", "", "", 134400, i[5], 0
+        end
+      end,
+    }
+    local red = { r = 1, g = 0.125, b = 0.125 }
+    local white = { r = 1, g = 1, b = 1 }
+    tips = {
+      [1] = { lines = { { leftText = "Low Cap" }, { leftText = "Leather", leftColor = white } } },
+      [3] = { lines = { { leftText = "Plate Helm" }, { leftText = "Head", rightText = "Plate", rightColor = red } } },
+    }
+    _G.C_TooltipInfo = {
+      GetItemByID = function(id)
+        return tips[id]
+      end,
+    }
+    _G.UnitLevel = function()
+      return 30
+    end
+    _G.CreateFrame = function()
+      return { RegisterEvent = function() end, SetScript = function() end }
+    end
+    _G.C_Timer = { After = function() end }
+    ns = addon.load({ "Core/Init.lua", "Core/Packed.lua", "Core/ItemCache.lua" })
+    C = ns.ItemCache
+    C.Init({})
+  end)
+
+  after_each(function()
+    for k, v in pairs(saved) do
+      _G[k] = v
+    end
+  end)
+
+  it("your level must reach the required level, and gear's tooltip must show nothing in red", function()
+    assert.is_true(C.Usable(1))
+    assert.is_false(C.Usable(2)) -- requires 45
+    assert.is_false(C.Usable(3)) -- Plate, in red
+    assert.is_true(C.Usable(4)) -- not gear: no tooltip needed
+    assert.equals(10, C.Get(1).minLevel)
+  end)
+
+  it("isn't known while the tooltip hasn't loaded, then is", function()
+    tips[1] = nil
+    assert.is_nil(C.Usable(1))
+    tips[1] = { lines = { { leftText = "Low Cap" }, { leftText = "Leather" } } }
+    assert.is_true(C.Usable(1))
+  end)
+end)

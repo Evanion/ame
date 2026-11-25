@@ -99,8 +99,6 @@ L["A normal price"] = "Ein normaler Preis"
 L["A route, broken down"] = "Eine Route im Detail"
 L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
   "Ein Verkauf erscheint im Journal, sobald das Spiel meldet, dass ein Käufer gefunden wurde (wartet auf Post), und wird mit dem genauen Betrag abgerechnet, wenn die Auktionspost eintrifft - öffne deinen Briefkasten, um sie zu erfassen. Seelengebundene Gegenstände zählen nicht: Sie können nicht verkauft werden."
-L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it. Right-click a row for more: search the auction house, watchlists, an alert, a chat link, or hiding items you don't trade (they move to Hidden in the sidebar, where you can unhide them)."] =
-  "Ein Screener über alle Gegenstände mit Verlauf. Wähle links eine Kategorie oder Beobachtungsliste, suche nach Namen, filtere nach Qualität, Preisspanne oder Signal und klicke zum Sortieren auf eine Spalte. Fahre über einen Spaltenkopf, um zu sehen, was er bedeutet. Klicke auf eine Zeile, um ihren Chart zu öffnen; klicke auf den Stern, um sie zu beobachten. Rechtsklick auf eine Zeile für mehr: im Auktionshaus suchen, Beobachtungslisten, ein Alarm, ein Chat-Link oder Gegenstände ausblenden, mit denen du nicht handelst (sie wandern in der Seitenleiste nach Ausgeblendet, wo du sie wieder einblenden kannst)."
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "Ein hoher oberer Docht: Der Preis ist einmal hochgesprungen - oft ein Scan ohne günstige Angebote - und hat sich nicht gehalten. Richte deinen Preis nicht nach der Spitze."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -126,8 +124,8 @@ L["Add to shopping list..."] = "Zur Einkaufsliste hinzufügen..."
 L["Add to watchlist"] = "Zur Beobachtungsliste"
 L["Added the reagents for %s to the shopping list %s."] = "Reagenzien für %s zur Einkaufsliste %s hinzugefügt."
 L["Added the reagents for one %s to the shopping list %s."] = "Reagenzien für 1x %s zur Einkaufsliste %s hinzugefügt."
-L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
-  "Fügt Übersicht neben Screener im Markt-Reiter hinzu: ein Marktindex, ein VPI, Angebotswert, Umsatz und Kategorien für das ganze Auktionshaus. Solange sie an ist, dauert das Aktualisieren der Marktdaten etwas länger."
+L["Adds Overview next to Auctions on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
+  "Fügt Übersicht neben Auktionen im Markt-Reiter hinzu: ein Marktindex, ein VPI, Angebotswert, Umsatz und Kategorien für das ganze Auktionshaus. Solange sie an ist, dauert das Aktualisieren der Marktdaten etwas länger."
 L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
   "Nach einem Scan kannst du den Markt-Reiter durchstöbern und Einstellpreise sehen. Signale, Trends und Verkaufsraten brauchen Verlauf: Mit einem Scan pro Tag werden sie besser, und nach einer Woche sind sie am aussagekräftigsten."
 L["After your first scan"] = "Nach deinem ersten Scan"
@@ -757,8 +755,8 @@ L["That's one of your characters: they already share AME's data"] =
   "Das ist einer deiner Charaktere: Er teilt die AME-Daten bereits"
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] =
   "Das AH bringt %s pro Stück nach Gebühr und %s Anzahlung  ·  ein Händler zahlt %s"
-L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Screener on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
-  "Die Übersicht zeigt das ganze Auktionshaus auf einen Blick, wie die Indizes einer Börse: Wird der Markt teurer oder billiger, wie viel ist angeboten und wo steckt das Gold. Sie ist standardmäßig aus: Schalte sie unter Einstellungen, Allgemein ein, dann erscheint Übersicht neben Screener in der Werkzeugleiste des Markt-Reiters. Solange sie an ist, dauert das Aktualisieren der Marktdaten etwas länger."
+L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Auctions on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
+  "Die Übersicht zeigt das ganze Auktionshaus auf einen Blick, wie die Indizes einer Börse: Wird der Markt teurer oder billiger, wie viel ist angeboten und wo steckt das Gold. Sie ist standardmäßig aus: Schalte sie unter Einstellungen, Allgemein ein, dann erscheint Übersicht neben Auktionen in der Werkzeugleiste des Markt-Reiters. Solange sie an ist, dauert das Aktualisieren der Marktdaten etwas länger."
 L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."] =
   "Die Auktionshausgebühren und die Auktionsdauer unter Verkaufen gelten überall, wo Geld berechnet wird: Anzahlungen, HÄNDLER-Empfehlungen, Einstellpreise und Arbitrage."
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
@@ -870,8 +868,8 @@ L["When"] = "Wann"
 L["Where the data comes from"] = "Woher die Daten kommen"
 L["Whose, and since when"] = "Wessen und seit wann"
 L["Window"] = "Fenster"
-L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
-  "Ist die Marktübersicht eingeschaltet (Einstellungen, Allgemein), schalten die ersten Knöpfe der Werkzeugleiste den Markt-Reiter zwischen dem Screener (dieser Liste) und der Übersicht um: Indizes und Summen für das ganze Auktionshaus (siehe Marktübersicht)."
+L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between Auctions (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
+  "Ist die Marktübersicht eingeschaltet (Einstellungen, Allgemein), schalten die ersten Knöpfe der Werkzeugleiste den Markt-Reiter zwischen Auktionen (dieser Liste) und der Übersicht um: Indizes und Summen für das ganze Auktionshaus (siehe Marktübersicht)."
 L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."] =
   "Bei geöffnetem Auktionshaus sucht Shift-Klick auf eine Zeile dort danach. Solange das Suchfeld aktiv ist, sucht Shift-Klick auf einen Gegenstandslink irgendwo nach seinem Namen."
 L["With your profession window open, adds the reagents of the selected recipe - as many times as you'll craft it."] =

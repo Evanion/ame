@@ -129,6 +129,65 @@ describe("Market", function()
       assert.is_nil(q.text)
       assert.equals("market", q.sortKey)
     end)
+    it("the level filters: a chip each, removable, counted on the Filters button", function()
+      local q = Market.NewQuery()
+      q.minLevel, q.maxLevel = Market.ParseRange("20-30")
+      q.minItemLevel, q.maxItemLevel = Market.ParseRange("40-")
+      q.usable = true
+      local labels = {}
+      for _, c in ipairs(Market.Chips(q, {})) do
+        labels[c.key] = c.label
+      end
+      assert.equals("lvl 20-30", labels.level)
+      assert.equals("ilvl 40-", labels.ilvl)
+      assert.equals("Usable", labels.usable)
+      assert.equals(3, Market.FilterCount(q))
+      Market.ClearChip(q, "level")
+      Market.ClearChip(q, "usable")
+      assert.is_nil(q.minLevel)
+      assert.is_nil(q.usable)
+      assert.equals(1, Market.FilterCount(q))
+      -- your alerts: every one, whatever the level filters say
+      local f = Market.FilterQuery(q, { alerts = {} })
+      assert.is_nil(f.minItemLevel)
+    end)
+
+    it("a watchlist shows every item on it, whatever the filters say; the name search still narrows it", function()
+      local q = Market.NewQuery()
+      q.minQuality, q.minPrice, q.signal, q.minLevel, q.usable, q.text = 3, 10000, "buy", 20, true, "lotus"
+      q.list, q.only = 1, { [5] = true }
+      local f = Market.FilterQuery(q, { only = q.only, usable = function() end })
+      assert.is_nil(f.minQuality)
+      assert.is_nil(f.minPrice)
+      assert.is_nil(f.signal)
+      assert.is_nil(f.minLevel)
+      assert.is_nil(f.usable)
+      assert.equals("lotus", f.text)
+      local keys = {}
+      for _, c in ipairs(Market.Chips(q, { listName = "Herbs" })) do
+        keys[#keys + 1] = c.key
+      end
+      assert.same({ "text", "list" }, keys)
+    end)
+
+    it("reads level ranges as typed", function()
+      assert.same({ 20, 30 }, { Market.ParseRange("20-30") })
+      assert.same({ 20, 30 }, { Market.ParseRange(" 30 - 20 ") })
+      assert.same({ 40, 40 }, { Market.ParseRange("40") })
+      assert.same({ 40 }, { Market.ParseRange("40-") })
+      assert.same({ nil, 30 }, { Market.ParseRange("-30") })
+      assert.same({}, { Market.ParseRange("") })
+      assert.same({}, { Market.ParseRange("abc") })
+      assert.equals("40", Market.RangeText(40, 40))
+      assert.equals("-30", Market.RangeText(nil, 30))
+    end)
+
+    it("the quality button and its menu draw each quality in its colour", function()
+      assert.is_nil(Market.QualityColor(0))
+      assert.equals("q2", Market.QualityColor(2))
+      assert.equals("Auctions", Market.ModeLabel("screener"))
+    end)
+
     it("Your alerts is a chip of its own, and the search at the auction house too", function()
       local chips = Market.Chips(Market.NewQuery(), { ahText = "lotus" }, "alerts")
       assert.equals("alerts", chips[1].key)

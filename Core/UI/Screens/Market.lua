@@ -295,6 +295,12 @@ local function screenerList(idx, q, opts)
     tostring(q.signal),
     tostring(q.classID),
     tostring(q.subClassID),
+    tostring(q.minLevel),
+    tostring(q.maxLevel),
+    tostring(q.minItemLevel),
+    tostring(q.maxItemLevel),
+    tostring(q.usable),
+    tostring(ns.ItemCache and ns.ItemCache.usable),
     tostring(q.list),
     tostring(q.sortKey),
     tostring(q.ascending),
@@ -307,6 +313,7 @@ local function screenerList(idx, q, opts)
   local c = S.cache
   if c.sig ~= sig then
     Market.PrepareVsAvg(idx, avgDays())
+    opts.usable = ns.ItemCache and ns.ItemCache.Usable
     local list, unnamed = ns.MarketFilter.Apply(idx, Market.FilterQuery(q, opts), info)
     c = { sig = sig, list = list or {}, unnamed = unnamed }
     S.cache = c
@@ -328,6 +335,26 @@ end
 
 -- ------------------------------------------------------------------------------------------------ toolbars
 
+-- the Filters button's count: the level filters, and at the auction house its own (category, Exact name)
+local function filterCount(ah)
+  local n = Market.FilterCount(S.q)
+  if ah and ns.AHBrowse and ns.AHBrowse.Count then
+    n = n + ns.AHBrowse.Count(S.ah.filters)
+  end
+  return n
+end
+
+-- what goes with an auction house search: its own filters (category, Exact name) and the level filters
+local function ahFilters()
+  local f, q = {}, S.q
+  for k, v in pairs(S.ah.filters) do
+    f[k] = v
+  end
+  f.minLevel, f.maxLevel, f.minItemLevel, f.maxItemLevel = q.minLevel, q.maxLevel, q.minItemLevel, q.maxItemLevel
+  f.usable = q.usable or nil
+  return f
+end
+
 local function screenerToolbar(app, params, hidden, ah)
   local q = S.q
   local alerts = params.view == "alerts"
@@ -345,15 +372,20 @@ local function screenerToolbar(app, params, hidden, ah)
   if ah then
     kids[#kids + 1] =
       input("market.search", S.ah.text, L["Search the auction house..."], "ahText", app.compact and 150 or 200)
+    kids[#kids].props.doubleAction = "clearAll" -- a double-click clears the search and every filter
     kids[#kids + 1] = btn("market.go", L["Search"], "ahSearch", "primary")
-    if not app.compact then
-      local n = ns.AHBrowse and ns.AHBrowse.Count and ns.AHBrowse.Count(S.ah.filters) or 0
-      kids[#kids + 1] = btn("market.filtersBtn", n > 0 and L["Filters (%d)"]:format(n) or L["Filters"], "ahFilters")
-    end
   else
     kids[#kids + 1] = input("market.search", q.text, L["Search items..."], "search", app.compact and 150 or 160)
+    kids[#kids].props.doubleAction = "clearAll"
   end
-  kids[#kids + 1] = btn("market.quality", Market.QualityLabel(alerts and 0 or q.minQuality) .. arrow(), "quality")
+  if not app.compact then
+    local n = filterCount(ah)
+    kids[#kids + 1] = btn("market.filtersBtn", n > 0 and L["Filters (%d)"]:format(n) or L["Filters"], "filters")
+  end
+  local quality = alerts and 0 or q.minQuality
+  local qb = btn("market.quality", Market.QualityLabel(quality) .. arrow(), "quality")
+  qb.props.color = Market.QualityColor(quality)
+  kids[#kids + 1] = qb
   if app.compact then
     kids[#kids + 1] = {
       id = "market.signals",
@@ -535,7 +567,7 @@ local function screenerBody(app, params)
   end
   if ah and not listed then
     local B = ns.AHBrowse
-    local found = (B and S.ah.at) and B.Rows(B.results, S.ah.filters, idx and idx.items) or {}
+    local found = (B and S.ah.at) and B.Rows(B.results, ahFilters(), idx and idx.items) or {}
     rows = Market.AHRows(found, idx and idx.items, {
       minQuality = q.minQuality,
       minPrice = q.minPrice,
@@ -544,6 +576,9 @@ local function screenerBody(app, params)
       classID = q.classID,
       subClassID = q.subClassID,
       only = q.only,
+      minLevel = q.minLevel,
+      maxLevel = q.maxLevel,
+      usable = q.usable and ns.ItemCache and ns.ItemCache.Usable or nil,
     }, info, avgDays())
     S.status =
       Market.AHStatus(houseLabel(app:House()), #rows, B and B.active, S.ah.at and W().Ago and W().Ago(S.ah.at, now()))
@@ -1281,8 +1316,9 @@ end
 A.quality = function(app)
   local entries = {}
   for _, o in ipairs(Market.QUALITIES) do
+    local color = Market.QualityColor(o[1])
     entries[#entries + 1] = {
-      text = o[2],
+      text = color and ns.Kit.Color(color, o[2]) or o[2],
       checked = (S.q.minQuality or 0) == o[1],
       func = function()
         S.q.minQuality = o[1]
@@ -1309,9 +1345,12 @@ A.chip = function(app, p)
   changed(app)
 end
 
+-- Clear all (the chips' link, a double-click on the search box): the search and every filter, the auction house's
+-- category and Exact name too
 A.clearAll = function(app)
   Market.ClearAll(S.q)
   S.ah.text, S.ah.at, S.ah.last = "", nil, nil
+  S.ah.filters = {}
   app:Set({ view = false })
 end
 
@@ -1487,6 +1526,14 @@ A.more = function(app)
     price("minPrice", L["Minimum price..."], L["Minimum price, e.g. 12 or 9s 50c (empty: none):"]),
     price("maxPrice", L["Maximum price..."], L["Maximum price, e.g. 12 or 9s 50c (empty: none):"]),
     {
+      text = L["Filters..."],
+      func = function()
+        C_Timer.After(0, function()
+          A.filters(app)
+        end)
+      end,
+    },
+    {
       text = L["Views..."],
       func = function()
         C_Timer.After(0, function()
@@ -1526,9 +1573,9 @@ local function searchAH(app, force, pick)
   S.ah.last, S.ah.at = t, at
   if ns.AHShopping and ns.AHShopping.Remember and AME_DB then
     AME_DB.recentSearches = AME_DB.recentSearches or {}
-    try(ns.AHShopping.Remember, AME_DB.recentSearches, t, S.ah.filters)
+    try(ns.AHShopping.Remember, AME_DB.recentSearches, t, ahFilters())
   end
-  try(B.Search, B, t, S.ah.filters, redraw)
+  try(B.Search, B, t, ahFilters(), redraw)
   app:Set({ pick = pick or false })
 end
 
@@ -1543,9 +1590,61 @@ A.ahSearch = function(app)
   searchAH(app, true)
 end
 
-A.ahFilters = function(app)
+local ahFilterEntries -- below
+
+-- Filters: required level, item level, Usable by you; at the auction house also its category and Exact name
+A.filters = function(app)
+  local q = S.q
+  local function range(lo, hi, label, ask, id)
+    local cur = Market.RangeText(q[lo], q[hi])
+    return {
+      text = label:format(cur or ns.Kit.Color("dim", L["any"])),
+      func = function()
+        prompt(id, ask, function(t)
+          q[lo], q[hi] = Market.ParseRange(t)
+          changed(app)
+        end)
+      end,
+    }
+  end
+  local entries = {
+    range(
+      "minLevel",
+      "maxLevel",
+      L["Required level: %s..."],
+      L["Required level, e.g. 20-30, 40 or 40- (empty: any):"],
+      "AME_REQ_LEVEL"
+    ),
+    range(
+      "minItemLevel",
+      "maxItemLevel",
+      L["Item level: %s..."],
+      L["Item level, e.g. 50-60, 60 or 60- (empty: any):"],
+      "AME_ITEM_LEVEL"
+    ),
+    {
+      text = L["Usable by you"],
+      checked = q.usable or false,
+      func = function()
+        q.usable = not q.usable or nil
+        changed(app)
+      end,
+    },
+  }
+  if ns.AME and ns.AME.ahOpen then
+    entries[#entries + 1] = { separator = true }
+    for _, e in ipairs(ahFilterEntries()) do
+      entries[#entries + 1] = e
+    end
+  end
+  menu(app, entries)
+end
+
+-- the auction house's own filters: its category, Exact name
+ahFilterEntries = function()
   local f = S.ah.filters
   local entries = {
+    { text = L["At the auction house"], disabled = true },
     {
       text = L["Any category"],
       checked = f.category == nil,
@@ -1575,15 +1674,7 @@ A.ahFilters = function(app)
       redraw()
     end,
   }
-  entries[#entries + 1] = {
-    text = L["Usable by you"],
-    checked = f.usable or false,
-    func = function()
-      f.usable = not f.usable or nil
-      redraw()
-    end,
-  }
-  menu(app, entries)
+  return entries
 end
 
 -- "Add to a shopping list": your lists (ticked when it's on one), then a new one; asks how many

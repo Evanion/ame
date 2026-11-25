@@ -194,7 +194,7 @@ function UI:CreateSettingsView(parent, contentArea)
       end,
     },
     {
-      text = L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."],
+      text = L["Adds Overview next to Auctions on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."],
     },
   })
   v.overviewCheck = ctl[1]

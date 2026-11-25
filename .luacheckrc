@@ -30,7 +30,7 @@ read_globals = {
   "MAX_GUILDBANK_SLOTS_PER_TAB",
   "SecondsToTime", "BackdropTemplateMixin", "GameFontNormal", "GameFontHighlight",
   "CreateFont", "GetLocale", "GetMoney", "GetQuestResetTime", "GetMouseFoci", "GetMouseFocus", "MenuUtil",
-  "GetSpellInfo", "IsPlayerSpell", "IsSpellKnown",
+  "GetSpellInfo", "IsPlayerSpell", "IsSpellKnown", "UnitLevel",
   "GameFontHighlightSmall", "GameFontNormalLarge", "GameFontDisableSmall", "UISpecialFrames", "GetCursorPosition",
   "StaticPopup_Show", "RELOADUI", "CANCEL", "ACCEPT", "DELETE", "UIErrorsFrame", "PlaySound", "SOUNDKIT", "C_Texture", "ERR_AUCTION_SOLD_S", "ERR_AUCTION_EXPIRED_S", "ERR_AUCTION_WON_S",
   "IsAltKeyDown", "IsModifiedClick", "IsShiftKeyDown", "IsControlKeyDown", "Item", "TooltipDataProcessor", "debugstack", "Enum", "C_TooltipInfo",

@@ -1,11 +1,16 @@
 -- Market (boards Market, MarketAlerts, MarketAH, ShoppingList, MarketAHList, Arbitrage, MarketCompact,
--- MarketAHCompact): the screener, your alerts, the lists and arbitrage, as rows for the redesigned window. Pure
--- functions turn what AME knows (the market index, the watchlists, the shopping lists, the auction house's answers)
--- into table rows, sidebar entries, chips and status lines; Core/UI/Screens/Market.lua builds the screen from them.
+-- MarketAHCompact): Auctions (the market index, filtered), your alerts, the lists and arbitrage, as rows for the
+-- redesigned window. Pure functions turn what AME knows (the market index, the watchlists, the shopping lists, the
+-- auction house's answers) into table rows, sidebar entries, chips and status lines; Core/UI/Screens/Market.lua
+-- builds the screen from them.
 --
---   Market.NewQuery() -> q                          the screener's filters: text, minQuality, minPrice, maxPrice,
---                                                    signal, classID, subClassID, list, sortKey, ascending
---   Market.FilterQuery(q, opts) -> MarketFilter query (opts: only, hidden, alerts)
+--   Market.NewQuery() -> q                          Auctions' filters: text, minQuality, minPrice, maxPrice,
+--                                                    signal, classID, subClassID, list, minLevel, maxLevel
+--                                                    (required level), minItemLevel, maxItemLevel, usable,
+--                                                    sortKey, ascending
+--   Market.FilterQuery(q, opts) -> MarketFilter query (opts: only, hidden, alerts, usable)
+--   Market.ParseRange(text) -> min, max / Market.RangeText(min, max)   "20-30", "40", "40-", "-30"
+--   Market.FilterCount(q) -> n                      how many of the Filters menu's filters are set
 --   Market.Sidebar(f, q, view) -> entries           All items, Watchlists, Alerts, Categories (counts)
 --   Market.PickEntry(q, key, f) -> what             a sidebar pick changes q; "newlist" | "alerts" | "list" | nil
 --   Market.Chips(q, f, view) -> { {key, label} }    the active filters, each removable
@@ -22,7 +27,21 @@ ns.Market = Market
 
 Market.STALE_DAYS = 3 -- rows whose data is older than this fade
 Market.MODES = { "screener", "overview", "arbitrage", "lists" }
-Market.VIEW_FIELDS = { "text", "minQuality", "minPrice", "maxPrice", "signal", "classID", "subClassID", "sortKey" }
+Market.VIEW_FIELDS = {
+  "text",
+  "minQuality",
+  "minPrice",
+  "maxPrice",
+  "signal",
+  "classID",
+  "subClassID",
+  "minLevel",
+  "maxLevel",
+  "minItemLevel",
+  "maxItemLevel",
+  "usable",
+  "sortKey",
+}
 
 local function money(copper)
   return ns.Widgets and ns.Widgets.Money and ns.Widgets.Money(copper, true) or tostring(copper)
@@ -65,7 +84,7 @@ Market.Size = size
 function Market.ModeOptions()
   return {
     { "overview", L["Overview"] },
-    { "screener", L["Screener"] },
+    { "screener", L["Auctions"] },
     { "arbitrage", L["Arbitrage"] },
     { "lists", L["Lists"] },
   }
@@ -77,7 +96,7 @@ function Market.ModeLabel(mode)
       return o[2]
     end
   end
-  return L["Screener"]
+  return L["Auctions"]
 end
 
 -- ------------------------------------------------------------------------------------------------ the query
@@ -90,6 +109,54 @@ Market.QUALITIES = {
   { 3, L["Rare+"] },
   { 4, L["Epic+"] },
 }
+
+-- the quality's colour token (the quality button and its menu draw each in its colour); Any quality: none
+function Market.QualityColor(minQuality)
+  return (minQuality or 0) > 0 and ("q" .. minQuality) or nil
+end
+
+-- a level range typed in: "20-30", "40" (just 40), "40-" (40 and up), "-30" (up to 30); empty: none.
+-- Returns min, max (either nil), swapped when typed the wrong way round
+function Market.ParseRange(text)
+  text = (text or ""):gsub("%s", "")
+  if text == "" then
+    return nil, nil
+  end
+  local a, dash, b = text:match("^(%d*)(%-?)(%d*)$")
+  if not a or (a == "" and b == "") then
+    return nil, nil
+  end
+  local lo, hi = tonumber(a), tonumber(b)
+  if dash == "" then
+    hi = lo
+  end
+  if lo and hi and lo > hi then
+    lo, hi = hi, lo
+  end
+  return lo, hi
+end
+
+function Market.RangeText(lo, hi)
+  if lo and hi then
+    return lo == hi and tostring(lo) or (lo .. "-" .. hi)
+  end
+  return lo and (lo .. "-") or hi and ("-" .. hi) or nil
+end
+
+-- the Filters menu's filters that are set (its button counts them)
+function Market.FilterCount(q)
+  local n = 0
+  if q.minLevel or q.maxLevel then
+    n = n + 1
+  end
+  if q.minItemLevel or q.maxItemLevel then
+    n = n + 1
+  end
+  if q.usable then
+    n = n + 1
+  end
+  return n
+end
 
 function Market.QualityLabel(minQuality)
   for _, o in ipairs(Market.QUALITIES) do
@@ -116,7 +183,7 @@ function Market.SortColumn(key)
 end
 
 -- the query MarketFilter.Apply takes. opts: only (a list's items), hidden (the hidden set), alerts (the alerts:
--- your alerts view, any quality and category)
+-- your alerts view, any quality and category), usable (function(itemID): can you use it, for q.usable)
 function Market.FilterQuery(q, opts)
   opts = opts or {}
   local out = {
@@ -124,16 +191,30 @@ function Market.FilterQuery(q, opts)
     minPrice = q.minPrice,
     maxPrice = q.maxPrice,
     signal = q.signal,
+    minLevel = q.minLevel,
+    maxLevel = q.maxLevel,
+    minItemLevel = q.minItemLevel,
+    maxItemLevel = q.maxItemLevel,
+    usable = q.usable and opts.usable or nil,
     sortKey = q.sortKey or "score",
     ascending = q.ascending,
   }
   if opts.alerts then
+    -- your alerts: every one, whatever the level filters say
+    out.minLevel, out.maxLevel, out.minItemLevel, out.maxItemLevel, out.usable = nil, nil, nil, nil, nil
     out.only = opts.alerts
     out.sortKey = "name" -- every alert stays in (a sort key drops rows without it); sorted by when they fired
     return out
   end
-  out.minQuality = (q.minQuality or 0) > 0 and q.minQuality or nil
-  out.classID, out.subClassID = q.classID, q.subClassID
+  if q.list then
+    -- a watchlist (yours, a guild member's) or Hidden: every item on it, whatever the filters say; the name search
+    -- still narrows it
+    out.minPrice, out.maxPrice, out.signal = nil, nil, nil
+    out.minLevel, out.maxLevel, out.minItemLevel, out.maxItemLevel, out.usable = nil, nil, nil, nil, nil
+  else
+    out.minQuality = (q.minQuality or 0) > 0 and q.minQuality or nil
+    out.classID, out.subClassID = q.classID, q.subClassID
+  end
   out.only = opts.only
   if q.list ~= "hidden" then
     out.hide = opts.hidden
@@ -268,7 +349,7 @@ end
 -- ------------------------------------------------------------------------------------------------ chips
 
 -- f: { listName = name of q.list, className = name of q.classID / subClassID, text (the AH search text) }
--- keys: "text", "quality", "min", "max", "list", "class", "alerts", "ahtext"
+-- keys: "text", "quality", "min", "max", "level", "ilvl", "usable", "list", "class", "alerts", "ahtext"
 function Market.Chips(q, f, view)
   f = f or {}
   local out = {}
@@ -284,14 +365,30 @@ function Market.Chips(q, f, view)
   if q.text and q.text ~= "" then
     add("text", '"' .. q.text .. '"')
   end
-  if view ~= "alerts" and (q.minQuality or 0) ~= 1 then
+  -- a watchlist shows every item on it: no filter applies (see FilterQuery); your alerts keep the price range
+  local listed = view ~= "alerts" and q.list ~= nil
+  local filters = view ~= "alerts" and not listed
+  if filters and (q.minQuality or 0) ~= 1 then
     add("quality", Market.QualityLabel(q.minQuality))
   end
-  if q.minPrice then
+  if q.minPrice and not listed then
     add("min", L["from %s"]:format(money(q.minPrice)))
   end
-  if q.maxPrice then
+  if q.maxPrice and not listed then
     add("max", L["up to %s"]:format(money(q.maxPrice)))
+  end
+  if filters then
+    local level = Market.RangeText(q.minLevel, q.maxLevel)
+    if level then
+      add("level", L["lvl %s"]:format(level))
+    end
+    local ilvl = Market.RangeText(q.minItemLevel, q.maxItemLevel)
+    if ilvl then
+      add("ilvl", L["ilvl %s"]:format(ilvl))
+    end
+    if q.usable then
+      add("usable", L["Usable"])
+    end
   end
   if view ~= "alerts" then
     if q.list and f.listName then
@@ -313,6 +410,12 @@ function Market.ClearChip(q, key)
     q.minPrice = nil
   elseif key == "max" then
     q.maxPrice = nil
+  elseif key == "level" then
+    q.minLevel, q.maxLevel = nil, nil
+  elseif key == "ilvl" then
+    q.minItemLevel, q.maxItemLevel = nil, nil
+  elseif key == "usable" then
+    q.usable = nil
   elseif key == "list" then
     q.list, q.only = nil, nil
   elseif key == "class" then
@@ -590,8 +693,9 @@ function Market.FiredToday(fired, now)
 end
 
 -- At the auction house: what the search found (AHBrowse.Rows: { key, qty, cheapest, market, signal }) with AME's
--- view beside it, narrowed by the screener's quality, price range, signal and category. info(key) -> { quality,
--- classID, subClassID }; items: the market index's summaries
+-- view beside it, narrowed by Auctions' quality, price range, signal, category, required level and usable (q.usable:
+-- function(key) -> false leaves it out). info(key) -> { quality, classID, subClassID, minLevel }; items: the market
+-- index's summaries
 function Market.AHRows(found, items, q, info, days)
   q = q or {}
   items = items or {}
@@ -614,6 +718,12 @@ function Market.AHRows(found, items, q, info, days)
     elseif q.subClassID and i.subClassID ~= q.subClassID then
       ok = false
     elseif q.only and not q.only[r.key] then
+      ok = false
+    elseif q.minLevel and (i.minLevel or -1) < q.minLevel then
+      ok = false
+    elseif q.maxLevel and (i.minLevel or math.huge) > q.maxLevel then
+      ok = false
+    elseif q.usable and q.usable(r.key) == false then
       ok = false
     end
     if ok then

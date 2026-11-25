@@ -100,8 +100,6 @@ L["A normal price"] = "보통 가격"
 L["A route, broken down"] = "경로 자세히 보기"
 L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
   "게임이 구매자를 찾았다고 알리는 즉시 판매가 거래 장부에 표시되며(우편 대기 중), 경매 우편이 도착하면 정확한 금액으로 정산됩니다 - 우편함을 열어 받으세요. 귀속 아이템은 팔 수 없으므로 집계하지 않습니다."
-L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it. Right-click a row for more: search the auction house, watchlists, an alert, a chat link, or hiding items you don't trade (they move to Hidden in the sidebar, where you can unhide them)."] =
-  "기록이 있는 모든 아이템을 보는 스크리너입니다. 왼쪽에서 분류나 관심 목록을 고르고, 이름으로 검색하고, 등급·가격 범위·신호로 필터링하고, 열을 클릭해 정렬하세요. 열 제목에 마우스를 올리면 설명이 나옵니다. 행을 클릭하면 차트가 열리고, 별을 클릭하면 관심 목록에 추가됩니다. 행을 오른쪽 클릭하면 더 많은 기능이 있습니다: 경매장 검색, 관심 목록, 알림, 대화창 링크, 또는 거래하지 않는 아이템 숨기기(사이드바의 숨김으로 옮겨지며, 거기서 숨김을 해제할 수 있습니다)."
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "긴 위꼬리: 가격이 한 번 튀었다가 - 대개 싼 매물이 없던 스캔 - 유지되지 않았습니다. 그 급등을 기준으로 가격을 정하지 마세요."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -129,8 +127,8 @@ L["Add to watchlist"] = "관심 목록에 추가"
 L["Added the reagents for %s to the shopping list %s."] = "%s 재료를 구매 목록 %s에 추가했습니다."
 L["Added the reagents for one %s to the shopping list %s."] =
   "%s 1개분 재료를 구매 목록 %s에 추가했습니다."
-L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
-  "시장 탭의 스크리너 옆에 개요를 추가합니다: 경매장 전체의 시장 지수, CPI, 등록 가치, 거래 대금, 분류. 켜져 있는 동안에는 시장 데이터 업데이트가 조금 더 오래 걸립니다."
+L["Adds Overview next to Auctions on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
+  "시장 탭의 경매 옆에 개요를 추가합니다: 경매장 전체의 시장 지수, CPI, 등록 가치, 거래 대금, 분류. 켜져 있는 동안에는 시장 데이터 업데이트가 조금 더 오래 걸립니다."
 L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
   "스캔 한 번이면 시장 탭을 둘러보고 등록 가격을 볼 수 있습니다. 신호, 추세, 판매 속도에는 기록이 필요합니다: 하루 한 번 스캔하면 점점 정확해지고, 일주일 뒤에 가장 의미가 있습니다."
 L["After your first scan"] = "첫 스캔 후"
@@ -760,8 +758,8 @@ L["That's one of your characters: they already share AME's data"] =
   "내 캐릭터입니다: 이미 AME 데이터를 공유하고 있습니다"
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] =
   "경매장 개당 순수익 %s (수수료와 보증금 %s 제외)  ·  상인은 %s"
-L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Screener on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
-  "개요는 증권 거래소의 지수처럼 경매장 전체를 한눈에 보여줍니다: 시장이 비싸지는지 싸지는지, 얼마나 등록되어 있는지, 골드가 어디에 몰려 있는지. 기본값은 꺼짐입니다: 설정 > 일반에서 켜면 시장 탭 도구 모음의 스크리너 옆에 개요가 나타납니다. 켜져 있는 동안에는 시장 데이터 업데이트가 조금 더 오래 걸립니다."
+L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Auctions on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
+  "개요는 증권 거래소의 지수처럼 경매장 전체를 한눈에 보여줍니다: 시장이 비싸지는지 싸지는지, 얼마나 등록되어 있는지, 골드가 어디에 몰려 있는지. 기본값은 꺼짐입니다: 설정 > 일반에서 켜면 시장 탭 도구 모음의 경매 옆에 개요가 나타납니다. 켜져 있는 동안에는 시장 데이터 업데이트가 조금 더 오래 걸립니다."
 L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."] =
   "판매 섹션의 경매장 수수료와 등록 기간은 금액을 계산하는 모든 곳에 적용됩니다: 보증금, 상인 판단, 등록 가격, 차익거래."
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
@@ -874,8 +872,8 @@ L["When"] = "시간"
 L["Where the data comes from"] = "데이터 출처"
 L["Whose, and since when"] = "누구의 데이터, 언제부터"
 L["Window"] = "창"
-L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
-  "시장 개요를 켜면(설정 > 일반) 도구 모음의 첫 버튼들로 시장 탭을 스크리너(이 목록)와 개요 - 경매장 전체의 지수와 합계 - 사이에서 전환할 수 있습니다 (시장 개요 참고)."
+L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between Auctions (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
+  "시장 개요를 켜면(설정 > 일반) 도구 모음의 첫 버튼들로 시장 탭을 경매(이 목록)와 개요 - 경매장 전체의 지수와 합계 - 사이에서 전환할 수 있습니다 (시장 개요 참고)."
 L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."] =
   "경매장이 열려 있을 때 행을 Shift-클릭하면 그곳에서 검색합니다. 검색창에 커서가 있을 때 아무 곳의 아이템 링크를 Shift-클릭하면 이름으로 검색합니다."
 L["With your profession window open, adds the reagents of the selected recipe - as many times as you'll craft it."] =

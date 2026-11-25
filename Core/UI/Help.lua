@@ -255,7 +255,7 @@ Help.GUIDE = {
   },
   {
     L["Market tab"],
-    L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it. Right-click a row for more: search the auction house, watchlists, an alert, a chat link, or hiding items you don't trade (they move to Hidden in the sidebar, where you can unhide them)."],
+    L["Auctions lists every item with history. Pick a category or watchlist on the left, search by name, filter by quality (each in its colour), price range or signal, and click a column to sort. Filters narrows it by required level, item level (ranges like 20-30, 40 or 40-) and Usable by you: items your character's level allows and, for weapons, armour and recipes, whose tooltip shows nothing in red (a weapon or armour type you can't use, a skill you lack, a recipe you know). At the auction house the same filters go with your search, beside the auction house's own category and Exact name. A watchlist shows every item on it, whatever the filters say; the name search still narrows it. Double-click the search box to clear the search and every filter. Hover a column header for what it means. Click a row to open its chart; click the star to watch it. Right-click a row for more: search the auction house, watchlists, an alert, a chat link, or hiding items you don't trade (they move to Hidden in the sidebar, where you can unhide them)."],
   },
   {
     L["Arbitrage tab"],
@@ -372,7 +372,7 @@ function Help.Articles()
           label = L["Market"],
           body = {
             guideText(2),
-            L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."],
+            L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between Auctions (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."],
             H(L["Filtering by signal"]),
             EX("signalFilter"),
             L["Pick a signal to see only those items. Active filters show as chips under the toolbar: click one to remove it, or Clear all."],
@@ -392,7 +392,7 @@ function Help.Articles()
           title = L["Market overview"],
           label = L["Overview"],
           body = {
-            L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Screener on the Market tab's toolbar. Market data takes a little longer to update while it's on."],
+            L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Auctions on the Market tab's toolbar. Market data takes a little longer to update while it's on."],
             H(L["The cards"]),
             L["Market index and CPI start at 100 thirty days ago. The market index follows every steadily listed item; the CPI only what players use up, weighted by what's spent on it. Listed value, Turnover and Auctions are the totals at the last full scan; Breadth is the share of items that rose. Each card's change is over the period picked on the right of the toolbar. Hover a card for how it's worked out."],
             H(L["Fair numbers"]),
