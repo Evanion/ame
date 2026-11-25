@@ -630,7 +630,10 @@ function Chart:Refresh()
     local t = pool(self, "text")
     t:SetText(tfmt(tick.t, tick.unit))
     t:SetTextColor(colorOf(o.axisTextColor))
-    t:SetPoint("TOP", self.canvas, "BOTTOMLEFT", x, lastPane.y - 3)
+    -- centred under its tick, but never past the plot's edges (the first and last day would hang out of it)
+    local half = (t:GetStringWidth() or 0) / 2
+    local lx = math.max(lastPane.x + half, math.min(lastPane.x + lastPane.w - half, x))
+    t:SetPoint("TOP", self.canvas, "BOTTOMLEFT", lx, lastPane.y - 3)
     if o.xGrid then
       for _, pane in pairs(panes) do
         local g = pool(self, "grid")
@@ -1077,12 +1080,22 @@ function Chart:UpdateHover()
     return date("%b %d", t)
   end
   self.xtagText:SetText(tfmt(snapX, "day"))
+  -- the hover's date tag, kept inside the plot's width as the day labels are
+  local tagW = (self.xtagText:GetStringWidth() or 30) + 10
+  local left, right = math.huge, -math.huge
+  for _, pane in pairs(v.panes or {}) do
+    left, right = math.min(left, pane.x), math.max(right, pane.x + pane.w)
+  end
+  local tx = cx
+  if left < right then
+    tx = math.max(left + tagW / 2, math.min(right - tagW / 2, cx))
+  end
   self.xtagText:ClearAllPoints()
-  self.xtagText:SetPoint("TOP", self.canvas, "BOTTOMLEFT", cx, bottom - 3)
+  self.xtagText:SetPoint("TOP", self.canvas, "BOTTOMLEFT", tx, bottom - 3)
   self.xtagText:Show()
   self.xtag:ClearAllPoints()
-  self.xtag:SetPoint("TOP", self.canvas, "BOTTOMLEFT", cx, bottom - 1)
-  self.xtag:SetSize((self.xtagText:GetStringWidth() or 30) + 10, 15)
+  self.xtag:SetPoint("TOP", self.canvas, "BOTTOMLEFT", tx, bottom - 1)
+  self.xtag:SetSize(tagW, 15)
   self.xtag:Show()
 
   for id, row in pairs(rows) do
