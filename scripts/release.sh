@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Upload a release to CurseForge (upload API). Credentials come from .env in the repo root (never committed):
-#   CURSEFORGE_CI_API_TOKEN=...   CURSEFORGE_PROJECT_ID=...
+# Upload a release to CurseForge (upload API). Releases run in CI (.github/workflows/release.yml, see RELEASING.md),
+# which passes the credentials in the environment. Locally, .env in the repo root (never committed) can hold them for
+# --check:   CURSEFORGE_CI_API_TOKEN=...   CURSEFORGE_PROJECT_ID=...
 #
 #   scripts/release.sh --check                       verify the token, list game versions that look like Forever
 #   scripts/release.sh <version> [beta|alpha|release] [changelog.md]
@@ -12,9 +13,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-[ -f .env ] || { echo "no .env with CURSEFORGE_CI_API_TOKEN / CURSEFORGE_PROJECT_ID" >&2; exit 1; }
-# read KEY=value lines (tolerates quotes, 'export ', CRLF); nothing is printed
-while IFS= read -r line || [ -n "$line" ]; do
+# .env, when there is one: KEY=value lines (tolerates quotes, 'export ', CRLF); nothing is printed. A value already in
+# the environment (CI) wins.
+[ -f .env ] && while IFS= read -r line || [ -n "$line" ]; do
   line="${line%$'\r'}"
   line="${line#export }"
   case "$line" in '' | '#'*) continue ;; esac
@@ -22,12 +23,12 @@ while IFS= read -r line || [ -n "$line" ]; do
   value="${line#*=}"
   value="${value%\"}"; value="${value#\"}"; value="${value%\'}"; value="${value#\'}"
   case "$key" in CURSEFORGE_CI_API_TOKEN | CURSEFORGE_PROJECT_ID | CURSEFORGE_GAME_VERSIONS | CURSEFORGE_DATA_SLUG)
-    export "$key=$value"
+    [ -n "${!key:-}" ] || export "$key=$value"
     ;;
   esac
 done < .env
-: "${CURSEFORGE_CI_API_TOKEN:?missing in .env}"
-: "${CURSEFORGE_PROJECT_ID:?missing in .env}"
+: "${CURSEFORGE_CI_API_TOKEN:?missing (CI secret, or .env locally)}"
+: "${CURSEFORGE_PROJECT_ID:?missing (CI variable, or .env locally)}"
 
 API=https://wow.curseforge.com/api
 auth=(-H "X-Api-Token: $CURSEFORGE_CI_API_TOKEN")
