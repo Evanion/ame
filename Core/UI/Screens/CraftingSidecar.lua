@@ -87,7 +87,14 @@ function Side.TakeOver()
   if Screen then
     Screen.Dirty()
   end
-  ns.App:Go("crafting", { profession = Side.OpenProfession(), filter = "all", selected = false })
+  local App = ns.App
+  local here = App.frame and App.frame:IsShown() and App.screens and App:Current() and App.screens[App:Current()]
+  if here and here.tab == "crafting" then
+    -- opened from AME itself (Craft next, Create): stay where you are - on the queue the next click crafts
+    App:Render()
+  else
+    App:Go("crafting", { profession = Side.OpenProfession(), filter = "all", selected = false })
+  end
   Side.HookApp()
 end
 

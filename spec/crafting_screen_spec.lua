@@ -636,5 +636,24 @@ describe("Crafting", function()
       assert.is_false(Side.TookOver())
       _G.C_TradeSkillUI, _G.ProfessionsFrame = nil, nil
     end)
+
+    it("a profession opened from the queue (Craft next) keeps you on the queue", function()
+      local Side = ns.CraftingSidecar
+      AME_DB.settings.newWindow = true
+      _G.C_TradeSkillUI = {
+        GetBaseProfessionInfo = function()
+          return { professionID = 129 }
+        end,
+      }
+      _G.ProfessionsFrame = CreateFrame("Frame")
+      valid("crafting", { filter = "queued" })
+      Side.Opened()
+      local id, params = App:Current()
+      assert.equals("crafting", id)
+      assert.equals("queued", params.filter)
+      assert.is_true(Side.TookOver())
+      Side.UseGameWindow()
+      _G.C_TradeSkillUI, _G.ProfessionsFrame = nil, nil
+    end)
   end)
 end)

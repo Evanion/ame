@@ -744,7 +744,8 @@ local function buttonCell(b, def, d, shown)
   if not shown then
     return
   end
-  b:SetText(type(def.label) == "function" and def.label(d) or def.label or "")
+  local text = type(def.label) == "function" and def.label(d) or def.label or ""
+  b:SetText(ns.Kit and ns.Kit.Glyphs and ns.Kit.Glyphs(text) or text) -- ✕ and the like, as the game can draw them
   local variant = def.variant and def.variant(d)
   W.Primary(b, variant == "primary")
   b:SetSelected(variant == "selected")
