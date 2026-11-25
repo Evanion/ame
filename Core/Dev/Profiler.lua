@@ -12,7 +12,7 @@ local Dev = {}
 ns.Dev = Dev
 
 Dev.SPIKE_MS = 12 -- a frame where AME took longer than this is logged
-Dev.SPIKES_KEEP = 40
+Dev.SPIKES_KEEP = 200
 
 ---------------------------------------------------------------------------------------------------------------------
 -- pure helpers (spec/dev_spec.lua)
@@ -116,6 +116,31 @@ local function account(kind, name, ms)
   end
 end
 
+-- Timed sections nest (a job's callback redraws a window, a render gathers Home's facts): each is recorded under its
+-- own kind and name, but only the outermost counts toward the frame's total, so nothing is counted twice.
+local depth = 0
+local function finish(kind, name, t0, ...)
+  depth = depth - 1
+  local ms = clock() - t0
+  if depth == 0 then
+    account(kind, name, ms)
+  else
+    Dev.Record(db[kind], name, ms)
+  end
+  return ...
+end
+
+local function timed(kind, name, fn, ...)
+  if not db then
+    return fn(...)
+  end
+  db[kind] = db[kind] or {}
+  depth = depth + 1
+  local t0 = clock()
+  return finish(kind, name, t0, fn(...))
+end
+Dev.Timed = timed
+
 -- jobs: time each Tick (the runner records which job it ran); while off, straight through
 local runner = AME.jobs
 local tick = runner.Tick
@@ -123,20 +148,66 @@ runner.Tick = function(self, ...)
   if not db then
     return tick(self, ...)
   end
+  -- the job's name is known once it has run
+  depth = depth + 1
   local t0 = clock()
   tick(self, ...)
-  account("jobs", self.lastName or "?", clock() - t0)
+  finish("jobs", self.lastName or "?", t0)
 end
 
 -- events: wrap AME's handlers (Main.lua dispatches through this table on every event)
 for event, fn in pairs(AME.handlers or {}) do
   AME.handlers[event] = function(...)
-    if not db then
-      return fn(...)
+    return timed("events", event, fn, ...)
+  end
+end
+
+-- The new window (Core/UI/App.lua): each draw by its screen ("render home"), the screen's tree on its own ("build
+-- home"), and the status row's half-second refresh. Home's facts: the whole gather and each of its pieces.
+local App = ns.App
+if App then
+  local render, tree = App.Render, App.Tree
+  App.Render = function(self, ...)
+    local id = self.Current and self:Current() or "?"
+    return timed("ui", "render " .. tostring(id), render, self, ...)
+  end
+  App.Tree = function(self, ...)
+    local id = self.Current and self:Current() or "?"
+    return timed("ui", "build " .. tostring(id), tree, self, ...)
+  end
+  for _, name in ipairs({ "StatusRight", "ScanButtonState" }) do
+    local fn = App[name]
+    if fn then
+      App[name] = function(...)
+        return timed("ui", "status " .. name, fn, ...)
+      end
     end
-    local t0 = clock()
-    fn(...)
-    account("events", event, clock() - t0)
+  end
+end
+local Home = ns.Home
+if Home and Home.Gather then
+  local gather = Home.Gather
+  Home.Gather = function(...)
+    return timed("ui", "home gather", gather, ...)
+  end
+  Home.Timed = function(label, fn, ...)
+    return timed("ui", "home " .. label, fn, ...)
+  end
+end
+-- the old window: its Render* and Refresh* methods ("old RenderMarket"), for sessions with both windows open
+local UI = ns.UI
+if UI then
+  local names = {}
+  for name, fn in pairs(UI) do
+    if type(fn) == "function" and (name:match("^Render") or name:match("^Refresh")) then
+      names[#names + 1] = name
+    end
+  end
+  for _, name in ipairs(names) do
+    local fn = UI[name]
+    UI[name] = function(...)
+      return timed("ui", "old " .. name, fn, ...)
+    end
   end
 end
 
@@ -169,7 +240,7 @@ local function onUpdate()
       end
     end
   end
-  frameMs, frameWhat = 0, nil
+  frameMs, frameWhat, depth = 0, nil, 0 -- (a timed section that errored never closed: start the next frame clean)
 end
 local frames = CreateFrame("Frame")
 
@@ -179,6 +250,7 @@ local function fresh(on)
     since = GetServerTime(),
     jobs = {},
     events = {},
+    ui = {},
     frames = { n = 0, ms = 0, max = 0 },
     spikes = {},
   }
@@ -230,7 +302,7 @@ local function summary()
     Dev.SPIKE_MS
   )
   say("CPU per minute: %.0f ms", f.ms / mins)
-  for _, kind in ipairs({ "jobs", "events" }) do
+  for _, kind in ipairs({ "jobs", "events", "ui" }) do
     for _, e in ipairs(Dev.Top(db[kind], 6)) do
       say("  %s %s: %.0f ms total, %d runs, worst %.1f ms", kind, e.name, e.ms, e.n, e.max)
     end

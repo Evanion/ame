@@ -163,6 +163,7 @@ function Report.Build()
     minutes = perMinute(hud.seconds),
     jobs = Dev.Top(dev.jobs or {}, 25),
     events = Dev.Top(dev.events or {}, 25),
+    ui = Dev.Top(dev.ui or {}, 25),
     spikes = dev.spikes,
     frames = dev.frames,
     sync = svc and svc.stats,

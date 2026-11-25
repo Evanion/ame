@@ -502,8 +502,13 @@ function Home.WeekAgo(log, today, value)
   return nil
 end
 
-local function try(fn, ...)
-  return ns.Shield(fn, ...) -- a failing piece is left out; its error goes to the game's handler (BugSack)
+-- a piece of the gather: one that fails is left out, its error going to the game's handler (BugSack). The profiler
+-- (/amedev on) sets Home.Timed to time each piece by its label.
+local function try(label, fn, ...)
+  if Home.Timed then
+    return Home.Timed(label, ns.Shield, fn, ...)
+  end
+  return ns.Shield(fn, ...)
 end
 
 local function gatherMoney(f, holdings, keep)
@@ -796,8 +801,8 @@ function Home.Gather(force)
   local keep = ns.Holdings.Keep("market") or function()
     return true
   end
-  try(gatherMoney, f, holdings, keep)
-  try(gatherAlerts, f, now)
+  try("gatherMoney", gatherMoney, f, holdings, keep)
+  try("gatherAlerts", gatherAlerts, f, now)
   f.professions = {}
   for _, c in pairs(ns.Professions and ns.Professions:Characters() or {}) do
     for _, p in pairs(c.professions or {}) do
@@ -812,15 +817,15 @@ function Home.Gather(force)
   end
   if index then
     local q = ns.Quote.For(AME:FactionShard(), index, { fresh = false })
-    try(gatherAuctions, f, holdings, index, keep)
-    try(gatherBags, f, holdings, index, q)
-    try(gatherWorth, f, holdings, index, q, keep)
+    try("gatherAuctions", gatherAuctions, f, holdings, index, keep)
+    try("gatherBags", gatherBags, f, holdings, index, q)
+    try("gatherWorth", gatherWorth, f, holdings, index, q, keep)
     if ns.Trading.ResolveLedger then
-      try(ns.Trading.ResolveLedger, ns.Trading)
+      try("resolveLedger", ns.Trading.ResolveLedger, ns.Trading)
     end
     f.ledger = AME.ledger and AME.ledger:Summary(now - 7 * DAY) or nil
     if ns.MarketStats and index.stats then
-      local s = try(ns.MarketStats.Summary, index, 7)
+      local s = try("marketStats", ns.MarketStats.Summary, index, 7)
       f.marketChange = s and s.levelChange
       f.marketLevel = s and s.level
     end
@@ -835,10 +840,10 @@ function Home.Gather(force)
     if newest then
       f.scanAge = now - newest
     end
-    local m = try(gatherCrafting, f, index)
-    try(gatherCooldowns, f, now, m and m.craft)
-    try(gatherBuy, f, index)
-    try(gatherCarry, f, index, AME)
+    local m = try("gatherCrafting", gatherCrafting, f, index)
+    try("gatherCooldowns", gatherCooldowns, f, now, m and m.craft)
+    try("gatherBuy", gatherBuy, f, index)
+    try("gatherCarry", gatherCarry, f, index, AME)
   end
   f.requests = ns.CraftRequests and ns.CraftRequests.Incoming and ns.CraftRequests.Incoming() or {}
   f.guildSharers = ns.SyncService and ns.SyncService.PeerCount and ns.SyncService:PeerCount() or 0

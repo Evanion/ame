@@ -15,7 +15,7 @@ Hud.SELF = "AzerothMercantileExchange"
 -- the log (AME_DB.dev.hudLog, read from the SavedVariables file after a /reload or logout): one line a second while
 -- the box is on, and every hitch - a frame where AME took over SELF_HITCH_MS, or the whole frame took over
 -- FRAME_HITCH_MS whoever caused it - with what AME was doing
-Hud.LOG_SECONDS = 1800 -- half an hour of seconds
+Hud.LOG_SECONDS = 7200 -- two hours of seconds
 Hud.LOG_HITCHES = 300
 Hud.SELF_HITCH_MS = 20
 Hud.FRAME_HITCH_MS = 100
@@ -195,6 +195,20 @@ local function queueNames()
   return table.concat(names, ",")
 end
 
+-- what each window shows, when it's open: the old one's tab, the new one's screen
+local function oldScreen()
+  local UI = ns.UI
+  return UI and UI.frame and UI.frame:IsShown() and UI.current or nil
+end
+
+local function newScreen()
+  local App = ns.App
+  if not (App and App.frame and App.frame:IsShown() and App.Current) then
+    return nil
+  end
+  return (App:Current())
+end
+
 local function inCombat()
   return InCombatLockdown and InCombatLockdown() or false
 end
@@ -253,7 +267,8 @@ local function build()
         memKB = math.floor(mem - lastMem),
         gc = gc or nil,
         combat = inCombat() or nil,
-        ui = ns.UI and ns.UI.frame and ns.UI.frame:IsShown() and ns.UI.current or nil,
+        ui = oldScreen(), -- the old window's tab, when it's open
+        app = newScreen(), -- the new window's screen, when it's open
       }, Hud.LOG_HITCHES)
     end
     if sec.elapsed >= 1 then
@@ -266,6 +281,8 @@ local function build()
         queue = queueNames(),
         memMB = math.floor(mem / 102.4) / 10,
         combat = inCombat() or nil,
+        ui = oldScreen(),
+        app = newScreen(),
       }, Hud.LOG_SECONDS)
       sec = { frames = 0, ame = 0, worst = 0, gameWorst = 0, elapsed = 0 }
     end
