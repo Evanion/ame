@@ -86,6 +86,36 @@ describe("MarketFilter", function()
   it("sorts ascending on numeric columns", function()
     assert.are.same({ 3, 1, 5, 2, 4 }, ids(MF.Apply(index, { sortKey = "market", ascending = true }, info)))
   end)
+
+  it("filters by required level and item level; items whose facts aren't loaded are left out", function()
+    local gear = {
+      [10] = { classID = 4, name = "Cap", quality = 2, minLevel = 20, level = 25 },
+      [11] = { classID = 4, name = "Robe", quality = 2, minLevel = 35, level = 40 },
+      [12] = { classID = 4, name = "Boots", quality = 2, minLevel = 0, level = 5 },
+      [13] = { classID = 4 }, -- not loaded
+    }
+    local idx = { items = {} }
+    for id in pairs(gear) do
+      idx.items[id] = { itemID = id, score = id }
+    end
+    local function gearInfo(id)
+      return gear[id]
+    end
+    assert.are.same({ 11, 10 }, ids(MF.Apply(idx, { minLevel = 20 }, gearInfo)))
+    assert.are.same({ 10 }, ids(MF.Apply(idx, { minLevel = 20, maxLevel = 30 }, gearInfo)))
+    assert.are.same({ 12 }, ids(MF.Apply(idx, { maxItemLevel = 10 }, gearInfo)))
+    assert.are.same({ 11 }, ids(MF.Apply(idx, { minItemLevel = 30 }, gearInfo)))
+  end)
+
+  it("Usable by you leaves out what you can't use, and keeps what isn't known yet", function()
+    local usable = { [1] = true, [2] = false } -- 3, 4, 5: not known yet
+    local list = MF.Apply(index, {
+      usable = function(id)
+        return usable[id]
+      end,
+    }, info)
+    assert.are.same({ 5, 1, 4, 3 }, ids(list))
+  end)
 end)
 
 describe("MarketFilter.FindByName", function()
