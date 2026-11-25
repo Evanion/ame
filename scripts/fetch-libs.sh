@@ -24,3 +24,7 @@ fi
 if [ ! -f Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua ] && command -v svn >/dev/null; then
   svn export -q https://repos.wowace.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0 Libs/LibSharedMedia-3.0
 fi
+# say what's still missing (CI installs svn; a release can't be built without them)
+for lib in LibDBIcon-1.0 LibSharedMedia-3.0; do
+  [ -f "Libs/$lib/$lib.lua" ] && echo "Libs/$lib: ok" || echo "Libs/$lib: missing (needs svn, or a copy from an installed addon)" >&2
+done
