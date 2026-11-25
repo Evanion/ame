@@ -130,8 +130,9 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     ns.UI.frame:Show()
     ns.UI:ShowTab("sync") -- Settings, Sharing
   elseif cmd == "new" then
-    -- the redesigned window (feature/redesign): switch to it, or back to the current one
-    ns.App.UseNew(not ns.App.Enabled())
+    ns.App.UseNew(true) -- AME's window
+  elseif cmd == "old" then
+    ns.App.UseNew(false) -- the previous window, for now
   elseif cmd == "session" and ns.SessionTracker then
     ns.SessionTracker.Toggle() -- what this outing has gathered and looted
   elseif cmd == "" then
@@ -147,6 +148,7 @@ SlashCmdList.AZEROTHMERCANTILEEXCHANGE = function(msg)
     say(
       L["/ame item <link> - print history  ·  /ame scan  ·  /ame status  ·  /ame selftest  ·  /ame backfill  ·  /ame config  ·  /ame sync  ·  /ame who <item>  ·  /ame session"]
     )
+    say(L["/ame old - the previous window  ·  /ame new - back to the new one"])
   elseif itemIDFrom(msg) then
     ns.UI:ShowItem(itemIDFrom(msg))
   else

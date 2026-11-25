@@ -53,7 +53,9 @@ Settings.DEFAULTS = {
   sellRange = "7D", -- the Sell page's chart span (2D, 7D, 30D, 90D, 1Y, All), as last picked
   -- the new window's Market mode when it opens (overview, screener, arbitrage, lists), as last used
   appMarketMode = "overview",
-  newWindow = false, -- the redesigned window (feature/redesign, /ame new) instead of the current one
+  -- the previous window instead of the redesigned one (/ame old; /ame new comes back). A new key, so everyone starts
+  -- on the new window, whatever the preview's newWindow said
+  oldWindow = false,
   minimap = { hide = false },
 }
 

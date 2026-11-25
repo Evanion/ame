@@ -141,7 +141,7 @@ local function general(env)
     {
       title = L["Window"],
       rows = {
-        check(L["Use the new window (preview)"], "newWindow"),
+        check(L["Use the old window"], "oldWindow"),
         field(L["Scale"], "windowScale", scales),
         field(L["At the auction house"], "ahMode", where),
         check(
@@ -344,7 +344,7 @@ end
 
 -- what each setting does, shown in the game's tooltip on hover (by setting key, or a button's action)
 S.TIPS = {
-  newWindow = L["AME's redesigned window. Untick it to go back to the old window; its Settings has the same box to come back. /ame new swaps too."],
+  oldWindow = L["AME's previous window, for now. Tick it to go back to it; its Settings has the same box to return. /ame old and /ame new swap too."],
   windowScale = L["How big the AME window draws, apart from the game's UI scale."],
   ahMode = L["What opens when you talk to an auctioneer: the AME window, which buys, sells and shows your auctions, or the game's own auction house window. The button on each swaps to the other, and AME remembers the last one you used."],
   openWithAH = L["When the game's auction house window opens, AME's window opens next to it."],
@@ -448,10 +448,10 @@ local function fontsChanged()
 end
 
 S.EFFECTS = {
-  -- unticked: back to the old window (its Settings has the same box to come back)
-  newWindow = function(on)
+  -- ticked: the old window (its Settings has the same box to come back)
+  oldWindow = function(on)
     if ns.App and ns.App.UseNew then
-      ns.App.UseNew(on)
+      ns.App.UseNew(not on)
     end
   end,
   fontText = fontsChanged,

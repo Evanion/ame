@@ -10,7 +10,7 @@
 --                         its own data did (def.Stamp(app) -> a value that changes with it)
 --   App:Toggle(), App:Show(), App:Hide()
 --
--- Until the cut-over the old window stays the default: Settings.newWindow (or /ame new) opens this one instead.
+-- This is AME's window; Settings.oldWindow (or /ame old) opens the previous one instead, and /ame new comes back.
 local _, ns = ...
 local L = ns.L
 
@@ -477,10 +477,10 @@ function App:Create()
   return f
 end
 
--- The preview switch (Settings in both windows, /ame new): the new window on, the old one closed - or back
+-- The switch (Settings in both windows, /ame new, /ame old): the new window on, the old one closed - or back
 function App.UseNew(on)
   on = on and true or false
-  ns.Settings:Set("newWindow", on)
+  ns.Settings:Set("oldWindow", not on)
   local UI = ns.UI
   if on then
     if UI and UI.frame then
@@ -649,7 +649,7 @@ function App:Toggle()
   end
 end
 
--- the development switch: /ame new
+-- the new window is the one in use (not Settings.oldWindow)
 function App.Enabled()
-  return ns.Settings and ns.Settings:Get("newWindow") and true or false
+  return not (ns.Settings and ns.Settings:Get("oldWindow"))
 end

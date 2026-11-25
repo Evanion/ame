@@ -701,7 +701,7 @@ describe("Crafting", function()
 
     it("opening a profession: takeover opens Crafting on it; the setting picks the frame instead", function()
       local Side = ns.CraftingSidecar
-      AME_DB.settings.newWindow = true
+      AME_DB.settings.oldWindow = false
       _G.C_TradeSkillUI = {
         GetBaseProfessionInfo = function()
           return { professionID = 171 }
@@ -722,7 +722,7 @@ describe("Crafting", function()
 
     it("a profession opened from the queue (Craft next) keeps you on the queue", function()
       local Side = ns.CraftingSidecar
-      AME_DB.settings.newWindow = true
+      AME_DB.settings.oldWindow = false
       _G.C_TradeSkillUI = {
         GetBaseProfessionInfo = function()
           return { professionID = 129 }
