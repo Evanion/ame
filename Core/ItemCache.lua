@@ -34,6 +34,15 @@ end
 -- Variant names and item strings saved packed (Core/Packed.lua): unpacked in the background after login, keeping
 -- what was learned meanwhile. Until then a variant shows its base name; looking a key up by name waits for them.
 function C.UnpackLater(names, strings)
+  -- saved as they came unless something new is learned (Packed.Keep); a table that already holds entries (saved
+  -- unpacked by an older version) isn't what the text says, so it's packed again
+  for _, kt in ipairs({ { "variants", names, C.variants }, { "variantStrings", strings, ns.itemStrings } }) do
+    if next(kt[3]) == nil then
+      ns.Packed.Keep(kt[1], kt[2], kt[3])
+    else
+      ns.Packed.Touch(kt[1], kt[3])
+    end
+  end
   ns.Packed.Later("variants", names, C.variants, function(key, name)
     if C.byName[name] == nil then
       C.byName[name] = key
@@ -44,9 +53,8 @@ end
 
 -- at logout: names, item strings, packed
 function C.PackForSave()
-  ns.Packed.Ready("variants")
-  ns.Packed.Ready("variantStrings")
-  return ns.Packed.Pack(C.variants), ns.Packed.Pack(ns.itemStrings)
+  local names = ns.Packed.Text("variants", C.variants, "variants")
+  return names, ns.Packed.Text("variantStrings", ns.itemStrings, "variantStrings")
 end
 
 -- a link that belongs to the auction item key (itemID, suffix): learn how links name that suffix, and the variant's
@@ -66,7 +74,10 @@ function C.Pair(link, itemID, suffix)
   end
   if suffix ~= 0 then
     ns.itemStrings = ns.itemStrings or {}
-    ns.itemStrings[key] = itemString
+    if ns.itemStrings[key] ~= itemString then
+      ns.itemStrings[key] = itemString
+      ns.Packed.Touch("variantStrings", ns.itemStrings)
+    end
     C.setName(key, link:match("|h%[(.-)%]|h"))
   end
   return key
@@ -75,6 +86,7 @@ end
 function C.setName(key, name)
   if name and name ~= "" and C.variants[key] ~= name then
     C.variants[key], C.byName[name] = name, key
+    ns.Packed.Touch("variants", C.variants)
     local e = C.info[key]
     if e then
       e.name = name

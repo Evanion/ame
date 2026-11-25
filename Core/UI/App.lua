@@ -186,6 +186,13 @@ App.actions.settings = function(app)
     app:Go("settings")
   end
 end
+-- the way back to the game's profession window while AME has taken it over: the Crafting toolbar's button, and the
+-- error panel's when a screen fails (a beta's escape hatch)
+App.actions.gameWindow = function()
+  if ns.CraftingSidecar and ns.CraftingSidecar.UseGameWindow then
+    ns.CraftingSidecar.UseGameWindow()
+  end
+end
 App.actions.scan = function(app)
   local Scan = ns.ScanButton
   if Scan and Scan.Start then
@@ -276,6 +283,14 @@ function App:Tree()
       props = { title = L["Something went wrong"] },
       children = { { id = "error.text", type = "text", props = { text = tostring(body), color = "bad", wrap = true } } },
     }
+    if ns.CraftingSidecar and ns.CraftingSidecar.TookOver and ns.CraftingSidecar.TookOver() then
+      table.insert(body.children, 1, {
+        id = "error.gamewindow",
+        type = "button",
+        props = { label = L["Use the game's window"], action = "gameWindow", variant = "primary" },
+        meta = { h = 24 },
+      })
+    end
   end
   body.meta = body.meta or {}
   body.meta.grow = 1

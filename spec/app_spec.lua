@@ -79,6 +79,32 @@ describe("the redesigned window", function()
     ns.ScanButton, ns.UI, ns.AME.ahOpen = nil, nil, false
   end)
 
+  it("a beta's escape hatch: with a profession taken over, a failing screen offers the game's window", function()
+    local used
+    ns.CraftingSidecar = {
+      TookOver = function()
+        return true
+      end,
+      UseGameWindow = function()
+        used = true
+      end,
+    }
+    ns.App.Screen("boom", {
+      Build = function()
+        error("broken")
+      end,
+    })
+    App:Show()
+    App:Go("boom")
+    local tree = App:Tree()
+    local b = ns.Layout.Find(tree, "error.gamewindow")
+    assert.is_not_nil(b)
+    App.ctx:Dispatch(b.props.action)
+    assert.is_true(used)
+    ns.CraftingSidecar = nil
+    ns.App.screens.boom = nil
+  end)
+
   it("opens on Home with the chrome around it", function()
     App:Show()
     assert.equals("home", App:Current())

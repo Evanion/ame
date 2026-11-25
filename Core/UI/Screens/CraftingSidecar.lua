@@ -1,7 +1,7 @@
 -- Opening a profession (setting "professionMode": "ame" | "game", docs/ux/redesign-review.md "Crafting has two modes"):
 --   takeover (the default): the AME window opens on Crafting with that profession picked; the game's window stays
 --     open (the game answers profession questions only while it is) but out of sight, and closing AME closes it.
---     "The game's window" in the sidebar swaps to the sidecar.
+--     "Use the game's window" in the Crafting toolbar (and on the error panel if a screen fails) swaps to the sidecar.
 --   sidecar: the game's window stays the recipe list (with AME's profit column, Core/UI/ProfessionBar.lua) and one
 --     AME frame sits beside it (boards CraftQueue, ProfBar): the picked recipe's cost, sells for, profit, Make N and
 --     Queue, then the queue itself. "Open in AME" on the frame swaps to the takeover.
@@ -113,7 +113,7 @@ function Side.HookApp()
   end)
 end
 
--- the sidebar's "The game's window": the game's window and the frame beside it, remembered for next time
+-- "Use the game's window": the game's window and the frame beside it, remembered for next time
 function Side.UseGameWindow()
   if ns.Settings then
     ns.Settings:Set("professionMode", "game")

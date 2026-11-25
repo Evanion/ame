@@ -244,6 +244,55 @@ describe("the Item page", function()
       assert.equals(2, #ch.xs)
       assert.is_nil(ns.Overview.ChartData(o, "value").base)
     end)
+
+    it("works a summary out once per index, period, hidden items and outlier setting", function()
+      local runs, steps, real = 0, 0, ns.MarketStats.Summary
+      ns.MarketStats.Summary = function(_, period, _, _, _, _, _, step)
+        runs = runs + 1
+        if step then
+          step()
+          steps = steps + 1
+        end
+        return { day = 1, period = period }
+      end
+      local watch = ns.Watch.New({})
+      ns.AME = { watch = watch }
+      local a, b = { items = {} }, { items = {} }
+      local first = ns.Overview.Summary(a, 7)
+      assert.equals(first, ns.Overview.Summary(a, 7))
+      assert.equals(1, runs)
+      ns.Overview.Summary(a, 30)
+      assert.equals(2, runs)
+      ns.Overview.Summary(b, 7) -- a new scan is a new index
+      assert.equals(3, runs)
+      watch:SetHidden(2452, true)
+      ns.Overview.Summary(b, 7)
+      assert.equals(4, runs)
+      ns.Settings:Set("outlierFactor", 6)
+      ns.Overview.Summary(b, 7)
+      assert.equals(5, runs)
+      -- after a scan, the default period is worked out in a background job, pausing as it goes
+      local queued
+      ns.AME.jobs = {
+        Add = function(_, name, fn)
+          queued = name
+          fn({ Checkpoint = function() end })
+        end,
+      }
+      ns.AME.CurrentShard = function()
+        return "R|Horde"
+      end
+      local c = { items = {}, stats = {} }
+      ns.Overview.Warm("R|Neutral", c) -- another market: not now
+      assert.is_nil(queued)
+      ns.Overview.Warm("R|Horde", c)
+      assert.equals("overview-warm", queued)
+      assert.equals(1, steps)
+      local before = runs
+      ns.Overview.Summary(c, ns.Overview.DEFAULT_PERIOD)
+      assert.equals(before, runs) -- the first open finds it ready
+      ns.MarketStats.Summary, ns.AME = real, nil
+    end)
   end)
 
   describe("the screen", function()

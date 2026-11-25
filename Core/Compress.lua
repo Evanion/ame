@@ -10,8 +10,9 @@ Compress.LEVEL = 5
 -- a whole string in one call (~430 ms for a full scan, ~95 ms to decompress), which froze the game for a moment
 -- when storing a scan or receiving one over sync. Chunked text is "#2," followed by the pieces joined with ","
 -- (both outside EncodeForPrint's alphabet). Texts up to CHUNK stay in the old single-piece form, readable by older
--- versions; both forms decompress.
-Compress.CHUNK = 16384
+-- versions; both forms decompress. 8 KB: one piece takes ~9 ms, which can't pause inside LibDeflate (16 KB took
+-- ~16 ms, a stutter when storing a guildmate's scan); the pieces compress ~1.5% worse. Any piece size reads back.
+Compress.CHUNK = 8192
 Compress.CHUNKED = "#2,"
 
 function Compress.New(LibDeflate)

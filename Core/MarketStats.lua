@@ -329,14 +329,15 @@ end
 -- What the Overview shows, over a period (1 / 7 / 30 days):
 -- index = { stats = ..., items = { [id] = summary } } (MarketIndex); classOf(itemID) -> classID; hide (optional set);
 -- moverClass (optional): risers and fallers from this category only; itemOf (optional): id -> ItemCache entry, to
--- leave Unremarkable items out of them
+-- leave Unremarkable items out of them; step (optional): called every few hundred items, so a background job can
+-- pause inside the walk over the index (job:Checkpoint)
 -- -> {
 --   day, level, levelChange, value, valueChange, auctions, auctionsChange, items, units, capped, basket,
 --   turnover (copper per day), up, down, buy, sell, risers = { s, ... }, fallers = { s, ... },
 --   sectors = { { classID, value, share, change, turnover }, ... } by value, top = { ... } (see Finish),
 --   series = { days = {...}, level = {...}, value = {...}, auctions = {...} } for the chart
 -- } or nil when the index has no stats (or no full-scan day)
-function MarketStats.Summary(index, period, classOf, hide, factor, moverClass, itemOf)
+function MarketStats.Summary(index, period, classOf, hide, factor, moverClass, itemOf, step)
   local st = index and index.stats
   local last = st and st.days[#st.days]
   if not last then
@@ -374,7 +375,12 @@ function MarketStats.Summary(index, period, classOf, hide, factor, moverClass, i
   factor = (factor and factor > 1) and factor or nil
   local key = CHANGE_KEY[period] or "change7"
   local movers, turnoverBy = {}, {}
+  local seen = 0
   for id, s in pairs(index.items or {}) do
+    seen = seen + 1
+    if step and seen % 200 == 0 then
+      step()
+    end
     if not (hide and hide[id]) then
       if s.signal == "buy" then
         out.buy = out.buy + 1

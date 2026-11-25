@@ -3,6 +3,9 @@
 -- viewed market's index (built in the background: it says why when there's nothing yet).
 --
 --   Overview.Gather(app, period, onReady) -> summary | nil, why ("loading" | "empty" | "off" | "building" | "noscan")
+--   Overview.Summary(index, period, step?) -> summary   kept per index, period, hidden items and outlier setting
+--   Overview.Warm(shard, index)                          works the default period out in a background job, so the
+--                                                        first open of Market finds it ready (IndexReady)
 --   Overview.Kpis(o, factor, compact) -> kpi props      Overview.Movers(list, period) -> rows
 --   Overview.Categories(o, className) -> rows, max       Overview.Largest(top) -> rows
 --   Overview.ChartData(o, mode) -> chart source          Overview.Message(why, house) -> text
@@ -224,6 +227,59 @@ local function itemClass(id)
   return ns.ItemCache.Get(id).classID
 end
 
+-- the summaries worked out, by what they depend on: the index (a new scan is a new table), the period, the hidden
+-- items and the outlier factor. A walk over every item of the index (~18,000) is too much for each draw.
+Overview.memo = {}
+Overview.MEMO_MAX = 6
+
+local function memoKey(index, period)
+  local w = ns.AME and ns.AME.watch
+  local hide = w and w:Hidden() or nil
+  local count = w and w.HiddenCount and w:HiddenCount() or 0
+  return tostring(index) .. ":" .. tostring(period) .. ":" .. tostring(hide) .. ":" .. tostring(count) .. ":"
+    .. tostring(ns.Settings and ns.Settings:Get("outlierFactor")), hide
+end
+
+function Overview.Summary(index, period, step)
+  local key, hide = memoKey(index, period)
+  local m = Overview.memo
+  for _, e in ipairs(m) do
+    if e.key == key then
+      return e.out
+    end
+  end
+  local out = ns.MarketStats.Summary(index, period, itemClass, hide, ns.Settings:Get("outlierFactor"), nil, nil, step)
+  if out then
+    table.insert(m, 1, { key = key, out = out })
+    m[Overview.MEMO_MAX + 1] = nil
+  end
+  return out
+end
+
+-- after a scan (or the index restored at login): the default period's summary, worked out in the background
+function Overview.Warm(shard, index)
+  local AME = ns.AME
+  if not (index and index.stats and AME and AME.jobs and AME.jobs.Add) then
+    return
+  end
+  if AME.CurrentShard and shard ~= AME:CurrentShard() then
+    return -- another market: worked out when you view it
+  end
+  AME.jobs:Add("overview-warm", function(job)
+    Overview.Summary(index, Overview.DEFAULT_PERIOD, function()
+      job:Checkpoint()
+    end)
+  end)
+end
+Overview.DEFAULT_PERIOD = 7
+
+if ns.Events and ns.Events.On then
+  ns.Events.On("IndexReady", function(shard)
+    local AME = ns.AME
+    Overview.Warm(shard, AME and AME.CachedIndex and AME:CachedIndex(shard))
+  end)
+end
+
 -- the summary for the viewed market and period (nil and why when there's none yet)
 function Overview.Gather(app, period, onReady)
   local AME = ns.AME
@@ -263,8 +319,7 @@ function Overview.Gather(app, period, onReady)
     return nil, "building"
   end
   Overview.building = nil
-  local hide = AME.watch and AME.watch:Hidden() or nil
-  local ok, o = pcall(ns.MarketStats.Summary, index, period, itemClass, hide, ns.Settings:Get("outlierFactor"))
+  local ok, o = pcall(Overview.Summary, index, period)
   if not ok or not o then
     return nil, "noscan"
   end

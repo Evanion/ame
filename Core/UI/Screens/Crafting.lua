@@ -75,16 +75,18 @@ function Screen.Filters(filter, sections, state, allFolded)
   kids[#kids + 1] = { id = "craft.filters.gap", type = "spacer", meta = { grow = 1 } }
   kids[#kids + 1] = { id = "craft.leveling", type = "button", props = { label = L["Leveling"], action = "leveling" }, meta = { h = 24 } }
   kids[#kids + 1] = { id = "craft.professions", type = "button", props = { label = L["Professions"], action = "professions" }, meta = { h = 24 } }
+  -- AME has taken over the game's profession window: the way back to it, as "Use the game's AH" (board CraftingFilters)
+  if ns.CraftingSidecar and ns.CraftingSidecar.TookOver and ns.CraftingSidecar.TookOver() then
+    kids[#kids + 1] = { id = "craft.gamewindow", type = "button", props = { label = L["Use the game's window"], action = "gameWindow" }, meta = { h = 24 } }
+  end
   return { id = "craft.filters", type = "row", props = { gap = 6, align = "center" }, meta = { h = 26 }, children = kids }
 end
 
 function Screen.Sidebar(f, profession, compact)
-  local live = f.live
-  local gameWindow = live ~= nil and ns.CraftingSidecar and ns.CraftingSidecar.TookOver and ns.CraftingSidecar.TookOver()
   return {
     id = "craft.side",
     type = "sidebar",
-    props = { entries = CP.Sidebar(f, profession, gameWindow and true or false), action = "side" },
+    props = { entries = CP.Sidebar(f, profession), action = "side" },
     meta = { w = compact and 130 or 160 },
   }
 end
@@ -674,12 +676,7 @@ Screen.actions = {
     end
   end,
   side = function(app, p)
-    if p.key == "gamewindow" then
-      if ns.CraftingSidecar then
-        ns.CraftingSidecar.UseGameWindow()
-      end
-      return
-    elseif p.key == "book" then
+    if p.key == "book" then
       -- the game's profession book (K): this client's own way to open it, else say where it is
       local opened = false
       if _G.ToggleProfessionsBook then

@@ -748,6 +748,47 @@ describe("addon in a stubbed client", function()
       assert.are.equal(variant, ns.ItemCache.KeyByName("Linen Cloth of the Monkey"))
     end)
 
+    it("logout saves each market index from text made before it: restored, or encoded in the background", function()
+      seeded()
+      local AME, shard = ns.AME, ns.AME:CurrentShard()
+      local encode, encodes = ns.MarketIndex.Encode, 0
+      ns.MarketIndex.Encode = function(...)
+        encodes = encodes + 1
+        return encode(...)
+      end
+      finally(function()
+        ns.MarketIndex.Encode = encode
+      end)
+      -- built and settled: its text was made by a background job
+      drainJobs()
+      local built = AME:CachedIndex(shard)
+      assert.is_string(built.savedText)
+      encodes = 0
+      AME:SaveIndexes()
+      assert.are.equal(0, encodes)
+      assert.are.equal(built.savedText, AME_DB.indexCache[shard].s)
+      -- restored at the next login: saved again as it came, nothing encoded
+      AME.indexes, AME.index, AME.indexShard = {}, nil, nil
+      AME:RestoreIndexes()
+      drainJobs()
+      local restored = AME:CachedIndex(shard)
+      assert.are.equal(built.savedText, restored.savedText)
+      encodes = 0
+      AME:SaveIndexes()
+      assert.are.equal(0, encodes)
+      -- a logout before the background job got to a new index: encoded then, the same text
+      fullScan({ { 2589, 2000, 10 } })
+      drainJobs()
+      local fresh = AME:CachedIndex(shard)
+      local text = fresh.savedText
+      fresh.savedText = nil
+      AME.jobs:Cancel("save-index-" .. shard)
+      encodes = 0
+      AME:SaveIndexes()
+      assert.are.equal(1, encodes)
+      assert.are.equal(text, AME_DB.indexCache[shard].s)
+    end)
+
     it("saves market indexes at logout and uses them at the next login, rebuilding only what changed", function()
       seeded()
       local shard = ns.AME:CurrentShard()

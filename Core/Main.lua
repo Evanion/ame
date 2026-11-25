@@ -510,8 +510,8 @@ function handlers.PLAYER_LOGOUT()
   if AME:HistoryLoaded() then
     AME:SaveIndexes()
   end
-  -- big tables of small entries go out packed: one string each (Core/Packed.lua)
-  ns.Packed.ReadyAll()
+  -- big tables of small entries go out packed: one string each, the one read at login or packed in the background
+  -- when nothing changed since (Core/Packed.lua)
   ns.Posting:PackForSave()
   AME_DB.variantsPacked, AME_DB.variantStringsPacked = ns.ItemCache.PackForSave()
   AME_DB.variants, AME_DB.variantStrings = nil, nil

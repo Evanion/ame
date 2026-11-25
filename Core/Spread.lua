@@ -35,8 +35,11 @@ function Spread.IsSummary(snap)
 end
 
 -- learn from a snapshot that saw every listing
-function Spread.Learn(db, snap)
+function Spread.Learn(db, snap, pause)
   for i, id in ipairs(snap.ids) do
+    if pause and i % 1000 == 0 then
+      pause()
+    end
     local lo, m = snap.min[i], snap.market[i]
     if lo and m and lo > 0 and m >= lo then
       local r = math.min(m / lo, Spread.MAX)
@@ -48,9 +51,12 @@ function Spread.Learn(db, snap)
 end
 
 -- a summary snapshot's market (and median) from its cheapest and the item's spread; returns how many it raised
-function Spread.Apply(db, snap)
+function Spread.Apply(db, snap, pause)
   local n = 0
   for i, id in ipairs(snap.ids) do
+    if pause and i % 1000 == 0 then
+      pause()
+    end
     local s = db[id]
     local lo = snap.min[i]
     if s and lo and lo > 0 then
@@ -73,14 +79,15 @@ function Spread.For(shard)
 end
 
 -- a snapshot on its way into the store: summary -> market from the spread; otherwise it teaches the spread
-function Spread.Take(shard, snap, summary)
+-- pause (optional): called every 1000 items, in a background job
+function Spread.Take(shard, snap, summary, pause)
   if summary == nil then
     summary = Spread.IsSummary(snap)
   end
   local db = Spread.For(shard)
   if summary then
-    return Spread.Apply(db, snap)
+    return Spread.Apply(db, snap, pause)
   end
-  Spread.Learn(db, snap)
+  Spread.Learn(db, snap, pause)
   return 0
 end

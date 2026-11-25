@@ -91,9 +91,12 @@ function Codec.FromBase36(s)
   return neg and -x or x
 end
 
-local function encodeColumn(values, n, delta)
+local function encodeColumn(values, n, delta, yield)
   local parts, prev = {}, 0
   for i = 1, n do
+    if yield and i % 500 == 0 then
+      yield()
+    end
     local v = values[i]
     if delta then
       if v < prev then
@@ -163,7 +166,8 @@ end
 
 -- Generic columnar table: fieldNames[1] is the key column (sorted ascending, delta-encoded); all columns have the
 -- same length. Used for scan snapshots and for daily/weekly point segments.
-function Codec.Encode(fieldNames, cols)
+-- yield (optional): called between columns and every 500 values in them (a saved market index, in a background job)
+function Codec.Encode(fieldNames, cols, yield)
   local n = #cols[fieldNames[1]]
   local out = { Codec.VERSION, Codec.ToBase36(n) }
   for f, name in ipairs(fieldNames) do
@@ -171,7 +175,10 @@ function Codec.Encode(fieldNames, cols)
     if not col then
       error("Codec: missing column " .. name, 2)
     end
-    out[f + 2] = encodeColumn(col, n, f == 1)
+    out[f + 2] = encodeColumn(col, n, f == 1, yield)
+    if yield then
+      yield()
+    end
   end
   return concat(out, "|")
 end

@@ -250,9 +250,8 @@ describe("Crafting", function()
       assert.is_true(e[3].selected)
       assert.equals("Zakzu", e[4].label)
       assert.equals("Blacksmithing", e[5].label)
-      assert.equals("gamewindow", e[#e - 1].key) -- no Herbalism: it has no recipes here
       assert.equals("book", e[#e].key) -- the game's profession book, always (unlearning a profession)
-      assert.equals(7, #e)
+      assert.equals(6, #e) -- no Herbalism: it has no recipes here
     end)
   end)
 
@@ -499,6 +498,28 @@ describe("Crafting", function()
       all:GetScript("OnClick")(all)
       assert.same({ 101, 3 }, crafted)
       _G.C_TradeSkillUI = nil
+    end)
+
+    it("with the game's profession window taken over, the toolbar has the way back to it", function()
+      local side = ns.CraftingSidecar
+      local used
+      ns.CraftingSidecar = setmetatable({
+        TookOver = function()
+          return true
+        end,
+        UseGameWindow = function()
+          used = true
+        end,
+      }, { __index = side })
+      local tree = valid("crafting", { filter = "all", profession = 171 })
+      local b = ns.Layout.Find(tree, "craft.gamewindow")
+      ns.CraftingSidecar = side
+      assert.is_not_nil(b)
+      assert.equals("Use the game's window", b.props.label)
+      ns.CraftingSidecar = setmetatable({ UseGameWindow = function() used = true end }, { __index = side })
+      App.ctx:Dispatch(b.props.action)
+      ns.CraftingSidecar = side
+      assert.is_true(used)
     end)
 
     it("All professions: Create on a recipe you know opens its profession when the window is closed", function()

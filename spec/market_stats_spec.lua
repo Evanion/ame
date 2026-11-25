@@ -166,6 +166,25 @@ describe("MarketStats", function()
     assert.are.equal(0, risers(1, 4)) -- white armour
   end)
 
+  it("pauses every 200 items for a background job, and sums the same", function()
+    local index = market()
+    local n = 0
+    for _ in pairs(index.items) do
+      n = n + 1
+    end
+    for id = 100000, 100000 + 400 - n - 1 do
+      index.items[id] = { itemID = id }
+    end
+    local steps = 0
+    local a = ns.MarketStats.Summary(index, 7, classOf, nil, 4)
+    local b = ns.MarketStats.Summary(index, 7, classOf, nil, 4, nil, nil, function()
+      steps = steps + 1
+    end)
+    assert.are.equal(2, steps)
+    assert.are.equal(a.turnover, b.turnover)
+    assert.are.equal(#a.risers, #b.risers)
+  end)
+
   it("has nothing to summarise without statistics", function()
     assert.is_nil(ns.MarketStats.Summary({ items = {} }, 7))
   end)

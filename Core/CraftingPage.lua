@@ -346,7 +346,7 @@ function CP.Sectioned(rows, cats, folds, skillLine)
 end
 
 -- the professions sidebar: All professions, then each character's professions under its name (a profession two of
--- yours have shows once, under the one with the higher skill); "The game's window" while one is open (takeover)
+-- yours have shows once, under the one with the higher skill)
 function CP.Professions(chars)
   local best = {}
   for key, c in pairs(chars or {}) do
@@ -378,7 +378,7 @@ function CP.Professions(chars)
   return out
 end
 
-function CP.Sidebar(f, selected, gameWindow)
+function CP.Sidebar(f, selected)
   local entries = {
     { key = "all", label = L["All professions"], count = #(f.entries or {}), selected = selected == nil },
   }
@@ -392,9 +392,6 @@ function CP.Sidebar(f, selected, gameWindow)
         selected = selected == p.skillLine,
       }
     end
-  end
-  if gameWindow then
-    entries[#entries + 1] = { key = "gamewindow", label = L["The game's window"], link = true }
   end
   -- always there: the game's profession book (K), where a profession is unlearned
   entries[#entries + 1] = { key = "book", label = L["Your professions in the game"], link = true }

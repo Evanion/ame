@@ -1661,6 +1661,7 @@ L["Usable by you"] = true
 L["Usable only"] = true
 L["Use the game's AH"] = true
 L["Use the game's AH, at the right end of the Buy, Sell and Auctions tabs, swaps to the game's auction house window, with Auctionator in it when you have that installed. Its Open in AME button swaps back. AME opens the auction house the way you last left it."] = true
+L["Use the game's window"] = true
 L["Use the new window (preview)"] = true
 L["Used in"] = true
 L["Using an info bar addon (Titan Panel, ChocolateBar, Bazooka and others that read LibDataBroker)? Add its \"Notifications\" entry: it shows how many you haven't seen, the newest on hover, and opens the list on a click."] = true
@@ -1749,6 +1750,7 @@ L["With the Market overview switched on (Settings, General), the toolbar's first
 L["With the auction house open, AME's window is the auction house. The tabs stay the same, and each gains what the auction house allows."] = true
 L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."] = true
 L["With the game's window: open AME beside it"] = true
+L["With the new window on, opening a profession opens AME's Crafting tab on it. Use the game's window, at the right of its toolbar, swaps to the game's own profession window with AME's frame beside it, and Open in AME on that frame swaps back; AME remembers which you used. If the Crafting tab ever shows Something went wrong, the same button is on it."] = true
 L["With v2 (the default), every scan goes to the whole guild at once, and hours you missed in the last week are filled in from whoever has them - a point per hour for the 7D chart, and whole days for days you have nothing of. It's paced at about one message a second, so a full scan takes several minutes to arrive, in the background. If sync seems to slow your game, pick v1 (lighter) under Guild sharing: you still get scans, the original way. Guild sharing shows how many of the week's hours you have."] = true
 L["With your profession window open, adds the reagents of the selected recipe - as many times as you'll craft it."] = true
 L["Withdraw"] = true

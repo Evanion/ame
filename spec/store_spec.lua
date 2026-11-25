@@ -457,6 +457,64 @@ describe("Store", function()
       assert.are.equal(0, yields)
     end)
 
+    -- A guildmate's full scan received over sync (SyncService:Merge): checked against our prices, the spread learnt,
+    -- then stored. Work is counted in Lua instructions between pauses; no stretch may run through more than a small
+    -- share of the scan (a whole pass over its items without a pause made 30-80 ms frames in game).
+    it("a large received scan pauses all through: checking, the spread and storing (many items)", function()
+      ns = addon.load({ "Core/Sync.lua", "Core/Spread.lua" }, ns)
+      local ITEMS = 12000
+      local function big(seed)
+        local items = {}
+        for id = 1, ITEMS do
+          local p = 1000 + (id * seed) % 50000
+          items[id * 3] = { p, p + 50, p + 80, 1 + id % 200, 1 + id % 9 }
+        end
+        return snap(items)
+      end
+      local work, stretch, longest, stretches = 0, 0, 0, 0
+      local store = Store.New({}, {
+        compressor = compressor,
+        now = function()
+          return clock
+        end,
+        yield = function()
+          longest = math.max(longest, stretch)
+          stretch, stretches = 0, stretches + 1
+        end,
+      })
+      local function measured(fn)
+        local ok, err = pcall(coroutine.wrap(function() -- a hook is per coroutine in Lua 5.1: set inside it
+          debug.sethook(function()
+            work, stretch = work + 1, stretch + 1
+          end, "", 100)
+          fn()
+          debug.sethook()
+        end))
+        assert(ok, err)
+        longest = math.max(longest, stretch)
+      end
+      measured(function()
+        store:AddScan(big(7), clock - 3600, "me", "full") -- ours, an hour earlier: the drain pairs with it
+      end)
+      work, stretch, longest, stretches = 0, 0, 0, 0
+      local received = big(11)
+      local packed = ns.Codec.Pack(ns.Codec.EncodeSnapshot(received), compressor)
+      local ref = {}
+      for i, id in ipairs(received.ids) do
+        ref[id] = { market = received.market[i] }
+      end
+      measured(function()
+        local pause = store:pauser()
+        assert.is_true((ns.Sync.Plausible(received, ref, pause)))
+        ns.Spread.Learn({}, received, pause)
+        assert.is_true(store:AddScan(received, clock, "Zakzu", "full", packed))
+      end)
+      assert.is_true(stretches > 100, "pauses " .. stretches)
+      assert.is_true(longest * 40 < work, ("longest stretch %d of %d"):format(longest, work))
+      assert.are.equal(2, #store.data.raw) -- stored alongside ours
+      assert.are.equal(packed, store.data.raw[2].s) -- as it came
+    end)
+
     it("works inside a coroutine that yields", function()
       local store = Store.New({}, {
         compressor = compressor,

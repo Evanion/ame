@@ -272,9 +272,13 @@ function Sync.Wanted(announce, myShard, myRaw, now, window)
 end
 
 -- Compare a received snapshot's market prices with ours (reference: itemID -> { market = }). Returns ok, reason.
-function Sync.Plausible(snap, reference)
+-- pause (optional): called every 1000 items (a full scan is ~25k, checked in a background job)
+function Sync.Plausible(snap, reference, pause)
   local comparable, off = 0, 0
   for i, id in ipairs(snap.ids) do
+    if pause and i % 1000 == 0 then
+      pause()
+    end
     local ref = reference[id]
     local p = snap.market[i]
     if ref and ref.market and ref.market > 0 and p and p > 0 then

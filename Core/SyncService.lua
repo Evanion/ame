@@ -734,12 +734,12 @@ function Service:Merge(m, sender)
     store.yield()
     -- compare with our own prices for that same auction house (goblin AH scans against goblin AH prices)
     local ref = AME:CachedIndex(m.shard)
-    local plausible, why = Sync.Plausible(snap, ref and ref.items or {})
+    local plausible, why = Sync.Plausible(snap, ref and ref.items or {}, store:pauser())
     if not plausible then
       return { rejected = why }
     end
     -- a guildmate's summary scan (cheapest only): its market from our spreads; then it's stored as we read it
-    local raised = ns.Spread.Take(m.shard, snap)
+    local raised = ns.Spread.Take(m.shard, snap, nil, store:pauser())
     local packed = raised == 0 and m.packed or nil
     return { added = store:AddScan(snap, m.t, m.src, m.kind == "partial" and "partial" or "full", packed) }
   end, function(done, result)

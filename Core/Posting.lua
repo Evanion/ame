@@ -22,13 +22,16 @@ local function now()
 end
 
 -- models not seen for Posting.KEEP are dropped
-local function prune(items)
-  local cutoff = now() - Posting.KEEP
+local function prune(items, shard)
+  local cutoff, dropped = now() - Posting.KEEP, false
   for id, s in pairs(items) do
     local t = ns.Pricing.LastSeen(s)
     if t and t < cutoff then
-      items[id] = nil
+      items[id], dropped = nil, true
     end
+  end
+  if dropped and shard then
+    ns.Packed.Touch("pricing:" .. shard, items)
   end
 end
 
@@ -39,8 +42,14 @@ local function unpackLater()
   for shard, text in pairs(AME_DB.pricingPacked or {}) do
     local items = AME_DB.pricing[shard] or {}
     AME_DB.pricing[shard] = items
+    -- saved as it came unless a model changes (Packed.Keep)
+    if next(items) == nil then
+      ns.Packed.Keep("pricing:" .. shard, text, items)
+    else
+      ns.Packed.Touch("pricing:" .. shard, items)
+    end
     ns.Packed.Later("pricing", text, items, nil, function()
-      prune(items)
+      prune(items, shard)
     end)
   end
   AME_DB.pricingPacked = nil
@@ -66,11 +75,15 @@ function Posting:Init()
   self:HookPosting()
 end
 
--- at logout: the models go out packed
+-- at logout: the models go out packed - as they were read, or as the background job last packed them, when no model
+-- changed since (Packed.Text)
 function Posting:PackForSave()
   local packed = {}
-  for shard, items in pairs(pricing()) do
-    packed[shard] = ns.Packed.Pack(items)
+  if not AME_DB.pricing then
+    unpackLater()
+  end
+  for shard, items in pairs(AME_DB.pricing) do
+    packed[shard] = ns.Packed.Text("pricing:" .. shard, items, "pricing")
   end
   AME_DB.pricingPacked, AME_DB.pricing = packed, nil
 end
@@ -110,6 +123,7 @@ function Posting:Save(shard, itemID, p)
   local all = pricing()
   all[shard] = all[shard] or {}
   all[shard][itemID] = ns.Pricing.Encode(p)
+  ns.Packed.Touch("pricing:" .. shard, all[shard])
 end
 
 -- The newest scan's market price per item (in memory): the market index sums up whole days, so on a day the price

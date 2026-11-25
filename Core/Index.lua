@@ -196,6 +196,10 @@ end
 -- put an index in use (built, or restored at login) and tell whoever shows it
 function AME:SetIndex(shard, index)
   self.indexes[shard] = index
+  -- its saved form, ready before logout (an index doesn't change once it's built)
+  if not index.savedText and self.jobs then
+    self:EncodeIndexLater(shard, index)
+  end
   if shard == self:CurrentShard() then
     self.index, self.indexShard = index, shard
     self:CheckAlerts(index)
@@ -281,11 +285,32 @@ function AME:RebuildIndex()
   self:RefreshIndex(self:CurrentShard())
 end
 
--- Saved indexes: written at logout, read back at login (MarketIndex.Encode / Decode).
+-- Saved indexes: written at logout, read back at login (MarketIndex.Encode / Decode). Encoding a big index takes
+-- seconds, too long for the logout frame: an index restored at login keeps the text it came from, and a newly built
+-- one is encoded by a low-priority background job (EncodeIndexLater). Logout encodes only an index that job didn't
+-- finish.
+AME.INDEX_SAVE_BUDGET_MS = 3
+function AME:EncodeIndexLater(shard, index)
+  local name = "save-index-" .. tostring(shard) -- not "index-": the status row reads that as updating
+  self.jobs:Cancel(name)
+  self.jobs:Add(name, function(job)
+    return ns.MarketIndex.Encode(index, function()
+      job:Checkpoint()
+    end)
+  end, function(ok, text)
+    if ok and type(text) == "string" then
+      index.savedText = text
+    end
+  end, AME.INDEX_SAVE_BUDGET_MS)
+end
+
 function AME:SaveIndexes()
   local saved = {}
   for shard, index in pairs(self.indexes) do
-    local ok, text = pcall(ns.MarketIndex.Encode, index)
+    local ok, text = true, index.savedText
+    if not text then
+      ok, text = pcall(ns.MarketIndex.Encode, index)
+    end
     if ok then
       -- the market statistics are small plain tables (30 days of totals): saved as they are
       saved[shard] = { rev = index.rev or 0, v = ns.MarketIndex.SAVE_VERSION, s = text, st = index.stats }
@@ -313,6 +338,10 @@ function AME:RestoreIndexes()
         if index then
           index.rev, index.saveVersion = entry.rev, entry.v or 1 -- saves before versioning: 1
           index.stats = type(entry.st) == "table" and entry.st or nil
+          -- saved again as it came (it re-encodes to the same text), unless it was saved in an older format
+          if index.saveVersion == ns.MarketIndex.SAVE_VERSION then
+            index.savedText = entry.s
+          end
           restored[shard] = index
         end
         job:Checkpoint()

@@ -189,7 +189,7 @@ function Store:unpack(packed)
 end
 
 function Store:encode(cols, fields)
-  return Codec.Pack(Codec.Encode(fields, cols), self.compressor, self:pauser())
+  return Codec.Pack(Codec.Encode(fields, cols, self:pauser()), self.compressor, self:pauser())
 end
 
 -- binary search in a sorted id column
@@ -220,7 +220,7 @@ end
 -- where market..auctions are sums and slot is the sample's hour bit (2^hour) or 0 for "no slot check" (weekly
 -- folds). A row whose hour slot is already taken only lowers min: one sample per item per hour feeds the means, so
 -- repeated searches of the same item can't skew the day. Returns a new segment.
-local function mergeRows(seg, rows)
+local function mergeRows(seg, rows, pause)
   local out = emptySegment()
   local i, j, n = 1, 1, 0
   local sids = seg.ids
@@ -233,6 +233,9 @@ local function mergeRows(seg, rows)
   while i <= #sids or j <= #rows do
     local a, r = sids[i], rows[j]
     n = n + 1
+    if pause and n % 500 == 0 then
+      pause()
+    end
     if r and (not a or r[1] < a) then
       if r.drainOnly then -- nothing to add liquidity to
         n = n - 1
@@ -274,8 +277,11 @@ function Store:mergeInto(tier, rowsByBucket)
     sort(rows, function(x, y)
       return x[1] < y[1]
     end)
+    self:pause()
     local seg = tier[b] and self:decode(tier[b], Store.SEGMENT_FIELDS) or emptySegment()
-    tier[b] = self:encode(mergeRows(seg, rows), Store.SEGMENT_FIELDS)
+    local merged = mergeRows(seg, rows, self:pauser())
+    self:pause()
+    tier[b] = self:encode(merged, Store.SEGMENT_FIELDS)
     self:pause()
   end
 end
@@ -287,7 +293,10 @@ end
 -- item ID (a blend of every suffix's prices). Returns true when there were any.
 function Store:markSuffixed(ids)
   local suffixed, fresh, any = self.data.suffixed, {}, false
-  for _, id in ipairs(ids) do
+  for i, id in ipairs(ids) do
+    if i % 1000 == 0 then
+      self:pause()
+    end
     if ns.IsVariant(id) then
       local base = ns.BaseID(id)
       if not suffixed[base] then
@@ -379,6 +388,9 @@ function Store:AddScan(snap, t, src, kind, packed)
     local qty = {}
     for i, id in ipairs(ids) do
       qty[id] = snap.qty[i]
+      if i % 1000 == 0 then
+        self:pause()
+      end
     end
     self.lastFull = { t = t, qty = qty }
   end
@@ -395,7 +407,11 @@ function Store:AddScan(snap, t, src, kind, packed)
     end
     return rows
   end
+  self:pause()
   for i, id in ipairs(ids) do
+    if i % 500 == 0 then
+      self:pause()
+    end
     local rows = suffixed[id] and {} or bucketRows(id) -- a mixed plain-ID row: not stored
     local before = prevQty and prevQty[id]
     local drain = before and max(0, before - snap.qty[i]) or 0
@@ -416,6 +432,7 @@ function Store:AddScan(snap, t, src, kind, packed)
       prevQty[id] = nil
     end
   end
+  self:pause()
   -- items that were listed in the previous scan and are gone now: all of it drained
   for id, before in pairs(prevQty or {}) do
     if before > 0 and not suffixed[id] then
@@ -464,6 +481,9 @@ function Store:AddHourFrom(snap, t, src, key)
   local round3 = Codec.Round3
   local n = 0
   for i, id in ipairs(snap.ids) do
+    if i % 1000 == 0 then
+      self:pause()
+    end
     if not ns.IsVariant(id) and not suffixed[id] then
       n = n + 1
       cols.ids[n], cols.min[n], cols.market[n] = id, round3(snap.min[i]), round3(snap.market[i])
@@ -471,7 +491,7 @@ function Store:AddHourFrom(snap, t, src, key)
     end
   end
   self:pause()
-  local packed = Codec.Pack(Codec.Encode(Codec.HOUR_FIELDS, cols), self.compressor, self:pauser())
+  local packed = Codec.Pack(Codec.Encode(Codec.HOUR_FIELDS, cols, self:pauser()), self.compressor, self:pauser())
   hours[hour] = { t = t, src = src, key = key, s = packed }
   return true
 end
