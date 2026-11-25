@@ -1,6 +1,7 @@
--- Market screener filtering: AH-style categories, name search, quality, price range and signal filters over the
--- market index. Pure: item facts come from an injected info(itemID) function returning
---   { classID, subClassID, name (nil until the client has the item cached), quality }
+-- Market Auctions filtering: AH-style categories, name search, quality, price range, signal, required level, item
+-- level and usable-by-you filters over the market index. Pure: item facts come from an injected info(itemID) function
+-- returning
+--   { classID, subClassID, name (nil until the client has the item cached), quality, level (item level), minLevel }
 local _, ns = ...
 
 local MarketFilter = {}
@@ -93,9 +94,11 @@ end
 -- query: { text, classID, subClassID, only (set of itemIDs, e.g. a watchlist), hide (set of itemIDs left out),
 --          minQuality, signal ("buy"/"sell"),
 --          minPrice, maxPrice (copper, on market),
+--          minLevel, maxLevel (required level), minItemLevel, maxItemLevel,
+--          usable (function(itemID) -> false leaves the item out; nil: not known yet, kept),
 --          sortKey, ascending }
 -- Name search only matches items whose name is known (info().name); returns list, unnamed (count of items that
--- couldn't be checked against the search text yet).
+-- couldn't be checked against the search text yet). The level filters leave out items whose facts aren't loaded.
 function MarketFilter.Apply(index, query, info)
   local text = query.text and query.text ~= "" and query.text:lower() or nil
   local key = query.sortKey or "score"
@@ -121,13 +124,22 @@ function MarketFilter.Apply(index, query, info)
       ok = false
     end
     local i
-    if ok and (query.classID or query.minQuality or text or key == "name") then
+    local levels = query.minLevel or query.maxLevel or query.minItemLevel or query.maxItemLevel
+    if ok and (query.classID or query.minQuality or text or levels or key == "name") then
       i = info(itemID) or {}
       if query.classID and i.classID ~= query.classID then
         ok = false
       elseif query.subClassID and i.subClassID ~= query.subClassID then
         ok = false
       elseif query.minQuality and (i.quality or -1) < query.minQuality then
+        ok = false
+      elseif query.minLevel and (i.minLevel or -1) < query.minLevel then
+        ok = false
+      elseif query.maxLevel and (i.minLevel or math.huge) > query.maxLevel then
+        ok = false
+      elseif query.minItemLevel and (i.level or -1) < query.minItemLevel then
+        ok = false
+      elseif query.maxItemLevel and (i.level or math.huge) > query.maxItemLevel then
         ok = false
       elseif text then
         if not i.name then
@@ -137,6 +149,9 @@ function MarketFilter.Apply(index, query, info)
           ok = false
         end
       end
+    end
+    if ok and query.usable and query.usable(itemID) == false then
+      ok = false
     end
     if ok then
       list[#list + 1] = s

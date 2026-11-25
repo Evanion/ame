@@ -104,8 +104,6 @@ L["A normal price"] = "Обычная цена"
 L["A route, broken down"] = "Маршрут в деталях"
 L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
   "Продажа появляется в журнале, как только игра сообщит, что покупатель найден (ждёт письма), и рассчитывается точной суммой, когда приходит письмо с аукциона - откройте почтовый ящик, чтобы его получить. Персональные предметы не учитываются: их нельзя продать."
-L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it. Right-click a row for more: search the auction house, watchlists, an alert, a chat link, or hiding items you don't trade (they move to Hidden in the sidebar, where you can unhide them)."] =
-  "Скринер всех предметов с историей. Выберите категорию или список наблюдения слева, ищите по названию, фильтруйте по качеству, диапазону цен или сигналу и щёлкните по столбцу для сортировки. Наведите курсор на заголовок столбца, чтобы узнать его смысл. Щёлкните по строке, чтобы открыть график; щёлкните по звезде, чтобы отслеживать предмет. ПКМ по строке открывает меню: поиск на аукционе, списки наблюдения, оповещение, ссылка в чат или скрытие предметов, которыми вы не торгуете (они перейдут в «Скрытые» на боковой панели, где их можно вернуть)."
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "Высокая верхняя тень: цена разово подскочила - часто это скан, когда ничего дешёвого не было выставлено, - и не удержалась. Не ориентируйтесь на этот всплеск при выборе цены."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -135,8 +133,8 @@ L["Added the reagents for %s to the shopping list %s."] =
   "Реагенты для «%s» добавлены в список покупок «%s»."
 L["Added the reagents for one %s to the shopping list %s."] =
   "Реагенты для 1 шт. «%s» добавлены в список покупок «%s»."
-L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
-  "Добавляет «Обзор» рядом со «Скринером» на вкладке «Рынок»: рыночный индекс, ИПЦ, стоимость лотов, оборот и категории по всему аукциону. Пока он включён, рыночные данные обновляются чуть дольше."
+L["Adds Overview next to Auctions on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
+  "Добавляет «Обзор» рядом с «Аукционами» на вкладке «Рынок»: рыночный индекс, ИПЦ, стоимость лотов, оборот и категории по всему аукциону. Пока он включён, рыночные данные обновляются чуть дольше."
 L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
   "После одного сканирования можно просматривать вкладку «Рынок» и видеть цены выставления. Сигналам, трендам и темпам продаж нужна история: они улучшаются при сканировании раз в день и наиболее показательны через неделю."
 L["After your first scan"] = "После первого сканирования"
@@ -783,8 +781,8 @@ L["That's one of your characters: they already share AME's data"] =
   "Это ваш персонаж: он уже делится данными AME"
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] =
   "Аукцион даст %s за шт. после комиссии и залога %s  ·  торговец платит %s"
-L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Screener on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
-  "«Обзор» показывает весь аукцион с первого взгляда, как биржевые индексы: дорожает ли рынок или дешевеет, сколько выставлено и где сосредоточено золото. По умолчанию он выключен: включите его в «Настройки», «Общие», и «Обзор» появится рядом со «Скринером» на панели инструментов вкладки «Рынок». Пока он включён, рыночные данные обновляются чуть дольше."
+L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Auctions on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
+  "«Обзор» показывает весь аукцион с первого взгляда, как биржевые индексы: дорожает ли рынок или дешевеет, сколько выставлено и где сосредоточено золото. По умолчанию он выключен: включите его в «Настройки», «Общие», и «Обзор» появится рядом с «Аукционами» на панели инструментов вкладки «Рынок». Пока он включён, рыночные данные обновляются чуть дольше."
 L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."] =
   "Комиссии аукциона и длительность лота в разделе «Продажа» учитываются везде, где считаются деньги: залоги, сигналы ТОРГОВЕЦ, цены выставления и арбитраж."
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
@@ -900,8 +898,8 @@ L["When"] = "Когда"
 L["Where the data comes from"] = "Откуда берутся данные"
 L["Whose, and since when"] = "Чьи и с какого времени"
 L["Window"] = "Окно"
-L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
-  "Когда обзор рынка включён («Настройки», «Общие»), первые кнопки панели инструментов переключают вкладку «Рынок» между «Скринером» (этим списком) и «Обзором» - индексами и итогами по всему аукциону (см. «Обзор рынка»)."
+L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between Auctions (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
+  "Когда обзор рынка включён («Настройки», «Общие»), первые кнопки панели инструментов переключают вкладку «Рынок» между «Аукционами» (этим списком) и «Обзором» - индексами и итогами по всему аукциону (см. «Обзор рынка»)."
 L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."] =
   "При открытом аукционе Shift-клик по строке ищет её там. Пока поле поиска активно, Shift-клик по ссылке на предмет где угодно ищет его по названию."
 L["With your profession window open, adds the reagents of the selected recipe - as many times as you'll craft it."] =

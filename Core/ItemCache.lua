@@ -265,10 +265,10 @@ function C.Get(key)
   -- read until the client has it: a variant's name can arrive first (setName), its facts with GetItemInfo
   if not e.name or e.quality == nil then
     local getInfo = api("GetItemInfo")
-    local name, quality, level, icon, bind
+    local name, quality, level, minLevel, icon, bind
     if getInfo then
-      local n, _, q, lvl, _, _, _, _, _, tex, sell, _, _, b = getInfo(ns.BaseID(key))
-      name, quality, level, icon, bind = n, q, lvl, tex, b
+      local n, _, q, lvl, req, _, _, _, _, tex, sell, _, _, b = getInfo(ns.BaseID(key))
+      name, quality, level, minLevel, icon, bind = n, q, lvl, req, tex, b
       e.sellPrice = sell
     end
     if name and ns.IsVariant(key) then
@@ -279,8 +279,9 @@ function C.Get(key)
       name = C.variants[key] or name
     end
     if name then
-      -- the client's facts, read once with the name: quality, item level, icon, bind type (1: binds when picked up)
-      e.name, e.quality, e.level, e.icon, e.bind = name, quality, level, icon, bind
+      -- the client's facts, read once with the name: quality, item level, required level, icon, bind type (1: binds
+      -- when picked up)
+      e.name, e.quality, e.level, e.minLevel, e.icon, e.bind = name, quality, level, minLevel or 0, icon, bind
     end
   end
   return e
@@ -420,10 +421,74 @@ function C.Warm(ids)
   step()
 end
 
+-- ------------------------------------------------------------------------------------------------ usable by you
+
+-- Usable by you (the Auctions filter "Usable by you"): your character's level is at least the item's required level
+-- and, for weapons, armour and recipes, the item's tooltip has no red line - the game colours red what you can't
+-- use (a weapon or armour type, a class, a profession or its skill, a recipe you already know). Kept per item until
+-- your level or skills change. nil while the client hasn't loaded the item (it isn't left out then).
+C.usable = {}
+local CHECK_TOOLTIP = { [2] = true, [4] = true, [9] = true } -- weapon, armour, recipe
+
+local function red(c)
+  return type(c) == "table" and (c.r or 0) > 0.9 and (c.g or 1) < 0.3 and (c.b or 1) < 0.3
+end
+
+local function redLine(itemID)
+  local tip = C_TooltipInfo and C_TooltipInfo.GetItemByID
+  if not tip then
+    return false
+  end
+  local ok, data = pcall(tip, itemID)
+  local lines = ok and type(data) == "table" and data.lines
+  if type(lines) ~= "table" or #lines < 2 then
+    return nil -- not loaded yet
+  end
+  for i = 2, #lines do
+    local l = lines[i]
+    if type(l) == "table" and (red(l.leftColor) or red(l.rightColor)) then
+      return true
+    end
+  end
+  return false
+end
+
+function C.Usable(key)
+  local itemID = ns.BaseID(key)
+  local known = C.usable[itemID]
+  if known ~= nil then
+    return known
+  end
+  local e = C.Get(key)
+  if e.minLevel == nil then
+    return nil
+  end
+  local mine = UnitLevel and UnitLevel("player") or 0
+  local ok = e.minLevel <= mine
+  if ok and CHECK_TOOLTIP[e.classID] then
+    local isRed = redLine(itemID)
+    if isRed == nil then
+      return nil
+    end
+    ok = not isRed
+  end
+  C.usable[itemID] = ok
+  return ok
+end
+
 local events = CreateFrame("Frame")
 for _, e in ipairs({ "GET_ITEM_INFO_RECEIVED", "ITEM_DATA_LOAD_RESULT" }) do
   pcall(events.RegisterEvent, events, e)
 end
-events:SetScript("OnEvent", function(_, _, itemID)
-  C.OnItemData(itemID)
+-- what you can use changes with your level, skills and spells (weapon skills, professions, recipes learned)
+local CHANGES = { "PLAYER_LEVEL_UP", "SKILL_LINES_CHANGED", "LEARNED_SPELL_IN_TAB", "NEW_RECIPE_LEARNED" }
+for _, e in ipairs(CHANGES) do
+  pcall(events.RegisterEvent, events, e)
+end
+events:SetScript("OnEvent", function(_, event, itemID)
+  if event == "GET_ITEM_INFO_RECEIVED" or event == "ITEM_DATA_LOAD_RESULT" then
+    C.OnItemData(itemID)
+  else
+    C.usable = {}
+  end
 end)

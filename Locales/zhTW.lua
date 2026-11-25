@@ -98,8 +98,6 @@ L["A normal price"] = "價格正常"
 L["A route, broken down"] = "路線明細"
 L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
   "遊戲一提示找到買家，銷售就會出現在帳本中（等待郵件），拍賣郵件到達後按準確金額結算——打開信箱即可收取。靈魂綁定物品不計入：它們無法出售。"
-L["A screener over every item with history. Pick a category or watchlist on the left, search by name, filter by quality, price range or signal, and click a column to sort. Hover a column header for what it means. Click a row to open its chart; click the star to watch it. Right-click a row for more: search the auction house, watchlists, an alert, a chat link, or hiding items you don't trade (they move to Hidden in the sidebar, where you can unhide them)."] =
-  "一個涵蓋所有有歷史資料物品的篩選器。在左側選擇分類或關注清單，依名稱搜尋，依品質、價格區間或訊號篩選，點擊欄位標題排序。滑鼠停留在欄位標題上可查看說明。點擊某列打開其圖表；點擊星號將其加入關注。右鍵點擊某列可進行更多操作：在拍賣場搜尋、關注清單、提醒、聊天連結，或隱藏你不交易的物品（它們會移到側邊欄的「已隱藏」中，可在那裡取消隱藏）。"
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "上影線很高：價格曾跳升一次——通常是某次掃描時沒有便宜貨——但沒能維持。不要按這個尖峰定價。"
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -125,8 +123,8 @@ L["Add to shopping list..."] = "加入購物清單..."
 L["Add to watchlist"] = "加入關注"
 L["Added the reagents for %s to the shopping list %s."] = "已將 %s 的材料加入購物清單 %s。"
 L["Added the reagents for one %s to the shopping list %s."] = "已將 1 個 %s 的材料加入購物清單 %s。"
-L["Adds Overview next to Screener on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
-  "在市場分頁的「篩選器」旁加入「概覽」：整個拍賣場的市場指數、CPI、上架總值、成交額和分類。開啟期間，市場資料更新會稍慢一些。"
+L["Adds Overview next to Auctions on the Market tab: a market index, a CPI, listed value, turnover and categories for the whole auction house. Market data takes a little longer to update while it's on."] =
+  "在市場分頁的「拍賣」旁加入「概覽」：整個拍賣場的市場指數、CPI、上架總值、成交額和分類。開啟期間，市場資料更新會稍慢一些。"
 L["After one scan you can browse the Market tab and see posting prices. Signals, trends and sell rates need history: they get better with a scan a day, and mean the most after a week."] =
   "掃描一次後，你就可以瀏覽市場分頁並查看上架價格。訊號、趨勢和售出速度需要歷史資料：每天掃描一次會越來越準，一週後最有參考價值。"
 L["After your first scan"] = "首次掃描之後"
@@ -746,8 +744,8 @@ L["That's one of your characters: they already share AME's data"] =
   "這是你自己的角色：已經分享 AME 的資料"
 L["The AH nets %s a unit after the cut and the %s deposit  ·  a vendor pays %s"] =
   "拍賣場每件淨得 %s（已扣除手續費和 %s 保證金）  ·  商人收購價 %s"
-L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Screener on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
-  "「概覽」像證券交易所的指數一樣一眼展示整個拍賣場：市場在變貴還是變便宜、上架有多少，以及金幣集中在哪裡。它預設關閉：在「設定 > 一般」中開啟後，「概覽」會出現在市場分頁工具列的「篩選器」旁邊。開啟期間，市場資料更新會稍慢一些。"
+L["The Overview is the whole auction house at a glance, like a stock exchange's indexes: is the market getting dearer or cheaper, how much is listed, and where the gold is. It's off by default: switch it on under Settings, General, and Overview appears next to Auctions on the Market tab's toolbar. Market data takes a little longer to update while it's on."] =
+  "「概覽」像證券交易所的指數一樣一眼展示整個拍賣場：市場在變貴還是變便宜、上架有多少，以及金幣集中在哪裡。它預設關閉：在「設定 > 一般」中開啟後，「概覽」會出現在市場分頁工具列的「拍賣」旁邊。開啟期間，市場資料更新會稍慢一些。"
 L["The auction house cuts and the listing length under Selling count everywhere money is worked out: deposits, VENDOR calls, posting prices and arbitrage."] =
   "「出售」中的拍賣場手續費和上架時長會用於所有金額計算：保證金、賣店判斷、上架價格和套利。"
 L["The average daily market price over the chosen period (Settings > Average period, 7 days by default). Compare it with today's market price to see if the item is cheap or expensive right now."] =
@@ -859,8 +857,8 @@ L["When"] = "時間"
 L["Where the data comes from"] = "資料來源"
 L["Whose, and since when"] = "來自誰，從何時起"
 L["Window"] = "視窗"
-L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between the Screener (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
-  "開啟市場概覽後（設定 > 一般），工具列最前面的按鈕可在「篩選器」（此清單）和「概覽」之間切換市場分頁：概覽顯示整個拍賣場的指數和合計（見「市場概覽」）。"
+L["With the Market overview switched on (Settings, General), the toolbar's first buttons switch the Market tab between Auctions (this list) and the Overview: indexes and totals for the whole auction house (see Market overview)."] =
+  "開啟市場概覽後（設定 > 一般），工具列最前面的按鈕可在「拍賣」（此清單）和「概覽」之間切換市場分頁：概覽顯示整個拍賣場的指數和合計（見「市場概覽」）。"
 L["With the auction house open, Shift-click a row to search for it there. While the search box has focus, Shift-click an item link anywhere to search for it by name."] =
   "拍賣場開啟時，Shift-點擊某列即可在那裡搜尋。搜尋框取得焦點時，在任意位置 Shift-點擊物品連結即可依名稱搜尋。"
 L["With your profession window open, adds the reagents of the selected recipe - as many times as you'll craft it."] =
