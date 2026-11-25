@@ -131,21 +131,33 @@ function CP.ReadyText(r)
     end
     return { text = L["%s not nearby"]:format(unmet.name), color = "warn" }
   end
+  -- "missing 2" in amber, the item in its quality colour (a link: its tooltip, Shift-click), as everywhere
+  local W = ns.Widgets
+  local function amber(text)
+    return ns.Kit and ns.Kit.Color("warn", text) or text
+  end
   local function shortText(m)
-    return m and L["missing %d %s"]:format(m.short, r.itemName and r.itemName(m.item) or "?")
+    if not m then
+      return nil
+    end
+    local item = W and W.LinkText and m.item and W.LinkText(m.item) or (r.itemName and r.itemName(m.item)) or "?"
+    return amber(L["missing %d"]:format(m.short)) .. " " .. item
   end
   local short = shortText(r.missing and r.missing[1])
   if r.n > 0 then
     local q = r.queuedMissing and r.queuedMissing[1]
     if q then
-      return { text = L["%d now · %s"]:format(r.n, shortText(q)), color = "warn" }
+      return { text = amber(L["%d now · "]:format(r.n)) .. shortText(q) }
     end
     if r.profit and r.profit < 0 then
       return { text = L["ready ×%d · loses money"]:format(r.n), color = "dim" }
     end
     return { text = L["ready ×%d"]:format(r.n), color = "good" }
   end
-  return { text = short or L["missing reagents"], color = "warn" }
+  if short then
+    return { text = short } -- coloured in parts
+  end
+  return { text = L["missing reagents"], color = "warn" }
 end
 
 -- how many things stand in the way of one craft (a reagent short, a requirement not met)

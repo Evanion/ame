@@ -193,7 +193,7 @@ describe("Crafting", function()
         by[r.id] = r
       end
       assert.equals(102, rows[1].id) -- by profit
-      assert.equals("missing 1 Item2002", by[101].ready.text)
+      assert.equals("missing 1 Item 2002", (by[101].ready.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H[^|]*|h", ""):gsub("|h", ""))) -- amber count, the item in its colour
       assert.equals(2, by[101].queued)
       assert.equals("orange", by[101].diff)
       assert.equals("missing a tool: Salt Shaker", by[102].ready.text)

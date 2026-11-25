@@ -433,14 +433,31 @@ end
 
 -- resolve many invoice names: the held-items map is built once, and only if the client's cache doesn't know a name
 function Trading.NameResolver()
-  local byName
+  local byName, indexed
   return function(name)
     local id = idFromName(name)
     if id or not name then
       return id
     end
     byName = byName or Trading.HeldByName()
-    return byName[name]
+    if byName[name] then
+      return byName[name]
+    end
+    -- not in the client's cache, nor held (a recipe bought and learned): the items of this market's scans, by the
+    -- names AME has cached for them
+    if not indexed then
+      indexed = {}
+      local AME = ns.AME
+      local index = AME and AME.FactionIndex and AME:FactionIndex()
+      for itemID in pairs(index and index.items or {}) do
+        local info = ns.ItemCache and ns.ItemCache.Get and ns.ItemCache.Get(itemID)
+        local n = info and info.name
+        if n and not indexed[n] then
+          indexed[n] = itemID
+        end
+      end
+    end
+    return indexed[name]
   end
 end
 
