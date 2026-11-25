@@ -122,7 +122,7 @@ local function header(f, compact, sub)
       {
         id = "item.search",
         type = "input",
-        props = { hint = compact and L["Search or Shift-click"] or L["Search item, or Shift-click one"], action = "find" },
+        props = { hint = compact and L["Search or Shift-click"] or L["Search item, or Shift-click one"], action = "find", suggest = true },
         meta = { w = compact and 170 or 260, h = 24 },
       },
     },
@@ -537,6 +537,10 @@ end
 S.actions = {
   -- the search box: a name (or a pasted link) opens that item
   find = function(app, p)
+    if p and p.item then -- a suggestion picked under the box
+      app:Go("item", { item = p.item })
+      return
+    end
     local textIn = p and p.text or ""
     if textIn == "" then
       return

@@ -184,6 +184,65 @@ local function drawCoins(box)
   box:SetTextColor(c[1], c[2], c[3], show and 0 or 1)
 end
 
+-- suggest = true (an item search box, board Menus): from the second letter, the items whose names match, the best
+-- first, up to ten, in a menu under the box (each with its icon in its quality colour); a click picks one and
+-- dispatches the box's action with { item = itemID }, Enter dispatches { text } as before (the screen opens the
+-- best match). The list follows the typing 150 ms after the last key.
+local SUGGEST_DELAY, SUGGEST_MAX = 0.15, 10
+local warmedIndex
+
+local function itemSuggestions(text)
+  if #text < 2 or (ns.ItemIDFrom and ns.ItemIDFrom(text)) then
+    return {}
+  end
+  local AME, app = ns.AME, ns.App
+  local index = AME and AME.CachedIndex and app and app.Shard and AME:CachedIndex(app:Shard())
+  if not (index and ns.MarketFilter and ns.MarketFilter.FindByName) then
+    return {}
+  end
+  if warmedIndex ~= index and ns.ItemCache and ns.ItemCache.Warm then
+    -- the names load from the game in the background: matches grow as they arrive
+    warmedIndex = index
+    local ids = {}
+    for id in pairs(index.items or {}) do
+      ids[#ids + 1] = id
+    end
+    pcall(ns.ItemCache.Warm, ids)
+  end
+  local ok, hits = pcall(ns.MarketFilter.FindByName, index, text, function(id)
+    return ns.ItemCache.Get(id)
+  end, SUGGEST_MAX)
+  return ok and hits or {}
+end
+
+local function suggest(box, ctx)
+  local text = box:GetText() or ""
+  local hits = itemSuggestions(text)
+  if #hits == 0 or not (box.HasFocus and box:HasFocus()) then
+    if W.HideMenu then
+      W.HideMenu(box)
+    end
+    return
+  end
+  local entries = {}
+  for i, h in ipairs(hits) do
+    entries[i] = {
+      item = h.itemID,
+      func = function()
+        if W.HideMenu then
+          W.HideMenu(box)
+        end
+        box:SetText("")
+        box:ClearFocus()
+        dispatch(ctx, box.props, { item = h.itemID })
+      end,
+    }
+  end
+  if W.Menu then
+    W.Menu(box, entries, { refresh = true, minWidth = box:GetWidth() }) -- a dropdown under the box, as wide as it
+  end
+end
+
 local function newInput(parent, ctx)
   local box = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
   Kit.Box(box, "bg", "controlLine")
@@ -201,16 +260,42 @@ local function newInput(parent, ctx)
       dispatch(ctx, self.props, { text = self:GetText() or "" })
     end
   end
+  local function hideSuggestions(self)
+    if self.props and self.props.suggest and W.HideMenu then
+      W.HideMenu(self)
+    end
+  end
   box:SetScript("OnEnterPressed", function(self)
+    hideSuggestions(self)
     send(self)
     self:ClearFocus()
   end)
   box:SetScript("OnEscapePressed", function(self)
+    hideSuggestions(self)
     self:ClearFocus()
   end)
-  box:SetScript("OnEditFocusLost", send)
-  box:SetScript("OnTextChanged", function(self)
+  box:SetScript("OnEditFocusLost", function(self)
+    -- a suggestion box sends on Enter or a pick (losing focus to click a suggestion mustn't send the half-typed text)
+    if not (self.props and self.props.suggest) then
+      send(self)
+    end
+  end)
+  box:SetScript("OnTextChanged", function(self, user)
     self.hintText:SetShown((self:GetText() or "") == "")
+    if user and self.props and self.props.suggest then
+      self.suggestAt = (self.suggestAt or 0) + 1
+      local mine = self.suggestAt
+      local function run()
+        if self.suggestAt == mine then -- only the last key's: the typing paused
+          suggest(self, ctx)
+        end
+      end
+      if C_Timer and C_Timer.After then
+        C_Timer.After(SUGGEST_DELAY, run)
+      else
+        run()
+      end
+    end
   end)
   box:SetScript("OnEditFocusGained", function(self)
     Kit.Box(self, "bg", Kit.Accent())
@@ -253,7 +338,15 @@ local function setInput(box, p)
 end
 
 Layout.Register("input", {
-  props = { value = "string?", hint = "string?", action = "string?", payload = "any?", numeric = "boolean?", money = "boolean?" },
+  props = {
+    value = "string?",
+    hint = "string?",
+    action = "string?",
+    payload = "any?",
+    numeric = "boolean?",
+    money = "boolean?",
+    suggest = "boolean?",
+  },
   create = newInput,
   update = setInput,
   size = function()

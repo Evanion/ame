@@ -100,6 +100,47 @@ describe("primitive widgets", function()
     assert.same({ "search", { text = "dreamfoil" } }, got[4])
   end)
 
+  it("an item search box suggests matching items in a dropdown, 150 ms after the typing pauses", function()
+    local index = { items = { [2452] = {}, [2459] = {} } }
+    ns.AME = {
+      CachedIndex = function()
+        return index
+      end,
+    }
+    ns.App = {
+      Shard = function()
+        return "R|Horde"
+      end,
+    }
+    ns.MarketFilter = {
+      FindByName = function(_, text)
+        return text == "swift" and { { itemID = 2452 }, { itemID = 2459 } } or {}
+      end,
+    }
+    local menus = {}
+    ns.Widgets.Menu = function(anchor, entries, opts)
+      menus[#menus + 1] = { anchor = anchor, entries = entries, opts = opts }
+    end
+    ns.Widgets.HideMenu = function() end
+    r:Render({ id = "q", type = "input", props = { action = "find", suggest = true } })
+    local box = r:Frame("q")
+    box.HasFocus = function()
+      return true
+    end
+    box:SetText("swi")
+    box.scripts.OnTextChanged(box, true)
+    box:SetText("swift")
+    box.scripts.OnTextChanged(box, true)
+    env:advance(0.1)
+    assert.equals(0, #menus) -- still typing
+    env:advance(0.1)
+    assert.equals(1, #menus) -- once, for the last key only
+    assert.equals(box, menus[1].anchor) -- under the box
+    assert.equals(2452, menus[1].entries[1].item)
+    menus[1].entries[1].func()
+    assert.same({ "find", { item = 2452 } }, got[#got])
+  end)
+
   it("a card puts its children under its title, inside its padding", function()
     r:Render(tree)
     local kid = r:Frame("card.a")

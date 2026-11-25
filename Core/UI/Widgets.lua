@@ -2010,6 +2010,7 @@ function W.Menu(anchor, entries, opts)
     menu.items[i]:Hide()
   end
   menu.anchor = anchor
+  width = math.max(width, opts and opts.minWidth or 0) -- a dropdown: at least as wide as its box
   menu:SetSize(width, top + 3)
   menu:ClearAllPoints()
   local x, y
