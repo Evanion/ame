@@ -1,0 +1,111 @@
+name: Release
+
+# Releases run only from release branches (release/0.5, release/0.6, ... cut from main by "Cut release branch").
+#   1. Every push to a release branch runs release-please. It keeps one release pull request open on that branch:
+#      the next version (0.5.0-beta.2, -beta.3, ... from the conventional commits since the last release) and the
+#      CHANGELOG.md entry.
+#   2. Merging that pull request is the release: release-please tags it (v0.5.0-beta.2) and makes the GitHub release.
+#   3. publish then checks the tagged commit (luacheck, busted), builds the zip, uploads it to CurseForge with the
+#      release notes as its changelog, attaches the zip to the GitHub release and opens an issue to archive the files
+#      it replaces (CurseForge has no API for archiving).
+#
+# Secrets: RELEASE_PLEASE_TOKEN (fine-grained, this repository: contents, pull requests, workflows read/write - so
+# the release pull request runs CI, which the default token's pull requests don't), CURSEFORGE_CI_API_TOKEN.
+# Variable: CURSEFORGE_PROJECT_ID (AME's CurseForge project ID; public).
+
+on:
+  push:
+    branches: ["release/**"]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-24.04
+    outputs:
+      created: ${{ steps.rp.outputs.release_created }}
+      tag: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          target-branch: ${{ github.ref_name }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.created == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ needs.release-please.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag }}
+
+      - name: Install Lua 5.1, busted, luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 liblua5.1-0-dev luarocks
+          sudo luarocks --lua-version=5.1 install busted
+          sudo luarocks --lua-version=5.1 install luacheck
+
+      - name: Fetch embedded libraries
+        run: bash scripts/fetch-libs.sh
+
+      - name: Check the tagged commit
+        run: |
+          luacheck .
+          busted
+
+      - name: Release notes and type
+        id: notes
+        run: |
+          version="${TAG#v}"
+          case "$version" in
+            *-alpha*) type=alpha ;;
+            *-beta*) type=beta ;;
+            *) type=release ;;
+          esac
+          {
+            echo "## Azeroth Mercantile Exchange $version"
+            echo
+            gh release view "$TAG" --json body --jq .body
+          } > "$RUNNER_TEMP/notes.md"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "type=$type" >> "$GITHUB_OUTPUT"
+
+      - name: Build and upload to CurseForge
+        id: upload
+        env:
+          CURSEFORGE_CI_API_TOKEN: ${{ secrets.CURSEFORGE_CI_API_TOKEN }}
+          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+        run: |
+          bash scripts/release.sh "${{ steps.notes.outputs.version }}" "${{ steps.notes.outputs.type }}" "$RUNNER_TEMP/notes.md" | tee "$RUNNER_TEMP/upload.log"
+          echo "file=$(sed -n 's/.*CurseForge file id \([0-9]*\).*/\1/p' "$RUNNER_TEMP/upload.log")" >> "$GITHUB_OUTPUT"
+
+      - name: Attach the zip to the GitHub release
+        run: gh release upload "$TAG" "dist/AzerothMercantileExchange-${{ steps.notes.outputs.version }}.zip" --clobber
+
+      - name: Ask for the older files to be archived
+        run: |
+          gh issue create --title "Archive the AME files $TAG replaces on CurseForge" --body "$(cat <<BODY
+          $TAG is on CurseForge (file ${{ steps.upload.outputs.file }}). CurseForge has no API for archiving, so archive the files it replaces by hand:
+
+          1. Open the project's files in the CurseForge authors dashboard (Projects > Azeroth Mercantile Exchange > Files).
+          2. Archive every earlier file of the same release line, and older lines that are no longer supported.
+          3. Close this issue.
+
+          Public file list: https://www.curseforge.com/wow/addons/ame/files
+          BODY
+          )"

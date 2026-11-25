@@ -1,0 +1,56 @@
+name: Cut release branch
+
+# Starts a release line: release/<line> from main's head, with an empty first commit whose Release-As footer tells
+# release-please the version to propose first (default <line>.0-beta.1). The branch is protected from then on: fixes
+# reach it by pull request (and go to main too), and each merged release pull request publishes (release.yml).
+# Pushed with RELEASE_PLEASE_TOKEN, so the push starts release.yml (a push with the default token wouldn't).
+
+on:
+  workflow_dispatch:
+    inputs:
+      line:
+        description: "Release line, major.minor (e.g. 0.6)"
+        required: true
+        type: string
+      first:
+        description: "First version to propose (empty: <line>.0-beta.1)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  cut:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check the inputs
+        env:
+          LINE: ${{ inputs.line }}
+          FIRST: ${{ inputs.first }}
+        run: |
+          printf '%s' "$LINE" | grep -Eq '^[0-9]+\.[0-9]+$' || { echo "line must be major.minor, got \"$LINE\"" >&2; exit 1; }
+          first="${FIRST:-$LINE.0-beta.1}"
+          printf '%s' "$first" | grep -Eq "^${LINE//./\.}\.[0-9]+(-(alpha|beta)\.[0-9]+)?$" \
+            || { echo "first must be a $LINE.x version, got \"$first\"" >&2; exit 1; }
+          echo "FIRST=$first" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+      - name: Create release/${{ inputs.line }}
+        env:
+          LINE: ${{ inputs.line }}
+        run: |
+          if git ls-remote --exit-code --heads origin "release/$LINE" >/dev/null; then
+            echo "release/$LINE exists already" >&2
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: start the $LINE release line" -m "Release-As: $FIRST"
+          git push origin "HEAD:refs/heads/release/$LINE"
+          echo "release/$LINE cut from main; release-please will propose $FIRST" >> "$GITHUB_STEP_SUMMARY"
