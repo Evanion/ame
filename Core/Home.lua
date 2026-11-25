@@ -678,7 +678,10 @@ local function top(list, n)
   return out
 end
 
-local function gatherCrafting(f, index)
+-- the costly part of Worth doing's crafting rows: the model (Core/CraftModel), its top earners and refines, and the
+-- recipes for sale your characters could learn. It hangs on the market index, your recipes and what you hold to
+-- craft with (Home.Piece keys it on those); not on gold, which only filters the recipes to buy (applyCrafting).
+local function gatherCrafting(index)
   local m = ns.CraftModel and ns.CraftModel.Build()
   if not m then
     return nil
@@ -698,9 +701,7 @@ local function gatherCrafting(f, index)
       end
     end
   end
-  f.crafts, f.bestCraft = crafts, crafts[1]
-  f.refines = top(Home.Refines(m))
-  f.bestRefine = f.refines[1]
+  local out = { m = m, crafts = crafts, refines = top(Home.Refines(m)) }
   -- recipes on the auction house your characters could learn
   if ns.CraftingData and ns.CraftingData.Teaches then
     local listings = {}
@@ -709,11 +710,21 @@ local function gatherCrafting(f, index)
         listings[#listings + 1] = { item = id, price = s.min }
       end
     end
-    local rows = m.craft:RecipesToBuy(listings, function(id)
+    out.toBuy = m.craft:RecipesToBuy(listings, function(id)
       return ns.CraftingData:Teaches(id)
-    end, ns.Recipes.Get, m.chars)
+    end, ns.Recipes.Get, m.chars) or {}
+  end
+  return out
+end
+
+-- the crafting rows into the facts, the recipes to buy filtered to what this character's gold covers
+local function applyCrafting(f, c)
+  f.crafts, f.bestCraft = c.crafts, c.crafts[1]
+  f.refines = c.refines
+  f.bestRefine = f.refines[1]
+  if c.toBuy then
     local learns = {}
-    for _, r in ipairs(rows or {}) do
+    for _, r in ipairs(c.toBuy) do
       if r.ready and r.payback and affordable(f, r.price) then
         local who = r.learners and r.learners[1]
         learns[#learns + 1] = {
@@ -728,7 +739,6 @@ local function gatherCrafting(f, index)
     end
     f.learns, f.bestLearn = learns, learns[1]
   end
-  return m
 end
 
 local function gatherBuy(f, index)
@@ -760,29 +770,54 @@ local function gatherBuy(f, index)
   f.bestBuy = f.buys[1]
 end
 
-local function gatherCarry(f, index, AME)
+-- the routes to carry to this realm's other auction houses, best first per house: they hang on the two markets'
+-- indexes and the day (Home.Piece keys them on those); gold only filters them (applyCarry)
+local function gatherCarry(index, AME)
   local realm = AME:MarketRealmName()
   local here = AME:CurrentHouse()
-  local routes = {}
+  local out = {}
   for _, house in ipairs({ "Horde", "Alliance", "Neutral" }) do
     if house ~= here then
       local other = AME:CachedIndex(ns.ShardKey(realm, house))
       if other then
-        local rows = ns.Arbitrage.Find(index, other, {
-          cut = ns.Quote.Cut(house),
-          today = ns.Today(GetServerTime()),
-          minProfit = 1,
-        })
-        -- the best routes whose first item your gold covers
-        local n = 0
-        for _, r in ipairs(rows or {}) do
-          if r.profit and affordable(f, r.buy) then
-            routes[#routes + 1] = { item = r.itemID, profit = r.profit, to = ns.ShardLabel and ns.ShardLabel(ns.ShardKey(realm, house)) or house }
-            n = n + 1
-            if n >= Home.PER_KIND then
-              break
-            end
-          end
+        out[#out + 1] = {
+          to = ns.ShardLabel and ns.ShardLabel(ns.ShardKey(realm, house)) or house,
+          rows = ns.Arbitrage.Find(index, other, {
+            cut = ns.Quote.Cut(house),
+            today = ns.Today(GetServerTime()),
+            minProfit = 1,
+          }) or {},
+        }
+      end
+    end
+  end
+  return out
+end
+
+-- the inputs gatherCarry hangs on, as one value
+local function carryKey(index, AME)
+  local realm = AME:MarketRealmName()
+  local here = AME:CurrentHouse()
+  local out = { tostring(index), tostring(realm), tostring(here), ns.Today(GetServerTime()) }
+  for _, house in ipairs({ "Horde", "Alliance", "Neutral" }) do
+    if house ~= here then
+      out[#out + 1] = tostring(AME:CachedIndex(ns.ShardKey(realm, house)))
+    end
+  end
+  return table.concat(out, "|")
+end
+
+-- the best routes whose first item your gold covers
+local function applyCarry(f, houses)
+  local routes = {}
+  for _, h in ipairs(houses) do
+    local n = 0
+    for _, r in ipairs(h.rows) do
+      if r.profit and affordable(f, r.buy) then
+        routes[#routes + 1] = { item = r.itemID, profit = r.profit, to = h.to }
+        n = n + 1
+        if n >= Home.PER_KIND then
+          break
         end
       end
     end
@@ -792,6 +827,63 @@ local function gatherCarry(f, index, AME)
   end)
   f.carries = top(routes)
   f.bestCarry = f.carries[1]
+end
+
+-- The costly pieces of the gather, each kept until what it hangs on changes, so a change of gold, bags or mail
+-- reruns only the pieces that read them. Home.Piece(name, key, fn, ...) -> fn's result, run (as a gather piece:
+-- timed, errors to BugSack) only when key differs from the last run's. A piece that failed runs again next time.
+local pieces = {}
+Home.runs = {} -- name -> how many times a piece has run (specs)
+function Home.Piece(name, key, fn, ...)
+  local p = pieces[name]
+  if p and p.key == key then
+    return p.value
+  end
+  Home.runs[name] = (Home.runs[name] or 0) + 1
+  local ok, value = ns.ShieldOk(function(...)
+    if Home.Timed then
+      return Home.Timed(name, fn, ...)
+    end
+    return fn(...)
+  end, ...)
+  if ok then
+    pieces[name] = { key = key, value = value }
+    return value
+  end
+  pieces[name] = nil
+end
+
+-- what a character's places hold, as identities (Trading replaces a place's table when it changes)
+local function heldKey(holdings, keep, places)
+  local out = {}
+  for key, h in pairs(holdings or {}) do
+    if not keep or keep(key) then
+      out[#out + 1] = key
+      for _, place in ipairs(places) do
+        out[#out + 1] = tostring(h[place])
+      end
+    end
+  end
+  return table.concat(out, "|")
+end
+
+-- the guild banks' tabs, as identities
+local function guildKey()
+  local out = {}
+  for gkey, bank in pairs(AME_DB and AME_DB.guildBanks or {}) do
+    out[#out + 1] = gkey
+    for tab, items in pairs(bank.tabs or {}) do
+      out[#out + 1] = tostring(tab) .. "=" .. tostring(items)
+    end
+  end
+  return table.concat(out, "|")
+end
+
+-- the ledger's length and newest entry
+local function ledgerKey()
+  local entries = AME_DB and AME_DB.ledger and AME_DB.ledger.entries or {}
+  local last = entries[#entries]
+  return #entries .. ":" .. tostring(last and last.t)
 end
 
 -- f.until: the soonest a fact changes with the clock alone (a cooldown ready, an alert a day old, a new day)
@@ -881,12 +973,17 @@ function Home.Gather(force)
     try("gatherAuctions", gatherAuctions, f, holdings, index, keep)
     try("gatherBags", gatherBags, f, holdings, index, q)
     try("gatherWorth", gatherWorth, f, holdings, index, q, keep)
+    -- names in the ledger to item IDs: they resolve against what you hold and the market's items, so it runs again
+    -- when the ledger, the index or what your characters hold changes
     if ns.Trading.ResolveLedger then
-      try("resolveLedger", ns.Trading.ResolveLedger, ns.Trading)
+      Home.Piece("resolveLedger", ledgerKey() .. "|" .. tostring(index) .. "|" .. heldKey(holdings, nil, { "bags", "bank", "auctions" }), ns.Trading.ResolveLedger, ns.Trading)
     end
     f.ledger = AME.ledger and AME.ledger:Summary(now - 7 * DAY) or nil
     if ns.MarketStats and index.stats then
-      local s = try("marketStats", ns.MarketStats.Summary, index, 7)
+      local s = Home.Piece("marketStats", tostring(index) .. "|" .. tostring(index.stats), function()
+        return { s = ns.MarketStats.Summary(index, 7) }
+      end)
+      s = s and s.s
       f.marketChange = s and s.levelChange
       f.marketLevel = s and s.level
     end
@@ -901,10 +998,24 @@ function Home.Gather(force)
     if newest then
       f.scanAt, f.scanAge = newest, now - newest
     end
-    local m = try("gatherCrafting", gatherCrafting, f, index)
+    local craftKey = table.concat({
+      tostring(index),
+      ns.Recipes and ns.Recipes.Stamp and ns.Recipes.Stamp() or "",
+      tostring(ns.CraftingData and ns.CraftingData.data),
+      heldKey(holdings, keep, ns.Holdings.PLACES.usable),
+      guildKey(),
+    }, "|")
+    local c = Home.Piece("gatherCrafting", craftKey, gatherCrafting, index)
+    local m = c and c.m
+    if c then
+      try("applyCrafting", applyCrafting, f, c)
+    end
     try("gatherCooldowns", gatherCooldowns, f, now, m and m.craft)
     try("gatherBuy", gatherBuy, f, index)
-    try("gatherCarry", gatherCarry, f, index, AME)
+    local houses = Home.Piece("gatherCarry", carryKey(index, AME), gatherCarry, index, AME)
+    if houses then
+      try("applyCarry", applyCarry, f, houses)
+    end
   end
   f.requests = ns.CraftRequests and ns.CraftRequests.Incoming and ns.CraftRequests.Incoming() or {}
   f.guildSharers = ns.SyncService and ns.SyncService.PeerCount and ns.SyncService:PeerCount() or 0
@@ -914,11 +1025,12 @@ end
 
 function Home.Forget()
   cache = nil
+  pieces = {}
 end
 
 -- who you share with changed (the guild line): gathered again next time
 if ns.Events and ns.Events.On then
   ns.Events.On("SyncChanged", function()
-    cache = nil
+    Home.Forget()
   end)
 end

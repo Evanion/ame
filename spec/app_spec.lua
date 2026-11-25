@@ -67,6 +67,18 @@ describe("the redesigned window", function()
     return App.renderer:Frame("app.title")
   end
 
+  it("the status row says the same busy news once", function()
+    ns.AME.ahOpen = true
+    ns.ScanButton = { Progress = function() return "Updating market data..." end }
+    ns.UI = { FooterRight = function() return "Updating market data\226\128\166    vdev" end }
+    local text = ns.App.StatusRight()
+    local _, n = text:gsub("Updating market data", "")
+    assert.equals(1, n)
+    ns.ScanButton = { Progress = function() return "Reading auctions 40%" end }
+    assert.matches("Reading auctions 40%%", ns.App.StatusRight())
+    ns.ScanButton, ns.UI, ns.AME.ahOpen = nil, nil, false
+  end)
+
   it("opens on Home with the chrome around it", function()
     App:Show()
     assert.equals("home", App:Current())

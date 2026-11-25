@@ -119,7 +119,7 @@ describe("CraftQueue", function()
     )
   end)
 
-  it("buys a part instead when that's picked, or when it's cheaper than making it", function()
+  it("buys a part only when that's picked; one you can make is made first, even when buying is cheaper", function()
     local q = Q.New({})
     q:Add(100, 2)
     q:SetChoice(BAR, "buy")
@@ -127,15 +127,18 @@ describe("CraftQueue", function()
     assert.are.equal(1, #plan.steps)
     assert.are.equal(8, source(material(plan, BAR), "ah").qty)
     assert.is_nil(material(plan, ORE))
-    -- not picked, but bought bars cost less than the ore for them
+    -- not picked: bought bars cost less than the ore for them, but you can smelt them, so the smelting is queued
+    -- first; what making costs over buying shows as its saves
     q:SetChoice(BAR, nil)
     prices[BAR] = 10000
     finally(function()
       prices[BAR] = 11800
     end)
     plan = Q.Plan(q.db, env())
-    assert.are.equal(1, #plan.steps)
-    assert.are.equal("buy", material(plan, BAR).choice)
+    assert.are.equal(2, #plan.steps)
+    assert.is_true(plan.steps[1].part)
+    assert.are.equal("make", material(plan, BAR).choice)
+    assert.is_true(material(plan, BAR).saves < 0)
   end)
 
   it("takes vendor reagents from a vendor, and shares a part's crafts between the items that need it", function()

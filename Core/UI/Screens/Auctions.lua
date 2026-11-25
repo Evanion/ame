@@ -24,9 +24,25 @@ local function me()
   return UnitName and UnitName("player") or nil
 end
 
+-- auctions cancelled a moment ago: left out until the game's list catches up (OWNED_AUCTIONS_UPDATED)
+P.CANCEL_HIDE = 15 -- seconds
+P.cancelling = {}
+
+local function cancelling()
+  local out, t = nil, clock()
+  for id, at in pairs(P.cancelling) do
+    if t - at < P.CANCEL_HIDE then
+      out = out or {}
+      out[id] = true
+    else
+      P.cancelling[id] = nil
+    end
+  end
+  return out
+end
+
 function P.AuctionState(app, p)
-  local f = P.Facts("all", "7")
-  local rows, sum = P.AuctionRows(f.auctions, books(), {
+  local rows, sum = P.AuctionRows(P.AuctionList(cancelling()), books(), {
     me = me(),
     atAH = app:AtAH(),
     undercutOnly = p.undercut,
@@ -198,14 +214,16 @@ local function current(app)
   return p
 end
 
+-- a cancel went to the game: the row leaves at once, and the game is asked for your auctions again; its answer
+-- (OWNED_AUCTIONS_UPDATED) rescans them, and the screen is drawn again from them (Stamp)
 local function cancelled(app, pl)
   P.message = { text = pl.message or "", at = clock() }
-  if pl.ok and ns.Trading and ns.Trading.ScanAuctions and C_Timer and C_Timer.After then
-    C_Timer.After(1, function()
-      pcall(ns.Trading.ScanAuctions, ns.Trading)
-      P.cached = nil
-      App:Redraw()
-    end)
+  local id = pl.auctionID or (pl.payload and pl.payload.auctionID)
+  if pl.ok and id then
+    P.cancelling[id] = clock()
+  end
+  if pl.ok and ns.Trading and ns.Trading.QueryAuctions then
+    pcall(ns.Trading.QueryAuctions, ns.Trading)
   end
   P.cached = nil
   app:Redraw()
@@ -215,6 +233,21 @@ App.Screen("auctions", {
   tab = "portfolio",
   ahTab = "auctions",
   Build = body,
+  -- your characters' saved auction lists (a rescan replaces the list) and the game's owned list: a cancel or a new
+  -- post draws it again, the window idling doesn't
+  Stamp = function()
+    local parts = {}
+    for key, h in pairs((AME_DB and AME_DB.holdings) or {}) do
+      parts[#parts + 1] = key .. "=" .. tostring(h.auctionList)
+    end
+    table.sort(parts)
+    local ah = C_AuctionHouse
+    local ok, n = pcall(function()
+      return ah and ah.GetNumOwnedAuctions and ah.GetNumOwnedAuctions() or 0
+    end)
+    parts[#parts + 1] = "owned=" .. tostring(ok and n or 0)
+    return table.concat(parts, ";")
+  end,
   Title = function()
     return L["Auctions"]
   end,
@@ -254,9 +287,8 @@ App.Screen("auctions", {
       if not (app:AtAH() and ns.AHSearch and ns.AHSearch.Start) then
         return
       end
-      local f = P.Facts("all", "7")
       local keys, seen = {}, {}
-      for _, a in ipairs(f.auctions or {}) do
+      for _, a in ipairs(P.AuctionList()) do
         if a.itemID and not seen[a.itemID] then
           seen[a.itemID] = true
           keys[#keys + 1] = a.itemID
@@ -272,7 +304,7 @@ App.Screen("auctions", {
       for _, r in ipairs(rows) do
         if r.key == pl.key and r.cancel and app:AtAH() then
           local ok, message = P.Cancel({ auctionID = r.auctionID })
-          cancelled(app, { ok = ok, message = message })
+          cancelled(app, { ok = ok, message = message, auctionID = r.auctionID })
           return
         end
       end

@@ -8,7 +8,8 @@
 --   crafthead  { item?, title?, subtitle? }                  a recipe's card: the item as a link, a line under it
 --   toolscard  { title?, tools = { { item?, place?, have?, tone?, line?, price? } } }
 --   partslines { title?, lines = { parts, ... } }            Kit.Parts lines (item names are links)
---   queuestrip { items = { { item?, count?, label? } }, toBuy?, button?, buttonAction?, action?, empty? }
+--   queuestrip { items = { { item?, count?, label? } }, toBuy?, ready? (nothing missing), button?, buttonAction?,
+--                action?, empty? }
 --   makebar    { count?, label?, recipe?, buttons = { { key, label, variant?, call? } }, action? }
 --   craftbutton { label, variant?, call?, payload?, action? }
 --   skillbar   { lo, yellow, green, grey, hi, from?, to? }
@@ -40,9 +41,34 @@ function CraftingUI.CanCreate(recipeID)
   return info and info.learned and true or false, info and info.numAvailable or 0
 end
 
+-- the profession that teaches a recipe, from the recorded catalog: skillLine, its name
+function CraftingUI.ProfessionOf(recipeID)
+  for skillLine, c in pairs(AME_DB and AME_DB.crafting and AME_DB.crafting.catalog or {}) do
+    if c.recipes and c.recipes[recipeID] then
+      return skillLine, c.name
+    end
+  end
+  return nil
+end
+
+-- this character knows it, but its profession's window is closed: open it (the game allows that on a click); the
+-- recipes load a moment later, so the next click on Create makes it. -> "opened" or false
+function CraftingUI.OpenFor(recipeID)
+  local api = _G.C_TradeSkillUI
+  local line = recipeID and CraftingUI.ProfessionOf(recipeID)
+  local PB = ns.ProfessionBar
+  if not (line and api and api.OpenTradeSkill and PB and PB.KnowsHere and PB.KnowsHere(line, recipeID)) then
+    return false
+  end
+  return pcall(api.OpenTradeSkill, line) and "opened" or false
+end
+
 function Calls.create(p)
   local api = _G.C_TradeSkillUI
-  if not (p and p.recipe and api and api.CraftRecipe and CraftingUI.CanCreate(p.recipe)) then
+  if p and p.recipe and not CraftingUI.CanCreate(p.recipe) then
+    return CraftingUI.OpenFor(p.recipe)
+  end
+  if not (p and p.recipe and api and api.CraftRecipe) then
     return false
   end
   return pcall(api.CraftRecipe, p.recipe, math.max(1, math.floor(p.count or 1))) and true or false
@@ -468,6 +494,7 @@ Layout.Register("queuestrip", {
   props = {
     items = "table",
     toBuy = "number?",
+    ready = "boolean?",
     button = "string?",
     buttonAction = "string?",
     action = "string?",
@@ -517,7 +544,7 @@ Layout.Register("queuestrip", {
     local right = p.button and f.button or f
     f.cost:ClearAllPoints()
     f.cost:SetPoint("RIGHT", right, right == f and "RIGHT" or "LEFT", right == f and -10 or -8, 0)
-    f.cost:SetText(p.toBuy and (L["to buy"] .. " " .. W.Money(p.toBuy, true)) or "")
+    f.cost:SetText(p.ready and L["nothing to buy"] or p.toBuy and (L["to buy"] .. " " .. W.Money(p.toBuy, true)) or "")
     f.body:ClearAllPoints()
     f.body:SetPoint("LEFT", f.title, "RIGHT", 10, 0)
     f.body:SetPoint("RIGHT", f.cost, "LEFT", -8, 0)

@@ -62,7 +62,8 @@ local function producer(env, itemID)
   return best and best.score > 0 and best or nil
 end
 
--- make or buy a part: what the player picked, else the cheaper one (craft cost per unit vs the market price)
+-- make or buy a part: what the player picked, else make it - one of your characters can, so it goes on the queue
+-- first (smelt the bars before the gauntlets). saves: per unit, making vs buying, shown beside the step
 local function decide(env, queue, itemID, prod)
   local choice = queue.choice and queue.choice[itemID]
   local r = env.recipe(prod.recipe)
@@ -73,13 +74,7 @@ local function decide(env, queue, itemID, prod)
     buy = env.craft:Price(itemID)
   end
   local saves = perUnit and buy and (buy - perUnit) or nil
-  if choice then
-    return choice, saves
-  end
-  if buy and perUnit and perUnit >= buy then
-    return "buy", saves
-  end
-  return "make", saves
+  return choice or "make", saves
 end
 
 function CraftQueue.Plan(queue, env)

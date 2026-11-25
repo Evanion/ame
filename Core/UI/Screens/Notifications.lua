@@ -1,6 +1,6 @@
 -- The bell's notifications (board NotifyPanel): what AME told you in passing (Core/Notices.lua), newest first, the
--- unread ones lit. Opening it marks them read; a click on one opens what it is about; Clear all empties it. The bell
--- again goes back to where you were.
+-- unread ones lit. A panel under the bell, over the screen you are on: opening it marks them read; a click on one
+-- opens what it is about; Clear all empties it. The bell again, a click elsewhere or Esc closes it.
 --
 --   Notify.Row(e, now, unread) -> actionlist row     one notice as a row (pill, title with item links, sub with age)
 --   Notify.Rows(list, now, isUnread, max) -> rows, older   newest first; older: how many didn't fit
@@ -19,7 +19,7 @@ local L = ns.L
 
 local App, Kit = ns.App, ns.Kit
 
-local Notify = { ROW_H = 46 }
+local Notify = { ROW_H = 46, W = 380, H = 400 }
 ns.NotifyScreen = Notify
 
 local function ago(t, now)
@@ -124,34 +124,25 @@ function Notify.Target(e)
   return nil
 end
 
--- ------------------------------------------------------------------------------------------------ the screen
+-- ------------------------------------------------------------------------------------------------ the panel
 
 local function notices()
   return ns.AME and ns.AME.notices
 end
 
-local function fit(app)
-  local h = app.frame and app.frame:GetHeight() or App.H
-  -- the window less the title bar, status row, padding, the card's own padding, heading, note and gaps
-  local room = (h or App.H) - 40 - 26 - 24 - 20 - 22 - 34 - 12
+-- as many rows as the panel holds: its height less its padding, heading, note and gaps
+function Notify.Fit()
+  local room = Notify.H - 24 - 22 - 34 - 12
   return math.max(3, math.floor(room / Notify.ROW_H))
 end
 
-local function build(app, params)
+-- the panel's tree; seenAt: what was unread when it opened stays lit while you look
+function Notify.Tree(seenAt, now)
   local n = notices()
-  local now = GetServerTime and GetServerTime() or 0
-  -- opening marks everything read; what was unread when you opened it stays lit while you look
-  if params.seenAt == nil then
-    params.seenAt = n and n.db and n.db.readAt or 0
-    if n then
-      n:MarkRead(now)
-    end
-  end
-  local seenAt = params.seenAt
   local list = n and n:List() or {}
   local rows, older = Notify.Rows(list, now, function(e)
     return (e.at or 0) > seenAt
-  end, fit(app))
+  end, Notify.Fit())
   if #rows == 0 then
     rows[1] = {
       key = "none",
@@ -166,84 +157,149 @@ local function build(app, params)
   end
   return {
     id = "notify",
-    type = "row",
+    type = "column",
+    props = { gap = 6, pad = 12 },
     children = {
-      { id = "notify.space", type = "spacer", meta = { grow = 1 } },
       {
-        id = "notify.card",
-        type = "card",
-        props = { layout = "column", gap = 6, pad = 10 },
-        meta = app.compact and { grow = 1 } or { w = 380 },
+        id = "notify.head",
+        type = "row",
+        props = { align = "center" },
+        meta = { h = 22 },
         children = {
-          {
-            id = "notify.head",
-            type = "row",
-            props = { align = "center" },
-            meta = { h = 22 },
-            children = {
-              {
-                id = "notify.title",
-                type = "text",
-                props = { text = L["Notifications"], font = "display", size = 14 },
-                meta = { grow = 1 },
-              },
-              #list > 0 and {
-                id = "notify.clear",
-                type = "keyvalue",
-                props = { text = L["Clear all"], action = "clearAll" },
-                meta = { w = 70 },
-              } or { id = "notify.clear", type = "spacer", meta = { w = 70 } },
-            },
-          },
-          {
-            id = "notify.list",
-            type = "noticelist",
-            props = { bare = true, rows = rows, rowAction = "openNotice" },
-            meta = { grow = 1 },
-          },
-          { id = "notify.note", type = "text", props = { text = note, color = "dim", size = 11, wrap = true }, meta = { h = 34 } },
+          { id = "notify.title", type = "text", props = { text = L["Notifications"], font = "display", size = 14 }, meta = { grow = 1 } },
+          #list > 0 and {
+            id = "notify.clear",
+            type = "keyvalue",
+            props = { text = L["Clear all"], action = "clearNotices" },
+            meta = { w = 70 },
+          } or { id = "notify.clear", type = "spacer", meta = { w = 70 } },
         },
       },
+      { id = "notify.list", type = "noticelist", props = { bare = true, rows = rows, rowAction = "openNotice" }, meta = { grow = 1 } },
+      { id = "notify.note", type = "text", props = { text = note, color = "dim", size = 11, wrap = true }, meta = { h = 34 } },
     },
   }
 end
 
-App.Screen("notifications", {
-  Build = build,
-  Title = function()
-    return L["Notifications"]
-  end,
-  Status = function()
-    local n = notices()
-    local count = n and #n.db.list or 0
-    return count == 1 and L["1 notification"] or L["%d notifications"]:format(count)
-  end,
-  actions = {
-    -- the bell again: back to where you were
-    bell = function(app)
-      app:Back()
-    end,
-    clearAll = function(app)
-      local n = notices()
-      if n then
-        n:Clear()
-      end
-      app:Render()
-    end,
-    openNotice = function(app, p)
-      local n = notices()
-      if not (n and p and p.key) then
-        return
-      end
-      for _, e in ipairs(n:List()) do
-        if Notify.Key(e) == p.key then
-          local screen, params = Notify.Target(e)
-          if screen then
-            app:Go(App.screens[screen] and screen or app:TabScreen(screen), params)
-          end
-          return
+local function bell(app)
+  local title = app.renderer and app.renderer:Frame("app.title")
+  return title and title.bell
+end
+
+-- the panel's frame: over the screen, its top right under the bell
+local function panel(app)
+  if app.notifyPanel then
+    return app.notifyPanel
+  end
+  local p = CreateFrame("Frame", nil, app.frame, "BackdropTemplate")
+  Kit.Box(p, "bg", "frame")
+  p:SetSize(Notify.W, Notify.H)
+  p:SetFrameLevel((app.inner and app.inner:GetFrameLevel() or 1) + 100)
+  p:EnableMouse(true)
+  p:Hide()
+  p.renderer = ns.Layout.Renderer(p, app.ctx)
+  -- closes on a click elsewhere, like a menu
+  p:SetScript("OnShow", function(self)
+    pcall(self.RegisterEvent, self, "GLOBAL_MOUSE_DOWN")
+  end)
+  p:SetScript("OnHide", function(self)
+    pcall(self.UnregisterEvent, self, "GLOBAL_MOUSE_DOWN")
+  end)
+  p:SetScript("OnEvent", function(self)
+    local b = bell(app)
+    if not self:IsMouseOver() and not (b and b:IsMouseOver()) then
+      self:Hide()
+    end
+  end)
+  -- Esc closes the panel, not the window (out of combat: the key is passed on otherwise)
+  if p.EnableKeyboard then
+    p:EnableKeyboard(true)
+    p:SetScript("OnKeyDown", function(self, key)
+      local fight = InCombatLockdown and InCombatLockdown()
+      if key == "ESCAPE" and not fight then
+        if self.SetPropagateKeyboardInput then
+          self:SetPropagateKeyboardInput(false)
         end
+        self:Hide()
+      elseif not fight and self.SetPropagateKeyboardInput then
+        self:SetPropagateKeyboardInput(true)
       end
-    end,
-  },
-})
+    end)
+  end
+  app.notifyPanel = p
+  return p
+end
+
+function App:NotifyShown()
+  return self.notifyPanel ~= nil and self.notifyPanel:IsShown()
+end
+
+-- draw the panel again (notices came or went while it shows)
+function App:DrawNotify()
+  local p = self.notifyPanel
+  if not (p and p:IsShown()) then
+    return
+  end
+  p.renderer:Render(Notify.Tree(p.seenAt or 0, GetServerTime and GetServerTime() or 0))
+end
+
+function App:OpenNotify()
+  self:Show()
+  local p = panel(self)
+  local n = notices()
+  local now = GetServerTime and GetServerTime() or 0
+  p.seenAt = n and n.db and n.db.readAt or 0
+  if n then
+    n:MarkRead(now)
+  end
+  p:ClearAllPoints()
+  local b = bell(self)
+  if b then
+    p:SetPoint("TOPRIGHT", b, "BOTTOMRIGHT", 8, -6)
+  else
+    p:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT", -8, -40)
+  end
+  p:Show()
+  self:DrawNotify()
+end
+
+function App:CloseNotify()
+  if self.notifyPanel then
+    self.notifyPanel:Hide()
+  end
+end
+
+-- the bell: opens the panel, or closes it
+App.actions.bell = function(app)
+  if app:NotifyShown() then
+    app:CloseNotify()
+  else
+    app:OpenNotify()
+  end
+end
+
+App.actions.clearNotices = function(app)
+  local n = notices()
+  if n then
+    n:Clear()
+  end
+  app:DrawNotify()
+end
+
+-- a click on a notice opens what it is about, and the panel closes
+App.actions.openNotice = function(app, p)
+  local n = notices()
+  if not (n and p and p.key) then
+    return
+  end
+  for _, e in ipairs(n:List()) do
+    if Notify.Key(e) == p.key then
+      local screen, params = Notify.Target(e)
+      app:CloseNotify()
+      if screen then
+        app:Go(App.screens[screen] and screen or app:TabScreen(screen), params)
+      end
+      return
+    end
+  end
+end

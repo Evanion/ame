@@ -191,7 +191,19 @@ local function drawRow(r, d)
   r.text:ClearAllPoints()
   r.text:SetPoint("TOPLEFT", r.pill, "TOPRIGHT", 10, 14)
   r.text:SetPoint("BOTTOM", r, "BOTTOM", 0, 0)
-  r.text:SetPoint("RIGHT", d.value and r.value or right, "LEFT", -10, 0)
+  if d.value or right ~= r then
+    r.text:SetPoint("RIGHT", d.value and r.value or right, "LEFT", -10, 0)
+  else
+    r.text:SetPoint("RIGHT", r, "RIGHT", -12, 0) -- nothing on the right: the text runs to the row's edge
+  end
+end
+
+-- only whole rows: those past the list's height are hidden, not drawn over what is under it
+local function fitRows(f)
+  local h = f.body:GetHeight() or 0
+  for i = 1, f.shown or 0 do
+    f.rows[i]:SetShown(h <= 0 or i * ROW_H <= h + 1)
+  end
 end
 
 Layout.Register("actionlist", {
@@ -202,6 +214,9 @@ Layout.Register("actionlist", {
     f.title:SetPoint("TOPLEFT", 12, -9)
     f.rule = Kit.Line(f, "TOP", "line")
     f.body = CreateFrame("Frame", nil, f)
+    f.body:SetScript("OnSizeChanged", function()
+      fitRows(f)
+    end)
     f.rows = {}
     f.ctx = ctx
     return f
@@ -232,6 +247,8 @@ Layout.Register("actionlist", {
     for i = #p.rows + 1, #f.rows do
       f.rows[i]:Hide()
     end
+    f.shown = #p.rows
+    fitRows(f)
   end,
   size = function(_, p)
     return 300, (p.bare and 0 or 32) + #(p.rows or {}) * ROW_H

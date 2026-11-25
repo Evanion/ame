@@ -417,6 +417,58 @@ describe("addon in a stubbed client", function()
       assert.truthy(trees >= 1)
     end)
 
+    it("Home gathers again only the pieces that read what changed: gold reruns none of the costly ones", function()
+      seeded()
+      local money = _G.GetMoney
+      finally(function()
+        _G.GetMoney = money
+      end)
+      local Home = ns.Home
+      Home.Forget()
+      Home.Gather()
+      local costly = { "marketStats", "gatherCarry", "resolveLedger", "gatherCrafting" }
+      local function runs()
+        local out = {}
+        for _, name in ipairs(costly) do
+          out[name] = Home.runs[name] or 0
+        end
+        return out
+      end
+      local before = runs()
+      assert.truthy(before.gatherCrafting > 0 and before.resolveLedger > 0 and before.gatherCarry > 0)
+      -- your gold changes: the facts are gathered again (gold shows the new amount), the costly pieces are kept
+      _G.GetMoney = function()
+        return 987654
+      end
+      env:fire("PLAYER_MONEY")
+      env:advance(1)
+      local facts = Home.Gather()
+      assert.are.equal(987654, facts.myGold)
+      assert.are.same(before, runs())
+      -- your bags change: crafting (reagents you hold) and the ledger's names run again; the market's pieces don't
+      local key = next(AME_DB.holdings)
+      local bags = {}
+      for id, n in pairs(AME_DB.holdings[key].bags or {}) do
+        bags[id] = n
+      end
+      bags[2589] = (bags[2589] or 0) + 7
+      AME_DB.holdings[key].bags = bags
+      Home.Gather()
+      local after = runs()
+      assert.are.equal(before.gatherCrafting + 1, after.gatherCrafting)
+      assert.are.equal(before.resolveLedger + 1, after.resolveLedger)
+      assert.are.equal(before.gatherCarry, after.gatherCarry)
+      assert.are.equal(before.marketStats, after.marketStats)
+      -- a new scan: everything that reads the market runs again
+      env.now = env.now + 86400
+      fullScan({ { 2589, 1200, 10 }, { 4306, 4000, 5 } })
+      env:advance(0)
+      Home.Gather()
+      local scanned = runs()
+      assert.are.equal(after.gatherCrafting + 1, scanned.gatherCrafting)
+      assert.are.equal(after.gatherCarry + 1, scanned.gatherCarry)
+    end)
+
     it("answers other addons through the public API, and plugs into Baganator", function()
       local corners, refreshed = {}, 0
       _G.Baganator = {

@@ -443,6 +443,32 @@ function P.OwnedAuctions()
   return out
 end
 
+-- Every character's auctions on this market, this character's with their game IDs: all the Auctions screen needs,
+-- without Gather's positions and ledger (which cost far more and the screen doesn't show).
+--   cancelling: { [auctionID] = true } left out (cancelled, the game's list not caught up yet)
+function P.AuctionList(cancelling)
+  local all = (ns.Trading and ns.Trading.Holdings and ns.Trading:Holdings()) or (AME_DB and AME_DB.holdings) or {}
+  local keep = ns.Holdings and ns.Holdings.Keep and ns.Holdings.Keep("market")
+  local holdings = {}
+  for key, h in pairs(all) do
+    if not keep or keep(key) then
+      holdings[key] = h
+    end
+  end
+  local list = ns.Trading and ns.Trading.ActiveAuctions and ns.Trading:ActiveAuctions(holdings) or {}
+  P.FillAuctionIDs(list, P.OwnedAuctions(), UnitName and UnitName("player"))
+  if not cancelling then
+    return list
+  end
+  local out = {}
+  for _, a in ipairs(list) do
+    if not (a.auctionID and cancelling[a.auctionID]) then
+      out[#out + 1] = a
+    end
+  end
+  return out
+end
+
 -- The saved auction list (Trading:ScanAuctions) has no auction IDs: this character's auctions take theirs from the
 -- game's owned list, matched by item, quantity and price, each ID used once.
 function P.FillAuctionIDs(auctions, owned, me)
@@ -601,6 +627,14 @@ function P.AuctionDetail(row, advice, hours, cut, t)
       { label = L["Your price"], copper = a.unit },
       { label = L["Lowest now"], copper = st.lowest },
       { label = L["Ahead of you"], text = L["%d listings · %s units"]:format(st.ahead, count(st.units)) },
+    }
+  elseif st.lowest then
+    -- a price to show (lowest, or the last scan's until it's searched): as money, as the table's Lowest now column;
+    -- the standing's words ("undercut by 8s 9c at the last scan") are too long for the card's value
+    d.title = st.kind == "scanUndercut" and L["Undercut"] or L["Standing"]
+    d.rows = {
+      { label = L["Your price"], copper = a.unit },
+      { label = L["Lowest now"], copper = st.lowest },
     }
   else
     d.title = L["Standing"]

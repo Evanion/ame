@@ -576,6 +576,7 @@ function handlers.PLAYER_LOGIN()
     "GUILDBANKFRAME_OPENED",
     "GUILDBANKBAGSLOTS_CHANGED",
     "OWNED_AUCTIONS_UPDATED",
+    "AUCTION_CANCELED",
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "COMMODITY_SEARCH_RESULTS_UPDATED",
     "ITEM_SEARCH_RESULTS_UPDATED",
@@ -801,6 +802,12 @@ end
 
 function handlers.OWNED_AUCTIONS_UPDATED()
   ns.Trading:ScanAuctions()
+  dataChanged() -- the Auctions screen: a cancelled auction leaves it
+end
+
+-- a cancel went through: ask for your auctions again, so the list (and the Auctions screen) loses it
+function handlers.AUCTION_CANCELED()
+  ns.Trading:QueryAuctions()
 end
 
 function handlers.AUCTION_HOUSE_CLOSED()

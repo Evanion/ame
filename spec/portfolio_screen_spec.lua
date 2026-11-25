@@ -256,6 +256,23 @@ describe("Portfolio page", function()
       P.Gather = function()
         return facts
       end
+      -- the Auctions screen's own list: the characters' saved auctions (copies, as Trading:ActiveAuctions makes)
+      ns.Trading = {
+        Holdings = function()
+          return {}
+        end,
+        ActiveAuctions = function()
+          local out = {}
+          for i, a in ipairs(facts.auctions) do
+            local e = {}
+            for k, v in pairs(a) do
+              e[k] = v
+            end
+            out[i] = e
+          end
+          return out
+        end,
+      }
       P.SellEntries = function()
         local list = {
           { key = 1, qty = 43, where = "ah", worth = 482000, commodity = true, summary = { market = 12000, signal = "buy", soldPerDay = 140 }, locs = { {} } },
@@ -373,6 +390,51 @@ describe("Portfolio page", function()
       local b = App.renderer:Frame("auc.cancel")
       b.scripts.OnClick(b)
       assert.equals(7, cancelled)
+    end)
+
+    it("a cancelled auction leaves the list at once, and the game is asked for your auctions again", function()
+      ns.AME.ahOpen = true
+      local queried = 0
+      _G.C_AuctionHouse.CancelAuction = function() end
+      ns.Trading.QueryAuctions = function()
+        queried = queried + 1
+      end
+      P.cancelling = {}
+      App:Show()
+      App:Go("auctions")
+      local before = #P.AuctionState(App, select(2, App:Current()))
+      local b = App.renderer:Frame("auc.cancel")
+      b.scripts.OnClick(b)
+      local rows, sum = P.AuctionState(App, select(2, App:Current()))
+      assert.equals(before - 1, #rows)
+      assert.equals(1, sum.count)
+      for _, r in ipairs(rows) do
+        assert.is_not.equals(7, r.auctionID)
+      end
+      assert.equals(1, queried)
+      valid()
+      -- the game's list caught up (the auction is gone from it) before the hold runs out: it stays gone
+      facts.auctions = { facts.auctions[2] }
+      env.now = env.now + P.CANCEL_HIDE + 1
+      assert.equals(1, #P.AuctionState(App, select(2, App:Current())))
+    end)
+
+    it("the Auctions screen is drawn again when your auctions change, not while it idles", function()
+      ns.AME.ahOpen = true
+      _G.AME_DB.holdings = { ["Forever:Tyken"] = { auctionList = {} } }
+      App:Show()
+      App:Go("auctions")
+      local stamp = App:Stamp()
+      assert.equals(stamp, App:Stamp())
+      _G.AME_DB.holdings["Forever:Tyken"].auctionList = {} -- a rescan replaces the list
+      assert.is_not.equals(stamp, App:Stamp())
+    end)
+
+    it("the Standing card shows the last scan's lowest as money, not the standing's words", function()
+      local row = { a = { itemID = 10, unit = 2309 }, st = P.Standing({ unit = 2309 }, nil, 1500) }
+      local d = P.AuctionDetail(row, nil, nil, 0.05, 1000)
+      assert.equals(1500, d.rows[2].copper)
+      assert.is_nil(d.rows[2].text)
     end)
   end)
 end)

@@ -225,16 +225,32 @@ local function detail(app, f, r, filter, profession, count)
   end
   kids[#kids + 1] = { id = "craft.d.gap", type = "spacer", meta = { grow = 1 } }
   local buttons, text
-  if profession then
-    local can = ns.CraftingUI.CanCreate(r.id)
-    local v = not can and "disabled" or nil
+  -- a recipe the character you are on knows: Create (it opens the profession's window first if that is closed)
+  local can = ns.CraftingUI.CanCreate(r.id)
+  local me = ns.Trading and ns.Trading.CharKey and ns.Trading.CharKey()
+  local mine = can
+  for _, key in ipairs(r.crafters or {}) do
+    if key == me then
+      mine = true
+    end
+  end
+  if mine or profession then
     buttons = {
-      { key = "create", label = L["Create"], variant = can and "primary" or "disabled", call = "create" },
-      { key = "createAll", label = L["Create all"], variant = v, call = "createAll" },
+      { key = "create", label = L["Create"], variant = mine and "primary" or "disabled", call = "create" },
+      { key = "createAll", label = L["Create all"], variant = not can and "disabled" or nil, call = "createAll" },
       { key = "queue", label = L["Queue"] },
     }
-    text = can and L["Create makes them now; Queue lines them up for later. Missing reagents: at the auction house Buy missing searches and buys; away from it, they go on a shopping list."]
-      or L["Create works while this profession's window is open on a character who knows the recipe; Queue lines it up for later."]
+    if not profession and filter == "ready" and d.raw and app:AtAH() then
+      buttons[4] = { key = "sellRaw", label = L["Sell the %s raw"]:format(f.itemName(d.raw.item) or "?") }
+    end
+    local _, profName = ns.CraftingUI.ProfessionOf(r.id)
+    if can then
+      text = L["Create makes them now; Queue lines them up for later. Missing reagents: at the auction house Buy missing searches and buys; away from it, they go on a shopping list."]
+    elseif mine then
+      text = L["Create opens %s if its window is closed; click again to make them. Ready counts bags, bank and mail."]:format(profName or L["its profession"])
+    else
+      text = L["Create works on a character who knows the recipe; Queue lines it up for later."]
+    end
   else
     buttons = { { key = "queue", label = L["Queue"], variant = "primary" } }
     if filter == "ready" and d.raw and app:AtAH() then
@@ -338,7 +354,20 @@ local STEP_COLS = {
   { key = "item", label = L["Craft"], width = 190, item = true },
   { key = "who", label = L["Who"], width = 170, align = "LEFT" },
   { key = "profitText", label = L["Profit"], width = 120 },
-  { key = "act", label = "", width = 50, button = { label = "✕", action = "stepAct" } },
+  {
+    key = "act",
+    label = "",
+    width = 50,
+    button = {
+      label = function(d)
+        return d.act or "✕"
+      end,
+      variant = function(d)
+        return d.actPrimary and "primary" or nil
+      end,
+      action = "stepAct",
+    },
+  },
 }
 local MAT_COLS = {
   { key = "item", label = L["Material"], width = 120, item = true },
@@ -359,6 +388,7 @@ local function stepRows(q)
       who = s.who,
       profitText = s.profitText,
       act = s.act,
+      actPrimary = s.actPrimary,
     }
   end
   return out
@@ -394,7 +424,7 @@ local function queuedBody(app, f, params)
           columns = STEP_COLS,
           action = "stepRow",
           selected = params.selected,
-          note = L["Parts first. A part is made or bought, whichever is cheaper; the button switches it. Craft next skips steps this character can't do."],
+          note = L["Parts first: what your characters can make is made. Where buying is cheaper the step says so; Buy switches it. Craft next skips steps this character can't do."],
           empty = L["Nothing queued. Pick a recipe and click Queue."],
           flex = "item",
         },
@@ -732,7 +762,10 @@ Screen.actions = {
       return
     end
     if p.key == "create" or p.key == "createAll" then
-      if not p.ran then
+      if p.ran == "opened" then
+        local _, name = ns.CraftingUI.ProfessionOf(p.recipe)
+        say(L["opening %s: click Create again to make it"], name or L["its profession"])
+      elseif not p.ran then
         say(L["open its profession on a character who knows it to create it"])
       end
       Screen.Dirty()

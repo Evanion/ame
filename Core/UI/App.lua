@@ -104,6 +104,14 @@ end
 
 -- open a screen; replace: don't put the one you leave on the history (a filter change inside a screen)
 function App:Go(id, params, replace)
+  -- the notifications are the bell's panel over the screen you are on, not a screen of their own
+  if id == "notifications" and self.OpenNotify then
+    self:OpenNotify()
+    return
+  end
+  if self.CloseNotify then
+    self:CloseNotify()
+  end
   if self.state and not replace then
     table.insert(self.back, self.state)
     if #self.back > App.HISTORY then
@@ -177,9 +185,6 @@ App.actions.settings = function(app)
   else
     app:Go("settings")
   end
-end
-App.actions.bell = function(app)
-  app:Go("notifications")
 end
 App.actions.scan = function(app)
   local Scan = ns.ScanButton
@@ -326,6 +331,13 @@ function App.StatusRight()
   if UI and UI.FooterRight then
     local ok, text = pcall(UI.FooterRight, UI)
     if ok and text then
+      -- the same news from both ("Updating market data"): said once
+      local function words(t)
+        return (t:gsub("%.%.%.", ""):gsub("\226\128\166", ""))
+      end
+      if progress and words(text):find(words(progress), 1, true) then
+        progress = nil
+      end
       return progress and (ns.Kit.Color("warn", progress) .. "    " .. text) or text
     end
   end
@@ -420,10 +432,17 @@ function App:Create()
   -- the resize grip stays above the screen (it was made first, so the screen would cover it)
   grip:SetFrameLevel(inner:GetFrameLevel() + 50)
   f:SetScale(ns.Settings and ns.Settings:Get("windowScale") or 1)
-  -- the bell's count and the notifications screen follow the notices
+  -- the bell's count and its panel follow the notices; the screen is drawn again only if what it shows changed
   if ns.AME and ns.AME.notices and ns.AME.notices.OnChange then
     ns.AME.notices:OnChange(function()
-      App:Redraw()
+      local n = ns.AME.notices
+      if not (App.renderer and App.renderer:Set("app.title", { unread = n.Unread and n:Unread() or 0 })) then
+        return App:Redraw()
+      end
+      if App.DrawNotify then
+        App:DrawNotify()
+      end
+      App:DataChanged()
     end)
   end
 
@@ -593,6 +612,9 @@ function App:Show()
 end
 
 function App:Hide()
+  if self.CloseNotify then
+    self:CloseNotify()
+  end
   if self.frame then
     self.frame:Hide()
   end

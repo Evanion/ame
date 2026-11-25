@@ -679,7 +679,7 @@ function CP.Queue(f)
     if s.crafter then
       chars[s.crafter] = true
     end
-    local whoText, profit, button
+    local whoText, profit, button, cheaper
     if s.part then
       local forStep
       for j = i + 1, #plan.steps do
@@ -691,7 +691,13 @@ function CP.Queue(f)
         end
       end
       whoText = { text = forStep and L["%s · a part for step %d"]:format(who, forStep) or L["%s · a part"]:format(who), color = "dim" }
-      profit = s.saved and { text = L["making saves %s"]:format(money(s.saved)), color = "good" } or { text = "", color = "dim" }
+      -- made, since one of yours can; where buying is cheaper the step says so and Buy is lit: your call
+      if s.choice ~= "buy" and s.saved and s.saved < 0 then
+        profit = { text = L["buying saves %s"]:format(money(-s.saved)), color = "warn" }
+        cheaper = true
+      else
+        profit = s.saved and s.saved > 0 and { text = L["making saves %s"]:format(money(s.saved)), color = "good" } or { text = "", color = "dim" }
+      end
       button = L["Buy"]
     else
       whoText = who
@@ -708,6 +714,7 @@ function CP.Queue(f)
       who = whoText,
       profitText = profit,
       act = button,
+      actPrimary = cheaper or nil,
       part = s.part or false,
       recipe = s.recipe,
     }
@@ -745,10 +752,21 @@ function CP.Strip(f, atAH)
     items[#items + 1] = { item = r and r.product or nil, count = q.count * (r and r.made or 1), label = f.recipeName and f.recipeName(q.recipe) }
   end
   local toBuy = f.plan and f.plan.toBuy or 0
+  -- nothing missing (every reagent held, or made by a step): nothing to buy and no button (board QueueStrip, ready)
+  local missing = false
+  for _, m in ipairs(f.plan and f.plan.materials or {}) do
+    for _, src in ipairs(m.sources or {}) do
+      if (src.kind == "ah" or src.kind == "vendor") and (src.qty or 0) > 0 then
+        missing = true
+      end
+    end
+  end
+  local ready = #items > 0 and f.plan ~= nil and not missing
   return {
     items = items,
     toBuy = toBuy > 0 and toBuy or nil,
-    button = #items > 0 and (atAH and L["Buy missing"] or L["Missing to a list"]) or nil,
+    ready = ready or nil,
+    button = #items > 0 and not ready and (atAH and L["Buy missing"] or L["Missing to a list"]) or nil,
     buttonAction = "buyMissing",
     action = "openQueue",
     empty = L["Nothing queued. Pick a recipe and click Queue."],
