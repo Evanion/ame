@@ -328,7 +328,20 @@ local function body(app, p)
   else
     bags.meta = { w = 340 }
     local key = e and e.key
-    app:Source("sell.spark", { item = key, days = 7 })
+    -- the Item page's own chart widget and data (ItemPage.Gather / ChartData), in a smaller box: Sell stands in for
+    -- the Item page while you post. 2D / 7D / 30D pick its span.
+    -- the span you last picked stays as Post moves on, and across sessions (Settings sellRange)
+    local range = p.range or (ns.Settings and ns.Settings:Get("sellRange")) or "7D"
+    local IP = ns.ItemPage
+    if key and IP then
+      local fc = IP.Gather(app, key, function()
+        app:Redraw()
+      end)
+      app:Source("sell.chart", IP.ChartData(fc.entry, fc.sum, range, fc.now, { vendor = fc.vendor, trades = fc.trades }))
+    else
+      app:Source("sell.chart", { points = {}, message = L["Pick an item on the left."] })
+    end
+    local style = ns.Settings and ns.Settings:Get("chartStyle") == "candles" and "candles" or "line"
     app:Source("sell.sale", P.SaleRows(key and book(key), GetServerTime and GetServerTime()))
     local b = key and book(key)
     local saleEmpty = not key and L["Pick an item on the left."] or (not b and L["searching..."]) or L["none listed"]
@@ -344,21 +357,31 @@ local function body(app, p)
           {
             id = "sell.chartCard",
             type = "card",
-            props = { gap = 4 },
-            meta = { h = 146 },
+            props = { gap = 6 },
+            meta = { grow = 3 }, -- the most room: three parts to the listings' two (board AHSell)
             children = {
               {
                 id = "sell.chartHead",
                 type = "row",
-                props = { align = "center" },
-                meta = { h = 20 },
+                props = { gap = 6, align = "center" },
+                meta = { h = 22 },
                 children = {
-                  { id = "sell.chartTitle", type = "text", props = { text = L["Last 7 days"], font = "display", size = 13 } },
+                  { id = "sell.chartTitle", type = "text", props = { text = L["Price history"], font = "display", size = 13 } },
                   { id = "sell.chartGap", type = "spacer", meta = { grow = 1 } },
-                  { id = "sell.open", type = "button", props = { label = L["Open item"], action = "openItem", variant = e and "normal" or "disabled" }, meta = { h = 20 } },
+                  {
+                    id = "sell.range",
+                    type = "segmented",
+                    props = { options = IP and IP.RangeOptions(false) or { { "7D", "7D" } }, selected = range, action = "range" },
+                  },
+                  { id = "sell.open", type = "button", props = { label = L["Open item"], action = "openItem", variant = e and "normal" or "disabled" }, meta = { h = 22 } },
                 },
               },
-              { id = "sell.chart", type = "chart", props = { source = "sell.spark", kind = "spark" }, meta = { h = 110 } },
+              {
+                id = "sell.chart",
+                type = "chart",
+                props = { source = "sell.chart", kind = "item", range = range, style = style },
+                meta = { grow = 1 },
+              },
             },
           },
           {
@@ -371,7 +394,7 @@ local function body(app, p)
               note = L["Click a listing to price just under it."],
               empty = saleEmpty,
             },
-            meta = { grow = 1 },
+            meta = { grow = 2 },
           },
         },
       },
@@ -439,6 +462,12 @@ App.Screen("sell", {
   actions = {
     view = function(app, pl)
       P.GoView(app, pl.key)
+    end,
+    range = function(app, pl)
+      if ns.Settings then
+        ns.Settings:Set("sellRange", pl.key)
+      end
+      app:Set({ range = pl.key })
     end,
     pickBag = function(app, pl)
       if pl.button == "RightButton" then

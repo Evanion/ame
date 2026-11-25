@@ -49,6 +49,7 @@ Settings.DEFAULTS = {
   soundAuction = false, -- and when an auction sells or is undercut
   pendingMark = true, -- mark the minimap button and data broker when something waits
   cooldownAlerts = true, -- tell me when a profession cooldown is ready
+  sellRange = "7D", -- the Sell page's chart span (2D, 7D, 30D, 90D, 1Y, All), as last picked
   newWindow = false, -- the redesigned window (feature/redesign, /ame new) instead of the current one
   minimap = { hide = false },
 }
