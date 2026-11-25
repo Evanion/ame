@@ -10,8 +10,8 @@ export default {
       "always",
       ["feat", "fix", "perf", "revert", "docs", "style", "refactor", "test", "build", "ci", "chore"],
     ],
-    // a subject may start with a name ("Auctions ..."), so sentence case is allowed beside lower case
-    "subject-case": [2, "always", ["sentence-case", "lower-case"]],
+    // no case rule: subjects name things as they are written ("Auctions", "CI", "TOC", "/ame old")
+    "subject-case": [0],
     "header-max-length": [2, "always", 100],
     // the repository's line width (stylua, luacheck)
     "body-max-line-length": [2, "always", 120],
