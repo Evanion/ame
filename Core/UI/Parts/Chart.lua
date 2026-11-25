@@ -324,6 +324,15 @@ local function chartFor(f, kind)
     c:SetAxisFormatter("y", function()
       return ""
     end)
+    -- a spark with a label (Home's gold line) shows the day's figure on hover; one without none
+    c:SetHoverFormatter(function(_, x, rows)
+      local data, row = f.data or {}, rows.y
+      if not data.label or not row or row.x ~= x then
+        return nil
+      end
+      local value = data.format == "money" and W.Money(row.y, true) or tostring(row.y)
+      return { Kit.Color("white", date("%a %b %d", x)), { W.Dim(data.label), value } }
+    end)
   else
     c = L2:New(f.plot, { panes = { { axis = "y", weight = 1 } } })
     c:SetHoverFormatter(function(_, x, rows)
@@ -481,7 +490,7 @@ function Chart.Draw(f)
       end
       c:SetSeries("y", { xs = xs, ys = ys, kind = "area", color = Kit.C("chartMarket"), marker = true })
     else
-      c:SetSeries("y", { xs = xs, ys = ys, kind = "line", color = Kit.C("chartMarket"), width = 2 })
+      c:SetSeries("y", { xs = xs, ys = ys, kind = "line", color = Kit.C(data.color or "chartMarket"), width = 2 })
       if data.avg then
         local axs, ays = {}, {}
         for i, x in ipairs(xs) do

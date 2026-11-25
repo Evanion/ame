@@ -106,11 +106,29 @@ function Trading:ScanBags()
   Trading:ScanMoney()
 end
 
--- the character's gold (Home's net worth): copper, and when it was seen
+Trading.GOLD_DAYS = 40 -- how many days of each character's gold are kept (Home draws 30)
+
+-- the character's gold (Home's net worth): copper, and when it was seen. goldDays keeps the day's last figure for
+-- Home's gold line: { [day] = copper }, the last GOLD_DAYS days.
 function Trading:ScanMoney()
   if GetMoney then
     local h = mine()
-    h.money, h.moneyAt = GetMoney(), GetServerTime()
+    local now = GetServerTime()
+    h.money, h.moneyAt = GetMoney(), now
+    Trading.NoteGold(h, ns.Today(now), h.money)
+  end
+end
+
+function Trading.NoteGold(h, today, copper)
+  if type(copper) ~= "number" then
+    return
+  end
+  h.goldDays = h.goldDays or {}
+  h.goldDays[today] = copper
+  for day in pairs(h.goldDays) do
+    if day <= today - Trading.GOLD_DAYS then
+      h.goldDays[day] = nil
+    end
   end
 end
 
@@ -255,21 +273,53 @@ function Trading:OnWon(name, n)
 end
 
 -- what the inbox holds, attachment by attachment (when it's open and read)
+-- a number the game hands over, or nil where it is secret
+local function num(v)
+  local secret = _G.issecretvalue
+  if type(v) ~= "number" or (secret and secret(v)) then
+    return nil
+  end
+  return v
+end
+
+-- What waits in this character's mailbox (Home's "Waiting in your mail"): mail.items by item, and inbox = { at,
+-- money, sales, items, firstOut } — the gold in it, how many AH sale mails, how many items, and when the first mail
+-- holding gold or items runs out (server time). Taking things out updates it, as the mailbox is read again.
 function Trading:ScanMailItems()
   local getItem, n = _G.GetInboxItem, GetInboxNumItems and GetInboxNumItems() or 0
   if not getItem then
     return
   end
+  local now = GetServerTime()
   local items = {}
+  local inbox = { at = now, money = 0, sales = 0, items = 0 }
+  local header, invoice = _G.GetInboxHeaderInfo, _G.GetInboxInvoiceInfo
   for i = 1, n do
+    local units = 0
     for a = 1, (_G.ATTACHMENTS_MAX_RECEIVE or 16) do
       local _, itemID, _, count = getItem(i, a)
       if itemID then
         items[itemID] = (items[itemID] or 0) + (count or 1)
+        units = units + (num(count) or 1)
       end
     end
+    local money, daysLeft
+    if header then
+      local _, _, _, _, m, _, d = header(i)
+      money, daysLeft = num(m) or 0, num(d)
+    end
+    if invoice and invoice(i) == "seller" and (money or 0) > 0 then
+      inbox.sales = inbox.sales + 1
+    end
+    inbox.money = inbox.money + (money or 0)
+    inbox.items = inbox.items + units
+    if daysLeft and ((money or 0) > 0 or units > 0) then
+      local out = now + math.floor(daysLeft * 86400)
+      inbox.firstOut = math.min(inbox.firstOut or out, out)
+    end
   end
-  mine().mail = items
+  local h = mine()
+  h.mail, h.inbox = items, inbox
 end
 
 -- your active auctions (C_AuctionHouse owned auctions; sold ones wait in the mail)

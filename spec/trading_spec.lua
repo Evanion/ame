@@ -77,3 +77,68 @@ describe("Trading.WonFrom", function()
     assert.is_nil(Trading.WonFrom("Your auction of Silk has expired.", "You won an auction for %s"))
   end)
 end)
+
+describe("Trading's mailbox and gold records", function()
+  local ns, Trading, saved
+  local G = { "AME_DB", "GetServerTime", "UnitName", "GetInboxNumItems", "GetInboxItem", "GetInboxHeaderInfo", "GetInboxInvoiceInfo", "GetMoney" }
+
+  before_each(function()
+    saved = {}
+    for _, k in ipairs(G) do
+      saved[k] = _G[k]
+    end
+    ns = addon.load({ "Core/Init.lua", "Core/Trading.lua" })
+    Trading = ns.Trading
+    ns.AME = ns.AME or {}
+    ns.AME.MarketRealmName = function()
+      return "Realm"
+    end
+    _G.AME_DB = { holdings = {} }
+    _G.GetServerTime = function()
+      return 1000000
+    end
+    _G.UnitName = function()
+      return "Tyken"
+    end
+  end)
+
+  after_each(function()
+    for _, k in ipairs(G) do
+      _G[k] = saved[k]
+    end
+  end)
+
+  it("keeps a figure a day for 40 days", function()
+    local h = { goldDays = { [10] = 5, [60] = 7 } }
+    Trading.NoteGold(h, 61, 9)
+    assert.are.same({ [60] = 7, [61] = 9 }, h.goldDays)
+  end)
+
+  it("sums what waits in the mailbox: gold, sales, items, and when the first mail with any runs out", function()
+    -- mail 1: a sale (gold, no items, 2.5 days left); mail 2: 3 + 1 items, 20 days; mail 3: empty letter, 1 day
+    local mails = {
+      { money = 41800, days = 2.5, kind = "seller", items = {} },
+      { money = 0, days = 20, items = { { 2589, 3 }, { 2592, 1 } } },
+      { money = 0, days = 1, items = {} },
+    }
+    _G.GetInboxNumItems = function()
+      return #mails
+    end
+    _G.GetInboxItem = function(i, a)
+      local it = mails[i].items[a]
+      if it then
+        return "name", it[1], nil, it[2]
+      end
+    end
+    _G.GetInboxHeaderInfo = function(i)
+      return nil, nil, "x", "s", mails[i].money, 0, mails[i].days
+    end
+    _G.GetInboxInvoiceInfo = function(i)
+      return mails[i].kind
+    end
+    Trading:ScanMailItems()
+    local h = AME_DB.holdings["Realm:Tyken"]
+    assert.are.same({ [2589] = 3, [2592] = 1 }, h.mail)
+    assert.are.same({ at = 1000000, money = 41800, sales = 1, items = 4, firstOut = 1000000 + 2.5 * 86400 }, h.inbox)
+  end)
+end)

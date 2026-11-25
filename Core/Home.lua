@@ -205,10 +205,24 @@ end
 
 -- ------------------------------------------------------------------------------------------------ worth doing
 
+-- up to three of each kind (Home.PER_KIND), the best first: f.crafts, f.buys, f.refines, f.carries, f.learns (or the
+-- single f.bestCraft ... where only one was gathered)
+Home.PER_KIND = 3
+
+local function kind(f, many, one)
+  local out = {}
+  for i, v in ipairs(f[many] or { f[one] }) do
+    if i > Home.PER_KIND then
+      break
+    end
+    out[i] = v
+  end
+  return out
+end
+
 function Home.Worth(f, atAH)
   local rows = {}
-  local c = f.bestCraft
-  if c then
+  for _, c in ipairs(kind(f, "crafts", "bestCraft")) do
     rows[#rows + 1] = {
       key = "craft:" .. c.recipe,
       pill = L["CRAFT"],
@@ -220,8 +234,7 @@ function Home.Worth(f, atAH)
       action = "queue",
     }
   end
-  local b = f.bestBuy
-  if b then
+  for _, b in ipairs(kind(f, "buys", "bestBuy")) do
     rows[#rows + 1] = {
       key = "buy:" .. b.item,
       pill = L["BUY"],
@@ -233,8 +246,7 @@ function Home.Worth(f, atAH)
       action = "openItem",
     }
   end
-  local r = f.bestRefine
-  if r then
+  for _, r in ipairs(kind(f, "refines", "bestRefine")) do
     rows[#rows + 1] = {
       key = "refine:" .. r.item .. ":" .. r.recipe,
       pill = L["REFINE"],
@@ -246,8 +258,7 @@ function Home.Worth(f, atAH)
       action = "queue",
     }
   end
-  local a = f.bestCarry
-  if a then
+  for _, a in ipairs(kind(f, "carries", "bestCarry")) do
     rows[#rows + 1] = {
       key = "carry:" .. a.item,
       pill = L["CARRY"],
@@ -259,8 +270,7 @@ function Home.Worth(f, atAH)
       action = "goArbitrage",
     }
   end
-  local l = f.bestLearn
-  if l then
+  for _, l in ipairs(kind(f, "learns", "bestLearn")) do
     rows[#rows + 1] = {
       key = "learn:" .. l.item,
       pill = L["LEARN"],
@@ -274,6 +284,106 @@ function Home.Worth(f, atAH)
   end
   local _ = atAH
   return rows
+end
+
+-- ------------------------------------------------------------------------------------------------ the strip
+
+-- Your gold, a point a day over the last `days` (30): every kept character's last figure on or before each day. A
+-- character's first figure stands for the days before it (AME hadn't seen them yet), its gold now for today.
+-- -> { xs, ys } (x: the day's server time), or nil before two days are in
+function Home.GoldLine(holdings, keep, today, days)
+  days = days or 30
+  local chars, first = {}, nil
+  for key, h in pairs(holdings or {}) do
+    if keep(key) then
+      local log = {}
+      for day, copper in pairs(h.goldDays or {}) do
+        log[day] = copper
+      end
+      if type(h.money) == "number" then
+        log[today] = h.money
+      end
+      local earliest
+      for day in pairs(log) do
+        earliest = math.min(earliest or day, day)
+      end
+      if earliest then
+        chars[#chars + 1] = { log = log, earliest = earliest }
+        first = math.min(first or earliest, earliest)
+      end
+    end
+  end
+  if not first then
+    return nil
+  end
+  local from = math.max(first, today - days + 1)
+  if from >= today then
+    return nil
+  end
+  local xs, ys = {}, {}
+  for day = from, today do
+    local sum = 0
+    for _, c in ipairs(chars) do
+      local back = day
+      while back > c.earliest and c.log[back] == nil do
+        back = back - 1
+      end
+      sum = sum + (c.log[back] or c.log[c.earliest])
+    end
+    xs[#xs + 1], ys[#ys + 1] = day * DAY, sum
+  end
+  return { xs = xs, ys = ys }
+end
+
+Home.MAIL_SOON = 3 -- days: a mailbox whose first mail runs out sooner is marked (what's left in it is lost)
+Home.MAIL_ROWS = 3
+
+-- Waiting in your mail: one row per kept character with gold or items there, the first to run out first.
+-- -> rows (keyvalue props), the total gold in all of them; rows is empty when nothing waits.
+function Home.Mail(holdings, keep, now)
+  local found = {}
+  for key, h in pairs(holdings or {}) do
+    local box = h.inbox
+    if keep(key) and box and ((box.money or 0) > 0 or (box.items or 0) > 0) then
+      found[#found + 1] = { name = tostring(key):match(":(.+)$") or tostring(key), box = box }
+    end
+  end
+  table.sort(found, function(a, b)
+    local x, y = a.box.firstOut or math.huge, b.box.firstOut or math.huge
+    if x ~= y then
+      return x < y
+    end
+    return a.name < b.name
+  end)
+  local rows, total = {}, 0
+  for i, c in ipairs(found) do
+    local box = c.box
+    total = total + (box.money or 0)
+    if i <= Home.MAIL_ROWS then
+      local what = {}
+      if (box.sales or 0) > 0 then
+        what[#what + 1] = box.sales == 1 and L["1 sale"] or L["%d sales"]:format(box.sales)
+      end
+      if (box.items or 0) > 0 then
+        what[#what + 1] = box.items == 1 and L["1 item"] or L["%d items"]:format(box.items)
+      end
+      local row = { label = c.name .. (#what > 0 and (" · " .. table.concat(what, ", ")) or ""), copper = box.money or 0 }
+      if box.firstOut then
+        local left = (box.firstOut - now) / DAY
+        if left < 0 then
+          row.note = L["some may have run out"]
+        elseif left < 1 then
+          row.note = L["first runs out today"]
+        else
+          local d = math.floor(left)
+          row.note = d == 1 and L["first runs out in 1 day"] or L["first runs out in %d days"]:format(d)
+        end
+        row.noteTone = left < Home.MAIL_SOON and "bad" or nil
+      end
+      rows[#rows + 1] = row
+    end
+  end
+  return rows, total
 end
 
 -- ------------------------------------------------------------------------------------------------ first run
@@ -405,6 +515,9 @@ local function gatherMoney(f, holdings, keep)
   end
   f.gold = gold
   f.myGold = _G.GetMoney and _G.GetMoney() or nil
+  -- the strip: neither needs prices
+  f.goldLine = Home.GoldLine(holdings, keep, ns.Today(f.now))
+  f.mail, f.mailTotal = Home.Mail(holdings, keep, f.now)
 end
 
 local function gatherAlerts(f, now)
@@ -506,24 +619,50 @@ local function gatherWorth(f, holdings, index, q, keep)
   local __ = keep
 end
 
--- the stack you hold that gains most from refining: { item, qty, recipe = recipeID, product, gain } or nil.
+-- the stacks you hold that gain from refining, the most first: { { item, qty, recipe = recipeID, product, gain } }.
 -- m: CraftModel.Build's model (held, uses, craft). SellOrRefine's options carry the recipe itself, not its id.
-function Home.BestRefine(m)
-  local best
+function Home.Refines(m)
+  local out = {}
   for id, n in pairs(m.held or {}) do
     local recipes = m.uses and m.uses[id]
     if recipes and n > 0 then
       local r = m.craft:SellOrRefine(id, n, recipes)
       local o = r and r.best
-      if o and o.gain and o.gain > 0 and (not best or o.gain > best.gain) then
+      if o and o.gain and o.gain > 0 then
         local rec = type(o.recipe) == "table" and o.recipe or ns.Recipes.Get(o.recipe)
         if rec and rec.id then
-          best = { item = id, qty = n, recipe = rec.id, product = rec.product, gain = o.gain }
+          out[#out + 1] = { item = id, qty = n, recipe = rec.id, product = rec.product, gain = o.gain }
         end
       end
     end
   end
-  return best
+  table.sort(out, function(a, b)
+    if a.gain ~= b.gain then
+      return a.gain > b.gain
+    end
+    return tostring(a.item) < tostring(b.item)
+  end)
+  return out
+end
+
+-- the one that gains most, or nil
+function Home.BestRefine(m)
+  return Home.Refines(m)[1]
+end
+
+-- what this character's gold covers (a purchase is paid from the one you're on): Worth doing today only suggests a
+-- buy, a carry or a recipe you can pay for
+local function affordable(f, copper)
+  return copper == nil or f.myGold == nil or copper <= f.myGold
+end
+
+-- the first `n` of a list, keeping f.best<Kind> as its first for the rest of AME
+local function top(list, n)
+  local out = {}
+  for i = 1, math.min(n or Home.PER_KIND, #list) do
+    out[i] = list[i]
+  end
+  return out
 end
 
 local function gatherCrafting(f, index)
@@ -531,21 +670,25 @@ local function gatherCrafting(f, index)
   if not m then
     return nil
   end
-  local top = m.craft:TopEarners(m.entries, m.heldSet)
-  for _, e in ipairs(top) do
+  local crafts = {}
+  for _, e in ipairs(m.craft:TopEarners(m.entries, m.heldSet)) do
     if e.eval and (e.eval.profit or 0) > 0 then
       local char = e.crafters and e.crafters[1]
-      f.bestCraft = {
+      crafts[#crafts + 1] = {
         recipe = e.recipe.id,
         product = e.recipe.product,
         profit = e.eval.profit,
         sub = char and L["%s · sells about %s"]:format(tostring(char):match(":(.+)$") or char, ns.Widgets.Rate(e.eval.sellRate)) or nil,
       }
-      break
+      if #crafts >= Home.PER_KIND then
+        break
+      end
     end
   end
-  f.bestRefine = Home.BestRefine(m)
-  -- a recipe on the auction house one of your characters could learn
+  f.crafts, f.bestCraft = crafts, crafts[1]
+  f.refines = top(Home.Refines(m))
+  f.bestRefine = f.refines[1]
+  -- recipes on the auction house your characters could learn
   if ns.CraftingData and ns.CraftingData.Teaches then
     local listings = {}
     for id, s in pairs(index.items) do
@@ -556,25 +699,23 @@ local function gatherCrafting(f, index)
     local rows = m.craft:RecipesToBuy(listings, function(id)
       return ns.CraftingData:Teaches(id)
     end, ns.Recipes.Get, m.chars)
+    local learns = {}
     for _, r in ipairs(rows or {}) do
       if r.ready and r.payback and affordable(f, r.price) then
         local who = r.learners and r.learners[1]
-        f.bestLearn = {
+        learns[#learns + 1] = {
           item = r.item,
           payback = r.payback,
           sub = who and L["%s can learn it"]:format(tostring(who.char):match(":(.+)$") or who.char) or nil,
         }
-        break
+        if #learns >= Home.PER_KIND then
+          break
+        end
       end
     end
+    f.learns, f.bestLearn = learns, learns[1]
   end
   return m
-end
-
--- what this character's gold covers (a purchase is paid from the one you're on): Worth doing today only suggests a
--- buy, a carry or a recipe you can pay for
-local function affordable(f, copper)
-  return copper == nil or f.myGold == nil or copper <= f.myGold
 end
 
 local function gatherBuy(f, index)
@@ -582,26 +723,34 @@ local function gatherBuy(f, index)
   if not watch then
     return
   end
-  local best
+  local buys, seen = {}, {}
   for _, list in ipairs(watch:Lists() or {}) do
     for id in pairs(list.items or {}) do
       local s = index.items[id]
       local usual = s and (s.avg30 or s.avg7)
-      if s and s.market and usual and usual > 0 then
+      if not seen[id] and s and s.market and usual and usual > 0 then
+        seen[id] = true
         local under = 1 - s.market / usual
-        if under >= 0.1 and (not best or under > best.under) and affordable(f, s.market) then
-          best = { item = id, under = under, sub = L["On your watchlist · %s sell a day"]:format(ns.Widgets.Rate(s.soldPerDay or s.sellRate)) }
+        if under >= 0.1 and affordable(f, s.market) then
+          buys[#buys + 1] = { item = id, under = under, sub = L["On your watchlist · %s sell a day"]:format(ns.Widgets.Rate(s.soldPerDay or s.sellRate)) }
         end
       end
     end
   end
-  f.bestBuy = best
+  table.sort(buys, function(a, b)
+    if a.under ~= b.under then
+      return a.under > b.under
+    end
+    return tostring(a.item) < tostring(b.item)
+  end)
+  f.buys = top(buys)
+  f.bestBuy = f.buys[1]
 end
 
 local function gatherCarry(f, index, AME)
   local realm = AME:MarketRealmName()
   local here = AME:CurrentHouse()
-  local best
+  local routes = {}
   for _, house in ipairs({ "Horde", "Alliance", "Neutral" }) do
     if house ~= here then
       local other = AME:CachedIndex(ns.ShardKey(realm, house))
@@ -611,19 +760,25 @@ local function gatherCarry(f, index, AME)
           today = ns.Today(GetServerTime()),
           minProfit = 1,
         })
-        -- the best route whose first item your gold covers
+        -- the best routes whose first item your gold covers
+        local n = 0
         for _, r in ipairs(rows or {}) do
           if r.profit and affordable(f, r.buy) then
-            if not best or r.profit > best.profit then
-              best = { item = r.itemID, profit = r.profit, to = ns.ShardLabel and ns.ShardLabel(ns.ShardKey(realm, house)) or house }
+            routes[#routes + 1] = { item = r.itemID, profit = r.profit, to = ns.ShardLabel and ns.ShardLabel(ns.ShardKey(realm, house)) or house }
+            n = n + 1
+            if n >= Home.PER_KIND then
+              break
             end
-            break
           end
         end
       end
     end
   end
-  f.bestCarry = best
+  table.sort(routes, function(a, b)
+    return a.profit > b.profit
+  end)
+  f.carries = top(routes)
+  f.bestCarry = f.carries[1]
 end
 
 local cache

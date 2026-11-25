@@ -648,6 +648,7 @@ local BOX_PROPS = {
   rowH = "number?",
   align = "string?",
   note = "string?",
+  copper = "number?", -- a sum at the title row's right (Home's gold card)
 }
 
 local function box(kind)
@@ -660,6 +661,7 @@ local function box(kind)
       Kit.Box(f, "panel", "line")
       f.title = Kit.Text(f, { font = "display", size = kind == "panel" and 15 or 14, color = "heading" })
       f.note = Kit.Text(f, { size = 11, color = "dim" })
+      f.money = Kit.Text(f, { size = 13, justify = "RIGHT" })
       f.rule = Kit.Line(f, "TOP", "line")
       f.content = CreateFrame("Frame", nil, f)
       if kind == "card" then
@@ -676,6 +678,10 @@ local function box(kind)
       f.title:SetPoint("TOPLEFT", pad, kind == "panel" and -9 or -8)
       f.note:SetShown(hasTitle and p.note ~= nil)
       f.note:SetText(p.note or "")
+      f.money:SetShown(hasTitle and p.copper ~= nil)
+      f.money:SetText(p.copper and W.Money(p.copper, true) or "")
+      f.money:ClearAllPoints()
+      f.money:SetPoint("TOPRIGHT", -pad, kind == "panel" and -9 or -8)
       f.note:ClearAllPoints()
       f.note:SetPoint("LEFT", f.title, "RIGHT", 8, 0)
       f.rule:ClearAllPoints()

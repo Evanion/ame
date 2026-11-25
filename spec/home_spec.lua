@@ -187,6 +187,54 @@ describe("Home", function()
     assert.is_nil(log[10]) -- older than 40 days drops
   end)
 
+  describe("the strip", function()
+    local all = function()
+      return true
+    end
+
+    it("draws a point a day: each character's last figure, the first standing for the days before it", function()
+      local holdings = {
+        ["R:A"] = { goldDays = { [100] = 10, [102] = 30 }, money = 40 },
+        ["R:B"] = { goldDays = { [101] = 5 } },
+        ["S:C"] = { goldDays = { [100] = 999 } },
+      }
+      local line = Home.GoldLine(holdings, function(key)
+        return key:sub(1, 1) == "R"
+      end, 103, 30)
+      assert.are.same({ 100 * 86400, 101 * 86400, 102 * 86400, 103 * 86400 }, line.xs)
+      assert.are.same({ 15, 15, 35, 45 }, line.ys)
+      assert.is_nil(Home.GoldLine({ ["R:A"] = { money = 1 } }, all, 103)) -- one day is no line yet
+    end)
+
+    it("lists the mail by when it first runs out, marking under 3 days, and totals the gold", function()
+      local now = 1000000
+      local rows, total = Home.Mail({
+        ["R:Kke"] = { inbox = { money = 96000, sales = 1, items = 2, firstOut = now + 26 * 86400 + 5 } },
+        ["R:Tyken"] = { inbox = { money = 418000, sales = 3, items = 4, firstOut = now + 2 * 86400 + 5 } },
+        ["R:Empty"] = { inbox = { money = 0, items = 0 } },
+      }, all, now)
+      assert.equals(514000, total)
+      assert.equals(2, #rows)
+      assert.equals("Tyken · 3 sales, 4 items", rows[1].label)
+      assert.equals("first runs out in 2 days", rows[1].note)
+      assert.equals("bad", rows[1].noteTone)
+      assert.equals("Kke · 1 sale, 2 items", rows[2].label)
+      assert.equals("first runs out in 26 days", rows[2].note)
+      assert.is_nil(rows[2].noteTone)
+    end)
+
+    it("worth doing shows up to three of each kind", function()
+      local crafts = {}
+      for i = 1, 5 do
+        crafts[i] = { recipe = i, product = i, profit = 100 }
+      end
+      local rows = Home.Worth({ now = 1, hasPrices = true, crafts = crafts, learns = { { item = 9, payback = 4 } } }, false)
+      assert.equals(4, #rows)
+      assert.equals("craft:3", rows[3].key)
+      assert.equals("learn:9", rows[4].key)
+    end)
+  end)
+
   describe("the screen", function()
     local App
 
@@ -197,6 +245,7 @@ describe("Home", function()
         "Core/UI/Parts/Primitives.lua",
         "Core/UI/Parts/Chrome.lua",
         "Core/UI/Parts/Composites.lua",
+        "Core/UI/Parts/Chart.lua",
         "Core/UI/App.lua",
         "Core/UI/Screens/Home.lua",
       }, ns)

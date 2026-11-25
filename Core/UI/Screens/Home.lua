@@ -5,6 +5,75 @@ local _, ns = ...
 local L = ns.L
 
 local App, Home = ns.App, ns.Home
+local W = ns.Widgets
+
+-- the strip under the lists (board Home), lined up with them: your gold over 30 days, and what waits in your mail.
+-- Neither needs a fresh scan. -> { the strip's row }
+local function strip(app, f)
+  local line = f.goldLine
+  local now = f.gold or 0
+  local foot
+  if line then
+    local first = line.ys[1]
+    app:Source("home.gold", { xs = line.xs, ys = line.ys, color = "gold", label = L["Your gold"], format = "money", id = "home.gold" })
+    foot = {
+      id = "home.gold.foot",
+      type = "row",
+      props = { gap = 8 },
+      meta = { h = 16 },
+      children = {
+        { id = "home.gold.from", type = "text", props = { text = date("%b %d", line.xs[1]) .. " · " .. W.Money(first, true), size = 11, color = "dim" }, meta = { grow = 1 } },
+        { id = "home.gold.to", type = "text", props = { text = L["today · %s"]:format(W.Money(now, true)), size = 11, color = "dim", justify = "RIGHT" }, meta = { grow = 1 } },
+      },
+    }
+  else
+    app:Source("home.gold", { xs = {}, ys = {}, id = "home.gold", message = L["Your gold line fills in a point a day."] })
+  end
+  local goldKids = {
+    { id = "home.gold.chart", type = "chart", props = { source = "home.gold", kind = "spark", bare = true }, meta = { grow = 1 } },
+  }
+  goldKids[#goldKids + 1] = foot
+  local mailKids = {}
+  for i, r in ipairs(f.mail or {}) do
+    mailKids[i] = { id = "home.mail." .. i, type = "keyvalue", props = r, meta = { h = 18 } }
+  end
+  if #mailKids == 0 then
+    mailKids[1] = { id = "home.mail.none", type = "text", props = { text = L["Nothing waiting, as each mailbox was last opened"], size = 12, color = "dim" }, meta = { h = 18 } }
+  else
+    mailKids[#mailKids + 1] = { id = "home.mail.all", type = "keyvalue", props = { label = L["In all"], copper = f.mailTotal or 0, total = true }, meta = { h = 18 } }
+  end
+  mailKids[#mailKids + 1] = { id = "home.mail.gap", type = "spacer", meta = { grow = 1 } }
+  mailKids[#mailKids + 1] = {
+    id = "home.mail.foot",
+    type = "text",
+    props = { text = L["As each character's mailbox was last opened. Mail runs out after 30 days."], size = 11, color = "dim" },
+    meta = { h = 16 },
+  }
+  return {
+    {
+      id = "home.strip",
+      type = "row",
+      props = { gap = 10 },
+      meta = { h = 150 },
+      children = {
+        {
+          id = "home.goldcard",
+          type = "card",
+          props = { title = L["Your gold"], note = L["· 30 days, all your characters"], copper = now, gap = 4 },
+          meta = { grow = 1 },
+          children = goldKids,
+        },
+        {
+          id = "home.mailcard",
+          type = "card",
+          props = { title = L["Waiting in your mail"], note = L["· gold and items, by when the first runs out"], gap = 4 },
+          meta = { grow = 1 },
+          children = mailKids,
+        },
+      },
+    },
+  }
+end
 
 local function body(app)
   local f = Home.Gather()
@@ -60,6 +129,10 @@ local function body(app)
       rightTitle = L["Worth doing today, after a fresh scan"]
     end
   end
+  local children = {}
+  if state ~= "first" then
+    children = strip(app, f)
+  end
   return {
     id = "home",
     type = "column",
@@ -77,6 +150,7 @@ local function body(app)
           { id = "home.right", type = "actionlist", props = { title = rightTitle, rows = right }, meta = { grow = 1 } },
         },
       },
+      children[1],
     },
   }
 end
