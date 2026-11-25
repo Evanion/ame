@@ -71,7 +71,8 @@ local function body(app)
         props = { gap = 10 },
         meta = { grow = 1 },
         children = {
-          { id = "home.left", type = "actionlist", props = { title = leftTitle, rows = left }, meta = { grow = 1.08 } },
+          -- halves: the gutter lines up with the KPI row's middle one
+          { id = "home.left", type = "actionlist", props = { title = leftTitle, rows = left }, meta = { grow = 1 } },
           { id = "home.right", type = "actionlist", props = { title = rightTitle, rows = right }, meta = { grow = 1 } },
         },
       },
