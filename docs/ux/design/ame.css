@@ -21,7 +21,7 @@
 
 /* controls */
 .btn{padding:4px 10px;white-space:nowrap;font-family:var(--font-ui);font-size:11px;line-height:14px;flex:none;cursor:pointer;background:var(--control);border:1px solid var(--control-line);color:var(--soft)}
-.btn.pri{background:linear-gradient(var(--acc-pri),var(--acc-sel));border-color:var(--primary-line);color:var(--white)}
+.btn.pri{background:var(--acc-pri);border-color:var(--acc);color:var(--white)}.btn.pri:hover{background:var(--acc-pri-hover)}
 .btn.sel{background:var(--acc-sel);border-color:var(--acc);color:var(--white)}
 .btn.off{opacity:.45}
 .input{padding:4px 8px;font-size:11px;background:var(--bg);border:1px solid var(--control-line);color:var(--dim)}
@@ -43,6 +43,31 @@
 .row .t>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .s{font-size:11px;color:var(--dim)}
 
+/* layout: a column whose children share its height (the "fill" layout widget) */
+.fill{display:flex;flex-direction:column}
+.fill>*{flex:1;min-height:0}
+.f{display:flex;flex-direction:column;gap:3px}
+.row1{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.acts{margin-top:auto;display:flex;flex-direction:column;gap:6px}
+.bts{display:flex;gap:6px;align-items:center}
+
+/* region chrome: a card (a framed block inside a page) and its title; .panel above is the larger, titled region */
+.card{background:var(--panel);border:1px solid var(--line);padding:8px 10px}
+.ct{font-family:var(--font-display);font-size:14px;color:var(--heading)}
+
+/* text roles */
+.lbl{color:var(--dim);font-size:11px}
+.cap{color:var(--dim);font-size:11px;margin-bottom:6px}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* a label and its value on one line */
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;white-space:nowrap;line-height:18px}
+.kv>span:first-child{color:var(--dim)}
+
+/* a text box drawn in markup (the Input widget draws the same) and a filter chip */
+.in{background:var(--bg);border:1px solid var(--control-line);padding:4px 8px;color:var(--soft);font-size:11px;font-family:var(--font-ui);box-sizing:border-box}
+.chip{background:var(--control);border:1px solid var(--control-line);padding:1px 8px;color:var(--soft);font-size:11px;white-space:nowrap}
+
 /* an item name is always a link: its icon, its quality colour */
 .il{white-space:nowrap}
 .il i{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin-right:4px;border:1px solid currentColor;background:linear-gradient(135deg,#3a3f4a,#15171c)}
@@ -58,3 +83,6 @@
 .ahtabs{display:flex;gap:2px;padding-left:16px;font-family:var(--font-display)}
 .ahtab{font-size:13px;color:var(--tab);background:linear-gradient(180deg,var(--chrome-bottom),var(--chrome-top));border:1px solid var(--frame);border-top:0;padding:5px 18px 6px;text-decoration:none}
 .ahtab.on{color:var(--white);background:linear-gradient(180deg,var(--acc-sel),var(--chrome-top));border-color:var(--frame-lit);box-shadow:inset 0 -2px 0 var(--acc)}
+
+/* at the auction house: the window with the AH's own tabs hanging under it, on a dark backdrop */
+.ahwrap{height:100vh;overflow:hidden;display:grid;align-content:start;background:var(--backdrop,#0b0c0f)}

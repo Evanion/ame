@@ -72,7 +72,7 @@ local function primaryShade(c, ratio)
 end
 
 Kit.theme, Kit.faction = "horde", "horde"
-local accent, selected, primary, row, factionColor
+local accent, selected, primary, primaryHover, row, factionColor
 
 local function rebuild()
   local a = byKey(T.themes, Kit.theme).accent
@@ -80,6 +80,7 @@ local function rebuild()
   local s = T.selectedShade
   selected = { accent[1] * s, accent[2] * s, accent[3] * s, 1 }
   primary = primaryShade(accent, T.primaryContrast)
+  primaryHover = primaryShade(accent, T.primaryHoverContrast or T.primaryContrast)
   row = { accent[1], accent[2], accent[3], T.rowAlpha }
   local f = byKey(T.factions, Kit.faction).color
   factionColor = { f[1] / 255, f[2] / 255, f[3] / 255, 1 }
@@ -94,6 +95,9 @@ function Kit.Selected()
 end
 function Kit.Primary()
   return primary
+end
+function Kit.PrimaryHover()
+  return primaryHover
 end
 function Kit.Row()
   return row

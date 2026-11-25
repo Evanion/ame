@@ -81,7 +81,7 @@ local function look(b)
   local v, hot = b.variant or "normal", b.hot
   if v == "primary" then
     local p = Kit.Primary()
-    Kit.Box(b, hot and { p[1] * 1.15, p[2] * 1.15, p[3] * 1.15, 1 } or p, "primaryLine")
+    Kit.Box(b, hot and Kit.PrimaryHover() or p, Kit.Accent()) -- muted fill, the accent as its border
     Kit.SetColor(b.label, b.color or "white")
   elseif v == "selected" then
     Kit.Box(b, Kit.Selected(), Kit.Accent())

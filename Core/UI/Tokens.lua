@@ -17,7 +17,11 @@ local T = {
   },
   -- shades derived from the accent, as the addon derives them
   selectedShade = 0.35, -- a selected control: the accent this dark
-  primaryContrast = 5, -- a primary button: the accent darkened until white text on it reaches this (WCAG)
+  -- a primary button: a muted fill, the accent darkened until white text on it reaches primaryContrast, with the
+  -- accent itself as its border; under the mouse a little lighter (primaryHoverContrast). Muted, so it reads as the
+  -- panel's main action rather than as something switched on (the selected look is the accent's own border too).
+  primaryContrast = 7,
+  primaryHoverContrast = 5,
   rowAlpha = 0.2, -- the picked row: the accent this strong over the panel
 
   color = {
@@ -33,7 +37,6 @@ local T = {
     controlLine = "#3a3d44",
     frame = "#5a4a2e", -- the window's own frame: bronze
     frameLit = "#6b5a3a", -- the title bar's edge, a card's top edge
-    primaryLine = "#b89a5a", -- the gilt edge of a primary button
     -- text
     text = "#e6e4df",
     soft = "#cfcdc7", -- button labels, quieter lines

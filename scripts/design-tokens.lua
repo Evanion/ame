@@ -37,6 +37,7 @@ local function accentVars(theme)
     "--acc:" .. rgb(a),
     "--acc-sel:" .. rgb(sel),
     "--acc-pri:" .. rgb(primary(a, T.primaryContrast)),
+    "--acc-pri-hover:" .. rgb(primary(a, T.primaryHoverContrast)),
     ("--acc-row:rgba(%d,%d,%d,%s)"):format(a[1], a[2], a[3], T.rowAlpha),
   }
 end
