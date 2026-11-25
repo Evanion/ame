@@ -339,15 +339,14 @@ function Side.Tree()
       },
       meta = { h = 18 },
     }
-    local buttons = {
-      { key = "sideQueue", label = L["Queue %d"]:format(count), variant = "primary" },
-      { key = "sideList", label = L["Reagents to a list"] .. (W.ARROW_DOWN or "") },
-    }
+    -- the primary action on a row of its own with its count, the rest on the row under it (board CraftQueue)
+    local primary = { { key = "sideQueue", label = L["Queue %d"]:format(count), variant = "primary" } }
+    local more = { { key = "sideList", label = L["Reagents to a list"] .. (W.ARROW_DOWN or "") } }
     if Side:AtAH() then
-      buttons[#buttons + 1] = { key = "sideSearch", label = L["Search the AH"] }
+      more[#more + 1] = { key = "sideSearch", label = L["Search the AH"] }
     end
-    buttons[#buttons + 1] = { key = "sideItem", label = L["Open item"] }
-    kids[#kids + 1] = { id = "side.make", type = "makebar", props = { count = count, recipe = recipe.id, buttons = buttons, action = "sideMake" }, meta = { h = 24 } }
+    more[#more + 1] = { key = "sideItem", label = L["Open item"] }
+    kids[#kids + 1] = { id = "side.make", type = "makebar", props = { count = count, recipe = recipe.id, buttons = primary, action = "sideMake" }, meta = { h = 24 } }
     kids[#kids + 1] = {
       id = "side.batch",
       type = "text",
@@ -355,6 +354,12 @@ function Side.Tree()
         text = Kit.Color("dim", ("×%d: "):format(count)) .. moneyText(L["profit"], s.profit and s.profit * count, true) .. Kit.Color("dim", " · ") .. moneyText(L["to buy"], s.toBuy),
       },
       meta = { h = 18 },
+    }
+    kids[#kids + 1] = {
+      id = "side.more",
+      type = "makebar",
+      props = { count = count, noCount = true, recipe = recipe.id, buttons = more, action = "sideMake" },
+      meta = { h = 24 },
     }
     kids[#kids + 1] = {
       id = "side.note",
@@ -405,10 +410,10 @@ function Side.Tree()
       meta = { h = math.min(200, 26 + 20 * #q.mats) },
     }
     kids[#kids + 1] = { id = "side.todo", type = "partslines", props = { title = L["To do"], lines = q.todo } }
+    -- Craft next on its own row (its label names the step), the rest under it
     kids[#kids + 1] = {
-      id = "side.buttons",
+      id = "side.nextRow",
       type = "row",
-      props = { gap = 6 },
       meta = { h = 24 },
       children = {
         {
@@ -421,6 +426,15 @@ function Side.Tree()
             action = "craftedNext",
           },
         },
+        { id = "side.nextGap", type = "spacer", meta = { grow = 1 } },
+      },
+    }
+    kids[#kids + 1] = {
+      id = "side.buttons",
+      type = "row",
+      props = { gap = 6 },
+      meta = { h = 24 },
+      children = {
         { id = "side.missing", type = "button", props = { label = L["Missing to a list"], action = "buyMissing" } },
         { id = "side.clear", type = "button", props = { label = L["Clear"], action = "clear" } },
       },
@@ -460,7 +474,7 @@ Side.actions = {
       ns.CraftQueue.New(AME_DB.craftQueue):Add(recipe.id, p.count)
       Screen.Dirty()
     elseif p.key == "sideList" and recipe and PB and PB.RecipeToShopping then
-      PB:RecipeToShopping(recipe, p.count, Side.renderer:Frame("side.make") or Side.frame)
+      PB:RecipeToShopping(recipe, p.count, Side.renderer:Frame("side.more") or Side.frame)
     elseif p.key == "sideSearch" and recipe and PB and PB.Search then
       PB:Search(recipe)
     elseif p.key == "sideItem" and recipe and recipe.product then
