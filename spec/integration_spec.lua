@@ -4708,6 +4708,8 @@ describe("addon in a stubbed client", function()
         local r = rows[1]
         assert.are.equal("Guild Mate", r.from)
         assert.are.equal(newer, r.scan)
+        -- Their scan says when it was taken, not how much newer: a duration there read as a wait
+        assert.are.equal("20 min ago", ns.UI.SyncMissingCells(r, newer + 1200)[3])
         assert.are.equal(2, r.hours)
         assert.are.equal(0, r.bytes) -- no sizes learned yet
         assert.are.equal(3, r.unknown)
