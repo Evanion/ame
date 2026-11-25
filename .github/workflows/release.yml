@@ -11,7 +11,7 @@ name: Release
 #
 # Secrets: RELEASE_PLEASE_TOKEN (fine-grained, this repository: contents, pull requests, workflows read/write - so
 # the release pull request runs CI, which the default token's pull requests don't), CURSEFORGE_CI_API_TOKEN.
-# Variable: CURSEFORGE_PROJECT_ID (AME's CurseForge project ID; public).
+# The CurseForge project is AzerothMercantileExchange.toc's X-Curse-Project-ID.
 
 on:
   push:
@@ -89,7 +89,6 @@ jobs:
         id: upload
         env:
           CURSEFORGE_CI_API_TOKEN: ${{ secrets.CURSEFORGE_CI_API_TOKEN }}
-          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
         run: |
           bash scripts/release.sh "${{ steps.notes.outputs.version }}" "${{ steps.notes.outputs.type }}" "$RUNNER_TEMP/notes.md" | tee "$RUNNER_TEMP/upload.log"
           echo "file=$(sed -n 's/.*CurseForge file id \([0-9]*\).*/\1/p' "$RUNNER_TEMP/upload.log")" >> "$GITHUB_OUTPUT"

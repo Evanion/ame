@@ -3,13 +3,12 @@ name: Crafting data
 # Keeps the crafting data library (AzerothMercantileExchange_Crafting) in step with the game, hands-off:
 #   1. once a day, ask wago.tools for the latest WoW Forever build (one small request)
 #   2. a build already handled (remembered in the Actions cache, with the generator's version) ends the run
-#   3. otherwise regenerate the data; unchanged data (the same as the latest data-v* tag) ends the run
-#   4. changed data is checked (the shrink guard in the generator, the crafting data specs), then released as the
-#      next patch version on its own CurseForge project (scripts/release-data.sh) - never AME itself. The data
-#      commit is pushed as its tag only: main is protected (reviewed pull requests), so merge a data tag into main by
-#      hand when you want main's copy current.
-#   5. any failure opens an issue instead of releasing
-# Secret: CURSEFORGE_CI_API_TOKEN (the same CurseForge token AME's releases use). The data project's ID is public.
+#   3. otherwise regenerate the data; data the same as main's ends the run
+#   4. changed data is checked (the shrink guard in the generator, the crafting data specs) and goes to main as a
+#      pull request ("fix(data): ..."), opened with RELEASE_PLEASE_TOKEN so CI runs on it and it counts as the
+#      owner's. Once its checks pass, this job merges it; the merge releases the data (crafting-data-release.yml).
+#   5. any failure opens an issue instead
+# Secret: RELEASE_PLEASE_TOKEN (the owner's fine-grained token, as for AME's releases).
 
 on:
   schedule:
@@ -17,12 +16,12 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: "Release even if the data didn't change (packaging fixes)"
+        description: "Open the pull request even if this build was handled already"
         type: boolean
         default: false
 
 permissions:
-  contents: write
+  contents: read
   issues: write
 
 concurrency: crafting-data
@@ -31,9 +30,10 @@ jobs:
   update:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # the data tags, for the next version number
+          ref: main
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - name: Latest WoW Forever build
         id: build
@@ -52,38 +52,46 @@ jobs:
         if: steps.seen.outputs.cache-hit != 'true' || inputs.force
         run: |
           python3 scripts/gen-recipes.py --build "${{ steps.build.outputs.build }}" --summary "$RUNNER_TEMP/summary.md"
-          if [ "${{ inputs.force }}" = "true" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Build ${{ steps.build.outputs.build }}: release forced by hand." >> "$GITHUB_STEP_SUMMARY"
-          elif [ -z "$(git tag --list 'data-v*')" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT" # nothing released yet: the first release
-            echo "Build ${{ steps.build.outputs.build }}: first crafting data release." >> "$GITHUB_STEP_SUMMARY"
-          elif git diff --quiet "$(git tag --list 'data-v*' --sort=-v:refname | head -n 1)" -- AzerothMercantileExchange_Crafting; then
+          if git diff --quiet -- AzerothMercantileExchange_Crafting; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Build ${{ steps.build.outputs.build }}: crafting data unchanged." >> "$GITHUB_STEP_SUMMARY"
+            echo "Build ${{ steps.build.outputs.build }}: main's crafting data is current." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             cat "$RUNNER_TEMP/summary.md" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Install Lua 5.1, busted and zip
+      - name: Install Lua 5.1 and busted
         if: steps.gen.outputs.changed == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y lua5.1 liblua5.1-0-dev luarocks zip
+          sudo apt-get install -y lua5.1 liblua5.1-0-dev luarocks
           sudo luarocks --lua-version=5.1 install busted
 
       - name: Check the data
         if: steps.gen.outputs.changed == 'true'
         run: busted spec/crafting_data_spec.lua
 
-      - name: Release the next patch version
+      - name: Open the pull request and merge it once its checks pass
         if: steps.gen.outputs.changed == 'true'
         env:
-          CURSEFORGE_CI_API_TOKEN: ${{ secrets.CURSEFORGE_CI_API_TOKEN }}
-          CURSEFORGE_DATA_PROJECT_ID: "1816764" # curseforge.com/wow/addons/ame-crafting-data
-          SUMMARY: ${{ runner.temp }}/summary.md
-        run: bash scripts/release-data.sh
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          BUILD: ${{ steps.build.outputs.build }}
+        run: |
+          BRANCH="data/build-$BUILD-$GITHUB_RUN_ID"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add AzerothMercantileExchange_Crafting
+          git commit -q -m "fix(data): crafting data for WoW Forever build $BUILD"
+          git push -q origin "$BRANCH"
+          URL=$(gh pr create --base main --head "$BRANCH" \
+            --title "fix(data): crafting data for WoW Forever build $BUILD" \
+            --body-file "$RUNNER_TEMP/summary.md")
+          echo "Opened $URL" >> "$GITHUB_STEP_SUMMARY"
+          sleep 30 # let the checks start
+          gh pr checks "$URL" --watch --required --interval 30
+          gh pr merge "$URL" --squash --admin --delete-branch
+          echo "Merged: the release follows (Crafting data release)." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remember the build
         if: steps.seen.outputs.cache-hit != 'true'
@@ -102,4 +110,4 @@ jobs:
         run: |
           gh issue create \
             --title "Crafting data update failed (WoW Forever build ${{ steps.build.outputs.build }})" \
-            --body "The scheduled crafting data update failed and released nothing. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            --body "The scheduled crafting data update failed; nothing was merged or released. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

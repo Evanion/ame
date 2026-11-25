@@ -1,0 +1,78 @@
+name: Crafting data release
+
+# Releases the crafting data library (AzerothMercantileExchange_Crafting) on its own CurseForge project when changed
+# data lands on main (a merged pull request: crafting-data.yml opens and merges them). Data the same as the latest
+# data-v* tag releases nothing. The next patch version is tagged on main's commit (scripts/release-data.sh), uploaded,
+# and an issue asks for the older files to be archived. Never releases AME itself.
+# Secret: CURSEFORGE_CI_API_TOKEN. The CurseForge project is the data TOC's X-Curse-Project-ID.
+
+on:
+  push:
+    branches: [main]
+    paths: ["AzerothMercantileExchange_Crafting/**"]
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Release main's data even if it's the same as the latest release (packaging fixes)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency: crafting-data-release
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the data tags, for the next version number
+
+      - name: Changed since the last release?
+        id: diff
+        run: |
+          LAST=$(git tag --list 'data-v*' --sort=-v:refname | head -n 1)
+          if [ "${{ inputs.force }}" = "true" ] || [ -z "$LAST" ] || ! git diff --quiet "$LAST" -- AzerothMercantileExchange_Crafting; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Main's crafting data is $LAST's: nothing to release." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Install Lua 5.1 and zip
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 zip
+
+      - name: Release the next patch version
+        id: release
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURSEFORGE_CI_API_TOKEN: ${{ secrets.CURSEFORGE_CI_API_TOKEN }}
+        run: |
+          # the merged pull request's description is the generator's summary of what changed
+          gh pr list --state merged --search "$GITHUB_SHA" --json body -q '.[0].body // ""' > "$RUNNER_TEMP/summary.md" || true
+          SUMMARY="$RUNNER_TEMP/summary.md" bash scripts/release-data.sh
+          echo "tag=$(git tag --points-at HEAD --list 'data-v*' | head -n 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Ask for the older files to be archived
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          gh issue create --title "Archive the crafting data files $TAG replaces on CurseForge" --body "$(cat <<BODY
+          $TAG is on CurseForge. CurseForge has no API for archiving, so archive the files it replaces by hand:
+
+          1. Open the project's files in the CurseForge authors dashboard (Projects > AME Crafting Data > Files).
+          2. Archive the earlier data files: only the newest is needed.
+          3. Close this issue.
+
+          Public file list: https://www.curseforge.com/wow/addons/ame-crafting-data/files
+          BODY
+          )"

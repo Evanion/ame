@@ -28,7 +28,10 @@ cd "$(dirname "$0")/.."
   esac
 done < .env
 : "${CURSEFORGE_CI_API_TOKEN:?missing (CI secret, or .env locally)}"
-: "${CURSEFORGE_PROJECT_ID:?missing (CI variable, or .env locally)}"
+# the CurseForge project: the TOC's X-Curse-Project-ID (each addon names its own), else CURSEFORGE_PROJECT_ID
+TOC_PROJECT=$(sed -n 's/^## X-Curse-Project-ID: *\([0-9]*\).*/\1/p' AzerothMercantileExchange.toc | tr -d '\r')
+CURSEFORGE_PROJECT_ID="${TOC_PROJECT:-${CURSEFORGE_PROJECT_ID:-}}"
+: "${CURSEFORGE_PROJECT_ID:?missing (X-Curse-Project-ID in AzerothMercantileExchange.toc, or .env locally)}"
 
 API=https://wow.curseforge.com/api
 auth=(-H "X-Api-Token: $CURSEFORGE_CI_API_TOKEN")

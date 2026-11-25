@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Release the crafting data library (AzerothMercantileExchange_Crafting) on its own CurseForge project: the next
-# patch version (data-v1.0.N -> 1.0.N+1), committed, tagged and uploaded. Run by .github/workflows/crafting-data.yml
-# after scripts/gen-recipes.py changed AzerothMercantileExchange_Crafting/Recipes.lua; never releases AME itself.
+# Release the crafting data library (AzerothMercantileExchange_Crafting) on its own CurseForge project (its TOC's
+# X-Curse-Project-ID): the next patch version (data-v1.0.N -> 1.0.N+1), tagged on the checked-out commit (main, where
+# the data arrived by pull request) and uploaded. Run by .github/workflows/crafting-data-release.yml; never releases
+# AME itself.
 #
-#   CURSEFORGE_CI_API_TOKEN, CURSEFORGE_DATA_PROJECT_ID   from the environment (GitHub secrets)
+#   CURSEFORGE_CI_API_TOKEN   from the environment (a GitHub secret)
 #   SUMMARY=path   Markdown appended to the changelog (gen-recipes.py --summary)
 #   DRY_RUN=1      package only: no commit, tag, push or upload
 # Needs: git, zip, luac5.1, curl, python3.
@@ -48,26 +49,20 @@ trap 'rm -f "$CHANGELOG"' EXIT
 } >"$CHANGELOG"
 
 if [ "${DRY_RUN:-}" = 1 ]; then
-  echo "dry run: not committing, tagging or uploading"
+  echo "dry run: not tagging or uploading"
   cat "$CHANGELOG"
   exit 0
 fi
 
-# commit the data (when it changed) and tag the release
-git config user.name "${GIT_AUTHOR_NAME:-github-actions[bot]}"
-git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
-if ! git diff --quiet -- "$DIR"; then
-  git add "$DIR"
-  git commit -q -m "Crafting data $VERSION: WoW Forever build $BUILD"
-fi
+# tag the release on the commit the data is on (main's: it arrives by pull request)
+git diff --quiet -- "$DIR" || { echo "uncommitted changes in $DIR: data reaches main by pull request" >&2; exit 1; }
 git tag "data-v$VERSION"
-# the tag only: main takes changes through reviewed pull requests (its ruleset), and the bot can't be exempted on a
-# personal repository. The data commit lives on the tag; the next run compares against the latest tag.
 git push -q origin "data-v$VERSION"
 
 # upload
 : "${CURSEFORGE_CI_API_TOKEN:?missing}"
-: "${CURSEFORGE_DATA_PROJECT_ID:?missing}"
+CURSEFORGE_DATA_PROJECT_ID=$(sed -n 's/^## X-Curse-Project-ID: *\([0-9]*\).*/\1/p' "$TOC" | tr -d '\r')
+: "${CURSEFORGE_DATA_PROJECT_ID:?missing: X-Curse-Project-ID in $TOC}"
 API=https://wow.curseforge.com/api
 auth=(-H "X-Api-Token: $CURSEFORGE_CI_API_TOKEN")
 TMP=$(mktemp -d)
