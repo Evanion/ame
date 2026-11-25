@@ -272,7 +272,7 @@ function App:Tree()
         meta = { h = 40 },
       },
       { id = "app.body", type = "fill", props = { pad = 12 }, meta = { grow = 1 }, children = { body } },
-      { id = "app.status", type = "statusbar", props = { text = status, right = "v" .. tostring(ns.VERSION) }, meta = { h = 26 } },
+      { id = "app.status", type = "statusbar", props = { text = status, right = App.StatusRight() }, meta = { h = 26 } },
     },
   }
 end
@@ -282,6 +282,19 @@ end
 local function saved()
   AME_DB.app = AME_DB.app or {}
   return AME_DB.app
+end
+
+-- the status row's right side: what AME is busy with ("Storing scan…", "Reading scan 1,200 / 30,000", "Updating
+-- market data…"), a newer version a guild member runs, then the version (the old window's own words, UI:FooterRight)
+function App.StatusRight()
+  local UI = ns.UI
+  if UI and UI.FooterRight then
+    local ok, text = pcall(UI.FooterRight, UI)
+    if ok and text then
+      return text
+    end
+  end
+  return "v" .. tostring(ns.VERSION)
 end
 
 function App:Create()
@@ -345,6 +358,19 @@ function App:Create()
   inner:SetPoint("BOTTOMRIGHT", -1, 1)
   self.inner = inner
   self.renderer = Layout.Renderer(inner, self.ctx)
+  -- the busy status follows the background work every half second, without drawing the screen again
+  local elapsed = 0
+  f:HookScript("OnUpdate", function(_, dt)
+    elapsed = elapsed + dt
+    if elapsed < 0.5 then
+      return
+    end
+    elapsed = 0
+    local bar = App.renderer and App.renderer:Frame("app.status")
+    if bar and bar.right then
+      bar.right:SetText(App.StatusRight())
+    end
+  end)
   -- the resize grip stays above the screen (it was made first, so the screen would cover it)
   grip:SetFrameLevel(inner:GetFrameLevel() + 50)
   f:SetScale(ns.Settings and ns.Settings:Get("windowScale") or 1)

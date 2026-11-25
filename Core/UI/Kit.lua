@@ -132,7 +132,8 @@ end
 -- and Marcellus lack the glyphs). Settings (Fonts and bars) can pick any LibSharedMedia font instead.
 local FONT_DIR = "Interface\\AddOns\\AzerothMercantileExchange\\media\\Fonts\\"
 Kit.FONTS = {
-  ui = FONT_DIR .. "Inter-Regular.ttf",
+  ui = FONT_DIR .. "Inter-Medium.ttf", -- Medium: the game draws fonts thinner than a browser, and Regular's thin
+  -- strokes fringe in colour there; Medium in game looks as the boards' Inter does
   uiBold = FONT_DIR .. "Inter-SemiBold.ttf",
   display = FONT_DIR .. "Marcellus-Regular.ttf",
 }
