@@ -296,7 +296,7 @@ Layout.Register("sidebar", {
       local total = (self.natural or 0) - 12
       local most = math.max(0, total - visible)
       self.offset = math.max(0, math.min(most, self.offset or 0))
-      for i, b in ipairs(self.rows) do
+      for _, b in ipairs(self.rows) do
         if b:IsShown() and b.y then
           b:ClearAllPoints()
           b:SetPoint("TOPLEFT", 4, -(b.y - self.offset))

@@ -21,10 +21,6 @@ ns.PortfolioPage = P
 
 local DAY = 86400
 
-local function W()
-  return ns.Widgets
-end
-
 local function money(copper)
   return ns.Widgets and ns.Widgets.Money(copper, true) or tostring(copper)
 end
@@ -914,7 +910,7 @@ function P.Post(payload)
   if not (e and a and price and price > 0 and qty > 0 and e.locs and e.locs[1]) then
     return false, L["Nothing to post"]
   end
-  local loc, ok, err = e.locs[1], nil, nil
+  local loc, ok, err = e.locs[1]
   local n = e.commodity and math.min(qty, e.qty) or 1
   if e.commodity then
     ok, err = pcall(a.PostCommodity, loc, payload.duration or 2, n, price)

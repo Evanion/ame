@@ -171,7 +171,7 @@ function Lv.Build(app, params)
     },
   }
 
-  local right = {}
+  local right
   local d = picked and CP.LevelingDetail(picked.st)
   if d then
     local mats = {}

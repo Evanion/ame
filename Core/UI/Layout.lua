@@ -248,7 +248,7 @@ end
 
 -- grid: props.cols equal columns (or props.widths), children flow row by row; meta.span takes several columns,
 -- props.rowH (or the child's meta.h) is a row's height
-local function grid(frame, kids, w, h, props)
+local function grid(frame, kids, w, _h, props)
   local px, py = pad(props)
   local gap = props.gap or 0
   local widths = {}

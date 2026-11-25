@@ -30,7 +30,7 @@ describe("Crafting", function()
       SalesPerDay = function()
         return 2
       end,
-      SellOrRefine = function(_, item, qty)
+      SellOrRefine = function(_, _item, qty)
         return {
           raw = qty * 50,
           options = {

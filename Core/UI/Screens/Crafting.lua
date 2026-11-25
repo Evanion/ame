@@ -944,7 +944,7 @@ Screen.actions = {
 App.Screen("crafting", {
   tab = "crafting",
   Build = Screen.Build,
-  Status = function(app, params)
+  Status = function(_app, params)
     local f = Screen.Facts()
     if f.loading then
       return L["No prices yet"]

@@ -425,7 +425,7 @@ describe("Portfolio page", function()
     it("Post runs the game's posting from the button's click", function()
       ns.AME.ahOpen = true
       local posted
-      _G.C_AuctionHouse.PostCommodity = function(loc, duration, qty, price)
+      _G.C_AuctionHouse.PostCommodity = function(_loc, _duration, qty, price)
         posted = { qty = qty, price = price }
       end
       App:Show()

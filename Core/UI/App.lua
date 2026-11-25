@@ -54,7 +54,7 @@ function App:TabScreen(tab)
 end
 
 App.Screen("soon", {
-  Build = function(app, params)
+  Build = function(_app, _params)
     return {
       id = "soon",
       type = "panel",

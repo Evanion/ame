@@ -56,7 +56,7 @@ local function search(app, key)
 end
 
 -- the state of the card: the picked entry, quantity, duration, advice, price
-function P.SellState(app, p)
+function P.SellState(_app, p)
   local entries = P.Bags()
   p.skipped, p.asis = p.skipped or {}, p.asis or {}
   local e = p.item and P.Find(entries, p.item) or P.FirstPick(entries, p.skipped)
@@ -317,7 +317,7 @@ local function note(text, h)
   }
 end
 
-local function tipCard(app, s)
+local function tipCard(_app, s)
   local e = s.e
   local kids = {
     {
@@ -466,12 +466,13 @@ local function tipWide(app, s)
   local kids = tipCard(app, s)
   local left, right = {}, {}
   for i, kid in ipairs(kids) do
-    if i == 1 or kid.id == "sell.tipSub" then
-      -- the item and its line go on top
-    elseif kid.id == "sell.buttons" or kid.id == "sell.note" or kid.id == "sell.findDE" or kid.id == "sell.push" then
-      right[#right + 1] = kid
-    else
-      left[#left + 1] = kid
+    local top = i == 1 or kid.id == "sell.tipSub" -- the item and its line go on top
+    if not top then
+      if kid.id == "sell.buttons" or kid.id == "sell.note" or kid.id == "sell.findDE" or kid.id == "sell.push" then
+        right[#right + 1] = kid
+      else
+        left[#left + 1] = kid
+      end
     end
   end
   local top = { kids[1] }

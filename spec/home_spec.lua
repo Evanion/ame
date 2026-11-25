@@ -130,6 +130,7 @@ describe("Home", function()
     fs:SetTextColor(0.5, 0.5, 0.5, 1)
     Kit.SetFont(fs, "ui", 12, true)
     assert.truthy(fs.obj.path:find("Inter%-SemiBold"), fs.obj.path)
+    assert.equals(fs.obj, made[fs.obj.name]) -- one of the font objects made for it
     assert.are.same({ 0.5, 0.5, 0.5, 1 }, fs.color) -- its colour kept
     ns.SettingsScreen = {
       FontPath = function()

@@ -51,7 +51,8 @@ Settings.DEFAULTS = {
   cooldownAlerts = true, -- tell me when a profession cooldown is ready
   autoSearch = true, -- at the auction house, Sell and the Item page search the item on screen (off: Search does)
   sellRange = "7D", -- the Sell page's chart span (2D, 7D, 30D, 90D, 1Y, All), as last picked
-  appMarketMode = "overview", -- the new window's Market mode when it opens (screener, overview, arbitrage, lists), as last used
+  -- the new window's Market mode when it opens (overview, screener, arbitrage, lists), as last used
+  appMarketMode = "overview",
   newWindow = false, -- the redesigned window (feature/redesign, /ame new) instead of the current one
   minimap = { hide = false },
 }

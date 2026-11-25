@@ -635,8 +635,7 @@ local function gatherWorth(f, holdings, index, q, keep)
   f.itemsValue = totals and totals.value or 0
   AME_DB.worthLog = AME_DB.worthLog or {}
   f.worthWeekAgo = Home.WeekAgo(AME_DB.worthLog, ns.Today(f.now), (f.gold or 0) + f.itemsValue)
-  local _ = holdings
-  local __ = keep
+  local _, _ = holdings, keep
 end
 
 -- the stacks you hold that gain from refining, the most first: { { item, qty, recipe = recipeID, product, gain } }.

@@ -10,7 +10,7 @@
 --       gets { key }
 local _, ns = ...
 
-local Layout, Kit = ns.Layout, ns.Kit
+local Layout = ns.Layout
 
 local base = Layout.Get("button")
 

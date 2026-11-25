@@ -395,7 +395,6 @@ describe("Market", function()
           [2] = { itemID = 2, min = 50, market = 60, qty = 1, day = 100 },
         },
       }
-      local shards = {}
       ns.AME = {
         ahOpen = false,
         CurrentHouse = function()
@@ -412,7 +411,6 @@ describe("Market", function()
         end,
         history = { shards = { [ns.ShardKey("Forever", "Horde")] = { raw = { { k = "full", t = 0 } } } } },
         CachedIndex = function(_, shard)
-          shards[shard] = true
           return shard:find("Neutral") and other or index
         end,
         IndexFor = function(self, shard, cb)

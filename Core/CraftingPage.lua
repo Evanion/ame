@@ -13,7 +13,8 @@
 --   CP.Strip(facts, atAH) -> props                the queue as one line
 --   CP.Learn(facts) -> rows                       recipes one of your characters could learn
 --   CP.ProfessionRows(chars, rows, now, unrecorded), CP.LevelingChoices(chars), CP.LevelingRows(plan)
--- A row's key says what it is: "r:<recipeID>", "sec:<skillLine>:<categoryID>", "step:<recipeID>", "learn:<item>:<spell>".
+-- A row's key says what it is: "r:<recipeID>", "sec:<skillLine>:<categoryID>", "step:<recipeID>",
+-- "learn:<item>:<spell>".
 local _, ns = ...
 local L = ns.L
 
@@ -351,7 +352,8 @@ function CP.Professions(chars)
   local best = {}
   for key, c in pairs(chars or {}) do
     for skillLine, p in pairs(c.professions or {}) do
-      if not CP.GATHERING[skillLine] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
+      -- a gathering profession with recipes (Forever) counts
+      if not CP.GATHERING[skillLine] or next(p.learned or {}) then
         local b = best[skillLine]
         if not b or (p.skill or 0) > (b.skill or 0) or ((p.skill or 0) == (b.skill or 0) and key < b.key) then
           best[skillLine] =
@@ -975,7 +977,8 @@ function CP.LevelingChoices(chars)
   local out = {}
   for key, c in pairs(chars or {}) do
     for profession, p in pairs(c.professions or {}) do
-      if not CP.GATHERING[profession] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
+      -- a gathering profession with recipes (Forever) counts
+      if not CP.GATHERING[profession] or next(p.learned or {}) then
         out[#out + 1] = { key = key, profession = profession, p = p }
       end
     end

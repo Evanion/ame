@@ -585,7 +585,7 @@ Layout.Register("keyvalue", {
       f.vlink:SetItem(p.valueItem)
     end
   end,
-  size = function(f, p)
+  size = function(_f, p)
     return 200, p.big and 22 or 18
   end,
 })

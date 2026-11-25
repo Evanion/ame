@@ -262,7 +262,7 @@ describe("CraftRequests", function()
         PREFIX = "AME1",
         enabled = true,
         transport = {
-          Send = function(_, prefix, msg, dist, to)
+          Send = function(_, _prefix, msg, dist, to)
             sent[#sent + 1] = { msg = msg, dist = dist, to = to }
           end,
         },

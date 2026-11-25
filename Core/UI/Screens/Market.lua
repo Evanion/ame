@@ -110,11 +110,11 @@ local function text(id, value, color, size, meta)
 end
 
 -- money: the amount drawn in its coins' colours while it isn't being typed in
-local function input(id, value, hint, action, w, money)
+local function input(id, value, hint, action, w, isMoney)
   return {
     id = id,
     type = "input",
-    props = { value = value or "", hint = hint, action = action, money = money or nil },
+    props = { value = value or "", hint = hint, action = action, money = isMoney or nil },
     meta = { w = w, h = 24 },
   }
 end
@@ -371,7 +371,7 @@ local function screenerToolbar(app, params, hidden, ah)
   return { id = "market.bar", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = kids }
 end
 
-local function filterRow(app, params, ah)
+local function filterRow(_app, params, ah)
   local q = S.q
   local names = chipNames(q, S.side or { lists = {}, guild = {} })
   names.ahText = ah and S.ah.text or nil
@@ -524,7 +524,7 @@ local function screenerBody(app, params)
     or app.compact and "compact"
     or "screener"
   local columns, hidden = Market.Columns(state, chosen, avgDays())
-  local rows, empty, note, selected = {}, nil, nil, nil
+  local rows, empty, note, selected = {}
   local hold = heldQty("owned", "market")
   -- a list or a category picked at the auction house, not searched yet: its items from your scans, as away (a click
   -- searches the row's item); the toolbar keeps the auction house's search box
@@ -697,16 +697,15 @@ local function listsBody(app, params)
   S.listRows = progress
   -- drawn as the old Shopping tab: what you have green once it covers the need, a price at or under your top price
   -- with a green "*"
-  local W = ns.Widgets
   local shown = {}
   for i, r in ipairs(rows) do
     local d = {}
     for k, v in pairs(r) do
       d[k] = v
     end
-    d.have = r.covered and { text = W.Count(r.have or 0), color = "good" } or W.Count(r.have or 0)
+    d.have = r.covered and { text = W().Count(r.have or 0), color = "good" } or W().Count(r.have or 0)
     if type(r.price) == "number" then
-      d.price = W.Money(r.price, true) .. (r.under and ("  " .. W.Color("good", "*")) or "")
+      d.price = W().Money(r.price, true) .. (r.under and ("  " .. W().Color("good", "*")) or "")
     end
     shown[i] = d
   end
@@ -717,7 +716,8 @@ local function listsBody(app, params)
     { key = "need", label = L["Need"], width = 54, format = "count" },
     { key = "have", label = L["Have"], width = 54 }, -- green once it covers the need
     { key = "tobuy", label = L["To buy"], width = 190 },
-    { key = "price", label = ah and L["Lowest listing"] or L["Market"], width = 100 }, -- money, "*" at or under your top price
+    -- money, "*" at or under your top price
+    { key = "price", label = ah and L["Lowest listing"] or L["Market"], width = 100 },
     { key = "max", label = L["Top price"], width = 86, format = "money" },
     { key = "cost", label = L["Cost"], width = 90, format = "money" },
   }
@@ -1419,7 +1419,10 @@ A.side = function(app, p)
   if what == "newlist" then
     prompt("AME_NEW_LIST", L["Name for the new watchlist:"], function(name)
       local w = watch()
-      local i, why = w and w:AddList(name)
+      local i, why
+      if w then
+        i, why = w:AddList(name) -- "and" would keep only the first value: the reason would be lost
+      end
       if not i and why then
         say("%s", why)
       end
@@ -1731,7 +1734,10 @@ A.listSide = function(app, p)
     app:Go("market", { mode = "screener" })
   elseif key == "newshop" then
     prompt("AME_NEW_SHOP", L["Name for the new shopping list (what it's for):"], function(name)
-      local i, why = shop and shop:AddList(name)
+      local i, why
+      if shop then
+        i, why = shop:AddList(name)
+      end
       if i then
         app:Set({ list = "shop:" .. i })
       elseif why then

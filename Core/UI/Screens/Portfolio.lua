@@ -186,7 +186,7 @@ App.Screen("portfolio", {
   Title = function(_, p)
     return VIEW_TITLE[p.view or "positions"] or L["Portfolio"]
   end,
-  Status = function(app, p)
+  Status = function(_app, p)
     p = params(p)
     local f = P.Facts(p.scope, p.range)
     return P.Status(p.view, f, P.Rows(p.view, f))

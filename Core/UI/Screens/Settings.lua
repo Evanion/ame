@@ -64,12 +64,12 @@ local function mediaOptions(kind, own)
     ok, list = pcall(media.List, media, kind)
   end
   -- AME's own are registered there too (Kit.RegisterFonts); they're the first entry already
-  local own = {}
+  local ours = {}
   for _, n in pairs(ns.Kit and ns.Kit.FONT_NAMES or {}) do
-    own[n] = true
+    ours[n] = true
   end
   for _, name in ipairs(ok and type(list) == "table" and list or {}) do
-    if not own[name] then
+    if not ours[name] then
       out[#out + 1] = opt(name, name)
     end
   end
