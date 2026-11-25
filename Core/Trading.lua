@@ -96,12 +96,41 @@ local function countBags(first, last)
   return out
 end
 
+-- the old table when the new one holds the same counts: a table is only replaced when what it holds changed (Home
+-- gathers again when one is - Home.Stamp - and bag events fire often for nothing it counts)
+function Trading.Same(old, new)
+  if type(old) ~= "table" or type(new) ~= "table" then
+    return new
+  end
+  for k, v in pairs(new) do
+    if old[k] ~= v then
+      return new
+    end
+  end
+  for k in pairs(old) do
+    if new[k] == nil then
+      return new
+    end
+  end
+  return old
+end
+
+-- a copy of counts with n more of id (tables are replaced when they change, as Same says)
+function Trading.Added(counts, id, n)
+  local out = {}
+  for k, v in pairs(counts or {}) do
+    out[k] = v
+  end
+  out[id] = (out[id] or 0) + n
+  return out
+end
+
 function Trading:ScanBags()
   local reagent = (Enum and Enum.BagIndex and Enum.BagIndex.ReagentBag) or 5
   local bags = countBags(0, math.max(NUM_BAG_SLOTS or 4, reagent))
   local h = mine() -- (and the character's faction, noted at login)
   if bags then
-    h.bags, h.t = bags, GetServerTime()
+    h.bags, h.t = Trading.Same(h.bags, bags), GetServerTime()
   end
   Trading:ScanMoney()
 end
@@ -165,7 +194,7 @@ function Trading:ScanBank()
     end
   end
   local h = mine()
-  h.bank, h.bankAt = main, GetServerTime()
+  h.bank, h.bankAt = Trading.Same(h.bank, main), GetServerTime()
 end
 
 -- The guild bank: what's in it, per tab, as last seen. The game only hands addons a tab's items once it has been
@@ -251,8 +280,7 @@ end
 Trading.BOUGHT_WINDOW = 60
 function Trading:OnBought(id, n)
   local h = mine()
-  h.mail = h.mail or {}
-  h.mail[id] = (h.mail[id] or 0) + n
+  h.mail = Trading.Added(h.mail, id, n)
   self.bought = self.bought or {}
   self.bought[id] = { n = (self.bought[id] and self.bought[id].n or 0) + n, t = GetServerTime() }
 end
@@ -268,8 +296,7 @@ function Trading:OnWon(name, n)
     return
   end
   local h = mine()
-  h.mail = h.mail or {}
-  h.mail[id] = (h.mail[id] or 0) + n
+  h.mail = Trading.Added(h.mail, id, n)
 end
 
 -- what the inbox holds, attachment by attachment (when it's open and read)
@@ -357,7 +384,7 @@ function Trading:ScanAuctions()
     end
   end
   local h = mine()
-  h.auctions, h.auctionsAt, h.listed = out, GetServerTime(), listed
+  h.auctions, h.auctionsAt, h.listed = Trading.Same(h.auctions, out), GetServerTime(), listed
   h.auctionList = list
 end
 

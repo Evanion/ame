@@ -737,14 +737,23 @@ function handlers.CHAT_MSG_SYSTEM(msg)
   end
 end
 
+-- the new window: drawn again if what its screen shows changed (App:DataChanged)
+local function dataChanged()
+  if ns.App and ns.App.DataChanged then
+    ns.App:DataChanged()
+  end
+end
+
 function handlers.MAIL_INBOX_UPDATE()
   ns.Trading:ScanMail()
   ns.Trading:ScanMailItems() -- what's waiting there now (won auctions taken out leave it)
+  dataChanged()
 end
 
 -- your gold, for Home's net worth
 function handlers.PLAYER_MONEY()
   ns.Trading:ScanMoney()
+  dataChanged()
 end
 
 function handlers.BAG_UPDATE_DELAYED()
@@ -757,6 +766,7 @@ function handlers.BAG_UPDATE_DELAYED()
   if ui and ui.marketView and ui.marketView:IsShown() and ui.ShoppingSelected and ui:ShoppingSelected() then
     ui:RenderMarket()
   end
+  dataChanged()
 end
 
 function handlers.BANKFRAME_OPENED()

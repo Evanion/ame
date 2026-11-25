@@ -139,12 +139,16 @@ function Bag.Loading(link)
 end
 
 -- (an item still loading gets { loading = true }: never kept, asked again on the next draw)
-function Bag.Compute(api, link)
+-- step (optional): the background job's pause (job:Checkpoint), called between the pieces of one item's work
+function Bag.Compute(api, link, step)
   if Bag.Loading(link) then
     return { loading = true }
   end
   local each, where = api.GetWorth(link)
   local e = { each = each, where = where, signal = api.GetSignal(link) or false }
+  if step then
+    step()
+  end
   e.tip = Bag.Tip({
     GetSignal = function()
       return e.signal or nil
@@ -152,7 +156,9 @@ function Bag.Compute(api, link)
     GetWorth = function()
       return e.each, e.where
     end,
-  }, link, Bag.Instead) or false
+  }, link, function(key)
+    return Bag.Instead(key, step)
+  end) or false
   return e
 end
 
@@ -228,13 +234,16 @@ function Bag:Prime(fresh)
   self.priming = true
   AME.jobs:Add("bags-corners", function(job)
     local out = {}
+    local function step()
+      job:Checkpoint()
+    end
     for _, link in ipairs(Bag.HeldLinks()) do
       if fresh or not Bag.values[link] then
-        local e = Bag.Compute(public, link)
+        local e = Bag.Compute(public, link, step)
         if not e.loading then
           out[link] = e
         end
-        job:Checkpoint()
+        step()
       end
     end
     return out
@@ -263,9 +272,9 @@ function Bag:Prime(fresh)
 end
 
 -- CraftModel.Instead, kept while the market data and your recipes stay the same (Baganator asks for every slot on
--- every redraw)
+-- every redraw). step: as Compute's
 local insteadCache, insteadStamp = {}, nil
-function Bag.Instead(key)
+function Bag.Instead(key, step)
   local CM = ns.CraftModel
   if not (CM and CM.Instead) then
     return nil
@@ -277,7 +286,7 @@ function Bag.Instead(key)
   end
   local hit = insteadCache[key]
   if hit == nil then
-    hit = CM.Instead(key) or false
+    hit = CM.Instead(key, step) or false
     insteadCache[key] = hit
   end
   return hit or nil

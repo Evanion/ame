@@ -362,6 +362,61 @@ describe("addon in a stubbed client", function()
       assert.is_not_nil(ns.App.renderer:Frame("home.kpi1"))
     end)
 
+    it("the redesigned window idles: Home and Market are built again only when what they show changes", function()
+      seeded()
+      ns.Settings:Set("newWindow", true)
+      SlashCmdList.AZEROTHMERCANTILEEXCHANGE("")
+      env:advance(1)
+      local trees, gathers, seen = 0, 0, ns.Home.errors
+      local tree = ns.App.Tree
+      ns.App.Tree = function(...)
+        trees = trees + 1
+        return tree(...)
+      end
+      local money = _G.GetMoney
+      finally(function()
+        ns.App.Tree, _G.GetMoney = tree, money
+      end)
+      _G.GetMoney = function()
+        return 500000
+      end
+      env:fire("PLAYER_MONEY")
+      env:advance(1)
+      local function idle(seconds)
+        for _ = 1, seconds do
+          env:advance(1)
+          env:update(2)
+          env:fire("BAG_UPDATE_DELAYED") -- nothing in the bags changed
+          env:fire("PLAYER_MONEY") -- nor your gold
+          if ns.Home.errors ~= seen then -- (a gather starts a new errors table)
+            gathers, seen = gathers + 1, ns.Home.errors
+          end
+        end
+      end
+      trees, gathers, seen = 0, 0, ns.Home.errors
+      idle(120)
+      assert.are.equal(0, trees)
+      assert.are.equal(0, gathers)
+      -- your gold changes: Home is gathered and drawn again, once
+      _G.GetMoney = function()
+        return 750000
+      end
+      env:fire("PLAYER_MONEY")
+      env:advance(0)
+      assert.are.equal(1, trees)
+      idle(1)
+      assert.are.equal(1, gathers)
+      -- Market: the same, until a new scan makes a new market index
+      ns.App:Go("market")
+      trees = 0
+      idle(60)
+      assert.are.equal(0, trees)
+      env.now = env.now + 86400
+      fullScan({ { 2589, 1200, 10 }, { 4306, 4000, 5 } })
+      env:advance(0)
+      assert.truthy(trees >= 1)
+    end)
+
     it("answers other addons through the public API, and plugs into Baganator", function()
       local corners, refreshed = {}, 0
       _G.Baganator = {
@@ -4898,6 +4953,85 @@ describe("addon in a stubbed client", function()
       -- without the recipe: nothing to suggest
       AME_DB.crafting.chars[me].professions[129].learned = {}
       assert.is_nil(ns.UI:CraftInstead(4306))
+    end)
+
+    it("bag corners share one 'craft it instead' setup per round, and pause inside it (many recipes)", function()
+      bootSync()
+      -- three characters with 700 recipes each; each recipe makes something of one of 50 vendor items
+      local chars, catalog = {}, { name = "Tailoring", recipes = {} }
+      for c = 1, 3 do
+        local learned = {}
+        for i = 1, 700 do
+          local id = 100000 + c * 1000 + i
+          learned[id] = true
+          catalog.recipes[id] = { out = 20000 + i, min = 1, r = { { 10000 + i % 50, 2 } } }
+        end
+        chars["TestRealm:Crafter" .. c] = { professions = { [197] = { skill = 300, learned = learned } } }
+      end
+      AME_DB.crafting = { chars = chars, catalog = { [197] = catalog } }
+      local items, bag = {}, {}
+      for i = 0, 49 do
+        items[10000 + i] = { market = 100, avg30 = 100, signal = "vendor" }
+        env.sellPrices[10000 + i] = 150
+        bag[#bag + 1] = { hyperlink = "|Hitem:" .. (10000 + i) .. "::::::::|h", stackCount = 5 }
+      end
+      for i = 1, 700 do
+        env.sellPrices[20000 + i] = 1000 -- every product vendors for more than its two reagents
+      end
+      local index = { items = items }
+      local savedIndex, container, jobs = ns.AME.FactionIndex, _G.C_Container, ns.AME.jobs
+      local get = ns.Recipes.Get
+      finally(function()
+        ns.AME.FactionIndex, _G.C_Container, ns.AME.jobs, ns.Recipes.Get = savedIndex, container, jobs, get
+      end)
+      ns.AME.FactionIndex = function()
+        return index
+      end
+      _G.C_Container = {
+        GetContainerNumSlots = function(b)
+          return b == 0 and #bag or 0
+        end,
+        GetContainerItemInfo = function(b, s)
+          return b == 0 and bag[s] or nil
+        end,
+      }
+      -- the clock counts work: a recipe looked up, or an item priced
+      local work = 0
+      ns.Recipes.Get = function(...)
+        work = work + 1
+        return get(...)
+      end
+      local api = ns.API.v1
+      local worth = api.GetWorth
+      api.GetWorth = function(...)
+        work = work + 1
+        return worth(...)
+      end
+      finally(function()
+        api.GetWorth = worth
+      end)
+      ns.AME.jobs = ns.Jobs.New({ budgetMs = 20, clock = function()
+        return work
+      end })
+      ns.Baganator.values = {}
+      ns.Baganator:Prime(true)
+      local longest, ticks = 0, 0
+      while ns.AME.jobs:Busy() do
+        local before = work
+        ns.AME.jobs:Tick()
+        longest = math.max(longest, work - before)
+        ticks = ticks + 1
+        assert.truthy(ticks < 1000, "the job never finished")
+      end
+      -- the recipes were looked up once for the whole bag, not once per item
+      assert.truthy(work < 2 * 2100 + 100, "work: " .. work) -- the setup and the products' recipes, once each
+      -- and no step ran far past the budget: it paused inside the setup, not only between items
+      assert.truthy(longest <= 21, "longest step: " .. longest)
+      -- every item got its tip: make something of it
+      for i = 0, 49 do
+        local e = ns.Baganator.values[bag[i + 1].hyperlink]
+        assert.are.equal("craft", e and e.tip)
+      end
     end)
 
     it(

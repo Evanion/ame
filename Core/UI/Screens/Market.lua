@@ -1891,6 +1891,16 @@ App.Screen("market", {
   Title = function(_, params)
     return Market.ModeLabel(params and params.mode)
   end,
+  -- drawn again for a new market index (a scan), and on the lists for what you hold (they count it)
+  Stamp = function(app, params)
+    local AME = ns.AME
+    local stamp = tostring(AME and AME.CachedIndex and AME:CachedIndex(app:Shard()))
+    if params and params.mode == "lists" and ns.Trading and ns.Trading.Holdings then
+      local h = ns.Trading:Holdings()[ns.Trading.CharKey()]
+      stamp = stamp .. ":" .. tostring(h and h.bags) .. ":" .. tostring(h and h.bank)
+    end
+    return stamp
+  end,
   actions = A,
 })
 

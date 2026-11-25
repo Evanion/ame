@@ -178,6 +178,9 @@ end
 App.Screen("home", {
   tab = "home",
   Build = body,
+  Stamp = function(app)
+    return Home.Current() .. (app:AtAH() and ":ah" or "")
+  end,
   Status = function(app)
     local f = Home.Gather()
     if not f.hasPrices then

@@ -164,7 +164,11 @@ end
 -- the box
 
 local box
-local state = { samples = {} }
+-- loading: a loading screen is up (login, a reload, a zone change), and the frames just after it: their time is the
+-- game loading every addon and its saved variables, AME's included - a hitch then is the load, not a job that happens
+-- to be queued (it's logged with job = "loading screen")
+Hud.SETTLE_FRAMES = 3
+local state = { samples = {}, loading = true, settle = 0 }
 
 local function logTable()
   AME_DB.dev = AME_DB.dev or {}
@@ -262,7 +266,8 @@ local function build()
         t = GetServerTime(),
         frame = math.floor(frameMs),
         ame = ms and math.floor(ms * 10 + 0.5) / 10,
-        job = jobs and jobs:Busy() and jobs.lastName or "none", -- lastName stays after the queue empties
+        -- lastName stays after the queue empties
+        job = (state.loading or state.settle > 0) and "loading screen" or jobs and jobs:Busy() and jobs.lastName or "none",
         queue = queueNames(),
         memKB = math.floor(mem - lastMem),
         gc = gc or nil,
@@ -287,6 +292,9 @@ local function build()
       sec = { frames = 0, ame = 0, worst = 0, gameWorst = 0, elapsed = 0 }
     end
     lastMem = mem
+    if not state.loading and state.settle > 0 then
+      state.settle = state.settle - 1
+    end
     since = since + elapsed
     if since < Hud.EVERY then
       return
@@ -335,7 +343,17 @@ end
 
 local boot = CreateFrame("Frame")
 boot:RegisterEvent("PLAYER_LOGIN")
-boot:SetScript("OnEvent", function()
+boot:RegisterEvent("LOADING_SCREEN_ENABLED")
+boot:RegisterEvent("LOADING_SCREEN_DISABLED")
+boot:RegisterEvent("PLAYER_ENTERING_WORLD") -- just before the screen goes (in case a client lacks the events above)
+boot:SetScript("OnEvent", function(_, event)
+  if event == "LOADING_SCREEN_ENABLED" then
+    state.loading = true
+    return
+  elseif event == "LOADING_SCREEN_DISABLED" or event == "PLAYER_ENTERING_WORLD" then
+    state.loading, state.settle = false, Hud.SETTLE_FRAMES
+    return
+  end
   local dev = AME_DB and AME_DB.dev
   if dev and dev.on and dev.hud and dev.hud.on then
     Hud.Show(true)

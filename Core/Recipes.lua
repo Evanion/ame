@@ -32,8 +32,9 @@ ns.Events.On("RecipesChanged", function()
   generation = generation + 1
 end)
 
+local NONE = {}
 function Recipes.Stamp()
-  local db = AME_DB and AME_DB.crafting or {}
+  local db = AME_DB and AME_DB.crafting or NONE -- (one table: a new {} each call would change the stamp every time)
   local key = 0
   for _, c in pairs(db.catalog or {}) do
     key = key + (c.at or 0)

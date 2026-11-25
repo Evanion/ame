@@ -1,7 +1,8 @@
 -- Home: what to do now, and what's worth doing today (the redesign's first screen, docs/ux boards Home, HomeAH,
 -- HomeFirstRun). Pure functions turn gathered facts into rows; Home.Gather reads them from the rest of AME.
 --
---   Home.Gather() -> facts                          (game state; cached for a little while)
+--   Home.Gather() -> facts                          (game state; kept until what it's built from changes)
+--   Home.Stamp(holdings, keep) -> text              what the facts are built from, as one value (Gather's key)
 --   Home.State(facts, atAH) -> "first" | "ah" | "away"
 --   Home.Kpis(facts) -> { kpi props, ... }          net worth, on the AH, profit 7 days, the market
 --   Home.Todo(facts, atAH) -> rows                  alerts, cooldowns, requests, undercut auctions, bags to post
@@ -12,7 +13,7 @@
 local _, ns = ...
 local L = ns.L
 
-local Home = { CACHE = 30, errors = {} } -- errors: what the last gather caught (a piece that failed is left out)
+local Home = { errors = {} } -- errors: what the last gather caught (a piece that failed is left out)
 ns.Home = Home
 
 local DAY = 86400
@@ -123,6 +124,16 @@ local function ahRow(row, atAH, button, action)
   return row
 end
 
+-- how long ago an alert fired, as of the facts' time (f.now): "12 min ago", "3 h ago"
+function Home.Ago(a, now)
+  local ago = a.ago
+  if a.at and now then
+    local mins = math.floor((now - a.at) / 60)
+    ago = mins < 60 and L["%d min"]:format(math.max(1, mins)) or L["%d h"]:format(math.floor(mins / 60))
+  end
+  return ago and L["%s ago"]:format(ago) or nil
+end
+
 function Home.Todo(f, atAH)
   local now, rows = f.now or 0, {}
   local alerts, cooldowns, requests, ahRows = {}, {}, {}, {}
@@ -132,7 +143,7 @@ function Home.Todo(f, atAH)
       pill = L["ALERT"],
       tone = "warn",
       title = { item(a.itemID), " " .. (a.text or "") },
-      sub = a.ago and L["%s ago"]:format(a.ago) or nil,
+      sub = Home.Ago(a, now),
       button = L["Open"],
       action = "openItem",
     }
@@ -534,12 +545,8 @@ local function gatherAlerts(f, now)
   for _, e in ipairs(notices:List()) do
     if e.kind == "alert" and e.itemID and not seen[e.itemID] and now - (e.at or 0) < DAY then
       seen[e.itemID] = true
-      local mins = math.floor((now - e.at) / 60)
-      out[#out + 1] = {
-        itemID = e.itemID,
-        text = e.text,
-        ago = mins < 60 and L["%d min"]:format(math.max(1, mins)) or L["%d h"]:format(math.floor(mins / 60)),
-      }
+      out[#out + 1] = { itemID = e.itemID, text = e.text, at = e.at }
+      Home.Until(f, e.at + DAY) -- it leaves the list then
     end
   end
   f.alerts = out
@@ -550,6 +557,7 @@ local function gatherCooldowns(f, now, craft)
   for key, c in pairs(ns.Professions and ns.Professions:Characters() or {}) do
     for _, p in pairs(c.professions or {}) do
       for recipeID, readyAt in pairs(p.cooldowns or {}) do
+        Home.Until(f, readyAt > now and readyAt or nil) -- it joins the list then
         if readyAt <= now then
           local r = ns.Recipes.Get(recipeID)
           local e = craft and r and craft:Evaluate(r, {})
@@ -786,21 +794,74 @@ local function gatherCarry(f, index, AME)
   f.bestCarry = f.carries[1]
 end
 
-local cache
-function Home.Gather(force)
-  local now = GetServerTime()
-  if not force and cache and now - cache.at < Home.CACHE then
-    return cache.facts
+-- f.until: the soonest a fact changes with the clock alone (a cooldown ready, an alert a day old, a new day)
+function Home.Until(f, at)
+  if at then
+    f["until"] = math.min(f["until"] or at, at)
   end
-  local AME = ns.AME
-  local f = { now = now }
-  Home.errors = {}
-  local index = AME and AME.FactionIndex and AME:FactionIndex()
-  f.hasPrices = index ~= nil or (AME and AME.HasData and AME:HasData(AME:FactionShard())) or false
+end
+
+-- What Home's facts are built from, as one value: the market index (a new one after every scan), your recipes, the
+-- notifications, the ledger, the items you've hidden, and each kept character's bags, gold, mail, auctions and bank
+-- (Trading replaces those tables when they change). Guild requests and sync call Home.Forget themselves.
+function Home.Stamp(holdings, keep)
+  local AME = ns.AME or {}
+  local out = { tostring(AME.FactionIndex and AME:FactionIndex()) }
+  local function add(v)
+    out[#out + 1] = tostring(v)
+  end
+  add(ns.Recipes and ns.Recipes.Stamp and ns.Recipes.Stamp())
+  local notices = AME.notices and AME.notices.db and AME.notices.db.list or {}
+  add(#notices .. ":" .. tostring(notices[#notices] and notices[#notices].at))
+  local ledger = AME.ledger and AME.ledger.db and AME.ledger.db.entries or {}
+  add(#ledger .. ":" .. tostring(ledger[#ledger] and ledger[#ledger].t))
+  add(AME.watch and AME.watch.HiddenCount and AME.watch:HiddenCount())
+  for key, h in pairs(holdings or {}) do
+    if keep(key) then
+      add(key)
+      add(h.bags)
+      add(h.money)
+      add(h.mail)
+      add(h.inbox)
+      add(h.auctions)
+      add(h.bank)
+    end
+  end
+  return table.concat(out, "|")
+end
+
+local function sources()
   local holdings = ns.Trading and ns.Trading:Holdings() or {}
   local keep = ns.Holdings.Keep("market") or function()
     return true
   end
+  return holdings, keep
+end
+
+-- the stamp as it is now (the Home screen's Stamp: drawn again only when it changes)
+function Home.Current()
+  return Home.Stamp(sources())
+end
+
+local cache
+function Home.Gather(force)
+  local now = GetServerTime()
+  local AME = ns.AME
+  local holdings, keep = sources()
+  local stamp = Home.Stamp(holdings, keep)
+  if not force and cache and cache.stamp == stamp and now < (cache.facts["until"] or math.huge) then
+    local f = cache.facts
+    f.now = now -- what the clock alone changes: how old the scan is, how long ago an alert fired
+    if f.scanAt then
+      f.scanAge = now - f.scanAt
+    end
+    return f
+  end
+  local f = { now = now }
+  Home.Until(f, (ns.Today(now) + 1) * DAY) -- a new day: the gold line, mail's days left
+  Home.errors = {}
+  local index = AME and AME.FactionIndex and AME:FactionIndex()
+  f.hasPrices = index ~= nil or (AME and AME.HasData and AME:HasData(AME:FactionShard())) or false
   try("gatherMoney", gatherMoney, f, holdings, keep)
   try("gatherAlerts", gatherAlerts, f, now)
   f.professions = {}
@@ -838,7 +899,7 @@ function Home.Gather(force)
       end
     end
     if newest then
-      f.scanAge = now - newest
+      f.scanAt, f.scanAge = newest, now - newest
     end
     local m = try("gatherCrafting", gatherCrafting, f, index)
     try("gatherCooldowns", gatherCooldowns, f, now, m and m.craft)
@@ -847,10 +908,17 @@ function Home.Gather(force)
   end
   f.requests = ns.CraftRequests and ns.CraftRequests.Incoming and ns.CraftRequests.Incoming() or {}
   f.guildSharers = ns.SyncService and ns.SyncService.PeerCount and ns.SyncService:PeerCount() or 0
-  cache = { at = now, facts = f }
+  cache = { stamp = stamp, facts = f }
   return f
 end
 
 function Home.Forget()
   cache = nil
+end
+
+-- who you share with changed (the guild line): gathered again next time
+if ns.Events and ns.Events.On then
+  ns.Events.On("SyncChanged", function()
+    cache = nil
+  end)
 end

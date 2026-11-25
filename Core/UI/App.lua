@@ -6,6 +6,8 @@
 --                                 Title = function(app, params) -> text (history labels) }
 --   App:Go(id, params)    open a screen (it goes on the history; Back and Forward walk it)
 --   App:Render()          draw again from state (coalesce with App:Redraw())
+--   App:DataChanged()     gold, bags, mail, the market index or recipes changed: the screen is drawn again only when
+--                         its own data did (def.Stamp(app) -> a value that changes with it)
 --   App:Toggle(), App:Show(), App:Hide()
 --
 -- Until the cut-over the old window stays the default: Settings.newWindow (or /ame new) opens this one instead.
@@ -498,6 +500,34 @@ function App:KeepTabsOnScreen(at)
   end
 end
 
+-- the current screen's data stamp (nil: it has none, or it failed)
+function App:Stamp()
+  local s = App.screens[self:Current()]
+  if not (s and s.Stamp) then
+    return nil
+  end
+  local ok, stamp = pcall(s.Stamp, self, self.state and self.state.params)
+  return ok and stamp or nil
+end
+
+function App:DataChanged()
+  if not (self.frame and self.frame:IsShown() and self.state) then
+    return
+  end
+  local stamp = self:Stamp()
+  if stamp ~= nil and stamp ~= self.drawnStamp then
+    self:Redraw()
+  end
+end
+
+if ns.Events and ns.Events.On then
+  for _, name in ipairs({ "IndexReady", "RecipesChanged" }) do
+    ns.Events.On(name, function()
+      App:DataChanged()
+    end)
+  end
+end
+
 function App:Render()
   if not (self.frame and self.frame:IsShown()) then
     return
@@ -505,6 +535,7 @@ function App:Render()
   if not self.state then
     self.state = { screen = App:TabScreen("home"), params = {} }
   end
+  self.drawnStamp = self:Stamp()
   Kit.SetTheme(themeKey(self:House()))
   local tree = self:Tree()
   if ns.Dev and ns.Dev.enabled then

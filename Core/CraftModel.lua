@@ -20,9 +20,10 @@ ns.CraftModel = M
 M.GATHERING = { [182] = true, [356] = true, [393] = true }
 local GATHERING = M.GATHERING
 
--- product -> the known recipes that make it, worked out again only when what your characters know changes
+-- product -> the known recipes that make it, worked out again only when what your characters know changes.
+-- step (optional): called between recipes while it's worked out (a background job's pause)
 local producers, producersKey
-function M.Producers()
+function M.Producers(step)
   local key = ns.Recipes.Stamp()
   if producers and producersKey == key then
     return producers
@@ -40,6 +41,9 @@ function M.Producers()
               producers[r.product] = producers[r.product] or {}
               table.insert(producers[r.product], r)
             end
+            if step then
+              step()
+            end
           end
         end
       end
@@ -50,9 +54,9 @@ end
 
 -- Crafting on your faction's auction house (index): its quote, and the recipes that make each product (chains)
 -- -> craft, quote
-local function env(index)
+local function env(index, step)
   local q = ns.Quote.For(ns.AME:FactionShard(), index)
-  return q:CraftEnv(M.Producers()), q
+  return q:CraftEnv(M.Producers(step)), q
 end
 
 function M.Craft()
@@ -67,36 +71,70 @@ end
 -- refine page does (Crafting:SellOrRefine: the product sold where it nets most, AH or vendor; other reagents bought).
 -- -> { product, where ("ah" | "vendor"), each (per unit of the item), raw (selling it as is, per unit), crafter }
 -- or nil when no known recipe beats selling it as it is
+--
+-- What it works from (InsteadSetup) is built once and shared by every item that asks - the bag corners ask for a
+-- whole bag in one round: your faction's index, a Crafting env on its quote, and your known recipes by the reagents
+-- they use, with a character who knows each. Kept while the index and your recipes stay the same, for at most
+-- SETUP_SECONDS (searches at the auction house make prices fresher). step (optional): called between recipes while
+-- it's built, so a background job can pause there (job:Checkpoint).
 M.INSTEAD_QTY = 100 -- valued over this many (whole crafts; per unit after)
-function M.Instead(itemID)
+M.SETUP_SECONDS = 60
+local setup
+local function clock()
+  return _G.GetTime and _G.GetTime() or os.time()
+end
+
+function M.InsteadSetup(step)
   local index = ns.AME:FactionIndex()
-  if not (index and itemID) then
+  if not index then
     return nil
   end
-  local recipes, crafters = {}, {}
+  local stamp, now = ns.Recipes.Stamp(), clock()
+  if setup and setup.index == index and setup.stamp == stamp and now - setup.at < M.SETUP_SECONDS then
+    return setup
+  end
+  local uses, crafters = {}, {}
   for key, c in pairs(ns.Professions:Characters()) do
     for profession, p in pairs(c.professions or {}) do
       if not GATHERING[profession] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
         for id in pairs(p.learned or {}) do
-          if not crafters[id] then
+          if crafters[id] == nil then
             local r = ns.Recipes.Get(id)
-            local uses = false
-            for _, reagent in ipairs(r and r.reagents or {}) do
-              uses = uses or reagent[1] == itemID
-            end
-            if uses and r.product then
-              recipes[#recipes + 1] = r
+            crafters[id] = false
+            if r and r.product then
               crafters[id] = key:match("[^:]+$") or key
+              local seen = {}
+              for _, reagent in ipairs(r.reagents or {}) do
+                local item = reagent[1]
+                if not seen[item] then
+                  seen[item] = true
+                  uses[item] = uses[item] or {}
+                  table.insert(uses[item], r)
+                end
+              end
+            end
+            if step then
+              step()
             end
           end
         end
       end
     end
   end
-  if #recipes == 0 then
+  setup = { index = index, stamp = stamp, at = now, craft = env(index, step), uses = uses, crafters = crafters }
+  return setup
+end
+
+function M.Instead(itemID, step)
+  if not itemID then
     return nil
   end
-  local craft = env(index)
+  local s = M.InsteadSetup(step)
+  local recipes = s and s.uses[itemID]
+  if not recipes then
+    return nil
+  end
+  local craft = s.craft
   local n = M.INSTEAD_QTY
   local r = craft:SellOrRefine(itemID, n, recipes)
   local best = r.best
@@ -109,7 +147,7 @@ function M.Instead(itemID)
     where = where,
     each = best.net / n,
     raw = r.raw / n,
-    crafter = crafters[best.recipe.id],
+    crafter = s.crafters[best.recipe.id],
     recipe = best.recipe, -- how: its profession, name and tools (the hint says them)
   }
 end
