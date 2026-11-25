@@ -139,6 +139,17 @@ describe("Home", function()
     ns.SettingsScreen, _G.CreateFont = nil, nil
   end)
 
+  it("prices are stale after 3 hours without a full scan; the market card says how old", function()
+    assert.is_false(Home.Stale({ hasPrices = true, scanAge = 2 * 3600 }))
+    assert.is_true(Home.Stale({ hasPrices = true, scanAge = 9 * 3600 }))
+    assert.is_false(Home.Stale({ hasPrices = false, scanAge = 9 * 3600 })) -- the first run asks for a scan its own way
+    assert.equals("9 h", Home.Age(9 * 3600))
+    assert.equals("3 days", Home.Age(80 * 3600))
+    local k = Home.Kpis({ hasPrices = true, scanAge = 9 * 3600, marketLevel = 91.3 })
+    assert.equals("prices 9 h old", k[4].note)
+    assert.equals("warn", k[4].deltaTone)
+  end)
+
   it("the best refine names its recipe by id (SellOrRefine hands back the recipe itself)", function()
     local SMELT = { id = 2659, product = 2840, reagents = { { 2770, 1 } } }
     local m = {
@@ -219,5 +230,39 @@ describe("Home", function()
         assert.is_not_nil(App.renderer:Frame("home.left"))
       end)
     end
+
+    it("old prices: a fresh scan leads To do now, and Worth doing waits for it (board HomeStale)", function()
+      local stale = {}
+      for k, v in pairs(facts) do
+        stale[k] = v
+      end
+      stale.scanAge = 9 * 3600
+      Home.Gather = function()
+        return stale
+      end
+      ns.AME.ahOpen = true
+      App:Show()
+      App:Go("home")
+      local tree = App:Tree()
+      assert.same({}, ns.Layout.Validate(tree))
+      local function find(node, id)
+        if node.id == id then
+          return node
+        end
+        for _, c in ipairs(node.children or {}) do
+          local hit = find(c, id)
+          if hit then
+            return hit
+          end
+        end
+      end
+      local left, right = find(tree, "home.left").props, find(tree, "home.right").props
+      assert.equals("scan", left.rows[1].key)
+      assert.equals("scan", left.rows[1].action)
+      assert.is_true(left.rows[1].primary)
+      assert.is_nil(left.rows[2].primary)
+      assert.is_true(right.rows[1].off)
+      assert.equals("Worth doing today, after a fresh scan", right.title)
+    end)
   end)
 end)

@@ -41,6 +41,23 @@ end
 
 -- ------------------------------------------------------------------------------------------------ kpis
 
+-- Prices are stale when the newest full scan (yours or a guildmate's, by sync) is older than this: Home then asks for a
+-- fresh scan before it recommends anything (board HomeStale)
+Home.STALE = 3 * 3600
+
+function Home.Stale(f)
+  return f.hasPrices and f.scanAge ~= nil and f.scanAge > Home.STALE or false
+end
+
+-- "9 h", "2 days": how old the newest full scan is
+function Home.Age(seconds)
+  local h = math.floor((seconds or 0) / 3600)
+  if h < 48 then
+    return L["%d h"]:format(math.max(1, h))
+  end
+  return L["%d days"]:format(math.floor(h / 24))
+end
+
 function Home.Kpis(f)
   if not f.hasPrices then
     return {
@@ -78,12 +95,14 @@ function Home.Kpis(f)
       value = ns.Widgets.Percent(f.marketChange), -- green / red
       note = (f.marketChange >= 0 and L["dearer this week"] or L["cheaper this week"]),
     }
+  elseif f.marketLevel then -- not a week of scans yet: the price index, the change when a week is in
+    out[4] = { label = L["Market"], value = ("%.1f"):format(f.marketLevel), note = L["price index · the week's change after 7 days of scans"] }
   else
-    if f.marketLevel then -- not a week of scans yet: the price index, the change when a week is in
-      out[4] = { label = L["Market"], value = ("%.1f"):format(f.marketLevel), note = L["price index · the week's change after 7 days of scans"] }
-    else
-      out[4] = { label = L["Market"], note = L["builds as full scans come in"] }
-    end
+    out[4] = { label = L["Market"], note = L["builds as full scans come in"] }
+  end
+  if Home.Stale(f) then -- how old the prices are, where the market's figure is (board HomeStale)
+    out[4].note = L["prices %s old"]:format(Home.Age(f.scanAge))
+    out[4].delta, out[4].deltaTone = L["old"], "warn"
   end
   return out
 end
@@ -641,6 +660,17 @@ function Home.Gather(force)
       local s = try(ns.MarketStats.Summary, index, 7)
       f.marketChange = s and s.levelChange
       f.marketLevel = s and s.level
+    end
+    -- the newest full scan of this market, yours or a guildmate's (sync stores theirs beside yours)
+    local data = AME.history and AME.history.shards and AME.history.shards[AME:FactionShard()]
+    local newest
+    for _, e in ipairs(data and data.raw or {}) do
+      if (e.k or "full") == "full" and e.t then
+        newest = math.max(newest or 0, e.t)
+      end
+    end
+    if newest then
+      f.scanAge = now - newest
     end
     local m = try(gatherCrafting, f, index)
     try(gatherCooldowns, f, now, m and m.craft)

@@ -27,6 +27,37 @@ local function body(app)
     if #right == 0 then
       right = { { key = "none", pill = "—", title = L["Nothing stands out yet"], sub = L["More scans and your professions fill this in"] } }
     end
+    -- the newest full scan over 3 hours old (board HomeStale): a fresh scan first. It leads To do now, the rest stay
+    -- but quiet; Worth doing is greyed until the scan is in, since it is ranked on the old prices.
+    if Home.Stale(f) then
+      local at = state == "ah"
+      local quiet = {}
+      for i, r in ipairs(left) do
+        local q = {}
+        for k, v in pairs(r) do
+          q[k] = v
+        end
+        q.primary, q.selected = nil, nil
+        quiet[i] = q
+      end
+      table.insert(quiet, 1, {
+        key = "scan",
+        pill = L["SCAN"],
+        tone = "warn",
+        title = L["Your prices are %s old"]:format(Home.Age(f.scanAge)),
+        sub = at and L["Scan before acting on them · about a minute"] or L["Scan at your next visit to an auction house"],
+        button = at and L["Full scan"] or L["At the AH"],
+        action = "scan",
+        off = not at,
+        primary = at,
+        selected = true,
+      })
+      left = quiet
+      for _, r in ipairs(right) do
+        r.off = true
+      end
+      rightTitle = L["Worth doing today, after a fresh scan"]
+    end
   end
   return {
     id = "home",
