@@ -31,7 +31,7 @@ for f in LibDeflate.lua lib.xml LICENSE.txt; do
   need "Libs/LibDeflate/$f"
   cp "Libs/LibDeflate/$f" "$CORE/Libs/LibDeflate/"
 done
-for d in LibDataBroker-1.1 LibDBIcon-1.0; do
+for d in LibDataBroker-1.1 LibDBIcon-1.0 LibSharedMedia-3.0; do
   need "Libs/$d"
   cp -r "Libs/$d" "$CORE/Libs/"
 done
