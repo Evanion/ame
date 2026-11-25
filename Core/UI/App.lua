@@ -260,7 +260,8 @@ end
 function App:Tree()
   local id, params = self:Current()
   local s = App.screens[id] or App.screens.soon
-  local ok, body = pcall(s.Build, self, params)
+  -- a screen that fails shows "Something went wrong" in its place, and its error goes to BugSack with its stack
+  local ok, body = ns.ShieldOk(s.Build, self, params)
   if not ok then
     body = {
       id = "error",

@@ -280,3 +280,30 @@ function ns.MoneyInputText(copper)
   end
   return table.concat(parts, " ")
 end
+
+-- A piece of a screen that fails is left out so the rest still draws, but the error isn't swallowed: it goes to the
+-- game's error handler (what BugSack and the like catch), with its stack, as any addon error would.
+--   ns.ReportError(err) -> err      hand an error to the game's error handler
+--   ns.Shield(fn, ...) -> fn's results, or nothing when it failed (reported)
+--   ns.ShieldOk(fn, ...) -> ok, ...    the same, with whether it worked first (ns.Try is Jobs': pausable, unreported)
+function ns.ReportError(err)
+  local handler = _G.geterrorhandler and _G.geterrorhandler()
+  if handler then
+    handler(err)
+  end
+  return err
+end
+
+function ns.ShieldOk(fn, ...)
+  local n, args = select("#", ...), { ... }
+  return xpcall(function()
+    return fn(unpack(args, 1, n))
+  end, ns.ReportError)
+end
+
+function ns.Shield(fn, ...)
+  local out = { ns.ShieldOk(fn, ...) }
+  if out[1] then
+    return unpack(out, 2, table.maxn(out))
+  end
+end

@@ -39,7 +39,7 @@ end
 
 -- a piece of the gather that fails is left out, and named
 local function try(name, fn, ...)
-  local ok, err = pcall(fn, ...)
+  local ok, err = ns.ShieldOk(fn, ...) -- its error goes to the game's handler (BugSack) too
   if not ok then
     P.errors[name] = err
   end

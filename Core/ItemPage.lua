@@ -827,14 +827,7 @@ end
 -- ------------------------------------------------------------------------------------------------ gather
 
 local function try(fn, ...)
-  local ok, a, b = pcall(fn, ...)
-  if ok then
-    return a, b
-  end
-  ItemPage.errors[#ItemPage.errors + 1] = tostring(a)
-  if ns.Dev and ns.Dev.Warn then
-    ns.Dev.Warn("Item page: " .. tostring(a))
-  end
+  return ns.Shield(fn, ...) -- a failing piece is left out; its error goes to the game's handler (BugSack)
 end
 
 -- every house of this market with a price for it (as the tooltip's Shift details list them)

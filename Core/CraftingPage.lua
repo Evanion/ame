@@ -1076,14 +1076,7 @@ end
 -- ------------------------------------------------------------------------------------------------ gathering
 
 local function try(fn, ...)
-  local ok, a, b = pcall(fn, ...)
-  if ok then
-    return a, b
-  end
-  CP.errors[#CP.errors + 1] = tostring(a)
-  if ns.Dev and ns.Dev.Warn then
-    ns.Dev.Warn("Crafting: " .. tostring(a))
-  end
+  return ns.Shield(fn, ...) -- a failing piece is left out; its error goes to the game's handler (BugSack)
 end
 
 local function call(api, name, ...)
@@ -1100,6 +1093,16 @@ end
 -- the open profession window, as the game says: per recipe learned, how many it can make, its skill-up colour,
 -- its section, whether it's a favourite and which requirements are met; the sections. nil when none is open (or a
 -- linked / guild window).
+-- a value the game keeps secret (the modern client's protected values) reads as nil: it can't be compared or be a
+-- table key (as Professions does)
+local function plain(v)
+  local secret = _G.issecretvalue
+  if secret and secret(v) then
+    return nil
+  end
+  return v
+end
+
 function CP.Live(api)
   if not api or call(api, "IsTradeSkillReady") == false then
     return nil
@@ -1108,37 +1111,40 @@ function CP.Live(api)
     return nil
   end
   local p = call(api, "GetBaseProfessionInfo")
-  local skillLine = type(p) == "table" and p.professionID
+  local skillLine = type(p) == "table" and plain(p.professionID)
   if not skillLine or skillLine == 0 then
     return nil
   end
-  local out = { skillLine = skillLine, name = p.professionName, recipes = {}, categories = {} }
+  local out = { skillLine = skillLine, name = plain(p.professionName), recipes = {}, categories = {} }
   for _, id in ipairs(call(api, "GetAllRecipeIDs") or {}) do
     local info = call(api, "GetRecipeInfo", id)
-    if type(info) == "table" then
+    if type(info) == "table" and plain(id) then
       local reqs
       for _, req in ipairs(call(api, "GetRecipeRequirements", id) or {}) do
-        if type(req) == "table" and type(req.name) == "string" then
+        local rname = type(req) == "table" and plain(req.name)
+        if type(rname) == "string" then
           reqs = reqs or {}
-          reqs[req.name] = req.met and true or false
+          reqs[rname] = plain(req.met) and true or false
         end
       end
+      local diff = plain(info.relativeDifficulty)
       out.recipes[id] = {
-        learned = info.learned and true or false,
-        available = info.numAvailable or 0,
-        diff = CP.RELATIVE[info.relativeDifficulty],
-        cat = info.categoryID,
-        fav = info.favorite and true or false,
+        learned = plain(info.learned) and true or false,
+        available = plain(info.numAvailable) or 0,
+        diff = diff ~= nil and CP.RELATIVE[diff] or nil,
+        cat = plain(info.categoryID),
+        fav = plain(info.favorite) and true or false,
         requirements = reqs,
       }
-      local cat = info.categoryID
+      local cat = plain(info.categoryID)
       while cat and not out.categories[cat] do
         local c = call(api, "GetCategoryInfo", cat)
         if type(c) ~= "table" then
           break
         end
-        out.categories[cat] = { name = c.name, order = c.uiOrder, parent = c.parentCategoryID }
-        cat = c.parentCategoryID ~= 0 and c.parentCategoryID or nil
+        local parent = plain(c.parentCategoryID)
+        out.categories[cat] = { name = plain(c.name), order = plain(c.uiOrder), parent = parent }
+        cat = parent ~= 0 and parent or nil
       end
     end
   end
@@ -1196,6 +1202,31 @@ function CP.RecordSections(state, live)
   end
   state.sections[live.skillLine] = s
   return true
+end
+
+function CP.RecordLive()
+  local live = try(CP.Live, _G.C_TradeSkillUI)
+  if live and AME_DB then
+    try(CP.RecordSections, CP.State(), live)
+  end
+end
+
+if CreateFrame then
+  local events = CreateFrame("Frame")
+  for _, e in ipairs({ "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE", "TRADE_SKILL_DATA_SOURCE_CHANGED" }) do
+    pcall(events.RegisterEvent, events, e)
+  end
+  local pending = false
+  events:SetScript("OnEvent", function()
+    if pending or not (C_Timer and C_Timer.After) then
+      return
+    end
+    pending = true -- the list fires in bursts: once, a moment after
+    C_Timer.After(0.5, function()
+      pending = false
+      CP.RecordLive()
+    end)
+  end)
 end
 
 local function recipeCat(skillLine, id)

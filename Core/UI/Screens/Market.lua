@@ -27,13 +27,7 @@ ns.MarketScreen = S
 -- ------------------------------------------------------------------------------------------------ helpers
 
 local function try(fn, ...)
-  local ok, a, b, c = pcall(fn, ...)
-  if ok then
-    return a, b, c
-  end
-  if ns.Dev and ns.Dev.Warn then
-    ns.Dev.Warn("Market: " .. tostring(a))
-  end
+  return ns.Shield(fn, ...) -- a failing piece is left out; its error goes to the game's handler (BugSack)
 end
 
 local function W()

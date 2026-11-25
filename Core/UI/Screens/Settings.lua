@@ -399,7 +399,7 @@ end
 
 local function try(fn, ...)
   if type(fn) == "function" then
-    pcall(fn, ...)
+    ns.Shield(fn, ...) -- its error goes to the game's handler (BugSack)
   end
 end
 

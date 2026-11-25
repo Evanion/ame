@@ -393,14 +393,7 @@ function Home.WeekAgo(log, today, value)
 end
 
 local function try(fn, ...)
-  local ok, a, b = pcall(fn, ...)
-  if ok then
-    return a, b
-  end
-  Home.errors[#Home.errors + 1] = tostring(a)
-  if ns.Dev and ns.Dev.Warn then
-    ns.Dev.Warn("Home: " .. tostring(a))
-  end
+  return ns.Shield(fn, ...) -- a failing piece is left out; its error goes to the game's handler (BugSack)
 end
 
 local function gatherMoney(f, holdings, keep)
