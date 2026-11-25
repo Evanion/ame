@@ -125,7 +125,7 @@ local function chartPanel(params, compact)
     id = "ov.chartcard",
     type = "card",
     props = { pad = 8, gap = 4 },
-    meta = { h = compact and 120 or 226 },
+    meta = compact and { h = 120 } or { grow = 1 }, -- wide: the chart takes the room the movers leave
     children = {
       { id = "ov.chart.top", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = top },
       {
@@ -192,7 +192,8 @@ function S.OverviewBody(app, params, opts)
   end
   app:Source("overview.risers", Overview.Movers(o.risers, period))
   app:Source("overview.fallers", Overview.Movers(o.fallers, period))
-  app:Source("overview.largest", Overview.Largest(o.top))
+  local largest = Overview.Largest(o.top)
+  app:Source("overview.largest", largest)
   local note = L["%s, steadily listed items"]:format(Overview.PeriodLabel(period))
   kids[#kids + 1] = {
     id = "ov.main",
@@ -211,7 +212,7 @@ function S.OverviewBody(app, params, opts)
             id = "ov.movers",
             type = "row",
             props = { gap = 8 },
-            meta = { grow = 1 },
+            meta = { h = 24 + 5 * 22 + 6 }, -- at the bottom, as tall as their five rows
             children = {
               moverBlock("ov.risers", L["Biggest risers"], note, "overview.risers"),
               moverBlock("ov.fallers", L["Biggest fallers"], note, "overview.fallers"),
@@ -226,8 +227,8 @@ function S.OverviewBody(app, params, opts)
         meta = { w = 400 },
         children = {
           heading("ov.categories.head", L["Categories"], L["by listed value"]),
-          -- as tall as its rows (a 20 px header, 22 px rows, the note under them); the largest items take the rest
-          categoryTable("ov.categories", false, period, { h = 20 + #cats * 22 + 30 }),
+          -- the categories take the room and scroll when it runs short; the largest items show all their rows
+          categoryTable("ov.categories", false, period),
           heading("ov.largest.head", L["Largest by value"], L["what the total leans on"]),
           {
             id = "ov.largest",
@@ -244,7 +245,7 @@ function S.OverviewBody(app, params, opts)
                 { key = "value", label = "", width = 100 },
               },
             },
-            meta = { grow = 1 },
+            meta = { h = math.max(1, #largest) * 22 + 4 },
           },
         },
       },

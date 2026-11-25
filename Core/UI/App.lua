@@ -17,7 +17,7 @@ local Layout, Kit = ns.Layout, ns.Kit
 local App = { screens = {}, back = {}, ahead = {}, actions = {} }
 ns.App = App
 
-App.W, App.H = 1100, 640 -- the boards' size
+App.W, App.H = 1110, 680 -- the size a first open gets, when the screen has room (then the size you leave it at)
 App.MIN_W, App.MIN_H = 760, 460
 App.COMPACT_W = 900 -- below this the title bar folds (the narrow boards)
 App.HISTORY = 50
@@ -312,7 +312,11 @@ function App:Create()
   end
   f:EnableMouse(true)
   local pos = saved()
-  f:SetSize(pos.w or App.W, pos.h or App.H)
+  -- your size, or the default; never bigger than the screen at AME's scale
+  local scale = ns.Settings and ns.Settings:Get("windowScale") or 1
+  local sw = UIParent and UIParent.GetWidth and UIParent:GetWidth() or 1920
+  local sh = UIParent and UIParent.GetHeight and UIParent:GetHeight() or 1080
+  f:SetSize(math.min(pos.w or App.W, (sw or 1920) / scale), math.min(pos.h or App.H, (sh or 1080) / scale - 40))
   if pos.x then
     f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", pos.x, pos.y)
   else
@@ -332,6 +336,9 @@ function App:Create()
   end)
   grip:SetScript("OnMouseUp", function()
     f:StopMovingOrSizing()
+    -- a size you pick is yours, at the auction house too: it isn't grown again this visit, nor put back after it
+    App.grown = nil
+    App.sizedAtAH = App:AtAH()
     App:SavePlace()
   end)
   f:SetScript("OnSizeChanged", function(self, w)
@@ -403,7 +410,7 @@ end
 App.AH_H = 830
 function App:FitAH(at)
   local f = self.frame
-  if at and not self.grown then
+  if at and not self.grown and not self.sizedAtAH then
     local room = UIParent and UIParent.GetHeight and UIParent:GetHeight() or App.AH_H
     local want = math.min(App.AH_H, (room or App.AH_H) / (f:GetScale() or 1) - 40)
     local h = f:GetHeight() or App.H
@@ -411,9 +418,12 @@ function App:FitAH(at)
       self.grown = h
       f:SetHeight(want)
     end
-  elseif not at and self.grown then
-    f:SetHeight(self.grown)
-    self.grown = nil
+  elseif not at then
+    if self.grown then
+      f:SetHeight(self.grown)
+      self.grown = nil
+    end
+    self.sizedAtAH = nil
   end
 end
 
