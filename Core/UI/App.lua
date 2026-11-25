@@ -427,6 +427,21 @@ function App:FitAH(at)
   end
 end
 
+-- The auction house's tabs hang under the window (32 px): the window is kept on screen with them, so they are never
+-- off its bottom edge (the window grows down at the auction house, and the game clamps only the window itself)
+App.TABS_H = 33
+function App:KeepTabsOnScreen(at)
+  local f = self.frame
+  if f.SetClampRectInsets then
+    f:SetClampRectInsets(0, 0, 0, at and -App.TABS_H or 0)
+  end
+  local bottom, top, left = f:GetBottom(), f:GetTop(), f:GetLeft()
+  if at and bottom and top and left and bottom < App.TABS_H then
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top + (App.TABS_H - bottom))
+  end
+end
+
 function App:Render()
   if not (self.frame and self.frame:IsShown()) then
     return
@@ -444,12 +459,24 @@ function App:Render()
   local at = self:AtAH()
   self:FitAH(at)
   self.renderer:Render(tree)
+  local wasShown = self.ahFrame:IsShown()
   self.ahFrame:SetShown(at)
+  self:KeepTabsOnScreen(at)
   if at then
     local id = self:Current()
     local s = App.screens[id] or {}
     local active = s.ahTab or (s.tab == "market" or s.tab == "item") and "buy" or s.tab == "portfolio" and "sell" or nil
-    self.ahRenderer:Render({ id = "ah.tabs", type = "ahtabs", props = { active = active } })
+    local tabs = { id = "ah.tabs", type = "ahtabs", props = { active = active } }
+    self.ahRenderer:Render(tabs)
+    -- just shown (the first open at the auction house): the strip has no width until the next frame, so the tabs
+    -- are laid out again then
+    if not wasShown and C_Timer and C_Timer.After then
+      C_Timer.After(0, function()
+        if self.ahFrame:IsShown() then
+          self.ahRenderer:Render(tabs)
+        end
+      end)
+    end
   end
 end
 
