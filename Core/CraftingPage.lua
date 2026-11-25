@@ -351,7 +351,7 @@ function CP.Professions(chars)
   local best = {}
   for key, c in pairs(chars or {}) do
     for skillLine, p in pairs(c.professions or {}) do
-      if not CP.GATHERING[skillLine] then
+      if not CP.GATHERING[skillLine] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
         local b = best[skillLine]
         if not b or (p.skill or 0) > (b.skill or 0) or ((p.skill or 0) == (b.skill or 0) and key < b.key) then
           best[skillLine] = { key = key, skillLine = skillLine, name = p.name or tostring(skillLine), skill = p.skill, max = p.max }
@@ -388,7 +388,7 @@ function CP.Sidebar(f, selected, gameWindow)
       entries[#entries + 1] = {
         key = "prof:" .. p.skillLine,
         label = p.name,
-        count = p.skill,
+        count = p.max and p.max > 0 and ("%d / %d"):format(p.skill or 0, p.max) or p.skill, -- your skill, of its most
         selected = selected == p.skillLine,
       }
     end
@@ -932,7 +932,7 @@ function CP.LevelingChoices(chars)
   local out = {}
   for key, c in pairs(chars or {}) do
     for profession, p in pairs(c.professions or {}) do
-      if not CP.GATHERING[profession] then
+      if not CP.GATHERING[profession] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
         out[#out + 1] = { key = key, profession = profession, p = p }
       end
     end

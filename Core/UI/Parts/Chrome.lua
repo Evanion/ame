@@ -181,7 +181,7 @@ Layout.Register("titlebar", {
       end
       local marketW = width(self.market.label, p.house .. ((p.houses and #p.houses > 1) and " ▾" or "")) + 20
       local fixedW = 14 + 16 + 8 + 12 + 26 + 4 + 26 + 6 + marketW + 16
-      local ahFull = p.ah and (width(self.scan.label, L["Full scan"]) + 26 + width(self.gameAH.label, L["Use the game's AH"]) + 26) or 0
+      local ahFull = p.ah and (width(self.scan.label, p.scan and p.scan.label or L["Full scan"]) + 26 + width(self.gameAH.label, L["Use the game's AH"]) + 26) or 0
       local ahFolded = p.ah and (width(self.scan.label, L["AH ▾"]) + 26) or 0
       local room = (self.GetWidth and self:GetWidth() or 0) - tabsW - fixedW
       local nameW = width(self.brand, fullName)

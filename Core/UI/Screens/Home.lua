@@ -46,9 +46,10 @@ local function body(app)
         tone = "warn",
         title = L["Your prices are %s old"]:format(Home.Age(f.scanAge)),
         sub = at and L["Scan before acting on them · about a minute"] or L["Scan at your next visit to an auction house"],
-        button = at and L["Full scan"] or L["At the AH"],
+        -- at the auction house: the scan button's own state (Scanning..., Full scan in 12:34: greyed while it waits)
+        button = at and (App.ScanButtonState and App.ScanButtonState().label or L["Full scan"]) or L["At the AH"],
         action = "scan",
-        off = not at,
+        off = not at or (App.ScanButtonState and App.ScanButtonState().off) or false,
         primary = at,
         selected = true,
       })

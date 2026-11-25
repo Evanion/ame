@@ -31,7 +31,7 @@ function M.Producers()
   local seen = {}
   for _, c in pairs(ns.Professions:Characters()) do
     for profession, p in pairs(c.professions or {}) do
-      if not GATHERING[profession] then
+      if not GATHERING[profession] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
         for id in pairs(p.learned or {}) do
           if not seen[id] then
             seen[id] = true
@@ -76,7 +76,7 @@ function M.Instead(itemID)
   local recipes, crafters = {}, {}
   for key, c in pairs(ns.Professions:Characters()) do
     for profession, p in pairs(c.professions or {}) do
-      if not GATHERING[profession] then
+      if not GATHERING[profession] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
         for id in pairs(p.learned or {}) do
           if not crafters[id] then
             local r = ns.Recipes.Get(id)
@@ -129,7 +129,7 @@ function M.Build(only)
   local byRecipe, uses, entries = {}, {}, {}
   for key, c in pairs(chars) do
     for profession, p in pairs(c.professions or {}) do
-      if not GATHERING[profession] then
+      if not GATHERING[profession] or next(p.learned or {}) then -- a gathering profession with recipes (Forever) counts
         for id in pairs(p.learned or {}) do
           local r = ns.Recipes.Get(id)
           if r then

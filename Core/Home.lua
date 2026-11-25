@@ -404,6 +404,7 @@ local function gatherMoney(f, holdings, keep)
     end
   end
   f.gold = gold
+  f.myGold = _G.GetMoney and _G.GetMoney() or nil
 end
 
 local function gatherAlerts(f, now)
@@ -556,7 +557,7 @@ local function gatherCrafting(f, index)
       return ns.CraftingData:Teaches(id)
     end, ns.Recipes.Get, m.chars)
     for _, r in ipairs(rows or {}) do
-      if r.ready and r.payback then
+      if r.ready and r.payback and affordable(f, r.price) then
         local who = r.learners and r.learners[1]
         f.bestLearn = {
           item = r.item,
@@ -568,6 +569,12 @@ local function gatherCrafting(f, index)
     end
   end
   return m
+end
+
+-- what this character's gold covers (a purchase is paid from the one you're on): Worth doing today only suggests a
+-- buy, a carry or a recipe you can pay for
+local function affordable(f, copper)
+  return copper == nil or f.myGold == nil or copper <= f.myGold
 end
 
 local function gatherBuy(f, index)
@@ -582,7 +589,7 @@ local function gatherBuy(f, index)
       local usual = s and (s.avg30 or s.avg7)
       if s and s.market and usual and usual > 0 then
         local under = 1 - s.market / usual
-        if under >= 0.1 and (not best or under > best.under) then
+        if under >= 0.1 and (not best or under > best.under) and affordable(f, s.market) then
           best = { item = id, under = under, sub = L["On your watchlist · %s sell a day"]:format(ns.Widgets.Rate(s.soldPerDay or s.sellRate)) }
         end
       end
@@ -604,9 +611,14 @@ local function gatherCarry(f, index, AME)
           today = ns.Today(GetServerTime()),
           minProfit = 1,
         })
-        local r = rows and rows[1]
-        if r and r.profit and (not best or r.profit > best.profit) then
-          best = { item = r.itemID, profit = r.profit, to = ns.ShardLabel and ns.ShardLabel(ns.ShardKey(realm, house)) or house }
+        -- the best route whose first item your gold covers
+        for _, r in ipairs(rows or {}) do
+          if r.profit and affordable(f, r.buy) then
+            if not best or r.profit > best.profit then
+              best = { item = r.itemID, profit = r.profit, to = ns.ShardLabel and ns.ShardLabel(ns.ShardKey(realm, house)) or house }
+            end
+            break
+          end
         end
       end
     end
