@@ -372,9 +372,11 @@ local function screenerToolbar(app, params, hidden, ah)
   if ah then
     kids[#kids + 1] =
       input("market.search", S.ah.text, L["Search the auction house..."], "ahText", app.compact and 150 or 200)
+    kids[#kids].props.doubleAction = "clearAll" -- a double-click clears the search and every filter
     kids[#kids + 1] = btn("market.go", L["Search"], "ahSearch", "primary")
   else
     kids[#kids + 1] = input("market.search", q.text, L["Search items..."], "search", app.compact and 150 or 160)
+    kids[#kids].props.doubleAction = "clearAll"
   end
   if not app.compact then
     local n = filterCount(ah)
@@ -1343,9 +1345,12 @@ A.chip = function(app, p)
   changed(app)
 end
 
+-- Clear all (the chips' link, a double-click on the search box): the search and every filter, the auction house's
+-- category and Exact name too
 A.clearAll = function(app)
   Market.ClearAll(S.q)
   S.ah.text, S.ah.at, S.ah.last = "", nil, nil
+  S.ah.filters = {}
   app:Set({ view = false })
 end
 

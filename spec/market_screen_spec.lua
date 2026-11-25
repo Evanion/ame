@@ -152,6 +152,24 @@ describe("Market", function()
       assert.is_nil(f.minItemLevel)
     end)
 
+    it("a watchlist shows every item on it, whatever the filters say; the name search still narrows it", function()
+      local q = Market.NewQuery()
+      q.minQuality, q.minPrice, q.signal, q.minLevel, q.usable, q.text = 3, 10000, "buy", 20, true, "lotus"
+      q.list, q.only = 1, { [5] = true }
+      local f = Market.FilterQuery(q, { only = q.only, usable = function() end })
+      assert.is_nil(f.minQuality)
+      assert.is_nil(f.minPrice)
+      assert.is_nil(f.signal)
+      assert.is_nil(f.minLevel)
+      assert.is_nil(f.usable)
+      assert.equals("lotus", f.text)
+      local keys = {}
+      for _, c in ipairs(Market.Chips(q, { listName = "Herbs" })) do
+        keys[#keys + 1] = c.key
+      end
+      assert.same({ "text", "list" }, keys)
+    end)
+
     it("reads level ranges as typed", function()
       assert.same({ 20, 30 }, { Market.ParseRange("20-30") })
       assert.same({ 20, 30 }, { Market.ParseRange(" 30 - 20 ") })

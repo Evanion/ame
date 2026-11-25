@@ -141,6 +141,23 @@ describe("primitive widgets", function()
     assert.same({ "find", { item = 2452 } }, got[#got])
   end)
 
+  it(
+    "a double-click on a search box empties it and sends its doubleAction, without searching the empty text",
+    function()
+      r:Render({ id = "q", type = "input", props = { value = "lotus", action = "search", doubleAction = "clearAll" } })
+      local box = r:Frame("q")
+      box.scripts.OnMouseUp(box)
+      env:advance(1)
+      box.scripts.OnMouseUp(box) -- a second click a second later: not a double-click
+      assert.equals(0, #got)
+      env:advance(0.2)
+      box.scripts.OnMouseUp(box)
+      assert.equals("", box:GetText())
+      assert.equals(1, #got)
+      assert.equals("clearAll", got[1][1])
+    end
+  )
+
   it("a card puts its children under its title, inside its padding", function()
     r:Render(tree)
     local kid = r:Frame("card.a")
