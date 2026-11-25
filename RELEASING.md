@@ -60,6 +60,10 @@ Betas: the line releases `x.y.0-beta.N` while `prerelease` is `true` in `release
 line as stable, set `"prerelease": false` on its release branch by pull request; the next release pull request
 proposes `x.y.0`.
 
+Before 1.0 there is no major bump: a breaking change (`feat!:`, or a `BREAKING CHANGE:` footer) raises the minor
+version, and a `feat` on a released line the patch (`0.5.0` -> `0.5.1`), so a line stays on its branch
+(`bump-minor-pre-major`, `bump-patch-for-minor-pre-major`). A new line is cut by hand (Cutting a release line).
+
 ## Crafting data
 
 Hands-off: **Crafting data** (`.github/workflows/crafting-data.yml`) asks wago.tools once a day for the latest WoW
