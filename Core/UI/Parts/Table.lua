@@ -18,7 +18,13 @@ local Layout, Kit, W = ns.Layout, ns.Kit, ns.Widgets
 local function signature(columns)
   local parts = {}
   for i, c in ipairs(columns) do
-    parts[i] = tostring(c.key) .. ":" .. tostring(c.format) .. ":" .. tostring(c.item) .. ":" .. tostring(c.button ~= nil)
+    parts[i] = tostring(c.key)
+      .. ":"
+      .. tostring(c.format)
+      .. ":"
+      .. tostring(c.item)
+      .. ":"
+      .. tostring(c.button ~= nil)
   end
   return table.concat(parts, ",")
 end

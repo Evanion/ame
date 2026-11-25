@@ -80,7 +80,16 @@ end)
 
 describe("Trading's mailbox and gold records", function()
   local ns, Trading, saved
-  local G = { "AME_DB", "GetServerTime", "UnitName", "GetInboxNumItems", "GetInboxItem", "GetInboxHeaderInfo", "GetInboxInvoiceInfo", "GetMoney" }
+  local G = {
+    "AME_DB",
+    "GetServerTime",
+    "UnitName",
+    "GetInboxNumItems",
+    "GetInboxItem",
+    "GetInboxHeaderInfo",
+    "GetInboxInvoiceInfo",
+    "GetMoney",
+  }
 
   before_each(function()
     saved = {}

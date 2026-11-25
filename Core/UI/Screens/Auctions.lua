@@ -75,7 +75,11 @@ end
 local function summary(sum)
   local text = L["%d auctions · asking %s"]:format(sum.count, money(sum.asking))
   if sum.undercut > 0 then
-    text = text .. " · " .. (ns.Kit and ns.Kit.Color("bad", L["%d undercut"]:format(sum.undercut)) or L["%d undercut"]:format(sum.undercut))
+    text = text
+      .. " · "
+      .. (
+        ns.Kit and ns.Kit.Color("bad", L["%d undercut"]:format(sum.undercut)) or L["%d undercut"]:format(sum.undercut)
+      )
   end
   return text
 end
@@ -83,7 +87,12 @@ end
 local function panel(app, row)
   if not row then
     return {
-      { id = "auc.none", type = "text", props = { text = L["Pick an auction on the left."], color = "dim", wrap = true }, meta = { h = 40 } },
+      {
+        id = "auc.none",
+        type = "text",
+        props = { text = L["Pick an auction on the left."], color = "dim", wrap = true },
+        meta = { h = 40 },
+      },
     }
   end
   local advice, hours = advise(row)
@@ -95,7 +104,12 @@ local function panel(app, row)
       props = { gap = 2 },
       meta = { h = 62 },
       children = {
-        { id = "auc.item", type = "itemlink", props = { item = row.item, count = row.qty, size = 13, bold = true }, meta = { h = 20 } },
+        {
+          id = "auc.item",
+          type = "itemlink",
+          props = { item = row.item, count = row.qty, size = 13, bold = true },
+          meta = { h = 20 },
+        },
         { id = "auc.posted", type = "text", props = { text = d.posted, color = "dim", size = 11 }, meta = { h = 16 } },
       },
     },
@@ -104,14 +118,31 @@ local function panel(app, row)
   for i, r in ipairs(d.rows) do
     cut[i] = { id = "auc.cut" .. i, type = "keyvalue", props = r, meta = { h = 18 } }
   end
-  cut[#cut + 1] = { id = "auc.cutNote", type = "text", props = { text = d.note, color = "dim", size = 11, wrap = true }, meta = { h = 28 } }
-  kids[#kids + 1] = { id = "auc.standing", type = "card", props = { title = d.title, gap = 2 }, meta = { h = 32 + 20 * #d.rows + 30 }, children = cut }
+  cut[#cut + 1] = {
+    id = "auc.cutNote",
+    type = "text",
+    props = { text = d.note, color = "dim", size = 11, wrap = true },
+    meta = { h = 28 },
+  }
+  kids[#kids + 1] = {
+    id = "auc.standing",
+    type = "card",
+    props = { title = d.title, gap = 2 },
+    meta = { h = 32 + 20 * #d.rows + 30 },
+    children = cut,
+  }
   if d.repost then
     local rep = {}
     for i, r in ipairs(d.repost) do
       rep[i] = { id = "auc.rep" .. i, type = "keyvalue", props = r, meta = { h = r.big and 22 or 18 } }
     end
-    kids[#kids + 1] = { id = "auc.repost", type = "card", props = { title = L["If you repost"], gap = 2 }, meta = { h = 96 }, children = rep }
+    kids[#kids + 1] = {
+      id = "auc.repost",
+      type = "card",
+      props = { title = L["If you repost"], gap = 2 },
+      meta = { h = 96 },
+      children = rep,
+    }
   end
   local can = row.cancel and app:AtAH()
   kids[#kids + 1] = {
@@ -134,13 +165,16 @@ local function panel(app, row)
   else
     why = L["A cancelled auction comes back by mail, and its deposit is lost. Repost it from Sell."]
   end
-  kids[#kids + 1] = { id = "auc.why", type = "text", props = { text = why, color = "dim", size = 11, wrap = true }, meta = { h = 28 } }
+  kids[#kids + 1] =
+    { id = "auc.why", type = "text", props = { text = why, color = "dim", size = 11, wrap = true }, meta = { h = 28 } }
   kids[#kids + 1] = {
     id = "auc.links",
     type = "row",
     props = { gap = 6 },
     meta = { h = 24 },
-    children = { { id = "auc.open", type = "button", props = { label = L["Open item"], action = "openItem" }, meta = { w = 80 } } },
+    children = {
+      { id = "auc.open", type = "button", props = { label = L["Open item"], action = "openItem" }, meta = { w = 80 } },
+    },
   }
   return kids
 end
@@ -177,10 +211,27 @@ local function body(app, p)
           P.ViewControl(app, "auc.views", "auctions"),
           { id = "auc.gap", type = "spacer", meta = { w = 4 } },
           { id = "auc.summary", type = "text", props = { text = summary(sum), color = "dim", size = 11 } },
-          { id = "auc.only", type = "check", props = { label = L["Undercut only"], checked = p.undercut and true or false, action = "undercutOnly" }, meta = { w = 110, h = 18 } },
-          { id = "auc.chars", type = "menubutton", props = { label = charLabel, options = chars, selected = p.char or "all", action = "chars" } },
+          {
+            id = "auc.only",
+            type = "check",
+            props = { label = L["Undercut only"], checked = p.undercut and true or false, action = "undercutOnly" },
+            meta = { w = 110, h = 18 },
+          },
+          {
+            id = "auc.chars",
+            type = "menubutton",
+            props = { label = charLabel, options = chars, selected = p.char or "all", action = "chars" },
+          },
           { id = "auc.barGap", type = "spacer", meta = { grow = 1 } },
-          { id = "auc.check", type = "button", props = { label = L["Check prices"], action = "checkPrices", variant = app:AtAH() and "normal" or "disabled" } },
+          {
+            id = "auc.check",
+            type = "button",
+            props = {
+              label = L["Check prices"],
+              action = "checkPrices",
+              variant = app:AtAH() and "normal" or "disabled",
+            },
+          },
         },
       },
       {
@@ -261,7 +312,9 @@ App.Screen("auctions", {
       return L["Your auctions as each character last saw them at the auction house"]
     end
     local house = ns.AME and ns.AME.CurrentHouse and ns.AME:CurrentHouse()
-    local text = L["At the %s"]:format(ns.HOUSE_LABEL and ns.HOUSE_LABEL[house] or house or "") .. " · " .. L["your auctions as of now"]
+    local text = L["At the %s"]:format(ns.HOUSE_LABEL and ns.HOUSE_LABEL[house] or house or "")
+      .. " · "
+      .. L["your auctions as of now"]
     if sum.checked and ns.Widgets then
       text = text .. " · " .. L["prices checked %s"]:format(ns.Widgets.Ago(sum.checked, t))
     end

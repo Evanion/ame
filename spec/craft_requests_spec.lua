@@ -44,7 +44,10 @@ describe("CraftRequests", function()
       assert.equals("crafter", R.ToAct(r))
       assert.equals(0, r.reagents[4].bring)
       assert.is_nil(r.message:find("|", 1, true))
-      assert.same({ { item = 13467, n = 4 }, { item = 18256, n = 5 }, { item = 99999, n = 1, soulbound = true } }, R.Supply(r))
+      assert.same(
+        { { item = 13467, n = 4 }, { item = 18256, n = 5 }, { item = 99999, n = 1, soulbound = true } },
+        R.Supply(r)
+      )
       assert.equals("most", R.Brings(r))
     end)
 
@@ -164,7 +167,10 @@ describe("CraftRequests", function()
 
     it("the whisper puts the count and the link in front", function()
       local r = request()
-      assert.equals("5 × [Major Mana Potion]: Could you make these?   with a pipe", R.WhisperText(r, "[Major Mana Potion]"))
+      assert.equals(
+        "5 × [Major Mana Potion]: Could you make these?   with a pipe",
+        R.WhisperText(r, "[Major Mana Potion]")
+      )
     end)
   end)
 

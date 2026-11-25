@@ -58,11 +58,22 @@ local function detail(r, now)
   local acts = GuildPage.Actions(r)
   local buttons = {}
   for i, b in ipairs(acts.buttons) do
-    buttons[i] = { id = "req.b" .. i, type = "button", props = { label = b.label, action = "req_" .. b.action, variant = b.variant } }
+    buttons[i] = {
+      id = "req.b" .. i,
+      type = "button",
+      props = { label = b.label, action = "req_" .. b.action, variant = b.variant },
+    }
   end
   buttons[#buttons + 1] = { id = "req.b.fill", type = "spacer", meta = { grow = 1 } }
-  buttons[#buttons + 1] = { id = "req.b.whisper", type = "button", props = { label = L["Whisper"], action = "req_whisper" } }
-  local what = r.item and { id = "req.what.item", type = "itemlink", props = { item = r.item, size = 13, bold = true }, meta = { h = 18 } }
+  buttons[#buttons + 1] =
+    { id = "req.b.whisper", type = "button", props = { label = L["Whisper"], action = "req_whisper" } }
+  local what = r.item
+      and {
+        id = "req.what.item",
+        type = "itemlink",
+        props = { item = r.item, size = 13, bold = true },
+        meta = { h = 18 },
+      }
     or G.Text("req.what.item", GuildPage.RequestName(r), { color = "white", size = 13, meta = { h = 18 } })
   local quote = {
     { text = '"' .. L["%d ×"]:format(r.count) .. " ", tone = "soft" },
@@ -73,7 +84,8 @@ local function detail(r, now)
   for i, row in ipairs(GuildPage.WorthRows(r, each, price)) do
     worth[i] = { id = "req.worth" .. i, type = "keyvalue", props = row, meta = { h = row.total and 20 or 18 } }
   end
-  worth[#worth + 1] = G.Text("req.worth.note", L["A fair tip: about a tenth of what the craft adds."], { meta = { h = 14 } })
+  worth[#worth + 1] =
+    G.Text("req.worth.note", L["A fair tip: about a tenth of what the craft adds."], { meta = { h = 14 } })
   local kids = {
     {
       id = "req.what",
@@ -86,12 +98,15 @@ local function detail(r, now)
       id = "req.msg",
       type = "card",
       meta = { h = 58 },
-      children = { { id = "req.msg.text", type = "linktext", props = { parts = quote, wrap = true }, meta = { h = 36 } } },
+      children = {
+        { id = "req.msg.text", type = "linktext", props = { parts = quote, wrap = true }, meta = { h = 36 } },
+      },
     },
     { id = "req.strip", type = "statestrip", props = GuildPage.Strip(r), meta = { h = 16 } },
   }
   if r.note and r.note ~= "" then
-    kids[#kids + 1] = G.Text("req.note", ('%s: "%s"'):format(r.crafter, r.note), { color = "soft", wrap = true, meta = { h = 28 } })
+    kids[#kids + 1] =
+      G.Text("req.note", ('%s: "%s"'):format(r.crafter, r.note), { color = "soft", wrap = true, meta = { h = 28 } })
   end
   kids[#kids + 1] = {
     id = "req.mats",

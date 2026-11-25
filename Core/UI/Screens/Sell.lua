@@ -96,10 +96,19 @@ local function header(e, size)
     sub[#sub + 1] = { id = "sell.sig", type = "signal", props = { signal = s.signal } }
   end
   if s and s.soldPerDay then
-    sub[#sub + 1] = { id = "sell.rate", type = "text", props = { text = "· " .. L["~%s sells/day"]:format(count(s.soldPerDay)), color = "dim", size = 11 } }
+    sub[#sub + 1] = {
+      id = "sell.rate",
+      type = "text",
+      props = { text = "· " .. L["~%s sells/day"]:format(count(s.soldPerDay)), color = "dim", size = 11 },
+    }
   end
   return {
-    { id = "sell.item", type = "itemlink", props = { item = e.key, count = e.qty, size = size, bold = true }, meta = { h = 20 } },
+    {
+      id = "sell.item",
+      type = "itemlink",
+      props = { item = e.key, count = e.qty, size = size, bold = true },
+      meta = { h = 20 },
+    },
     { id = "sell.sub", type = "row", props = { gap = 5, align = "center" }, meta = { h = 16 }, children = sub },
   }
 end
@@ -122,15 +131,38 @@ end
 local function ladderCard(app, s, compact)
   local e = s.e
   local picks = P.Ladder(s.advice, s.picked, compact)
-  local kids = compact and { { id = "sell.item", type = "itemlink", props = { item = e.key, count = e.qty, size = 13, bold = true }, meta = { h = 20 } } }
+  local kids = compact
+      and {
+        {
+          id = "sell.item",
+          type = "itemlink",
+          props = { item = e.key, count = e.qty, size = 13, bold = true },
+          meta = { h = 20 },
+        },
+      }
     or header(e, 14)
   if not compact then
-    kids[#kids + 1] = { id = "sell.priceHead", type = "text", props = { text = L["Price each"], font = "display", size = 13 }, meta = { h = 16 } }
+    kids[#kids + 1] = {
+      id = "sell.priceHead",
+      type = "text",
+      props = { text = L["Price each"], font = "display", size = 13 },
+      meta = { h = 16 },
+    }
   end
   if #picks > 0 then
-    kids[#kids + 1] = { id = "sell.ladder", type = "priceladder", props = { picks = picks, dense = compact or nil, action = "pick" }, meta = { h = compact and 130 or 150 } }
+    kids[#kids + 1] = {
+      id = "sell.ladder",
+      type = "priceladder",
+      props = { picks = picks, dense = compact or nil, action = "pick" },
+      meta = { h = compact and 130 or 150 },
+    }
   else
-    kids[#kids + 1] = { id = "sell.noLadder", type = "text", props = { text = L["No suggestion yet: searching what's on sale"], color = "dim", size = 11 }, meta = { h = 18 } }
+    kids[#kids + 1] = {
+      id = "sell.noLadder",
+      type = "text",
+      props = { text = L["No suggestion yet: searching what's on sale"], color = "dim", size = 11 },
+      meta = { h = 18 },
+    }
   end
   local durLabel = L["%d h"]:format(ns.Posting and ns.Posting.DurationHours(s.duration) or 24)
   kids[#kids + 1] = {
@@ -139,16 +171,42 @@ local function ladderCard(app, s, compact)
     props = { gap = 8 },
     meta = { h = 42 },
     children = {
-      { id = "sell.qty", type = "field", props = { label = L["Quantity"], value = tostring(s.qty), numeric = true, action = "qty" }, meta = { w = compact and 50 or 56 } },
-      { id = "sell.price", type = "field", props = { label = L["Price each"], value = s.price and ns.MoneyInputText(s.price) or "", hint = L["gold"], action = "price", money = true }, meta = { w = compact and 80 or 90 } },
+      {
+        id = "sell.qty",
+        type = "field",
+        props = { label = L["Quantity"], value = tostring(s.qty), numeric = true, action = "qty" },
+        meta = { w = compact and 50 or 56 },
+      },
+      {
+        id = "sell.price",
+        type = "field",
+        props = {
+          label = L["Price each"],
+          value = s.price and ns.MoneyInputText(s.price) or "",
+          hint = L["gold"],
+          action = "price",
+          money = true,
+        },
+        meta = { w = compact and 80 or 90 },
+      },
       {
         id = "sell.dur",
         type = "column",
         props = { gap = 3 },
         meta = { w = 70 },
         children = {
-          { id = "sell.durLabel", type = "text", props = { text = L["Duration"], color = "dim", size = 11 }, meta = { h = 15 } },
-          { id = "sell.duration", type = "menubutton", props = { label = durLabel, options = P.Durations(), selected = tostring(s.duration), action = "duration" }, meta = { h = 24 } },
+          {
+            id = "sell.durLabel",
+            type = "text",
+            props = { text = L["Duration"], color = "dim", size = 11 },
+            meta = { h = 15 },
+          },
+          {
+            id = "sell.duration",
+            type = "menubutton",
+            props = { label = durLabel, options = P.Durations(), selected = tostring(s.duration), action = "duration" },
+            meta = { h = 24 },
+          },
         },
       },
     },
@@ -159,15 +217,30 @@ local function ladderCard(app, s, compact)
       kids[#kids + 1] = {
         id = "sell.last",
         type = "text",
-        props = { text = L["Last time you posted it: %s for %s"]:format(money(last.unit), L["%d h"]:format(last.hours or 24)), color = "dim", size = 11 },
+        props = {
+          text = L["Last time you posted it: %s for %s"]:format(money(last.unit), L["%d h"]:format(last.hours or 24)),
+          color = "dim",
+          size = 11,
+        },
         meta = { h = 16 },
       }
     end
-    kids[#kids + 1] = { id = "sell.deposit", type = "keyvalue", props = { label = L["Deposit"], copper = s.deposit, text = not s.deposit and "—" or nil }, meta = { h = 18 } }
+    kids[#kids + 1] = {
+      id = "sell.deposit",
+      type = "keyvalue",
+      props = { label = L["Deposit"], copper = s.deposit, text = not s.deposit and "—" or nil },
+      meta = { h = 18 },
+    }
   end
-  local cutLabel = compact and L["You net, after the cut"] or L["You net, after the %d%% cut"]:format(math.floor((s.cut or 0.05) * 100 + 0.5))
+  local cutLabel = compact and L["You net, after the cut"]
+    or L["You net, after the %d%% cut"]:format(math.floor((s.cut or 0.05) * 100 + 0.5))
   local net = P.Net(s.price, s.n, s.cut)
-  kids[#kids + 1] = { id = "sell.net", type = "keyvalue", props = { label = cutLabel, copper = net, text = not net and "—" or nil }, meta = { h = 18 } }
+  kids[#kids + 1] = {
+    id = "sell.net",
+    type = "keyvalue",
+    props = { label = cutLabel, copper = net, text = not net and "—" or nil },
+    meta = { h = 18 },
+  }
   kids[#kids + 1] = { id = "sell.push", type = "spacer", meta = { grow = 1 } }
   local canPost = app:AtAH() and (s.price or 0) > 0 and s.n > 0
   local buttons = {
@@ -186,9 +259,18 @@ local function ladderCard(app, s, compact)
     { id = "sell.skip", type = "button", props = { label = L["Skip"], action = "skip" }, meta = { w = 50 } },
   }
   if compact and s.next then
-    buttons[#buttons + 1] = { id = "sell.thenC", type = "text", props = { text = L["then %s"]:format(ns.Widgets and ns.Widgets.LinkText(s.next.key) or ""), color = "dim", size = 11 } }
+    buttons[#buttons + 1] = {
+      id = "sell.thenC",
+      type = "text",
+      props = {
+        text = L["then %s"]:format(ns.Widgets and ns.Widgets.LinkText(s.next.key) or ""),
+        color = "dim",
+        size = 11,
+      },
+    }
   end
-  kids[#kids + 1] = { id = "sell.buttons", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = buttons }
+  kids[#kids + 1] =
+    { id = "sell.buttons", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = buttons }
   if not compact then
     if s.next then
       kids[#kids + 1] = {
@@ -202,7 +284,12 @@ local function ladderCard(app, s, compact)
         },
       }
     end
-    kids[#kids + 1] = { id = "sell.howto", type = "text", props = { text = L["Each post takes one click: the game asks for one."], color = "dim", size = 11, wrap = true }, meta = { h = 16 } }
+    kids[#kids + 1] = {
+      id = "sell.howto",
+      type = "text",
+      props = { text = L["Each post takes one click: the game asks for one."], color = "dim", size = 11, wrap = true },
+      meta = { h = 16 },
+    }
   end
   return kids
 end
@@ -222,30 +309,57 @@ local function tipButtons(primary)
 end
 
 local function note(text, h)
-  return { id = "sell.note", type = "text", props = { text = text, color = "dim", size = 11, wrap = true }, meta = { h = h or 30 } }
+  return {
+    id = "sell.note",
+    type = "text",
+    props = { text = text, color = "dim", size = 11, wrap = true },
+    meta = { h = h or 30 },
+  }
 end
 
 local function tipCard(app, s)
   local e = s.e
   local kids = {
-    { id = "sell.item", type = "itemlink", props = { item = e.key, count = e.qty, size = 14, bold = true }, meta = { h = 20 } },
+    {
+      id = "sell.item",
+      type = "itemlink",
+      props = { item = e.key, count = e.qty, size = 14, bold = true },
+      meta = { h = 20 },
+    },
   }
   if s.tip == "craft" then
     local c = P.CraftCard(e)
-    kids[#kids + 1] = { id = "sell.tipSub", type = "text", props = { text = c.sub, color = "dim", size = 11 }, meta = { h = 16 } }
-    kids[#kids + 1] = { id = "sell.tipHead", type = "text", props = { text = L["Worth more made first"], font = "display", size = 13 }, meta = { h = 18 } }
+    kids[#kids + 1] =
+      { id = "sell.tipSub", type = "text", props = { text = c.sub, color = "dim", size = 11 }, meta = { h = 16 } }
+    kids[#kids + 1] = {
+      id = "sell.tipHead",
+      type = "text",
+      props = { text = L["Worth more made first"], font = "display", size = 13 },
+      meta = { h = 18 },
+    }
     add(kids, kvs("sell.kv", c.rows))
     kids[#kids + 1] = { id = "sell.push", type = "spacer", meta = { grow = 1 } }
     kids[#kids + 1] = tipButtons({
       id = "sell.queue",
       type = "button",
-      props = { label = L["Queue %d"]:format(c.crafts), action = "queue", payload = { recipe = c.recipe, n = c.crafts }, variant = (c.recipe and c.crafts > 0) and "primary" or "disabled" },
+      props = {
+        label = L["Queue %d"]:format(c.crafts),
+        action = "queue",
+        payload = { recipe = c.recipe, n = c.crafts },
+        variant = (c.recipe and c.crafts > 0) and "primary" or "disabled",
+      },
     })
     kids[#kids + 1] = note(L["Queue puts it on your crafting queue. What you make comes back to this list once made."])
   elseif s.tip == "disenchant" then
     local c = P.DECard(e, P.quote)
-    kids[#kids + 1] = { id = "sell.tipSub", type = "text", props = { text = c.sub, color = "dim", size = 11 }, meta = { h = 16 } }
-    kids[#kids + 1] = { id = "sell.tipHead", type = "text", props = { text = L["Worth more disenchanted"], font = "display", size = 13 }, meta = { h = 18 } }
+    kids[#kids + 1] =
+      { id = "sell.tipSub", type = "text", props = { text = c.sub, color = "dim", size = 11 }, meta = { h = 16 } }
+    kids[#kids + 1] = {
+      id = "sell.tipHead",
+      type = "text",
+      props = { text = L["Worth more disenchanted"], font = "display", size = 13 },
+      meta = { h = 18 },
+    }
     add(kids, kvs("sell.kv", c.rows))
     kids[#kids + 1] = { id = "sell.push", type = "spacer", meta = { grow = 1 } }
     local bag, slot
@@ -256,17 +370,37 @@ local function tipCard(app, s)
         bag, slot = b, sl
       end
     end
-    kids[#kids + 1] = tipButtons({ id = "sell.de", type = "debutton", props = { label = L["Disenchant"], bag = bag, slot = slot, action = "disenchanted" } })
-    kids[#kids + 1] = note(L["One click each: the game wants a click for every disenchant. Not an enchanter on this character?"], 28)
-    kids[#kids + 1] = { id = "sell.findDE", type = "button", props = { label = L["Find one in your guild"], action = "findEnchanter" }, meta = { h = 22 } }
+    kids[#kids + 1] = tipButtons({
+      id = "sell.de",
+      type = "debutton",
+      props = { label = L["Disenchant"], bag = bag, slot = slot, action = "disenchanted" },
+    })
+    kids[#kids + 1] =
+      note(L["One click each: the game wants a click for every disenchant. Not an enchanter on this character?"], 28)
+    kids[#kids + 1] = {
+      id = "sell.findDE",
+      type = "button",
+      props = { label = L["Find one in your guild"], action = "findEnchanter" },
+      meta = { h = 22 },
+    }
   else
     local c = P.VendorCard(e, P.Deposit(e, e.qty, P.DefaultDuration()), s.cut)
-    kids[#kids + 1] = { id = "sell.tipSub", type = "text", props = { text = c.sub, color = "dim", size = 11 }, meta = { h = 16 } }
-    kids[#kids + 1] = { id = "sell.tipHead", type = "text", props = { text = L["Worth more at a vendor"], font = "display", size = 13 }, meta = { h = 18 } }
+    kids[#kids + 1] =
+      { id = "sell.tipSub", type = "text", props = { text = c.sub, color = "dim", size = 11 }, meta = { h = 16 } }
+    kids[#kids + 1] = {
+      id = "sell.tipHead",
+      type = "text",
+      props = { text = L["Worth more at a vendor"], font = "display", size = 13 },
+      meta = { h = 18 },
+    }
     add(kids, kvs("sell.kv", c.rows))
     kids[#kids + 1] = { id = "sell.push", type = "spacer", meta = { grow = 1 } }
-    kids[#kids + 1] = tipButtons({ id = "sell.vendor", type = "button", props = { label = L["At a vendor"], variant = "disabled" } })
-    kids[#kids + 1] = note(L["Nothing to do here. At any vendor, AME's panel beside the merchant window sells everything tipped Vendor in one go."], 42)
+    kids[#kids + 1] =
+      tipButtons({ id = "sell.vendor", type = "button", props = { label = L["At a vendor"], variant = "disabled" } })
+    kids[#kids + 1] = note(
+      L["Nothing to do here. At any vendor, AME's panel beside the merchant window sells everything tipped Vendor in one go."],
+      42
+    )
   end
   return kids
 end
@@ -287,7 +421,13 @@ local function headLine(e)
   local h = header(e, 14)
   local item, sub = h[1], h[2]
   item.meta, sub.meta = nil, { grow = 1 } -- the market line takes the rest of the width
-  return { id = "sell.head", type = "row", props = { gap = 8, align = "center" }, meta = { h = 20 }, children = { item, sub } }
+  return {
+    id = "sell.head",
+    type = "row",
+    props = { gap = 8, align = "center" },
+    meta = { h = 20 },
+    children = { item, sub },
+  }
 end
 
 local function ladderWide(app, s)
@@ -297,7 +437,13 @@ local function ladderWide(app, s)
     left[1].props.dense = true
     left[1].meta = { h = 130 }
   end
-  local right = { k["sell.inputs"], k["sell.deposit"], k["sell.net"], { id = "sell.push", type = "spacer", meta = { grow = 1 } }, k["sell.buttons"] }
+  local right = {
+    k["sell.inputs"],
+    k["sell.deposit"],
+    k["sell.net"],
+    { id = "sell.push", type = "spacer", meta = { grow = 1 } },
+    k["sell.buttons"],
+  }
   if k["sell.then"] then
     right[#right + 1] = k["sell.then"]
   end
@@ -354,7 +500,14 @@ end
 local function card(app, s, compact)
   local kids
   if not s.e then
-    kids = { { id = "sell.none", type = "text", props = { text = L["Nothing in your bags can be listed here."], color = "dim", wrap = true }, meta = { h = 40 } } }
+    kids = {
+      {
+        id = "sell.none",
+        type = "text",
+        props = { text = L["Nothing in your bags can be listed here."], color = "dim", wrap = true },
+        meta = { h = 40 },
+      },
+    }
   elseif compact then
     kids = s.ladder and ladderCard(app, s, true) or tipCard(app, s)
   else
@@ -396,7 +549,11 @@ local function body(app, p)
     { id = "sell.barGap", type = "spacer", meta = { grow = 1 } },
   }
   if compact then
-    bar[#bar + 1] = { id = "sell.open", type = "button", props = { label = L["Open item"], action = "openItem", variant = e and "normal" or "disabled" } }
+    bar[#bar + 1] = {
+      id = "sell.open",
+      type = "button",
+      props = { label = L["Open item"], action = "openItem", variant = e and "normal" or "disabled" },
+    }
   end
   local bags = {
     id = "sell.bags",
@@ -406,7 +563,9 @@ local function body(app, p)
       columns = P.Columns("bags"),
       action = "pickBag",
       selected = e and tostring(e.key) or nil,
-      note = not compact and L["Worth: all of it, after the cut and the deposit you'd lose if it didn't sell; at a vendor when that pays more."] or nil,
+      note = not compact
+          and L["Worth: all of it, after the cut and the deposit you'd lose if it didn't sell; at a vendor when that pays more."]
+        or nil,
       empty = L["Nothing in your bags can be listed here."],
     },
   }
@@ -426,7 +585,10 @@ local function body(app, p)
       local fc = IP.Gather(app, key, function()
         app:Redraw()
       end)
-      app:Source("sell.chart", IP.ChartData(fc.entry, fc.sum, range, fc.now, { vendor = fc.vendor, trades = fc.trades }))
+      app:Source(
+        "sell.chart",
+        IP.ChartData(fc.entry, fc.sum, range, fc.now, { vendor = fc.vendor, trades = fc.trades })
+      )
     else
       app:Source("sell.chart", { points = {}, message = L["Pick an item on the left."] })
     end
@@ -455,7 +617,13 @@ local function body(app, p)
         meta = { grow = 1 },
         children = {
           -- on top, beside the top of the bags (the least mouse travel): the card and what's on sale now
-          { id = "sell.top", type = "row", props = { gap = 8 }, meta = { h = 192 }, children = { card(app, s, false), sale } },
+          {
+            id = "sell.top",
+            type = "row",
+            props = { gap = 8 },
+            meta = { h = 192 },
+            children = { card(app, s, false), sale },
+          },
           {
             id = "sell.chartCard",
             type = "card",
@@ -468,21 +636,41 @@ local function body(app, p)
                 props = { gap = 6, align = "center" },
                 meta = { h = 22 },
                 children = {
-                  { id = "sell.chartTitle", type = "text", props = { text = L["Price history"], font = "display", size = 13 } },
+                  {
+                    id = "sell.chartTitle",
+                    type = "text",
+                    props = { text = L["Price history"], font = "display", size = 13 },
+                  },
                   { id = "sell.chartGap", type = "spacer", meta = { grow = 1 } },
                   {
                     id = "sell.range",
                     type = "segmented",
-                    props = { options = IP and IP.RangeOptions(false) or { { "7D", "7D" } }, selected = range, action = "range" },
+                    props = {
+                      options = IP and IP.RangeOptions(false) or { { "7D", "7D" } },
+                      selected = range,
+                      action = "range",
+                    },
                   },
-                  { id = "sell.open", type = "button", props = { label = L["Open item"], action = "openItem", variant = e and "normal" or "disabled" }, meta = { h = 22 } },
+                  {
+                    id = "sell.open",
+                    type = "button",
+                    props = { label = L["Open item"], action = "openItem", variant = e and "normal" or "disabled" },
+                    meta = { h = 22 },
+                  },
                 },
               },
               {
                 id = "sell.chart",
                 type = "chart",
                 -- compact: the legend folds into its corner button (the full one would cover this smaller chart)
-                props = { source = "sell.chart", kind = "item", range = range, style = style, compact = true, bare = true },
+                props = {
+                  source = "sell.chart",
+                  kind = "item",
+                  range = range,
+                  style = style,
+                  compact = true,
+                  bare = true,
+                },
                 meta = { grow = 1 },
               },
             },

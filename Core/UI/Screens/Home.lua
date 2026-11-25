@@ -15,22 +15,43 @@ local function strip(app, f)
   local foot
   if line then
     local first = line.ys[1]
-    app:Source("home.gold", { xs = line.xs, ys = line.ys, color = "gold", label = L["Your gold"], format = "money", id = "home.gold" })
+    app:Source(
+      "home.gold",
+      { xs = line.xs, ys = line.ys, color = "gold", label = L["Your gold"], format = "money", id = "home.gold" }
+    )
     foot = {
       id = "home.gold.foot",
       type = "row",
       props = { gap = 8 },
       meta = { h = 16 },
       children = {
-        { id = "home.gold.from", type = "text", props = { text = date("%b %d", line.xs[1]) .. " · " .. W.Money(first, true), size = 11, color = "dim" }, meta = { grow = 1 } },
-        { id = "home.gold.to", type = "text", props = { text = L["today · %s"]:format(W.Money(now, true)), size = 11, color = "dim", justify = "RIGHT" }, meta = { grow = 1 } },
+        {
+          id = "home.gold.from",
+          type = "text",
+          props = { text = date("%b %d", line.xs[1]) .. " · " .. W.Money(first, true), size = 11, color = "dim" },
+          meta = { grow = 1 },
+        },
+        {
+          id = "home.gold.to",
+          type = "text",
+          props = { text = L["today · %s"]:format(W.Money(now, true)), size = 11, color = "dim", justify = "RIGHT" },
+          meta = { grow = 1 },
+        },
       },
     }
   else
-    app:Source("home.gold", { xs = {}, ys = {}, id = "home.gold", message = L["Your gold line fills in a point a day."] })
+    app:Source(
+      "home.gold",
+      { xs = {}, ys = {}, id = "home.gold", message = L["Your gold line fills in a point a day."] }
+    )
   end
   local goldKids = {
-    { id = "home.gold.chart", type = "chart", props = { source = "home.gold", kind = "spark", bare = true }, meta = { grow = 1 } },
+    {
+      id = "home.gold.chart",
+      type = "chart",
+      props = { source = "home.gold", kind = "spark", bare = true },
+      meta = { grow = 1 },
+    },
   }
   goldKids[#goldKids + 1] = foot
   local mailKids = {}
@@ -38,15 +59,29 @@ local function strip(app, f)
     mailKids[i] = { id = "home.mail." .. i, type = "keyvalue", props = r, meta = { h = 18 } }
   end
   if #mailKids == 0 then
-    mailKids[1] = { id = "home.mail.none", type = "text", props = { text = L["Nothing waiting, as each mailbox was last opened"], size = 12, color = "dim" }, meta = { h = 18 } }
+    mailKids[1] = {
+      id = "home.mail.none",
+      type = "text",
+      props = { text = L["Nothing waiting, as each mailbox was last opened"], size = 12, color = "dim" },
+      meta = { h = 18 },
+    }
   else
-    mailKids[#mailKids + 1] = { id = "home.mail.all", type = "keyvalue", props = { label = L["In all"], copper = f.mailTotal or 0, total = true }, meta = { h = 18 } }
+    mailKids[#mailKids + 1] = {
+      id = "home.mail.all",
+      type = "keyvalue",
+      props = { label = L["In all"], copper = f.mailTotal or 0, total = true },
+      meta = { h = 18 },
+    }
   end
   mailKids[#mailKids + 1] = { id = "home.mail.gap", type = "spacer", meta = { grow = 1 } }
   mailKids[#mailKids + 1] = {
     id = "home.mail.foot",
     type = "text",
-    props = { text = L["As each character's mailbox was last opened. Mail runs out after 30 days."], size = 11, color = "dim" },
+    props = {
+      text = L["As each character's mailbox was last opened. Mail runs out after 30 days."],
+      size = 11,
+      color = "dim",
+    },
     meta = { h = 16 },
   }
   return {
@@ -66,7 +101,11 @@ local function strip(app, f)
         {
           id = "home.mailcard",
           type = "card",
-          props = { title = L["Waiting in your mail"], note = L["· gold and items, by when the first runs out"], gap = 4 },
+          props = {
+            title = L["Waiting in your mail"],
+            note = L["· gold and items, by when the first runs out"],
+            gap = 4,
+          },
           meta = { grow = 1 },
           children = mailKids,
         },
@@ -91,10 +130,24 @@ local function body(app)
     leftTitle = state == "ah" and L["To do now, at the auction house"] or L["To do now"]
     rightTitle = L["Worth doing today"]
     if #left == 0 then
-      left = { { key = "none", pill = "—", title = L["Nothing needs you right now"], sub = L["Alerts, cooldowns, requests and your auctions show here"] } }
+      left = {
+        {
+          key = "none",
+          pill = "—",
+          title = L["Nothing needs you right now"],
+          sub = L["Alerts, cooldowns, requests and your auctions show here"],
+        },
+      }
     end
     if #right == 0 then
-      right = { { key = "none", pill = "—", title = L["Nothing stands out yet"], sub = L["More scans and your professions fill this in"] } }
+      right = {
+        {
+          key = "none",
+          pill = "—",
+          title = L["Nothing stands out yet"],
+          sub = L["More scans and your professions fill this in"],
+        },
+      }
     end
     -- the newest full scan over 3 hours old (board HomeStale): a fresh scan first. It leads To do now, the rest stay
     -- but quiet; Worth doing is greyed until the scan is in, since it is ranked on the old prices.
@@ -114,7 +167,8 @@ local function body(app)
         pill = L["SCAN"],
         tone = "warn",
         title = L["Your prices are %s old"]:format(Home.Age(f.scanAge)),
-        sub = at and L["Scan before acting on them · about a minute"] or L["Scan at your next visit to an auction house"],
+        sub = at and L["Scan before acting on them · about a minute"]
+          or L["Scan at your next visit to an auction house"],
         -- at the auction house: the scan button's own state (Scanning..., Full scan in 12:34: greyed while it waits)
         button = at and (App.ScanButtonState and App.ScanButtonState().label or L["Full scan"]) or L["At the AH"],
         action = "scan",
@@ -138,7 +192,13 @@ local function body(app)
     type = "column",
     props = { gap = 10 },
     children = {
-      { id = "home.kpis", type = "grid", props = { cols = 4, gap = 10, rowH = 66 }, meta = { h = 66 }, children = kpis },
+      {
+        id = "home.kpis",
+        type = "grid",
+        props = { cols = 4, gap = 10, rowH = 66 },
+        meta = { h = 66 },
+        children = kpis,
+      },
       {
         id = "home.cols",
         type = "row",

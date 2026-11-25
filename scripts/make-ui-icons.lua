@@ -96,7 +96,28 @@ ICONS.Close = any({ line(3, 3, 13, 13, 1.6, "butt"), line(13, 3, 3, 13, 1.6, "bu
 local function writeTGA(path, alpha)
   local f = assert(io.open(path, "wb"))
   -- no id, no colour map, uncompressed true colour, 32 bpp, 8 alpha bits, origin top-left (bit 5)
-  f:write(string.char(0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, SIZE % 256, math.floor(SIZE / 256), SIZE % 256, math.floor(SIZE / 256), 32, 40))
+  f:write(
+    string.char(
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      SIZE % 256,
+      math.floor(SIZE / 256),
+      SIZE % 256,
+      math.floor(SIZE / 256),
+      32,
+      40
+    )
+  )
   for row = 0, SIZE - 1 do
     local out = {}
     for col = 0, SIZE - 1 do

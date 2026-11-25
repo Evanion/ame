@@ -118,11 +118,20 @@ local function header(f, compact, sub)
     props = { gap = 10, align = "center" },
     meta = { h = compact and 32 or 40 },
     children = {
-      { id = "item.name", type = "itemhead", props = { item = f.key, sub = sub, compact = compact }, meta = { grow = 1 } },
+      {
+        id = "item.name",
+        type = "itemhead",
+        props = { item = f.key, sub = sub, compact = compact },
+        meta = { grow = 1 },
+      },
       {
         id = "item.search",
         type = "input",
-        props = { hint = compact and L["Search or Shift-click"] or L["Search item, or Shift-click one"], action = "find", suggest = true },
+        props = {
+          hint = compact and L["Search or Shift-click"] or L["Search item, or Shift-click one"],
+          action = "find",
+          suggest = true,
+        },
         meta = { w = compact and 170 or 260, h = 24 },
       },
     },
@@ -185,7 +194,8 @@ local function priceCard(f, h)
   local pc = ItemPage.PriceCard(f.sum, f.indexed)
   local top = { text("item.price.title", { text = L["Market price"], font = "display", size = 14 }, { grow = 1 }) }
   if pc.signal then
-    top[#top + 1] = { id = "item.price.signal", type = "signal", props = { signal = pc.signal }, meta = { w = 52, h = 16 } }
+    top[#top + 1] =
+      { id = "item.price.signal", type = "signal", props = { signal = pc.signal }, meta = { w = 52, h = 16 } }
   end
   if pc.phase then
     top[#top + 1] = text("item.price.phase", { text = pc.phase, color = "dim", size = 11 }, { w = 70, h = 16 })
@@ -218,7 +228,11 @@ local function postCard(f)
   end
   for i, n in ipairs(p.notes) do
     local note = type(n) == "table" and n or { text = n }
-    kids[#kids + 1] = text("item.post.note" .. i, { text = note.text, color = note.tone or "dim", size = 11, wrap = true }, { h = 28 })
+    kids[#kids + 1] = text(
+      "item.post.note" .. i,
+      { text = note.text, color = note.tone or "dim", size = 11, wrap = true },
+      { h = 28 }
+    )
   end
   local h = 20 + 18 + (#p.picks > 0 and 18 * #p.picks + 2 or 0) + (p.net and 20 or 0) + #p.notes * 30
   return card("item.post", nil, kids, { h = h })
@@ -247,7 +261,11 @@ local function lowerCards(f)
     props = { cols = 3, gap = 8, rowH = 112 },
     meta = { h = 112 },
     children = {
-      card("item.position", L["Your position"], rows("item.pos", ItemPage.Position(f.held, f.basis, f.sum and f.sum.market))),
+      card(
+        "item.position",
+        L["Your position"],
+        rows("item.pos", ItemPage.Position(f.held, f.basis, f.sum and f.sum.market))
+      ),
       card("item.houses", L["Other auction houses"], houseKids),
       card("item.craft", L["Crafting"], rows("item.craftrow", ItemPage.CraftRows(f.craft or {}))),
     },
@@ -330,23 +348,36 @@ local function summaryBar(f, details)
   local w = W()
   local market = Kit.Color("dim", L["Market"]) .. " " .. (pc.now and w.Money(pc.now, true) or "—")
   if f.sum and f.sum.change then
-    market = market .. " " .. Kit.Color(f.sum.change >= 0 and "good" or "bad", (f.sum.change >= 0 and "▲" or "▼") .. ("%d%%"):format(math.floor(math.abs(f.sum.change) * 100 + 0.5)))
+    market = market
+      .. " "
+      .. Kit.Color(
+        f.sum.change >= 0 and "good" or "bad",
+        (f.sum.change >= 0 and "▲" or "▼") .. ("%d%%"):format(math.floor(math.abs(f.sum.change) * 100 + 0.5))
+      )
   end
   local kids = { text("item.sum.market", { text = market }, { h = 18 }) }
   if pc.signal then
-    kids[#kids + 1] = { id = "item.sum.signal", type = "signal", props = { signal = pc.signal }, meta = { w = 52, h = 16 } }
+    kids[#kids + 1] =
+      { id = "item.sum.signal", type = "signal", props = { signal = pc.signal }, meta = { w = 52, h = 16 } }
   end
   local n = f.advice and f.advice.normal
   if n then
     kids[#kids + 1] = text("item.sum.post", {
-      text = Kit.Color("dim", L["Post at"]) .. " " .. w.Money(n.price, true) .. " " .. Kit.Color("dim", w.Hours(n.hours)),
+      text = Kit.Color("dim", L["Post at"]) .. " " .. w.Money(n.price, true) .. " " .. Kit.Color(
+        "dim",
+        w.Hours(n.hours)
+      ),
     }, { h = 18 })
   end
   kids[#kids + 1] = spacer("item.sum.gap")
   kids[#kids + 1] = {
     id = "item.details",
     type = "button",
-    props = { label = L["Details"] .. (details and " ▴" or " ▾"), action = "details", variant = details and "selected" or nil },
+    props = {
+      label = L["Details"] .. (details and " ▴" or " ▾"),
+      action = "details",
+      variant = details and "selected" or nil,
+    },
   }
   return card("item.summary", nil, kids, { h = 36 }, { layout = "row", gap = 12, pad = 6, align = "center" })
 end
@@ -372,7 +403,12 @@ local function compactLayout(f, params, atAH, range, style, sub)
           },
         },
         spacer("item.panes.gap"),
-        text("item.panes.note", { text = L["cheapest first"] .. " · " .. ItemPage.OnSale(f.book, 0, f.now):gsub("^.-· ", ""), color = "dim", size = 11, justify = "RIGHT" }, { w = 220, h = 18 }),
+        text("item.panes.note", {
+          text = L["cheapest first"] .. " · " .. ItemPage.OnSale(f.book, 0, f.now):gsub("^.-· ", ""),
+          color = "dim",
+          size = 11,
+          justify = "RIGHT",
+        }, { w = 220, h = 18 }),
       },
     }
     if pane == "chart" then
@@ -484,7 +520,10 @@ function S.Build(app, params)
   local compact = app.compact and true or false
   if not key then
     S.facts = nil
-    app:Source("item.chart", { points = {}, message = L["Pick an item: search above, Shift-click one anywhere, or click a row on the Market tab."] })
+    app:Source("item.chart", {
+      points = {},
+      message = L["Pick an item: search above, Shift-click one anywhere, or click a row on the Market tab."],
+    })
     return empty(compact)
   end
   local atAH = app:AtAH()
@@ -519,7 +558,12 @@ function S.Status(app, params)
   local out = ItemPage.PriceSource(f.raw, f.entry and f.entry.latest, f.now, me, app.compact)
   local dropped = f.sum and f.sum.dropped or 0
   if dropped > 0 then
-    out = out .. " · " .. Kit.Color("warn", (dropped == 1 and L["%d outlier price ignored"] or L["%d outlier prices ignored"]):format(dropped))
+    out = out
+      .. " · "
+      .. Kit.Color(
+        "warn",
+        (dropped == 1 and L["%d outlier price ignored"] or L["%d outlier prices ignored"]):format(dropped)
+      )
   end
   return out
 end

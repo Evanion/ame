@@ -151,7 +151,8 @@ function Notify.Tree(seenAt, now)
       sub = L["Alerts, craft requests and news of a newer AME show up here"],
     }
   end
-  local note = L["Click one to open what it is about. What shows here, and whether it also prints in chat or plays a sound, is set under Settings > Notifications."]
+  local note =
+    L["Click one to open what it is about. What shows here, and whether it also prints in chat or plays a sound, is set under Settings > Notifications."]
   if older > 0 then
     note = L["+ %d older."]:format(older) .. " " .. note
   end
@@ -166,7 +167,12 @@ function Notify.Tree(seenAt, now)
         props = { align = "center" },
         meta = { h = 22 },
         children = {
-          { id = "notify.title", type = "text", props = { text = L["Notifications"], font = "display", size = 14 }, meta = { grow = 1 } },
+          {
+            id = "notify.title",
+            type = "text",
+            props = { text = L["Notifications"], font = "display", size = 14 },
+            meta = { grow = 1 },
+          },
           #list > 0 and {
             id = "notify.clear",
             type = "keyvalue",
@@ -175,8 +181,18 @@ function Notify.Tree(seenAt, now)
           } or { id = "notify.clear", type = "spacer", meta = { w = 70 } },
         },
       },
-      { id = "notify.list", type = "noticelist", props = { bare = true, rows = rows, rowAction = "openNotice" }, meta = { grow = 1 } },
-      { id = "notify.note", type = "text", props = { text = note, color = "dim", size = 11, wrap = true }, meta = { h = 34 } },
+      {
+        id = "notify.list",
+        type = "noticelist",
+        props = { bare = true, rows = rows, rowAction = "openNotice" },
+        meta = { grow = 1 },
+      },
+      {
+        id = "notify.note",
+        type = "text",
+        props = { text = note, color = "dim", size = 11, wrap = true },
+        meta = { h = 34 },
+      },
     },
   }
 end

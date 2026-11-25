@@ -50,7 +50,15 @@ function Prof.Build(app, params)
   local rows = Prof.Rows(f)
   local data, picked, first = {}, nil, nil
   for i, r in ipairs(rows) do
-    data[i] = { key = r.key, char = r.char, profession = r.profession, skillText = r.skillText, known = r.known, cooldown = r.cooldown, faded = r.faded }
+    data[i] = {
+      key = r.key,
+      char = r.char,
+      profession = r.profession,
+      skillText = r.skillText,
+      known = r.known,
+      cooldown = r.cooldown,
+      faded = r.faded,
+    }
     if r.key == params.selected then
       picked = r
     end
@@ -69,10 +77,20 @@ function Prof.Build(app, params)
     })
     local earn = {}
     for i, e in ipairs(picked.earners) do
-      earn[i] = { key = "earn:" .. e.id, item = e.item, label = not e.item and e.name or nil, perDay = e.eval and e.eval.perDay }
+      earn[i] = {
+        key = "earn:" .. e.id,
+        item = e.item,
+        label = not e.item and e.name or nil,
+        perDay = e.eval and e.eval.perDay,
+      }
     end
     app:Source("prof.earn", earn)
-    right[#right + 1] = { id = "prof.d.earnTitle", type = "text", props = { text = L["Best earners"], font = "display", size = 14 }, meta = { h = 20 } }
+    right[#right + 1] = {
+      id = "prof.d.earnTitle",
+      type = "text",
+      props = { text = L["Best earners"], font = "display", size = 14 },
+      meta = { h = 20 },
+    }
     right[#right + 1] = {
       id = "prof.d.earn",
       type = "crafttable",
@@ -83,7 +101,11 @@ function Prof.Build(app, params)
     right[#right + 1] = {
       id = "prof.d.none",
       type = "text",
-      props = { text = L["Open this profession once on that character, so AME knows its recipes."], color = "dim", wrap = true },
+      props = {
+        text = L["Open this profession once on that character, so AME knows its recipes."],
+        color = "dim",
+        wrap = true,
+      },
       meta = { h = 30 },
     }
   end
@@ -91,7 +113,11 @@ function Prof.Build(app, params)
   right[#right + 1] = {
     id = "prof.d.cooldown",
     type = "check",
-    props = { label = L["Tell me when a cooldown is ready"], checked = ns.Settings:Get("cooldownAlerts") ~= false, action = "cooldownAlerts" },
+    props = {
+      label = L["Tell me when a cooldown is ready"],
+      checked = ns.Settings:Get("cooldownAlerts") ~= false,
+      action = "cooldownAlerts",
+    },
     meta = { h = 18 },
   }
   local usable = picked and not picked.unrecorded and picked.skillLine and not CP.GATHERING[picked.skillLine]
@@ -101,8 +127,16 @@ function Prof.Build(app, params)
     props = { gap = 6 },
     meta = { h = 24 },
     children = {
-      { id = "prof.earners", type = "button", props = { label = L["Its top earners"], action = "earners", variant = not usable and "disabled" or nil } },
-      { id = "prof.leveling", type = "button", props = { label = L["Leveling"], action = "leveling", variant = not usable and "disabled" or nil } },
+      {
+        id = "prof.earners",
+        type = "button",
+        props = { label = L["Its top earners"], action = "earners", variant = not usable and "disabled" or nil },
+      },
+      {
+        id = "prof.leveling",
+        type = "button",
+        props = { label = L["Leveling"], action = "leveling", variant = not usable and "disabled" or nil },
+      },
       { id = "prof.offers", type = "button", props = { label = L["Your crafts"], action = "offers" } },
     },
   }
@@ -122,7 +156,11 @@ function Prof.Build(app, params)
           {
             id = "prof.note",
             type = "text",
-            props = { text = L["every character on this market, as their profession windows last showed them"], color = "dim", size = 11 },
+            props = {
+              text = L["every character on this market, as their profession windows last showed them"],
+              color = "dim",
+              size = 11,
+            },
             meta = { grow = 1 },
           },
         },
@@ -148,7 +186,13 @@ function Prof.Build(app, params)
             },
             meta = { grow = 1 },
           },
-          { id = "prof.right", type = "column", props = { gap = 8 }, meta = { w = app.compact and 240 or 270 }, children = right },
+          {
+            id = "prof.right",
+            type = "column",
+            props = { gap = 8 },
+            meta = { w = app.compact and 240 or 270 },
+            children = right,
+          },
         },
       },
     },

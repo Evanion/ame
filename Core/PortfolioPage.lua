@@ -163,7 +163,10 @@ function P.PositionRows(f)
       key = tostring(r.itemID),
       item = r.itemID,
       held = r.qty,
-      where = { text = P.Where(r.itemID, f.held and f.held[r.itemID] or { chars = r.chars }, f.holdingsAll), color = "dim" },
+      where = {
+        text = P.Where(r.itemID, f.held and f.held[r.itemID] or { chars = r.chars }, f.holdingsAll),
+        color = "dim",
+      },
       market = r.market,
       value = r.value,
       cost = r.unitCost,
@@ -379,9 +382,10 @@ function P.Gather(scope, range)
     local basis = AME.ledger and AME.ledger:CostBasis() or {}
     local q = index and ns.Quote.For(AME:FactionShard(), index, { fresh = false })
     f.held = ns.Holdings.Of("owned", hscope)
-    f.positions, f.totals = ns.Portfolio.Build(f.held, basis, f.items, AME.watch and AME.watch:Hidden(), q and function(id)
-      return q:Worth(id)
-    end)
+    f.positions, f.totals =
+      ns.Portfolio.Build(f.held, basis, f.items, AME.watch and AME.watch:Hidden(), q and function(id)
+        return q:Worth(id)
+      end)
   end)
   try("listed", function()
     f.listed = ns.Portfolio.Listed(f.holdings, ns.Quote.Cut, f.items)
@@ -437,7 +441,8 @@ function P.OwnedAuctions()
       if info.itemLink and ns.ItemCache and ns.ItemCache.Pair then
         key = ns.ItemCache.Pair(info.itemLink, k.itemID, k.itemSuffix)
       end
-      out[#out + 1] = { auctionID = info.auctionID, key = key, qty = info.quantity or 1, unit = info.buyoutAmount or info.bidAmount }
+      out[#out + 1] =
+        { auctionID = info.auctionID, key = key, qty = info.quantity or 1, unit = info.buyoutAmount or info.bidAmount }
     end
   end
   return out
@@ -620,7 +625,8 @@ function P.AuctionDetail(row, advice, hours, cut, t)
   local d = {}
   local post = P.LastPost(a.itemID, a.unit)
   local ago = post and ns.Widgets and ns.Widgets.Age(post.t, t or now())
-  d.posted = ago and L["Posted %s ago at %s each"]:format(ago, money(a.unit)) or L["Asking %s each"]:format(money(a.unit))
+  d.posted = ago and L["Posted %s ago at %s each"]:format(ago, money(a.unit))
+    or L["Asking %s each"]:format(money(a.unit))
   if st.kind == "undercut" then
     d.title = L["Undercut"]
     d.rows = {
@@ -644,7 +650,8 @@ function P.AuctionDetail(row, advice, hours, cut, t)
     }
   end
   if st.kind ~= "unchecked" then
-    d.note = hours and L["At your price it would take about %s to sell."]:format(ns.Widgets and ns.Widgets.Hours(hours) or hours)
+    d.note = hours
+        and L["At your price it would take about %s to sell."]:format(ns.Widgets and ns.Widgets.Hours(hours) or hours)
       or L["At your price it may not sell within a week."]
   else
     d.note = L["Check prices searches what's on sale now."]
@@ -654,12 +661,16 @@ function P.AuctionDetail(row, advice, hours, cut, t)
     local qty = a.qty or 1
     d.repost = {
       {
-        label = n.hours and L["Normal · sells in %s"]:format(ns.Widgets and ns.Widgets.Hours(n.hours) or n.hours) or L["Normal"],
+        label = n.hours and L["Normal · sells in %s"]:format(ns.Widgets and ns.Widgets.Hours(n.hours) or n.hours)
+          or L["Normal"],
         copper = n.price,
         big = true,
       },
       { label = L["New deposit"], copper = advice.deposit or 0 },
-      { label = L["You net for %s, after the cut"]:format(count(qty)), copper = math.floor(n.price * qty * (1 - (cut or 0.05)) + 0.5) },
+      {
+        label = L["You net for %s, after the cut"]:format(count(qty)),
+        copper = math.floor(n.price * qty * (1 - (cut or 0.05)) + 0.5),
+      },
     }
   end
   return d
@@ -984,7 +995,11 @@ function P.DECard(e, q)
   out.rows = {
     { label = L["Sold as it is"], copper = asIs and math.floor(asIs + 0.5) or nil, text = not asIs and "—" or nil },
     { label = L["At a vendor"], copper = sellPrice(e.key) },
-    { label = L["Disenchanted, on average"], copper = de and de.value and math.floor(de.value + 0.5) or nil, text = not (de and de.value) and "—" or nil },
+    {
+      label = L["Disenchanted, on average"],
+      copper = de and de.value and math.floor(de.value + 0.5) or nil,
+      text = not (de and de.value) and "—" or nil,
+    },
   }
   for i, o in ipairs(de and de.outcomes or {}) do
     if i > 2 then

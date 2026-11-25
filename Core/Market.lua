@@ -179,7 +179,13 @@ function Market.Sidebar(f, q, view)
   end
   add({ key = "newlist", label = "+ " .. L["New list"], link = true })
   if (f.hidden or 0) > 0 then
-    add({ key = "hidden", label = L["Hidden"], count = thousands(f.hidden), tone = "dim", selected = not alerts and q.list == "hidden" })
+    add({
+      key = "hidden",
+      label = L["Hidden"],
+      count = thousands(f.hidden),
+      tone = "dim",
+      selected = not alerts and q.list == "hidden",
+    })
   end
   if f.guild and #f.guild > 0 then
     add({ heading = true, label = L["Guild watchlists"] })
@@ -905,7 +911,8 @@ function Market.RouteCost(e, f)
     { label = L["Buy at the %s"]:format(f.buyHouse or ""), copper = e.buy },
     { label = L["Sells at the %s"]:format(f.sellHouse or ""), copper = e.sell },
     { label = L["%d%% cut"]:format(f.cutPct or 0), copper = -(e.fee or 0), signed = true },
-    e.deposit and { label = L["Deposit if unsold"], copper = e.deposit } or { label = L["Deposit if unsold"], text = "—" },
+    e.deposit and { label = L["Deposit if unsold"], copper = e.deposit }
+      or { label = L["Deposit if unsold"], text = "—" },
     { label = L["You net"], copper = e.net or e.profit, signed = true, total = true },
   }
 end
@@ -965,7 +972,10 @@ function Market.ScreenerStatus(f)
 end
 
 function Market.AlertStatus(n, firedToday)
-  return L["%d alerts · %d fired today · checked against every scan, yours and your guild's"]:format(n, firedToday or 0)
+  return L["%d alerts · %d fired today · checked against every scan, yours and your guild's"]:format(
+    n,
+    firedToday or 0
+  )
 end
 
 function Market.AHStatus(house, found, searching, ago)
@@ -994,7 +1004,8 @@ function Market.ListStatus(totals, at, house)
       money(at.left or 0)
     )
   end
-  local s = L["%d of %d items still to buy: %s at market price"]:format(totals.missing, totals.items, money(totals.cost or 0))
+  local s =
+    L["%d of %d items still to buy: %s at market price"]:format(totals.missing, totals.items, money(totals.cost or 0))
   if (totals.unpriced or 0) > 0 then
     s = s .. " · " .. L["%d without a price yet"]:format(totals.unpriced)
   end

@@ -55,7 +55,12 @@ function Screen.Filters(filter, sections, state, allFolded)
       props = { value = state.search or "", hint = L["Search recipes or items"], action = "search" },
       meta = { w = 180, h = 24 },
     },
-    { id = "craft.filter", type = "segmented", props = { options = CP.FILTERS, selected = filter, action = "filter" }, meta = { h = 24 } },
+    {
+      id = "craft.filter",
+      type = "segmented",
+      props = { options = CP.FILTERS, selected = filter, action = "filter" },
+      meta = { h = 24 },
+    },
   }
   if sections then
     kids[#kids + 1] = {
@@ -73,13 +78,34 @@ function Screen.Filters(filter, sections, state, allFolded)
     }
   end
   kids[#kids + 1] = { id = "craft.filters.gap", type = "spacer", meta = { grow = 1 } }
-  kids[#kids + 1] = { id = "craft.leveling", type = "button", props = { label = L["Leveling"], action = "leveling" }, meta = { h = 24 } }
-  kids[#kids + 1] = { id = "craft.professions", type = "button", props = { label = L["Professions"], action = "professions" }, meta = { h = 24 } }
+  kids[#kids + 1] = {
+    id = "craft.leveling",
+    type = "button",
+    props = { label = L["Leveling"], action = "leveling" },
+    meta = { h = 24 },
+  }
+  kids[#kids + 1] = {
+    id = "craft.professions",
+    type = "button",
+    props = { label = L["Professions"], action = "professions" },
+    meta = { h = 24 },
+  }
   -- AME has taken over the game's profession window: the way back to it, as "Use the game's AH" (board CraftingFilters)
   if ns.CraftingSidecar and ns.CraftingSidecar.TookOver and ns.CraftingSidecar.TookOver() then
-    kids[#kids + 1] = { id = "craft.gamewindow", type = "button", props = { label = L["Use the game's window"], action = "gameWindow" }, meta = { h = 24 } }
+    kids[#kids + 1] = {
+      id = "craft.gamewindow",
+      type = "button",
+      props = { label = L["Use the game's window"], action = "gameWindow" },
+      meta = { h = 24 },
+    }
   end
-  return { id = "craft.filters", type = "row", props = { gap = 6, align = "center" }, meta = { h = 26 }, children = kids }
+  return {
+    id = "craft.filters",
+    type = "row",
+    props = { gap = 6, align = "center" },
+    meta = { h = 26 },
+    children = kids,
+  }
 end
 
 function Screen.Sidebar(f, profession, compact)
@@ -192,7 +218,12 @@ local function detail(app, f, r, filter, profession, count)
     kids[1] = hint("craft.d.none", L["Pick a recipe for what it needs and what it earns."])
     return kids
   end
-  kids[#kids + 1] = { id = "craft.d.head", type = "crafthead", props = { item = d.item, title = d.title, subtitle = d.subtitle }, meta = { h = 48 } }
+  kids[#kids + 1] = {
+    id = "craft.d.head",
+    type = "crafthead",
+    props = { item = d.item, title = d.title, subtitle = d.subtitle },
+    meta = { h = 48 },
+  }
   if #d.tools > 0 then
     kids[#kids + 1] = { id = "craft.d.tools", type = "toolscard", props = { tools = d.tools } }
   end
@@ -209,7 +240,11 @@ local function detail(app, f, r, filter, profession, count)
       { item = raw.item, count = raw.qty, label = L["sold raw"], copper = raw.raw },
       { item = raw.product, count = raw.sold and raw.sold.n, label = L["sold"], copper = raw.sold and raw.sold.copper },
       { label = L["That nets"], copper = raw.net, total = true },
-      { label = raw.gain >= 0 and L["More than selling it raw"] or L["Less than selling it raw"], copper = raw.gain, signed = true },
+      {
+        label = raw.gain >= 0 and L["More than selling it raw"] or L["Less than selling it raw"],
+        copper = raw.gain,
+        signed = true,
+      },
     }
     kids[#kids + 1] = kvCard("craft.d.raw", L["Raw or refined"], list)
     if raw.rate and raw.rate > 0 then
@@ -247,9 +282,13 @@ local function detail(app, f, r, filter, profession, count)
     end
     local _, profName = ns.CraftingUI.ProfessionOf(r.id)
     if can then
-      text = L["Create makes them now; Queue lines them up for later. Missing reagents: at the auction house Buy missing searches and buys; away from it, they go on a shopping list."]
+      text =
+        L["Create makes them now; Queue lines them up for later. Missing reagents: at the auction house Buy missing searches and buys; away from it, they go on a shopping list."]
     elseif mine then
-      text = L["Create opens %s if its window is closed; click again to make them. Ready counts bags, bank and mail."]:format(profName or L["its profession"])
+      text =
+        L["Create opens %s if its window is closed; click again to make them. Ready counts bags, bank and mail."]:format(
+          profName or L["its profession"]
+        )
     else
       text = L["Create works on a character who knows the recipe; Queue lines it up for later."]
     end
@@ -448,11 +487,20 @@ local function queuedBody(app, f, params)
       {
         id = "craft.q.mats",
         type = "crafttable",
-        props = { source = "craft.mats", columns = MAT_COLS, action = "matRow", note = L["The count is green when your bags cover it."], flex = "source" },
+        props = {
+          source = "craft.mats",
+          columns = MAT_COLS,
+          action = "matRow",
+          note = L["The count is green when your bags cover it."],
+          flex = "source",
+        },
         meta = { h = 252 },
       },
       { id = "craft.q.gap", type = "spacer", meta = { grow = 1 } },
-      hint("craft.q.hint", L["The queue is kept per account: each character sees its steps when you log in there. With the game's window, the same queue is in AME's frame beside it."]),
+      hint(
+        "craft.q.hint",
+        L["The queue is kept per account: each character sees its steps when you log in there. With the game's window, the same queue is in AME's frame beside it."]
+      ),
       {
         id = "craft.q.buttons",
         type = "row",
@@ -462,10 +510,23 @@ local function queuedBody(app, f, params)
           {
             id = "craft.q.next",
             type = "craftbutton",
-            props = { label = L["Craft next"], variant = #q.steps > 0 and "primary" or "disabled", call = "craftNext", action = "craftedNext" },
+            props = {
+              label = L["Craft next"],
+              variant = #q.steps > 0 and "primary" or "disabled",
+              call = "craftNext",
+              action = "craftedNext",
+            },
           },
-          { id = "craft.q.buy", type = "button", props = { label = app:AtAH() and L["Buy missing"] or L["Missing to a list"], action = "buyMissing" } },
-          { id = "craft.q.clear", type = "button", props = { label = L["Clear"], action = "clear", variant = #q.steps == 0 and "disabled" or nil } },
+          {
+            id = "craft.q.buy",
+            type = "button",
+            props = { label = app:AtAH() and L["Buy missing"] or L["Missing to a list"], action = "buyMissing" },
+          },
+          {
+            id = "craft.q.clear",
+            type = "button",
+            props = { label = L["Clear"], action = "clear", variant = #q.steps == 0 and "disabled" or nil },
+          },
         },
       },
     },
@@ -492,7 +553,16 @@ local function learnBody(app, f, params, profession, state)
   local picked = find(rows, params.selected) or rows[1]
   local data = {}
   for i, r in ipairs(rows) do
-    data[i] = { key = r.key, item = r.item, label = r.label, who = r.who, profit = r.profit, where = r.where, buy = r.buy, faded = r.faded }
+    data[i] = {
+      key = r.key,
+      item = r.item,
+      label = r.label,
+      who = r.who,
+      profit = r.profit,
+      where = r.where,
+      buy = r.buy,
+      faded = r.faded,
+    }
   end
   app:Source("craft.learn", data)
   local center = {
@@ -510,7 +580,8 @@ local function learnBody(app, f, params, profession, state)
           action = "row",
           selected = picked and picked.key,
           note = L["For: the character who could learn it. Profit: per craft, after the cut."],
-          empty = f.loading and L["Crafting needs prices: scan the auction house once."] or L["Nothing to learn that's for sale lately."],
+          empty = f.loading and L["Crafting needs prices: scan the auction house once."]
+            or L["Nothing to learn that's for sale lately."],
           flex = "item",
         },
         meta = { grow = 1 },
@@ -521,7 +592,8 @@ local function learnBody(app, f, params, profession, state)
   local kids = {}
   local d = picked and CP.LearnDetail(f, picked)
   if d then
-    kids[#kids + 1] = { id = "craft.l.head", type = "crafthead", props = { item = d.item, subtitle = d.subtitle }, meta = { h = 48 } }
+    kids[#kids + 1] =
+      { id = "craft.l.head", type = "crafthead", props = { item = d.item, subtitle = d.subtitle }, meta = { h = 48 } }
     kids[#kids + 1] = kvCard("craft.l.worth", L["Is it worth it"], d.rows)
     if d.note then
       kids[#kids + 1] = hint("craft.l.note", d.note)
@@ -538,11 +610,29 @@ local function learnBody(app, f, params, profession, state)
     props = { gap = 6 },
     meta = { h = 24 },
     children = {
-      { id = "craft.l.search", type = "button", props = { label = L["Search the AH"], variant = picked and "primary" or "disabled", action = "learnSearch" } },
-      { id = "craft.l.list", type = "button", props = { label = L["Add to a shopping list"] .. (W.ARROW_DOWN or ""), action = "learnList", variant = not picked and "disabled" or nil } },
+      {
+        id = "craft.l.search",
+        type = "button",
+        props = { label = L["Search the AH"], variant = picked and "primary" or "disabled", action = "learnSearch" },
+      },
+      {
+        id = "craft.l.list",
+        type = "button",
+        props = {
+          label = L["Add to a shopping list"] .. (W.ARROW_DOWN or ""),
+          action = "learnList",
+          variant = not picked and "disabled" or nil,
+        },
+      },
     },
   }
-  local right = { id = "craft.right", type = "column", props = { gap = 8 }, meta = { w = app.compact and 250 or 300 }, children = kids }
+  local right = {
+    id = "craft.right",
+    type = "column",
+    props = { gap = 8 },
+    meta = { w = app.compact and 250 or 300 },
+    children = kids,
+  }
   return center, right
 end
 
@@ -594,7 +684,10 @@ end
 local function learnRow(app, key)
   local _, params = app:Current()
   local f = Screen.Facts()
-  local rows = CP.Learn({ learnRows = CP.LearnRows(f), recipeName = f.recipeName, itemName = f.itemName }, { profession = tonumber(params.profession) })
+  local rows = CP.Learn(
+    { learnRows = CP.LearnRows(f), recipeName = f.recipeName, itemName = f.itemName },
+    { profession = tonumber(params.profession) }
+  )
   key = key or params.selected
   for _, r in ipairs(rows) do
     if r.key == key then

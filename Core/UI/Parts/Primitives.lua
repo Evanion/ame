@@ -174,7 +174,10 @@ Layout.Register("button", {
 -- in their coins' colours) over the box's own text; typing in it shows the plain text
 local function drawCoins(box)
   local p = box.props or {}
-  local copper = p.money and not (box.HasFocus and box:HasFocus()) and ns.ParseMoney and ns.ParseMoney(box:GetText() or "")
+  local copper = p.money
+    and not (box.HasFocus and box:HasFocus())
+    and ns.ParseMoney
+    and ns.ParseMoney(box:GetText() or "")
   local show = copper ~= nil and copper ~= false
   box.coins:SetShown(show)
   if show then
@@ -311,7 +314,13 @@ local function newInput(parent, ctx)
       if self.props and self.props.money and GameTooltip then
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:SetText(L["Gold, or silver and copper too"], 1, 1, 1)
-        GameTooltip:AddLine(L["12 or 12g is gold; 1.5 is 1g 50s; 9s 50c, 1g 20s and 150c work too."], nil, nil, nil, true)
+        GameTooltip:AddLine(
+          L["12 or 12g is gold; 1.5 is 1g 50s; 9s 50c, 1g 20s and 150c work too."],
+          nil,
+          nil,
+          nil,
+          true
+        )
         GameTooltip:Show()
       end
     end)
@@ -508,7 +517,9 @@ Layout.Register("itemlink", {
     f:SetItem(p.item or false, p.count)
   end,
   size = function(f)
-    local w = (f.nameX or 18) + textWidth(f.name) + (f.count and f.count:GetText() ~= "" and textWidth(f.count) + 6 or 0)
+    local w = (f.nameX or 18)
+      + textWidth(f.name)
+      + (f.count and f.count:GetText() ~= "" and textWidth(f.count) + 6 or 0)
     return w + 2, 18
   end,
 })
@@ -702,7 +713,13 @@ local function box(kind)
     end,
     arrange = function(frame, kids, w, h, props)
       local place = Layout.ARRANGE[props.layout or "column"] or Layout.ARRANGE.column
-      place(frame, kids, w, h, { gap = props.gap or 4, cols = props.cols, widths = props.widths, rowH = props.rowH, align = props.align })
+      place(
+        frame,
+        kids,
+        w,
+        h,
+        { gap = props.gap or 4, cols = props.cols, widths = props.widths, rowH = props.rowH, align = props.align }
+      )
     end,
   }
 end

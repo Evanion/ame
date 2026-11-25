@@ -261,12 +261,14 @@ function Kit.Glyphs(text)
   if type(text) ~= "string" or not text:find("[\226]") then
     return text
   end
-  return (text:gsub("[\226][\128-\191][\128-\191]", function(c)
-    if c == "★" then
-      return ns.Widgets and ns.Widgets.StarInline and ns.Widgets.StarInline(12) or nil -- the favourite star
-    end
-    return Kit.GLYPHS[c]
-  end))
+  return (
+    text:gsub("[\226][\128-\191][\128-\191]", function(c)
+      if c == "★" then
+        return ns.Widgets and ns.Widgets.StarInline and ns.Widgets.StarInline(12) or nil -- the favourite star
+      end
+      return Kit.GLYPHS[c]
+    end)
+  )
 end
 
 local function glyphSetText(fs, text)

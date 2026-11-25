@@ -5103,9 +5103,12 @@ describe("addon in a stubbed client", function()
       finally(function()
         api.GetWorth = worth
       end)
-      ns.AME.jobs = ns.Jobs.New({ budgetMs = 20, clock = function()
-        return work
-      end })
+      ns.AME.jobs = ns.Jobs.New({
+        budgetMs = 20,
+        clock = function()
+          return work
+        end,
+      })
       ns.Baganator.values = {}
       ns.Baganator:Prime(true)
       local longest, ticks = 0, 0

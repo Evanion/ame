@@ -87,7 +87,15 @@ function Lv.Build(app, params)
   local rows = CP.LevelingRows(plan, f.recipeName)
   local data = {}
   for i, r in ipairs(rows) do
-    data[i] = { key = r.key, skill = r.skill, item = r.item, label = r.label, crafts = r.crafts, net = r.net, results = r.results }
+    data[i] = {
+      key = r.key,
+      skill = r.skill,
+      item = r.item,
+      label = r.label,
+      crafts = r.crafts,
+      net = r.net,
+      results = r.results,
+    }
   end
   app:Source("lv.rows", data)
   local picked
@@ -127,14 +135,26 @@ function Lv.Build(app, params)
         id = "lv.prof",
         type = "button",
         props = {
-          label = choice and (("%s · %s %d"):format(CP.CharName(choice.key), choice.p.name or "?", choice.p.skill or 0) .. (W.ARROW_DOWN or "")) or L["No professions recorded"],
+          label = choice
+              and (("%s · %s %d"):format(CP.CharName(choice.key), choice.p.name or "?", choice.p.skill or 0) .. (W.ARROW_DOWN or ""))
+            or L["No professions recorded"],
           action = "pickProf",
         },
         meta = { h = 24 },
       },
-      { id = "lv.target", type = "button", props = { label = L["to %d"]:format(target) .. (W.ARROW_DOWN or ""), action = "pickTarget" }, meta = { h = 24 } },
+      {
+        id = "lv.target",
+        type = "button",
+        props = { label = L["to %d"]:format(target) .. (W.ARROW_DOWN or ""), action = "pickTarget" },
+        meta = { h = 24 },
+      },
       { id = "lv.gap", type = "spacer", meta = { grow = 1 } },
-      { id = "lv.goal", type = "segmented", props = { options = CP.GOALS, selected = goal, action = "goal" }, meta = { h = 24 } },
+      {
+        id = "lv.goal",
+        type = "segmented",
+        props = { options = CP.GOALS, selected = goal, action = "goal" },
+        meta = { h = 24 },
+      },
     },
   }
 
@@ -157,15 +177,34 @@ function Lv.Build(app, params)
     local mats = {}
     for i, m in ipairs(d.mats) do
       local price = f.craft and f.craft:Price(m.item)
-      mats[i] = { key = m.key, item = m.item, suffix = ns.Kit.Color("dim", "  ×" .. m.count), cost = price and ns.Widgets.SignedMoney(-(price * m.count), { tint = true }) or ns.Widgets.Dim("-") }
+      mats[i] = {
+        key = m.key,
+        item = m.item,
+        suffix = ns.Kit.Color("dim", "  ×" .. m.count),
+        cost = price and ns.Widgets.SignedMoney(-(price * m.count), { tint = true }) or ns.Widgets.Dim("-"),
+      }
     end
     app:Source("lv.mats", mats)
     right = {
       { id = "lv.d.head", type = "crafthead", props = { item = d.item, subtitle = d.subtitle }, meta = { h = 48 } },
       { id = "lv.d.bar", type = "skillbar", props = d.bar, meta = { h = 14 } },
-      { id = "lv.d.matsTitle", type = "text", props = { text = L["Reagents for ~%d"]:format(d.crafts), font = "display", size = 14 }, meta = { h = 20 } },
-      { id = "lv.d.mats", type = "crafttable", props = { source = "lv.mats", columns = MAT_COLS }, meta = { h = math.min(130, 26 + 20 * #mats) } },
-      Screen.KvCard("lv.d.net", nil, { { label = L["Net for this step"], copper = d.net, signed = true, total = true } }),
+      {
+        id = "lv.d.matsTitle",
+        type = "text",
+        props = { text = L["Reagents for ~%d"]:format(d.crafts), font = "display", size = 14 },
+        meta = { h = 20 },
+      },
+      {
+        id = "lv.d.mats",
+        type = "crafttable",
+        props = { source = "lv.mats", columns = MAT_COLS },
+        meta = { h = math.min(130, 26 + 20 * #mats) },
+      },
+      Screen.KvCard(
+        "lv.d.net",
+        nil,
+        { { label = L["Net for this step"], copper = d.net, signed = true, total = true } }
+      ),
     }
   else
     right = {
@@ -184,8 +223,20 @@ function Lv.Build(app, params)
     props = { gap = 6 },
     meta = { h = 24 },
     children = {
-      { id = "lv.queue", type = "button", props = { label = L["Queue the steps"], variant = plan and "primary" or "disabled", action = "queueSteps" } },
-      { id = "lv.list", type = "button", props = { label = L["Mats, recipes to a list"] .. (W.ARROW_DOWN or ""), action = "toList", variant = not plan and "disabled" or nil } },
+      {
+        id = "lv.queue",
+        type = "button",
+        props = { label = L["Queue the steps"], variant = plan and "primary" or "disabled", action = "queueSteps" },
+      },
+      {
+        id = "lv.list",
+        type = "button",
+        props = {
+          label = L["Mats, recipes to a list"] .. (W.ARROW_DOWN or ""),
+          action = "toList",
+          variant = not plan and "disabled" or nil,
+        },
+      },
     },
   }
 
@@ -204,7 +255,12 @@ function Lv.Build(app, params)
         props = { gap = 10 },
         meta = { grow = 1 },
         children = {
-          { id = "lv.side", type = "sidebar", props = { entries = side, action = "side" }, meta = { w = app.compact and 130 or 160 } },
+          {
+            id = "lv.side",
+            type = "sidebar",
+            props = { entries = side, action = "side" },
+            meta = { w = app.compact and 130 or 160 },
+          },
           {
             id = "lv.center",
             type = "column",
@@ -228,7 +284,13 @@ function Lv.Build(app, params)
               },
             },
           },
-          { id = "lv.right", type = "column", props = { gap = 8 }, meta = { w = app.compact and 240 or 270 }, children = right },
+          {
+            id = "lv.right",
+            type = "column",
+            props = { gap = 8 },
+            meta = { w = app.compact and 240 or 270 },
+            children = right,
+          },
         },
       },
     },

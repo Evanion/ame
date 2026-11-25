@@ -204,7 +204,13 @@ end
 -- the Market price card: { now, vs = { text, tone }, note, signal, phase }
 function ItemPage.PriceCard(sum, indexed)
   if not sum then
-    return { now = nil, vsLabel = L["vs 7-day average"], vs = "—", vsTone = "dim", note = L["No history at this auction house yet."] }
+    return {
+      now = nil,
+      vsLabel = L["vs 7-day average"],
+      vs = "—",
+      vsTone = "dim",
+      note = L["No history at this auction house yet."],
+    }
   end
   local text, tone = ItemPage.ChangeText(sum.change)
   local word = ({ high = L["high"], medium = L["medium"], low = L["low"] })[sum.level] or ""
@@ -217,7 +223,11 @@ function ItemPage.PriceCard(sum, indexed)
     vsTone = tone,
     note = L["Confidence %s %s"]:format(pips, word) .. " · " .. L["%d scans this week"]:format(sum.scans),
     signal = signal ~= "none" and signal or nil,
-    phase = sum.s.phase and ns.Analytics.PHASE_LABEL and ns.Analytics.PHASE_LABEL[sum.s.phase] and ns.Analytics.PHASE_LABEL[sum.s.phase]:lower() or nil,
+    phase = sum.s.phase
+        and ns.Analytics.PHASE_LABEL
+        and ns.Analytics.PHASE_LABEL[sum.s.phase]
+        and ns.Analytics.PHASE_LABEL[sum.s.phase]:lower()
+      or nil,
   }
 end
 
@@ -302,7 +312,8 @@ function ItemPage.PriceSource(raw, latest, now, me, compact)
         or L["Prices from %s's full scan %s"]:format(full.src, ago(full.t))
     end
     if searches > 0 then
-      out = out .. (compact and " · " or " ")
+      out = out
+        .. (compact and " · " or " ")
         .. (compact and L["%d searches since"] or L["and %d searches since"]):format(searches)
     end
   elseif latest and latest.t then
@@ -567,7 +578,8 @@ local function timeLeft(seconds, band)
     return shop.TimeLeftText(seconds, band)
   end
   if seconds then
-    return seconds >= 3600 and L["%d h"]:format(floor(seconds / 3600)) or L["%d min"]:format(math.max(1, floor(seconds / 60)))
+    return seconds >= 3600 and L["%d h"]:format(floor(seconds / 3600))
+      or L["%d min"]:format(math.max(1, floor(seconds / 60)))
   end
   return ""
 end
@@ -632,7 +644,8 @@ function ItemPage.Actions(f, atAH)
   local watching = f.watchLists and #f.watchLists > 0
   out[#out + 1] = {
     id = "watch",
-    label = watching and ("★ " .. L["Watching"] .. " · " .. table.concat(f.watchLists, ", ") .. " ▾") or (L["Watch"] .. " ▾"),
+    label = watching and ("★ " .. L["Watching"] .. " · " .. table.concat(f.watchLists, ", ") .. " ▾")
+      or (L["Watch"] .. " ▾"),
     menu = "watch",
   }
   local alert = f.alert
@@ -654,7 +667,8 @@ function ItemPage.Actions(f, atAH)
     variant = f.whoCan and "normal" or "disabled",
     right = true,
   }
-  out[#out + 1] = { id = "hide", label = f.hidden and L["Unhide"] or L["Hide from lists"], action = "toggleHidden", right = true }
+  out[#out + 1] =
+    { id = "hide", label = f.hidden and L["Unhide"] or L["Hide from lists"], action = "toggleHidden", right = true }
   return out
 end
 
@@ -741,8 +755,11 @@ function ItemPage.ChartData(entry, sum, range, now, extra)
   end
   if not sum then
     data.message = extra.message
-      or (entry.mixed and L['Each suffix of this item ("of the Monkey", "of Magic"...) has its own prices. Shift-click one, or search its full name.']
-        or L["No history for this item yet. Search for it at the auction house, or run a full scan."])
+      or (
+        entry.mixed
+          and L['Each suffix of this item ("of the Monkey", "of Magic"...) has its own prices. Shift-click one, or search its full name.']
+        or L["No history for this item yet. Search for it at the auction house, or run a full scan."]
+      )
     return data
   end
   local days = ItemPage.RangeDays(range)
@@ -914,7 +931,9 @@ function ItemPage.Gather(app, key, onReady)
   end
   local info = ns.ItemCache and ns.ItemCache.Get(key) or {}
   f.vendor = info.sellPrice
-  f.category = info.subClassID and ns.ItemCache.SubClassName and try(ns.ItemCache.SubClassName, info.classID, info.subClassID)
+  f.category = info.subClassID
+    and ns.ItemCache.SubClassName
+    and try(ns.ItemCache.SubClassName, info.classID, info.subClassID)
   f.entry = try(ItemPage.Get, shard, key, onReady)
   f.loading = f.entry == nil
   local settings = ns.Settings
@@ -970,7 +989,10 @@ function ItemPage.Gather(app, key, onReady)
     f.hidden = watch:IsHidden(key)
   end
   f.trades = AME.ledger and AME.ledger.db and ItemPage.Trades(AME.ledger.db.entries, key, ns.ItemCache.Name(key)) or nil
-  f.raw = AME.HistoryLoaded and AME:HistoryLoaded() and AME.history and AME.history.shards[shard]
+  f.raw = AME.HistoryLoaded
+    and AME:HistoryLoaded()
+    and AME.history
+    and AME.history.shards[shard]
     and AME.history.shards[shard].raw
   -- at the auction house: what's on sale now
   f.book = ns.AHSearch and ns.AHSearch.results and ns.AHSearch.results[key]

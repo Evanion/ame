@@ -85,12 +85,21 @@ local function build(app, params)
     checks[#checks + 1] = {
       id = "offers.take" .. i,
       type = "check",
-      props = { label = ("%s (%s)"):format(p.name, p.char), checked = d.taking[p.key] and true or false, action = "taking", payload = p.key },
+      props = {
+        label = ("%s (%s)"):format(p.name, p.char),
+        checked = d.taking[p.key] and true or false,
+        action = "taking",
+        payload = p.key,
+      },
       meta = { h = 18 },
     }
   end
   if #d.professions == 0 then
-    checks[#checks + 1] = G.Text("offers.noprof", L["Open each of your professions once so AME knows what you make."], { meta = { grow = 1, h = 18 } })
+    checks[#checks + 1] = G.Text(
+      "offers.noprof",
+      L["Open each of your professions once so AME knows what you make."],
+      { meta = { grow = 1, h = 18 } }
+    )
   end
   local pickedRow
   for _, row in ipairs(d.rows) do
@@ -100,7 +109,13 @@ local function build(app, params)
   end
   local mainKids = {
     G.Heading("offers.h", L["Your crafts"], L["what your characters make for others"]),
-    { id = "offers.checks", type = "row", props = { gap = 16, align = "center" }, meta = { h = 20 }, children = checks },
+    {
+      id = "offers.checks",
+      type = "row",
+      props = { gap = 16, align = "center" },
+      meta = { h = 20 },
+      children = checks,
+    },
     {
       id = "offers.table",
       type = "table",
@@ -125,12 +140,19 @@ local function build(app, params)
       meta = { h = 24 },
       children = {
         G.Text("offers.tiprow.l", L["Your tip for"], { meta = { h = 18 } }),
-        pickedRow.item and { id = "offers.tiprow.item", type = "itemlink", props = { item = pickedRow.item }, meta = { h = 18 } }
+        pickedRow.item
+            and { id = "offers.tiprow.item", type = "itemlink", props = { item = pickedRow.item }, meta = { h = 18 } }
           or G.Text("offers.tiprow.item", pickedRow.name, { color = "text", meta = { h = 18 } }),
         {
           id = "offers.tiprow.in",
           type = "input",
-          props = { value = tip and ns.Requests.Typed(tip) or "", hint = L["suggested"], action = "setTip", payload = pickedRow.recipe, money = true },
+          props = {
+            value = tip and ns.Requests.Typed(tip) or "",
+            hint = L["suggested"],
+            action = "setTip",
+            payload = pickedRow.recipe,
+            money = true,
+          },
           meta = { w = 70, h = 24 },
         },
       },
@@ -139,17 +161,26 @@ local function build(app, params)
   local main = { id = "offers.main", type = "column", props = { gap = 8 }, children = mainKids }
 
   local tell = {
-    G.Text("offers.tell.l", L["An advert for chat, with links to what's most asked for. AME puts it in your chat box; you press Enter."], { wrap = true, meta = { h = 28 } }),
+    G.Text(
+      "offers.tell.l",
+      L["An advert for chat, with links to what's most asked for. AME puts it in your chat box; you press Enter."],
+      { wrap = true, meta = { h = 28 } }
+    ),
   }
   if d.advert then
-    tell[#tell + 1] = { id = "offers.tell.text", type = "linktext", props = { parts = d.advert.parts, wrap = true }, meta = { h = 48 } }
+    tell[#tell + 1] =
+      { id = "offers.tell.text", type = "linktext", props = { parts = d.advert.parts, wrap = true }, meta = { h = 48 } }
     tell[#tell + 1] = {
       id = "offers.tell.buttons",
       type = "row",
       props = { gap = 6 },
       meta = { h = 24 },
       children = {
-        { id = "offers.tell.guild", type = "button", props = { label = L["To guild chat"], variant = "primary", action = "advertGuild" } },
+        {
+          id = "offers.tell.guild",
+          type = "button",
+          props = { label = L["To guild chat"], variant = "primary", action = "advertGuild" },
+        },
         { id = "offers.tell.trade", type = "button", props = { label = L["To trade chat"], action = "advertTrade" } },
       },
     }
@@ -163,8 +194,20 @@ local function build(app, params)
     type = "column",
     props = { gap = 8 },
     children = {
-      { id = "offers.tell", type = "card", props = { title = L["Tell people"], gap = 6 }, meta = { h = 32 + 28 + 48 + 24 + 24 }, children = tell },
-      { id = "offers.month", type = "card", props = { title = L["This month"], gap = 2 }, meta = { h = 32 + 20 * #month }, children = month },
+      {
+        id = "offers.tell",
+        type = "card",
+        props = { title = L["Tell people"], gap = 6 },
+        meta = { h = 32 + 28 + 48 + 24 + 24 },
+        children = tell,
+      },
+      {
+        id = "offers.month",
+        type = "card",
+        props = { title = L["This month"], gap = 2 },
+        meta = { h = 32 + 20 * #month },
+        children = month,
+      },
     },
   }
   return G.Page("offers", main, right, 290)
@@ -207,9 +250,12 @@ App.Screen("offers", {
       n = n + 1
     end
     local shared = ns.Settings and ns.Settings:Get("shareRecipes")
-    local text = shared and L["Your recipes are shared with the guild"] or L["Your recipes are not shared (Sharing prices)"]
+    local text = shared and L["Your recipes are shared with the guild"]
+      or L["Your recipes are not shared (Sharing prices)"]
     if n > 0 then
-      text = text .. " · " .. (n == 1 and L["taking orders for 1 profession"] or L["taking orders for %d professions"]:format(n))
+      text = text
+        .. " · "
+        .. (n == 1 and L["taking orders for 1 profession"] or L["taking orders for %d professions"]:format(n))
     end
     return text
   end,

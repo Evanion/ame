@@ -728,8 +728,10 @@ end
 local function notice(r, text)
   local notices = ns.AME and ns.AME.notices
   if notices and notices.Add then
-    notices:Add({ kind = "craft", text = text, itemID = r.item, who = r.side == "crafter" and r.asker or r.crafter },
-      GetServerTime())
+    notices:Add(
+      { kind = "craft", text = text, itemID = r.item, who = r.side == "crafter" and r.asker or r.crafter },
+      GetServerTime()
+    )
   end
   if ns.Sound then
     ns.Sound.Play("craft")
@@ -765,7 +767,14 @@ function R.OnMessage(body, sender)
   local t = transport()
   local s = shard()
   if t and s and ns.Sync.EncodeCraft then
-    pcall(t.Send, t, ns.SyncService.PREFIX, ns.Sync.EncodeCraft(s, R.EncodeAck(stored.id, stored.seq)), "WHISPER", sender)
+    pcall(
+      t.Send,
+      t,
+      ns.SyncService.PREFIX,
+      ns.Sync.EncodeCraft(s, R.EncodeAck(stored.id, stored.seq)),
+      "WHISPER",
+      sender
+    )
   end
   local o = db.outbox[stored.id]
   if o and (stored.seq or 0) >= (o.seq or 0) then
@@ -778,14 +787,20 @@ function R.OnMessage(body, sender)
     if what == "new" then
       notice(stored, L["%s asks for %d %s"]:format(stored.asker, stored.count, name))
     elseif stored.state == "answered" then
-      notice(stored, L["%s answered the request for %s"]:format(side == "asker" and stored.crafter or stored.asker, name))
+      notice(
+        stored,
+        L["%s answered the request for %s"]:format(side == "asker" and stored.crafter or stored.asker, name)
+      )
     elseif stored.state == "accepted" then
       notice(stored, L["%s agreed to make %s"]:format(stored.crafter, name))
       if side == "crafter" then
         R.Queue(stored)
       end
     elseif stored.state == "declined" or stored.state == "withdrawn" then
-      notice(stored, L["The request for %s ended: %s"]:format(name, stored.state == "declined" and L["declined"] or L["withdrawn"]))
+      notice(
+        stored,
+        L["The request for %s ended: %s"]:format(name, stored.state == "declined" and L["declined"] or L["withdrawn"])
+      )
     end
     changed()
   end
@@ -923,7 +938,8 @@ function R.Incoming()
   for _, r in ipairs(R.List()) do
     if r.side == "crafter" and (r.state == "new" or r.state == "answered") and R.ToAct(r) == "crafter" then
       local brings = R.Brings(r)
-      local sub = brings == "all" and L["brings the mats"] or brings == "none" and L["you provide the mats"]
+      local sub = brings == "all" and L["brings the mats"]
+        or brings == "none" and L["you provide the mats"]
         or L["brings some of the mats"]
       if (r.tip or 0) > 0 then
         sub = sub .. " · " .. L["%s tip"]:format(g(r.tip))

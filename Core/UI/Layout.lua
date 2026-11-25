@@ -360,9 +360,10 @@ end
 function Renderer:node(item, parent, seen)
   local def = type(item) == "table" and Layout.widgets[item.type]
   if not def then
-    warnOnce("type:" .. tostring(type(item) == "table" and item.type), "layout: unknown widget type " .. tostring(
-      type(item) == "table" and item.type
-    ))
+    warnOnce(
+      "type:" .. tostring(type(item) == "table" and item.type),
+      "layout: unknown widget type " .. tostring(type(item) == "table" and item.type)
+    )
     return nil
   end
   local id = item.id

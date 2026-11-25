@@ -75,7 +75,9 @@ local function mediaOptions(kind, own)
   end
   if kind == "statusbar" then -- each texture drawn beside its name (Kit.WHITE: AME's flat bar)
     for i, o in ipairs(out) do
-      o.texture = i == 1 and (ns.Kit and ns.Kit.WHITE) or (media and media.Fetch and media:Fetch("statusbar", o.value, true)) or nil
+      o.texture = i == 1 and (ns.Kit and ns.Kit.WHITE)
+        or (media and media.Fetch and media:Fetch("statusbar", o.value, true))
+        or nil
     end
   end
   return out
@@ -142,7 +144,11 @@ local function general(env)
         check(L["Use the new window (preview)"], "newWindow"),
         field(L["Scale"], "windowScale", scales),
         field(L["At the auction house"], "ahMode", where),
-        check(L["With the game's window: open AME beside it"], "openWithAH", { indent = true, off = S.Get("ahMode") ~= "game" }),
+        check(
+          L["With the game's window: open AME beside it"],
+          "openWithAH",
+          { indent = true, off = S.Get("ahMode") ~= "game" }
+        ),
         check(L["Search the auction house for the item on screen"], "autoSearch", { indent = true }),
         field(L["Opening a profession"], "professionMode", where),
         check(L["Show the queue's missing reagents in the objectives tracker"], "queueTracker"),
@@ -191,7 +197,10 @@ local function general(env)
         {
           text = L["Place the corners under Icons, and pick the worth sort as the sort, in Baganator's settings. The tip marks a slot; it never moves anything (junk is Baganator's own)."]
             .. " "
-            .. (env.baganator and L["Turned off, Baganator lists them until a /reload, but they show nothing."] or L["Baganator isn't installed: nothing to do."]),
+            .. (
+              env.baganator and L["Turned off, Baganator lists them until a /reload, but they show nothing."]
+              or L["Baganator isn't installed: nothing to do."]
+            ),
         },
       },
     },
@@ -233,7 +242,9 @@ local function display(env)
       rows = {
         {
           text = hidden > 0
-              and L["%d items are hidden from the Market, Arbitrage and Portfolio lists. AME still records their prices."]:format(hidden)
+              and L["%d items are hidden from the Market, Arbitrage and Portfolio lists. AME still records their prices."]:format(
+                hidden
+              )
             or L["Nothing hidden. Right-click an item in the Market, Arbitrage or Portfolio list to hide it."],
         },
         {
@@ -249,7 +260,15 @@ end
 
 local function selling()
   local function cut(label, key)
-    return { input = "", label = label, key = key, value = tostring(S.Get(key) or ""), suffix = "%", numeric = true, width = 44 }
+    return {
+      input = "",
+      label = label,
+      key = key,
+      value = tostring(S.Get(key) or ""),
+      suffix = "%",
+      numeric = true,
+      width = 44,
+    }
   end
   local hours = {}
   for _, h in ipairs({ 2, 8, 24 }) do
@@ -262,7 +281,11 @@ local function selling()
   return {
     {
       title = L["Selling"],
-      rows = { cut(L["Faction AH cut"], "cutFaction"), cut(L["Goblin AH cut"], "cutNeutral"), field(L["Listing length"], "listingHours", hours) },
+      rows = {
+        cut(L["Faction AH cut"], "cutFaction"),
+        cut(L["Goblin AH cut"], "cutNeutral"),
+        field(L["Listing length"], "listingHours", hours),
+      },
     },
     {
       title = L["Buying"],
@@ -596,7 +619,12 @@ local function build(app, params)
     type = "row",
     props = { gap = 10 },
     children = {
-      { id = "settings.nav", type = "sidebar", props = { entries = entries, action = "section" }, meta = { w = SIDEBAR_W } },
+      {
+        id = "settings.nav",
+        type = "sidebar",
+        props = { entries = entries, action = "section" },
+        meta = { w = SIDEBAR_W },
+      },
       { id = "settings.cards", type = "scrollcolumn", props = { gap = 10 }, meta = { grow = 1 }, children = cards },
     },
   }

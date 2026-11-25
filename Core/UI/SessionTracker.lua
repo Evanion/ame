@@ -29,7 +29,12 @@ function T.Tree(sum, bags)
       props = { label = L["Gathered and looted"], copper = sum.total, signed = true, big = true },
       meta = { h = 20 },
     },
-    { id = "session.rate", type = "keyvalue", props = { label = L["An hour"], copper = sum.perHour }, meta = { h = 18 } },
+    {
+      id = "session.rate",
+      type = "keyvalue",
+      props = { label = L["An hour"], copper = sum.perHour },
+      meta = { h = 18 },
+    },
     {
       id = "session.bags",
       type = "keyvalue",
@@ -263,7 +268,8 @@ if CreateFrame then
     TRADE_SKILL_CLOSE = "craft",
   }
   local events = CreateFrame("Frame")
-  local all = { "PLAYER_ENTERING_WORLD", "BAG_UPDATE_DELAYED", "PLAYER_MONEY", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
+  local all =
+    { "PLAYER_ENTERING_WORLD", "BAG_UPDATE_DELAYED", "PLAYER_MONEY", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
   for e in pairs(BUSY) do
     all[#all + 1] = e
   end
@@ -294,7 +300,14 @@ if CreateFrame then
       end
     elseif event == "PLAYER_ENTERING_WORLD" then
       T.Observe()
-      if AME_DB and AME_DB.sessionTracker and AME_DB.sessionTracker.shown and ns.App and ns.App.Enabled and ns.App.Enabled() then
+      if
+        AME_DB
+        and AME_DB.sessionTracker
+        and AME_DB.sessionTracker.shown
+        and ns.App
+        and ns.App.Enabled
+        and ns.App.Enabled()
+      then
         T.Show()
       end
     else

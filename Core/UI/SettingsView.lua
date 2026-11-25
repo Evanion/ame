@@ -172,7 +172,8 @@ function UI:CreateSettingsView(parent, contentArea)
       onChange = function(on)
         ns.Launcher:SetMinimap(on)
       end,
-    },    {
+    },
+    {
       -- the redesigned window, as a preview: tick it to switch (its Settings has the same box to come back)
       check = L["Try the new window (preview)"],
       key = "newWindow",

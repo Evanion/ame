@@ -131,9 +131,11 @@ describe("Home", function()
     Kit.SetFont(fs, "ui", 12, true)
     assert.truthy(fs.obj.path:find("Inter%-SemiBold"), fs.obj.path)
     assert.are.same({ 0.5, 0.5, 0.5, 1 }, fs.color) -- its colour kept
-    ns.SettingsScreen = { FontPath = function()
-      return "Fonts\\picked.ttf"
-    end }
+    ns.SettingsScreen = {
+      FontPath = function()
+        return "Fonts\\picked.ttf"
+      end,
+    }
     Kit.ApplyFonts()
     assert.are.equal("Fonts\\picked.ttf", fs.obj.path)
     ns.SettingsScreen, _G.CreateFont = nil, nil
@@ -157,7 +159,13 @@ describe("Home", function()
       uses = { [2770] = { SMELT } },
       craft = {
         SellOrRefine = function(_, item, qty)
-          return { item = item, qty = qty, raw = 4000, options = { { recipe = SMELT, gain = 1200 } }, best = { recipe = SMELT, gain = 1200 } }
+          return {
+            item = item,
+            qty = qty,
+            raw = 4000,
+            options = { { recipe = SMELT, gain = 1200 } },
+            best = { recipe = SMELT, gain = 1200 },
+          }
         end,
       },
     }
@@ -228,7 +236,8 @@ describe("Home", function()
       for i = 1, 5 do
         crafts[i] = { recipe = i, product = i, profit = 100 }
       end
-      local rows = Home.Worth({ now = 1, hasPrices = true, crafts = crafts, learns = { { item = 9, payback = 4 } } }, false)
+      local rows =
+        Home.Worth({ now = 1, hasPrices = true, crafts = crafts, learns = { { item = 9, payback = 4 } } }, false)
       assert.equals(4, #rows)
       assert.equals("craft:3", rows[3].key)
       assert.equals("learn:9", rows[4].key)
@@ -267,7 +276,11 @@ describe("Home", function()
       end
     end)
 
-    for _, case in ipairs({ { "away", false, facts }, { "at the AH", true, facts }, { "first run", false, { hasPrices = false } } }) do
+    for _, case in ipairs({
+      { "away", false, facts },
+      { "at the AH", true, facts },
+      { "first run", false, { hasPrices = false } },
+    }) do
       it("draws a valid tree " .. case[1], function()
         Home.Gather = function()
           return case[3]

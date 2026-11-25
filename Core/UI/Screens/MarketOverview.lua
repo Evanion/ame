@@ -41,13 +41,21 @@ function S.OverviewTools(app, params)
       {
         id = "ov.period",
         type = "itemmenu",
-        props = { label = Overview.PeriodLabel(Overview.PeriodDays(key)) .. " ▾", entries = entries, action = "overviewPeriod" },
+        props = {
+          label = Overview.PeriodLabel(Overview.PeriodDays(key)) .. " ▾",
+          entries = entries,
+          action = "overviewPeriod",
+        },
       },
     }
   end
   return {
     { id = "ov.periodLabel", type = "text", props = { text = L["Change over"], color = "dim", size = 11 } },
-    { id = "ov.period", type = "segmented", props = { options = periodOptions(), selected = key, action = "overviewPeriod" } },
+    {
+      id = "ov.period",
+      type = "segmented",
+      props = { options = periodOptions(), selected = key, action = "overviewPeriod" },
+    },
   }
 end
 
@@ -73,7 +81,13 @@ local function moverBlock(id, title, note, source)
       {
         id = id .. ".table",
         type = "table",
-        props = { source = source, columns = MOVER_COLUMNS, bare = true, action = "overviewItem", empty = L["None yet"] },
+        props = {
+          source = source,
+          columns = MOVER_COLUMNS,
+          bare = true,
+          action = "overviewItem",
+          empty = L["None yet"],
+        },
         meta = { grow = 1 },
       },
     },
@@ -98,7 +112,8 @@ local function categoryTable(id, compact, period, meta)
       columns = cols,
       flex = "name",
       action = "overviewCategory",
-      note = compact and L["Narrow window: one column. Widen it for breadth, risers and fallers, and the largest items."]
+      note = compact
+          and L["Narrow window: one column. Widen it for breadth, risers and fallers, and the largest items."]
         or L["Click a category to open it in the screener."],
     },
     meta = meta or { grow = 1 },
@@ -131,7 +146,13 @@ local function chartPanel(params, compact)
       {
         id = "ov.chart",
         type = "chart",
-        props = { source = "overview.chart", kind = "index", range = 30, format = Overview.ChartData(nil, compact and "index" or mode).format, bare = true },
+        props = {
+          source = "overview.chart",
+          kind = "index",
+          range = 30,
+          format = Overview.ChartData(nil, compact and "index" or mode).format,
+          bare = true,
+        },
         meta = { grow = 1 },
       },
     },
@@ -145,7 +166,13 @@ local function kpiRow(o, compact)
     kids[i] = { id = "ov.kpi" .. i, type = "kpi", props = k }
   end
   local h = compact and 44 or 72
-  return { id = "ov.kpis", type = "grid", props = { cols = #kids, gap = compact and 6 or 8, rowH = h }, meta = { h = h }, children = kids }
+  return {
+    id = "ov.kpis",
+    type = "grid",
+    props = { cols = #kids, gap = compact and 6 or 8, rowH = h },
+    meta = { h = h },
+    children = kids,
+  }
 end
 
 -- the body under the mode switch
@@ -163,7 +190,8 @@ function S.OverviewBody(app, params, opts)
     for _, t in ipairs(S.OverviewTools(app, params)) do
       tools[#tools + 1] = t
     end
-    kids[#kids + 1] = { id = "ov.tools", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = tools }
+    kids[#kids + 1] =
+      { id = "ov.tools", type = "row", props = { gap = 6, align = "center" }, meta = { h = 24 }, children = tools }
   end
   if not o then
     local house = ns.HOUSE_LABEL and ns.HOUSE_LABEL[app:House()] or app:House()
