@@ -90,7 +90,7 @@ jobs:
           echo "Opened $URL" >> "$GITHUB_STEP_SUMMARY"
           sleep 30 # let the checks start
           gh pr checks "$URL" --watch --required --interval 30
-          gh pr merge "$URL" --squash --admin --delete-branch
+          gh pr merge "$URL" --rebase --admin --delete-branch
           echo "Merged: the release follows (Crafting data release)." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remember the build

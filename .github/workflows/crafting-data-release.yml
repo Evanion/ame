@@ -56,7 +56,7 @@ jobs:
           CURSEFORGE_CI_API_TOKEN: ${{ secrets.CURSEFORGE_CI_API_TOKEN }}
         run: |
           # the merged pull request's description is the generator's summary of what changed
-          gh pr list --state merged --search "$GITHUB_SHA" --json body -q '.[0].body // ""' > "$RUNNER_TEMP/summary.md" || true
+          gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" -q '.[0].body // ""' > "$RUNNER_TEMP/summary.md" || true
           SUMMARY="$RUNNER_TEMP/summary.md" bash scripts/release-data.sh
           echo "tag=$(git tag --points-at HEAD --list 'data-v*' | head -n 1)" >> "$GITHUB_OUTPUT"
 
