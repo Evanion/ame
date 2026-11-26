@@ -114,6 +114,8 @@ function Store.New(data, opts)
     yield = opts.yield or function() end,
     cache = {}, -- packed string -> decoded segment
     cacheOrder = {},
+    rows = {}, -- itemID -> its rows of the segments Series read (Store.SERIES_ITEMS)
+    rowsOrder = {},
   }, Store)
 end
 
@@ -839,31 +841,73 @@ local function byDay(x, y)
   return x.day < y.day
 end
 
+-- An item's row of one stored segment, shaped as a decoded segment cut down to that row (Codec.DecodeRow), or false
+-- when the item isn't in it. A segment already in the decoded cache is read from there; otherwise only the ids column
+-- is decoded in full, and the segment doesn't go into the cache (a full history is more segments than it holds).
+function Store:segmentRow(packed, itemID)
+  local seg = self.cache[packed]
+  if seg then
+    local i = find(seg.ids, itemID)
+    if not i then
+      return false
+    end
+    local row = {}
+    for name, col in pairs(seg) do
+      row[name] = { col[i] }
+    end
+    return row
+  end
+  return Codec.DecodeRow(Store.SEGMENT_FIELDS, self:unpack(packed), itemID, true) or false
+end
+
+-- Series remembers, for the last SERIES_ITEMS items it read (this session only, not saved), the item's row of every
+-- segment it read: rows[itemID] = { [packed] = row or false }. A segment is decompressed (most of the cost: ~3 ms
+-- each with LibDeflate) only the first time; reopening the item, or reloading it after a scan, reads only the
+-- segments that changed. Keyed by the packed string, so a row can't go stale: a changed segment is a new string.
+Store.SERIES_ITEMS = 8
+
 function Store:Series(itemID, fromDay, toDay)
+  local whole = not fromDay and not toDay
   fromDay, toDay = fromDay or -math.huge, toDay or math.huge
   local b = itemID % Store.BUCKETS
+  local had = self.rows[itemID]
+  local memo, kept = had or {}, {}
+  if not whole then -- a part of the range: keep the rows of the rest
+    for packed, row in pairs(memo) do
+      kept[packed] = row
+    end
+  end
   local out = {}
+  local function read(packed, res, period)
+    local row = memo[packed]
+    if row == nil then
+      row = self:segmentRow(packed, itemID)
+      self:pause()
+    end
+    kept[packed] = row
+    if row then
+      out[#out + 1] = point(row, 1, res, period)
+    end
+  end
   for week, buckets in pairs(self.data.weeks) do
     local first = week * 7
     if buckets[b] and first + 6 >= fromDay and first <= toDay then
-      local seg = self:decode(buckets[b], Store.SEGMENT_FIELDS)
-      self:pause()
-      local i = find(seg.ids, itemID)
-      if i then
-        out[#out + 1] = point(seg, i, "week", week)
-      end
+      read(buckets[b], "week", week)
     end
   end
   for day, buckets in pairs(self.data.days) do
     if buckets[b] and day >= fromDay and day <= toDay then
-      local seg = self:decode(buckets[b], Store.SEGMENT_FIELDS)
-      self:pause()
-      local i = find(seg.ids, itemID)
-      if i then
-        out[#out + 1] = point(seg, i, "day", day)
-      end
+      read(buckets[b], "day", day)
     end
   end
+  local order = self.rowsOrder
+  if not had then
+    order[#order + 1] = itemID
+    if #order > Store.SERIES_ITEMS then
+      self.rows[table.remove(order, 1)] = nil
+    end
+  end
+  self.rows[itemID] = kept
   sort(out, function(x, y)
     return x.day < y.day
   end)

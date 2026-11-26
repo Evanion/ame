@@ -100,6 +100,46 @@ describe("Codec", function()
       end
     end)
 
+    it("DecodeRow reads one row, as Decode would cut it down to that row", function()
+      local F = { "ids", "a", "b", "c" }
+      local cols = { ids = { 3, 8, 9, 40, 1000 }, a = { -1, 2, 3, 4, 5 }, b = { 0, 0, 77, 0, 2 ^ 40 }, c = {} }
+      for i = 1, 5 do
+        cols.c[i] = i * 1000
+      end
+      local text = Codec.Encode(F, cols)
+      for i, id in ipairs(cols.ids) do
+        assert.are.same(
+          { ids = { id }, a = { cols.a[i] }, b = { cols.b[i] }, c = { cols.c[i] } },
+          Codec.DecodeRow(F, text, id)
+        )
+      end
+      for _, id in ipairs({ 1, 4, 41, 5000 }) do
+        assert.is_nil(Codec.DecodeRow(F, text, id))
+      end
+      assert.is_nil(Codec.DecodeRow(F, "1|0||||", 3))
+      -- text written before the trailing columns existed
+      local older = Codec.Encode({ "ids", "a" }, cols)
+      assert.are.same({ ids = { 40 }, a = { 4 } }, Codec.DecodeRow(F, older, 40, true))
+      assert.has_error(function()
+        Codec.DecodeRow(F, older, 40)
+      end)
+    end)
+
+    it("DecodeRow errors on malformed text", function()
+      local F = { "ids", "v" }
+      for _, bad in ipairs({
+        "9|2|1,2|5,6",
+        "1|2|1,2|5,6|7",
+        "1|2|1,2|5",
+        "1|2|1,2|5,",
+        "1|2|1,2|5,!",
+        "1|2|1,!|5,6",
+        "1|2|1|5,6",
+      }) do
+        assert.is_false((pcall(Codec.DecodeRow, F, bad, 3)), bad)
+      end
+    end)
+
     it("rejects unsorted ids", function()
       assert.has_error(function()
         Codec.EncodeSnapshot(snap({ 5, 3 }))
