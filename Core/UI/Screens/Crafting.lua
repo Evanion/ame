@@ -232,7 +232,8 @@ local function detail(app, f, r, filter, profession, count)
     id = "craft.d.needs",
     type = "crafttable",
     props = { source = "craft.needs", columns = NEED_COLS },
-    meta = { h = math.min(124, 26 + 20 * math.max(1, #d.needs)) },
+    -- every reagent without a scroll bar (a recipe rarely has more than 8)
+    meta = { h = ns.DataTable.Height(math.min(8, #d.needs)) },
   }
   if filter == "ready" and d.raw then
     local raw = d.raw

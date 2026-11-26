@@ -136,12 +136,21 @@ local function linksItem(opts)
 end
 DataTable.LinksItem = linksItem
 
+-- a row's height and the header's, unless a table asks for its own
+DataTable.ROW_H, DataTable.HEAD_H = 22, 20
+
+-- The height a table needs to show n rows without a scroll bar (at least one), with its header unless bare. A layout
+-- that sizes a table to its rows asks this rather than counting rows itself.
+function DataTable.Height(n, bare)
+  return (bare and 0 or DataTable.HEAD_H) + math.max(1, n or 0) * DataTable.ROW_H
+end
+
 function DataTable.New(parent, opts)
   local t = setmetatable({ opts = opts, data = {}, headers = {}, rows = {}, pending = {}, ownOffset = 0 }, DataTable)
   t.sort = opts.sort or {}
-  local rowsN, rowH, top = opts.rows or 17, opts.rowHeight or 22, opts.top or 0
+  local rowsN, rowH, top = opts.rows or 17, opts.rowHeight or DataTable.ROW_H, opts.top or 0
   t.rowH = rowH
-  t.headH = opts.bare and 0 or 20 -- a bare table has no header row
+  t.headH = opts.bare and 0 or DataTable.HEAD_H -- a bare table has no header row
   t.rowsN = rowsN
   local frame = CreateFrame("Frame", nil, parent)
   frame:SetPoint("TOPLEFT", 0, top)
