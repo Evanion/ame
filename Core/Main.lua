@@ -833,7 +833,15 @@ function handlers.AUCTION_HOUSE_CLOSED()
   if ns.UI and ns.UI.RenderArbitrage then
     ns.UI:RenderArbitrage()
   end
-  if AME.ingest.reading then
+  local ingest = AME.ingest
+  if ingest.reading or ingest.requested then
+    -- the scan is over: the button stops saying "Scanning..." and counts down the game's 15 minutes instead
+    AME:ScanDiag().abortedAt = GetServerTime()
+  end
+  if ns.ScanButton then
+    ns.ScanButton.fast = nil -- a fast scan's paging stops with the auction house: another can go next visit
+  end
+  if ingest.reading then
     local d = AME:ScanDiag()
     d.aborted = (d.aborted or 0) + 1
     say(

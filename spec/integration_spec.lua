@@ -1022,6 +1022,7 @@ describe("addon in a stubbed client", function()
       local sell = CreateFrame("Frame")
       function sell.SetItem() end
       local ah = CreateFrame("Frame")
+      ah.CloseButton = CreateFrame("Button", nil, ah)
       ah.CommoditiesSellFrame = sell
       _G.AuctionHouseFrame = ah
       local getItemID = C_Item.GetItemID
@@ -4153,6 +4154,59 @@ describe("addon in a stubbed client", function()
       assert.is_false(b:IsShown())
       _G.Auctionator, _G.AuctionHouseFrame = nil, nil
     end)
+
+    it(
+      "the AH closed mid-scan: the scan is over (the 15 minutes count down), and a fast scan can go next visit",
+      function()
+        seeded()
+        _G.AuctionHouseFrame = CreateFrame("Frame")
+        ns.AME:ScanDiag().lastReplicateAt = nil
+        env:fire("AUCTION_HOUSE_SHOW")
+        assert.is_true(ns.ScanButton:Start())
+        local ingest = ns.AME.ingest
+        ingest.reading, ingest.progress = true, { done = 2500, total = 10000 }
+        env:fire("AUCTION_HOUSE_CLOSED")
+        ingest.reading = false
+        assert.is_true(env:chatContains("it wasn't recorded"))
+        env.now = env.now + 5
+        env:fire("AUCTION_HOUSE_SHOW")
+        local state, left = ns.ScanButton:State()
+        assert.are.equal("wait", state) -- not "Scanning..." until the 2-minute timeout
+        assert.is_true(left > 14 * 60)
+        ns.ScanButton:Refresh()
+        assert.truthy(ns.ScanButton.button.label.text:find("Full scan in 14:", 1, true))
+        -- a fast scan left paging when the AH closed doesn't block the next
+        ns.Settings:Set("scanMode", "fast")
+        assert.is_true(ns.ScanButton:Start())
+        env:fire("AUCTION_HOUSE_CLOSED")
+        env:fire("AUCTION_HOUSE_SHOW")
+        assert.are.equal("ready", ns.ScanButton:State())
+        assert.is_true(ns.ScanButton:Start())
+        ns.Settings:Set("scanMode", "detailed")
+        _G.AuctionHouseFrame = nil
+      end
+    )
+
+    it(
+      "AME's window as the auction house: the game's, put out of sight, is back to normal however it closes",
+      function()
+        seeded()
+        ns.Settings:Set("oldWindow", false)
+        local ah = CreateFrame("Frame")
+        ah.CloseButton = CreateFrame("Button", nil, ah)
+        _G.AuctionHouseFrame = ah
+        env:fire("AUCTION_HOUSE_SHOW")
+        env:advance(0.1)
+        assert.are.equal(0.001, ah:GetScale()) -- tucked away
+        ah.scripts.OnHide(ah) -- closed by the game (or anything else) without AUCTION_HOUSE_CLOSED first
+        assert.are.equal(1, ah:GetScale())
+        assert.are.equal(1, ah:GetAlpha())
+        env:fire("AUCTION_HOUSE_CLOSED")
+        assert.are.equal(1, ah:GetScale())
+        _G.AuctionHouseFrame = nil
+        ns.Settings:Set("oldWindow", true)
+      end
+    )
 
     it("Settings, Data: what AME holds per market, the one you're on first", function()
       seeded()

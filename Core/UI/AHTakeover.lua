@@ -39,7 +39,7 @@ local function tuck(f)
   end
 end
 
-local function untuck(f)
+local function untuck(f, hiding)
   local saved = f and f.ameTucked
   if not saved then
     return
@@ -50,8 +50,19 @@ local function untuck(f)
   if f.EnableMouse then
     f:EnableMouse(true)
   end
-  if _G.UpdateUIPanelPositions then
+  if not hiding and _G.UpdateUIPanelPositions then
     pcall(_G.UpdateUIPanelPositions, f) -- back in its place among the game's windows
+  end
+end
+
+-- however the game's window closes (the visit ends, Escape, another addon), it is back to normal size and opacity
+-- before it opens again: the game draws its borders as it shows the window, and can't at a speck's scale
+local function watchHide(f)
+  if f and not f.ameHideHooked and f.HookScript then
+    f.ameHideHooked = true
+    f:HookScript("OnHide", function(self)
+      untuck(self, true) -- the game is putting it away: no need to place it among its windows
+    end)
   end
 end
 
@@ -105,6 +116,7 @@ function T.OnShow()
   -- the game's window may build itself after the event: once it's there (next frame), place both
   C_Timer.After(0, function()
     local f = game()
+    watchHide(f)
     swapButton(f)
     if ns.Settings:Get("ahMode") == "game" then
       untuck(f)
