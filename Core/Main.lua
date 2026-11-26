@@ -545,17 +545,23 @@ function handlers.PLAYER_LOGIN()
       end
     end)
   end
-  -- legacy AH API (classic flavours): a getAll query is a full scan
+  -- legacy AH API (classic flavours): a getAll query is a full scan; any other query is a search, recorded once
+  -- all its pages are in
   if QueryAuctionItems then
-    hooksecurefunc("QueryAuctionItems", function(_, _, _, _, _, _, getAll)
-      if getAll then
-        AME.scanRequestedAt = debugprofilestop()
-        local d = AME:ScanDiag()
-        d.requests, d.getAllRequests = (d.requests or 0) + 1, (d.getAllRequests or 0) + 1
-        d.lastRequestAt, d.eventsSinceRequest = GetServerTime(), 0
-        AME.ingest:OnGetAllRequested()
+    hooksecurefunc(
+      "QueryAuctionItems",
+      function(name, minLevel, maxLevel, page, isUsable, quality, getAll, exact, filterData)
+        if getAll then
+          AME.scanRequestedAt = debugprofilestop()
+          local d = AME:ScanDiag()
+          d.requests, d.getAllRequests = (d.requests or 0) + 1, (d.getAllRequests or 0) + 1
+          d.lastRequestAt, d.eventsSinceRequest = GetServerTime(), 0
+          AME.ingest:OnGetAllRequested()
+        else
+          AME.ingest:OnLegacyQuery(name, minLevel, maxLevel, page, isUsable, quality, exact, filterData)
+        end
       end
-    end)
+    )
   end
   for _, e in ipairs({
     "AUCTION_HOUSE_SHOW",
@@ -580,6 +586,7 @@ function handlers.PLAYER_LOGIN()
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "COMMODITY_SEARCH_RESULTS_UPDATED",
     "ITEM_SEARCH_RESULTS_UPDATED",
+    "AUCTION_ITEM_LIST_UPDATE",
     "PLAYER_LOGOUT",
   }) do
     pcall(events.RegisterEvent, events, e) -- tolerate events a client flavour doesn't have
@@ -896,6 +903,11 @@ end
 function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)
   AME.ingest:OnCommodityResults(itemID)
   followSearch(itemID)
+end
+
+-- a page of a legacy search (classic AH window, Auctionator's legacy searches)
+function handlers.AUCTION_ITEM_LIST_UPDATE()
+  AME.ingest:OnLegacyListUpdate()
 end
 
 function handlers.ITEM_SEARCH_RESULTS_UPDATED(itemKey)

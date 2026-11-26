@@ -400,12 +400,13 @@ function M.install(opts)
     RequestLoadItemDataByID = function() end,
   })
   set("C_AuctionHouse", env.ah)
-  -- legacy AH API (Forever): env.legacyRows = { { itemID, buyout, count } }, 1-based
+  -- legacy AH API (Forever): env.legacyRows = { { itemID, buyout, count } }, 1-based; env.legacyTotal: results of the
+  -- whole search when the list holds one page of it (default: the rows)
   env.legacyRows = {}
   env.sellPrices = {}
   set("QueryAuctionItems", function() end)
   set("GetNumAuctionItems", function()
-    return #env.legacyRows, #env.legacyRows
+    return #env.legacyRows, env.legacyTotal or #env.legacyRows
   end)
   set("GetAuctionItemInfo", function(_, i)
     local r = env.legacyRows[i]

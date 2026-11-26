@@ -415,6 +415,152 @@ describe("Ingest", function()
     end)
   end)
 
+  describe("legacy searches (QueryAuctionItems without getAll)", function()
+    local list
+
+    local function legacyIngest()
+      list = { rows = {}, total = 0 }
+      return ns.Ingest.New({
+        api = api,
+        jobs = runner,
+        legacy = {
+          GetNumAuctionItems = function(kind)
+            assert(kind == "list")
+            return #list.rows, list.total
+          end,
+          GetAuctionItemInfo = function(kind, i)
+            assert(kind == "list")
+            local r = list.rows[i]
+            if r then
+              return "x", nil, r[3], 1, true, 1, "", 0, 0, r[2], 0, false, nil, nil, nil, 0, r[1], true
+            end
+          end,
+          GetAuctionItemLink = function(_, i)
+            return list.rows[i] and list.rows[i][4]
+          end,
+        },
+        now = function()
+          return 7000
+        end,
+        after = function(_, fn)
+          timers[#timers + 1] = fn
+        end,
+        onSnapshot = function(snap, t, kind, info)
+          got[#got + 1] = { snap = snap, t = t, kind = kind, info = info }
+        end,
+      })
+    end
+
+    -- n listings of itemID, one each at price, price + 1, ...
+    local function listings(n, itemID, price)
+      local rows = {}
+      for i = 1, n do
+        rows[i] = { itemID, price + i - 1, 1 }
+      end
+      return rows
+    end
+
+    -- the query for a page, then its results arriving
+    local function page(ing, p, rows, total, name)
+      ing:OnLegacyQuery(name or "Linen", nil, nil, p, false, 0, false, nil)
+      list.rows, list.total = rows, total
+      ing:OnLegacyListUpdate()
+    end
+
+    it("records every page of a search as one partial snapshot once the last page is in", function()
+      local ing = legacyIngest()
+      page(ing, 0, listings(50, 2589, 100), 110)
+      -- page 1 asked for: an event before its results arrive still shows page 0, and is not page 1
+      ing:OnLegacyQuery("Linen", nil, nil, 1, false, 0, false, nil)
+      ing:OnLegacyListUpdate()
+      list.rows = listings(50, 2589, 150)
+      ing:OnLegacyListUpdate()
+      fireTimers()
+      drain()
+      assert.are.equal(0, #got) -- not the last page yet
+      page(ing, 2, listings(10, 4306, 900), 110)
+      ing:OnLegacyListUpdate() -- the last page updates again: still one snapshot
+      fireTimers()
+      drain()
+      assert.are.equal(1, #got)
+      assert.are.equal("partial", got[1].kind)
+      assert.are.equal(7000, got[1].t)
+      assert.are.same({ 2589, 4306 }, got[1].snap.ids)
+      local linen = row(got[1].snap, 2589)
+      assert.are.equal(100, linen.min)
+      assert.are.equal(100, linen.qty)
+      assert.are.equal(10, row(got[1].snap, 4306).qty)
+      assert.are.equal(900, row(got[1].snap, 4306).min)
+      fireTimers()
+      drain()
+      assert.are.equal(1, #got)
+    end)
+
+    it("records a one-page search, skipping listings without a buyout, keyed by suffix", function()
+      local ing = legacyIngest()
+      local magic = "|cff1eff00|Hitem:15211::::::1234::60:::::|h[Raider Shortsword of Magic]|h|r"
+      page(ing, 0, { { 2589, 0, 5 }, { 2589, 600, 3 }, { 15211, 3500, 1, magic } }, 3)
+      fireTimers()
+      drain()
+      assert.are.equal(1, #got)
+      assert.are.same({ 2589, ns.ItemKey(15211, 1234) }, got[1].snap.ids)
+      assert.are.equal(200, row(got[1].snap, 2589).min)
+      assert.are.equal(3, row(got[1].snap, 2589).qty)
+      assert.are.equal(1, got[1].snap.skipped)
+    end)
+
+    it("drops a page set when a query with other parameters starts", function()
+      local ing = legacyIngest()
+      page(ing, 0, listings(50, 2589, 100), 60)
+      page(ing, 0, listings(2, 4306, 900), 2, "Wool")
+      fireTimers()
+      drain()
+      page(ing, 1, listings(10, 2589, 150), 60) -- Linen's last page, but its set was abandoned
+      fireTimers()
+      drain()
+      assert.are.equal(1, #got)
+      assert.are.same({ 4306 }, got[1].snap.ids)
+    end)
+
+    it("records nothing for an incomplete page set", function()
+      local ing = legacyIngest()
+      page(ing, 0, listings(50, 2589, 100), 120) -- only the cheapest page
+      fireTimers()
+      drain()
+      page(ing, 2, listings(20, 2589, 200), 120) -- the last page, page 1 never came
+      fireTimers()
+      drain()
+      assert.are.equal(0, #got)
+    end)
+
+    it("drops the pages when the AH closes or a getAll scan starts", function()
+      local ing = legacyIngest()
+      page(ing, 0, listings(3, 2589, 100), 3)
+      ing:OnAuctionHouseClosed() -- before the last page settled
+      fireTimers()
+      drain()
+      page(ing, 0, listings(3, 2589, 100), 3)
+      ing:OnGetAllRequested()
+      for _ = 1, 3 do
+        list.rows, list.total = {}, 0 -- the getAll list hasn't arrived
+        fireTimers()
+      end
+      drain()
+      assert.are.equal(0, #got)
+    end)
+
+    it("ignores the list when no search was asked for, and without the legacy API", function()
+      local ing = legacyIngest()
+      list.rows, list.total = listings(3, 2589, 100), 3
+      ing:OnLegacyListUpdate()
+      ingest:OnLegacyQuery("Linen", nil, nil, 0, false, 0, false, nil)
+      ingest:OnLegacyListUpdate()
+      fireTimers()
+      drain()
+      assert.are.equal(0, #got)
+    end)
+  end)
+
   describe("search and sell-tab results", function()
     it("turns full commodity results into one partial snapshot after things settle", function()
       api.commodities[2589] = { { 100, 20 }, { 120, 5 } }
