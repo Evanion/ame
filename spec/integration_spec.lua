@@ -248,7 +248,7 @@ describe("addon in a stubbed client", function()
     assert.are.equal(2, AME_DB.stats.lastFull.items)
   end)
 
-  it("ignores ordinary legacy searches", function()
+  it("an ordinary legacy search is no full scan", function()
     boot()
     env:fire("AUCTION_HOUSE_SHOW")
     env.legacyRows = { { 2589, 1000, 10 } }
@@ -256,6 +256,85 @@ describe("addon in a stubbed client", function()
     env:advance(3)
     drainJobs()
     assert.is_false(env:chatContains("recorded full scan"))
+  end)
+
+  -- Auctionator's shopping and selling searches on Forever (its legacy AH code), and the classic browse window
+  it("records a legacy search's pages as one partial scan once the last page is in", function()
+    boot()
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    local function listings(n, itemID, price)
+      local rows = {}
+      for i = 1, n do
+        rows[i] = { itemID, price, 1 }
+      end
+      return rows
+    end
+    env.legacyTotal = 60
+    QueryAuctionItems("Linen", nil, nil, 0, nil, nil, false, false, nil)
+    env.legacyRows = listings(50, 2589, 100)
+    env:fire("AUCTION_ITEM_LIST_UPDATE")
+    QueryAuctionItems("Linen", nil, nil, 1, nil, nil, false, false, nil)
+    env.legacyRows = { { 2589, 300, 5 }, { 2589, 0, 5 }, { 4306, 9000, 3 }, { 4306, 6000, 2 } } -- one bid only
+    env:fire("AUCTION_ITEM_LIST_UPDATE")
+    env:advance(1)
+    drainJobs()
+    local raw = AME_HistoryDB.shards["TestRealm|Horde"].raw
+    assert.are.equal(1, #raw)
+    assert.are.equal("partial", raw[1].k)
+    assert.are.equal(1, AME_DB.stats.partials)
+    assert.is_false(env:chatContains("recorded full scan"))
+    local snap = ns.Codec.DecodeSnapshot(ns.Codec.Unpack(raw[1].s, ns.AME.compressor))
+    assert.are.same({ 2589, 4306 }, snap.ids)
+    assert.are.equal(60, snap.min[1])
+    assert.are.equal(55, snap.qty[1])
+    assert.are.equal(3000, snap.min[2])
+    assert.are.equal(5, snap.qty[2])
+  end)
+
+  it("records nothing for a legacy search abandoned before its last page", function()
+    boot()
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    env.legacyTotal = 75
+    QueryAuctionItems("Linen", nil, nil, 0, nil, nil, false, false, nil)
+    env.legacyRows = {}
+    for i = 1, 50 do
+      env.legacyRows[i] = { 2589, 100, 1 }
+    end
+    env:fire("AUCTION_ITEM_LIST_UPDATE")
+    QueryAuctionItems("Wool", nil, nil, 1, nil, nil, false, false, nil) -- another search's second page
+    env.legacyRows = { { 2592, 200, 1 } }
+    env:fire("AUCTION_ITEM_LIST_UPDATE")
+    env:advance(3)
+    drainJobs()
+    local shard = AME_HistoryDB.shards["TestRealm|Horde"]
+    assert.are.equal(0, shard and #shard.raw or 0)
+    assert.is_nil(AME_DB.stats.partials)
+  end)
+
+  it("a getAll scan after a legacy search's first page is still recorded as a full scan", function()
+    boot()
+    env.npcFaction = "Horde"
+    env:fire("AUCTION_HOUSE_SHOW")
+    env.legacyTotal = 80
+    QueryAuctionItems("Linen", nil, nil, 0, nil, nil, false, false, nil)
+    env.legacyRows = {}
+    for i = 1, 50 do
+      env.legacyRows[i] = { 2589, 100, 1 }
+    end
+    env:fire("AUCTION_ITEM_LIST_UPDATE")
+    env.legacyTotal = nil
+    env.legacyRows = { { 2589, 1000, 10 }, { 4306, 5000, 5 } }
+    QueryAuctionItems("", nil, nil, 0, nil, nil, true, false, nil)
+    env:fire("AUCTION_ITEM_LIST_UPDATE")
+    env:advance(1)
+    env:advance(1)
+    drainJobs()
+    assert.is_true(env:chatContains("recorded full scan: 2 items"))
+    local raw = AME_HistoryDB.shards["TestRealm|Horde"].raw
+    assert.are.equal(1, #raw)
+    assert.are.equal("full", raw[1].k)
   end)
 
   it("uses the ruleset as the market on Forever and migrates old realm-named history", function()

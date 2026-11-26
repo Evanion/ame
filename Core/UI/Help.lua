@@ -251,7 +251,9 @@ Help.GLOSSARY = {
 Help.GUIDE = {
   {
     L["Where the data comes from"],
-    L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."],
+    L["AME listens to the game's own auction house APIs, so every scan and search you run is recorded - from the default auction house window or any scanning addon (it works well with addons like Auctionator). Nothing extra is scanned. History is kept per market (realm or Forever ruleset) and auction house, and guild members running AME share their full scans automatically."]
+      .. " "
+      .. L["A search whose results fill several pages (the classic auction house window, Auctionator on Forever) is recorded once its last page is in. One you leave after the first pages isn't: its cheapest listings alone would set the market price too low."],
   },
   {
     L["Market tab"],

@@ -275,6 +275,7 @@ L["A recipe's tooltip (pattern, plans, formula...) also shows what it makes at t
 L["A request also goes out as a whisper, so a crafter without AME still sees it. Handed over and declined ones clear after a week."] = true
 L["A route, broken down"] = true
 L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] = true
+L["A search whose results fill several pages (the classic auction house window, Auctionator on Forever) is recorded once its last page is in. One you leave after the first pages isn't: its cheapest listings alone would set the market price too low."] = true
 L["A shared list updates as its owner changes it. A copy is yours: it stops following theirs."] = true
 L["A shopping list is for buying toward something - the reagents for a robe you're about to craft - while a watchlist is for items you keep an eye on for good. Make one with \"+ New shopping list\" in the Market sidebar, from any item's right-click menu (Add to shopping list...), or from a recipe: open your profession window, pick the recipe, set how many you'll make and click Add to shopping list."] = true
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] = true

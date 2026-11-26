@@ -22,6 +22,12 @@
 -- Searches / sell-tab rechecks: commodity and item search results are collected per item and flushed as one
 -- "partial" snapshot after SETTLE seconds without new results. Incomplete result sets (only the cheapest page) are
 -- skipped, because they would bias the market price low.
+--
+-- Legacy searches (any QueryAuctionItems without getAll: Auctionator's shopping and selling searches on Forever, the
+-- classic browse window): each page that arrives (AUCTION_ITEM_LIST_UPDATE) is copied, up to 50 rows, and once the
+-- page holding the last result is in, every page of that query is recorded as one partial snapshot. A query with
+-- other parameters, a getAll scan or the AH closing drops the pages collected so far; a set with a page missing is
+-- never recorded, like an incomplete modern search.
 local _, ns = ...
 
 local Ingest = {}
@@ -32,6 +38,7 @@ Ingest.SETTLE = 0.4 -- a search's results arrive together; record them once they
 Ingest.BROWSE_SETTLE = 2.0 -- browse pages arrive as the list scrolls; record a partial once they pause
 Ingest.POLL = 1.0 -- seconds between legacy list checks
 Ingest.POLL_LIMIT = 180 -- give up waiting for a getAll list after this many polls
+Ingest.PAGE_SIZE = 50 -- legacy search results per page (NUM_AUCTION_ITEMS_PER_PAGE)
 
 -- opts: api, jobs, now, after(seconds, fn), onSnapshot(snap, t, kind, info), onReadStart(rows) (optional),
 -- legacy (optional: the legacy AH functions { GetNumAuctionItems, GetAuctionItemInfo, GetAuctionItemLink }),
@@ -176,6 +183,7 @@ end
 
 -- legacy getAll query sent (hook on QueryAuctionItems with getAll = true)
 function Ingest:OnGetAllRequested()
+  self.legacySearch = nil -- a search's pages collected so far are dropped (its list is gone)
   if not self.legacy or self.reading then
     return
   end
@@ -264,6 +272,7 @@ function Ingest:OnAuctionHouseClosed()
   self.requested, self.browseRequested, self.browseActive = false, false, false
   self.browseGen = (self.browseGen or 0) + 1
   self.pollGen = (self.pollGen or 0) + 1 -- stop waiting for a getAll list
+  self.legacySearch = nil -- a legacy search's pages so far: incomplete, dropped
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -358,4 +367,140 @@ function Ingest:flush()
       end
     end)
   end
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- legacy searches (QueryAuctionItems without getAll)
+
+-- what makes two queries the same search: every parameter but the page (filterData by content, not identity)
+local function querySig(name, minLevel, maxLevel, isUsable, quality, exact, filterData)
+  local parts = { tostring(name or ""), tostring(minLevel), tostring(maxLevel), tostring(isUsable) }
+  parts[#parts + 1] = tostring(quality)
+  parts[#parts + 1] = tostring(exact)
+  if type(filterData) == "table" then
+    for _, f in ipairs(filterData) do
+      if type(f) == "table" then
+        parts[#parts + 1] = tostring(f.classID) .. "." .. tostring(f.subClassID) .. "." .. tostring(f.inventoryType)
+      else
+        parts[#parts + 1] = tostring(f)
+      end
+    end
+  else
+    parts[#parts + 1] = tostring(filterData)
+  end
+  return table.concat(parts, "|")
+end
+
+-- the same rows (the list still showing the previous page when the event fires)
+local function samePage(a, b)
+  if #a ~= #b then
+    return false
+  end
+  for i, r in ipairs(a) do
+    local o = b[i]
+    if r[1] ~= o[1] or r[2] ~= o[2] or r[3] ~= o[3] or r[4] ~= o[4] then
+      return false
+    end
+  end
+  return true
+end
+
+-- a legacy search page asked for (hook on QueryAuctionItems with getAll false). Page 0, or a query with other
+-- parameters, starts a new set of pages; the previous set is dropped.
+function Ingest:OnLegacyQuery(name, minLevel, maxLevel, page, isUsable, quality, exact, filterData)
+  if not self.legacy then
+    return
+  end
+  page = tonumber(page) or 0
+  local sig = querySig(name, minLevel, maxLevel, isUsable, quality, exact, filterData)
+  local s = self.legacySearch
+  if not s or s.sig ~= sig or page == 0 then
+    s = { sig = sig, pages = {} }
+    self.legacySearch = s
+  end
+  s.want = page
+  self.legacyGen = (self.legacyGen or 0) + 1 -- a flush waiting for the last page is off: more pages are coming
+end
+
+-- AUCTION_ITEM_LIST_UPDATE: copy the page the last query asked for; once the last page is in, record the set
+function Ingest:OnLegacyListUpdate()
+  local s, legacy = self.legacySearch, self.legacy
+  if not s or not s.want or not legacy then
+    return
+  end
+  local batch, total = legacy.GetNumAuctionItems("list")
+  batch, total = batch or 0, total or 0
+  if batch > Ingest.PAGE_SIZE or (batch == 0 and total > 0) then
+    return -- not a search page (or not loaded yet)
+  end
+  local page = s.want
+  local rows = {}
+  for i = 1, batch do
+    local _, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = legacy.GetAuctionItemInfo("list", i)
+    local link = legacy.GetAuctionItemLink and legacy.GetAuctionItemLink("list", i)
+    rows[i] = { itemID or 0, buyout or 0, count or 0, link or false }
+  end
+  local prev = s.pages[page - 1]
+  if prev and samePage(rows, prev) then
+    return -- still the previous page: this page's results haven't arrived yet
+  end
+  s.pages[page], s.total = rows, total
+  if (page + 1) * Ingest.PAGE_SIZE < total then
+    return -- more pages to come
+  end
+  -- the last page: record once its rows settle (later events for it re-read it and wait again)
+  self.legacyGen = (self.legacyGen or 0) + 1
+  local gen = self.legacyGen
+  self.after(Ingest.SETTLE, function()
+    if gen == self.legacyGen and self.legacySearch == s then
+      self.legacySearch = nil
+      self:flushLegacy(s, page)
+    end
+  end)
+end
+
+-- pages 0..last of one search -> one partial snapshot (and order books), time-sliced. A missing page: nothing.
+function Ingest:flushLegacy(s, last)
+  for p = 0, last do
+    if not s.pages[p] then
+      return
+    end
+  end
+  local t = self.now()
+  self.jobs:Add("ingest-legacy-search", function(job)
+    local acc = ns.Stats.NewAccumulator()
+    local tiers = {} -- item key -> { unit price, count } per listing
+    local n = 0
+    for p = 0, last do
+      for _, r in ipairs(s.pages[p]) do
+        local itemID, buyout, count, link = r[1], r[2], r[3], r[4]
+        if itemID > 0 then
+          local key = link and self:keyOf(itemID, link) or itemID
+          acc:Add(key, buyout, count) -- no buyout (bid only): skipped
+          if buyout > 0 then
+            local c = count > 0 and count or 1
+            tiers[key] = tiers[key] or {}
+            table.insert(tiers[key], { math.floor(buyout / c), c })
+          end
+        end
+        n = n + 1
+        if n % 64 == 0 then
+          job:Checkpoint()
+        end
+      end
+    end
+    local books = {}
+    if ns.Depth then
+      for key, list in pairs(tiers) do
+        books[key] = ns.Depth.Book(list, t)
+      end
+    end
+    return { snap = acc:Finish(), books = books }
+  end, function(ok, out)
+    if not ok then
+      ns.ReportError(out) -- to the game's error handler (BugSack)
+    elseif out and out.snap and #out.snap.ids > 0 then
+      self.onSnapshot(out.snap, t, "partial", { books = out.books, source = "legacy" })
+    end
+  end)
 end
