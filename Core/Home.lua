@@ -305,24 +305,26 @@ end
 
 -- ------------------------------------------------------------------------------------------------ the strip
 
--- Your gold, a point a day over the last `days` (30): every kept character's last figure on or before each day. A
--- character's first figure stands for the days before it (AME hadn't seen them yet), its gold now for today.
--- -> { xs, ys } (x: the day's server time), or nil before two days are in
-function Home.GoldLine(holdings, keep, today, days)
-  days = days or 30
+-- Your gold over `count` steps of `unit` seconds (a day by default) up to step `now` (now's day, or hour): every kept
+-- character's last figure on or before each step, from its `field` log (goldDays, or goldHours). A character's
+-- first figure stands for the steps before it (AME hadn't seen them yet), its gold now for the step now.
+-- -> { xs, ys, first } (x: the step's server time; first: the earliest step any character has a figure for), or nil
+-- before two steps are in
+function Home.GoldLine(holdings, keep, now, count, field, unit)
+  count, field, unit = count or 30, field or "goldDays", unit or DAY
   local chars, first = {}, nil
   for key, h in pairs(holdings or {}) do
     if keep(key) then
       local log = {}
-      for day, copper in pairs(h.goldDays or {}) do
-        log[day] = copper
+      for step, copper in pairs(h[field] or {}) do
+        log[step] = copper
       end
       if type(h.money) == "number" then
-        log[today] = h.money
+        log[now] = h.money
       end
       local earliest
-      for day in pairs(log) do
-        earliest = math.min(earliest or day, day)
+      for step in pairs(log) do
+        earliest = math.min(earliest or step, step)
       end
       if earliest then
         chars[#chars + 1] = { log = log, earliest = earliest }
@@ -333,23 +335,47 @@ function Home.GoldLine(holdings, keep, today, days)
   if not first then
     return nil
   end
-  local from = math.max(first, today - days + 1)
-  if from >= today then
+  local from = math.max(first, now - count + 1)
+  if from >= now then
     return nil
   end
   local xs, ys = {}, {}
-  for day = from, today do
+  for step = from, now do
     local sum = 0
     for _, c in ipairs(chars) do
-      local back = day
+      local back = step
       while back > c.earliest and c.log[back] == nil do
         back = back - 1
       end
       sum = sum + (c.log[back] or c.log[c.earliest])
     end
-    xs[#xs + 1], ys[#ys + 1] = day * DAY, sum
+    xs[#xs + 1], ys[#ys + 1] = step * unit, sum
   end
-  return { xs = xs, ys = ys }
+  return { xs = xs, ys = ys, first = first }
+end
+
+-- The gold line's ranges, shortest first. 1D and 2D draw a point an hour, 7D and 30D a point a day; each is offered
+-- once the history is longer than the one before it (1D: two hours in; 2D: a day; 7D: two days; 30D: a week).
+Home.HOUR = 3600
+Home.GOLD_RANGES = {
+  { key = "1D", field = "goldHours", unit = Home.HOUR, count = 24, after = 1 },
+  { key = "2D", field = "goldHours", unit = Home.HOUR, count = 48, after = 24 },
+  { key = "7D", field = "goldDays", unit = DAY, count = 7, after = 2 },
+  { key = "30D", field = "goldDays", unit = DAY, count = 30, after = 7 },
+}
+
+-- -> { [key] = line }, { key, ... } (the ranges the history covers, shortest first); both empty before any is
+function Home.GoldLines(holdings, keep, now)
+  local lines, keys = {}, {}
+  for _, r in ipairs(Home.GOLD_RANGES) do
+    local step = math.floor(now / r.unit)
+    local line = Home.GoldLine(holdings, keep, step, r.count, r.field, r.unit)
+    if line and step - line.first >= r.after then
+      line.hourly = r.unit < DAY
+      lines[r.key], keys[#keys + 1] = line, r.key
+    end
+  end
+  return lines, keys
 end
 
 Home.MAIL_SOON = 3 -- days: a mailbox whose first mail runs out sooner is marked (what's left in it is lost)
@@ -539,7 +565,7 @@ local function gatherMoney(f, holdings, keep)
   f.gold = gold
   f.myGold = _G.GetMoney and _G.GetMoney() or nil
   -- the strip: neither needs prices
-  f.goldLine = Home.GoldLine(holdings, keep, ns.Today(f.now))
+  f.goldLines, f.goldRanges = Home.GoldLines(holdings, keep, f.now)
   f.mail, f.mailTotal = Home.Mail(holdings, keep, f.now)
 end
 

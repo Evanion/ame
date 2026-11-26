@@ -371,6 +371,16 @@ function Help.Articles()
       L["Tabs"],
       {
         {
+          key = "tabHome",
+          title = L["Home"],
+          body = {
+            H(L["Your gold"]),
+            L["Under the lists, Your gold draws the gold all your characters on this realm hold together. AME notes each character's gold whenever it changes, so the line grows as you play: 1D (a point an hour) after your first hours, 2D once a day is in, 7D (a point a day) after two days and 30D after a week. Pick a range above the line; the longest is shown until you do. Hover the line for a point's total. A character counts at its last known gold for the times AME didn't see it."],
+            H(L["Waiting in your mail"]),
+            L["Beside it, what waits in each character's mailbox - gold from sales and items - as the mailbox was last opened, the one whose first mail runs out soonest first. Mail runs out after 30 days."],
+          },
+        },
+        {
           key = "tabMarket",
           title = Help.GUIDE[2][1],
           label = L["Market"],

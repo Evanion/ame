@@ -123,6 +123,13 @@ describe("Trading's mailbox and gold records", function()
     assert.are.same({ [60] = 7, [61] = 9 }, h.goldDays)
   end)
 
+  it("keeps a figure an hour for 50 hours, beside the day's", function()
+    local h = { goldHours = { [100] = 5, [140] = 7 } }
+    Trading.NoteGold(h, 6, 9, 150)
+    assert.are.same({ [140] = 7, [150] = 9 }, h.goldHours)
+    assert.are.same({ [6] = 9 }, h.goldDays)
+  end)
+
   it("sums what waits in the mailbox: gold, sales, items, and when the first mail with any runs out", function()
     -- mail 1: a sale (gold, no items, 2.5 days left); mail 2: 3 + 1 items, 20 days; mail 3: empty letter, 1 day
     local mails = {
