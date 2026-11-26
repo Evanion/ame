@@ -4,7 +4,7 @@ The addon is linked into `C:\Games\World of Warcraft\_forever_\Interface\AddOns\
 - `AzerothMercantileExchange` points to the repo root.
 - `AzerothMercantileExchange_History` points to the repo's history addon folder.
 
-Edits in the repo are live after `/reload`. The M0 spike (`AME_Spike`) is no longer linked.
+Edits in the repo are live after `/reload`.
 
 ## Playbook (≈ 5-20 min; replicate-style full scans have a 15-minute server cooldown)
 
