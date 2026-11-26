@@ -54,7 +54,8 @@ function Scan:State()
   if not asked then
     return "ready"
   end
-  if (not read or read < asked) and now - asked < Scan.TIMEOUT then
+  local over = (read and read >= asked) or (d.abortedAt and d.abortedAt >= asked) -- read, or the AH closed first
+  if not over and now - asked < Scan.TIMEOUT then
     return "scanning"
   end
   local left = asked + Scan.COOLDOWN - now
