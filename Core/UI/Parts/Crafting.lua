@@ -78,7 +78,10 @@ end
 function Calls.createAll(p)
   local api = _G.C_TradeSkillUI
   local can, n = CraftingUI.CanCreate(p and p.recipe)
-  if not (can and n > 0 and api.CraftRecipe) then
+  if p and p.recipe and not can then
+    return CraftingUI.OpenFor(p.recipe) -- as Create: its window opens, the next click makes them
+  end
+  if not (can and n > 0 and api and api.CraftRecipe) then
     return false
   end
   return pcall(api.CraftRecipe, p.recipe, n) and true or false
