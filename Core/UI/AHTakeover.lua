@@ -53,6 +53,10 @@ local function untuck(f, hiding)
   if not hiding and _G.UpdateUIPanelPositions then
     pcall(_G.UpdateUIPanelPositions, f) -- back in its place among the game's windows
   end
+  -- what sizes itself to its text on the window was left alone while it was out of sight (Widgets.Measurable)
+  if ns.ScanButton and ns.ScanButton.button then
+    ns.ScanButton:Refresh()
+  end
 end
 
 -- however the game's window closes (the visit ends, Escape, another addon), it is back to normal size and opacity

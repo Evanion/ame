@@ -88,8 +88,15 @@ local function newObject(kind)
     GetRight = function(self)
       return self.w
     end,
-    GetEffectiveScale = function()
-      return 1
+    -- its own scale times its parents' (a frame put out of sight at a speck's scale, as the game does)
+    GetEffectiveScale = function(self)
+      local s, f = 1, self
+      while type(f) == "table" do
+        local own = rawget(f, "scale")
+        s = s * (type(own) == "number" and own or 1)
+        f = rawget(f, "parent")
+      end
+      return s
     end,
     SetVertexOffset = function(self, corner, x, y)
       self.offsets = rawget(self, "offsets") or {}
@@ -104,8 +111,10 @@ local function newObject(kind)
     GetText = function(self)
       return rawget(self, "text")
     end,
+    -- as the game measures it: far wider at a speck's scale (the font can't shrink below a few pixels)
     GetStringWidth = function(self)
-      return #(rawget(self, "text") or "") * 6
+      local w, s = #(rawget(self, "text") or "") * 6, self:GetEffectiveScale()
+      return s < 0.05 and w * 0.05 / s or w
     end,
     GetStringHeight = function()
       return 12
@@ -113,9 +122,10 @@ local function newObject(kind)
     CreateTexture = function()
       return newObject("Texture")
     end,
-    CreateFontString = function(_, _, _, font)
+    CreateFontString = function(self, _, _, font)
       local fs = newObject("FontString")
       fs._font = font
+      fs.parent = self
       return fs
     end,
     CreateLine = function()

@@ -195,7 +195,9 @@ function Scan:Refresh()
     b:SetText(Scan.Fast() and L["Fast scan"] or L["Full scan"])
     b:SetEnabled(true)
   end
-  b:SetWidth(math.ceil(b.label:GetStringWidth() or 60) + 20)
+  if W.Measurable(b) then -- not while the window is out of sight: it keeps its width from before
+    b:SetWidth(math.ceil(b.label:GetStringWidth() or 60) + 20)
+  end
 end
 
 -- on the auction house window, top right; once

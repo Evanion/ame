@@ -196,6 +196,15 @@ function W.Skin(frame, color, border)
   frame:SetBackdropBorderColor(b[1], b[2], b[3], b[4])
 end
 
+-- Whether text on this frame measures true. Not while its window is put out of sight at a speck's scale (the game's
+-- auction house window while AME's is the auction house): the game then measures text thousands of pixels wide, and a
+-- frame sized by it can't draw its border when the window opens again.
+W.MEASURE_MIN_SCALE = 0.05
+function W.Measurable(frame)
+  local s = frame and frame.GetEffectiveScale and frame:GetEffectiveScale()
+  return not s or s >= W.MEASURE_MIN_SCALE
+end
+
 function W.Text(parent, font, justify)
   local fs = parent:CreateFontString(nil, "OVERLAY", font or "GameFontHighlightSmall")
   fs:SetJustifyH(justify or "LEFT")

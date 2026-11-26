@@ -120,6 +120,9 @@ function ns.Kit.Button(parent)
   -- b:Fit(minW, pad): as wide as its label plus pad (20) each side together, at least minW, and the label on a whole
   -- pixel (centred on a half pixel, thin strokes like "ll" blur into coloured fringes)
   function b:Fit(minW, pad)
+    if not W.Measurable(self) then
+      return self:GetWidth() -- out of sight at a speck's scale: its width from before
+    end
     local tw = math.ceil(self.label:GetStringWidth() or 0)
     local w = math.max(tw + (pad or 20), minW or 0)
     self:SetWidth(w)
@@ -128,7 +131,7 @@ function ns.Kit.Button(parent)
   end
   -- the label centred on a whole pixel at the button's own width (a dropdown's label sits by its arrow instead)
   function b:Snap()
-    if self.arrow or not self.GetWidth then
+    if self.arrow or not self.GetWidth or not W.Measurable(self) then
       return
     end
     local w, tw = self:GetWidth() or 0, math.ceil(self.label:GetStringWidth() or 0)
