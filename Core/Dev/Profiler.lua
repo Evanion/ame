@@ -323,7 +323,10 @@ local function sizes()
     add("index " .. ns.ShardLabel(shard), index)
   end
   for shard, store in pairs(AME.stores or {}) do
-    add("store " .. ns.ShardLabel(shard), { data = store.data, cache = store.cache, texts = store.texts })
+    add(
+      "store " .. ns.ShardLabel(shard),
+      { data = store.data, cache = store.cache, texts = store.texts, rows = store.rows }
+    )
   end
   add("item cache", ns.ItemCache and ns.ItemCache.info)
   if ns.UI then

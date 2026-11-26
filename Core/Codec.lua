@@ -188,7 +188,9 @@ end
 -- init (optional): where the encoded table starts in text (a saved market index has a header before it)
 -- The columns are cut out one at a time, as they're decoded: an 8 MB index split up front allocated twice its size
 -- in one step, and the garbage collector made the next frames pay for it.
-function Codec.Decode(fieldNames, text, allowMissing, yield, init)
+-- where each "|"-separated field of an encoded table starts, its row count, and a function cutting out field i.
+-- Errors (at the caller of the caller) on a bad version or field count.
+local function header(fieldNames, text, allowMissing, init)
   local starts, pos = {}, init or 1
   while true do
     starts[#starts + 1] = pos
@@ -204,12 +206,17 @@ function Codec.Decode(fieldNames, text, allowMissing, yield, init)
     return sub(text, starts[i], e)
   end
   if field(1) ~= Codec.VERSION then
-    error("Codec: unsupported version " .. tostring(field(1)), 2)
+    error("Codec: unsupported version " .. tostring(field(1)), 3)
   end
   if count ~= #fieldNames + 2 and not (allowMissing and count >= 3 and count < #fieldNames + 2) then
-    error("Codec: wrong field count", 2)
+    error("Codec: wrong field count", 3)
   end
-  local n = Codec.FromBase36(field(2))
+  return starts, Codec.FromBase36(field(2)), field
+end
+
+function Codec.Decode(fieldNames, text, allowMissing, yield, init)
+  local starts, n, field = header(fieldNames, text, allowMissing, init)
+  local count = #starts
   local cols = {}
   for f, name in ipairs(fieldNames) do
     if f + 2 <= count then
@@ -218,6 +225,54 @@ function Codec.Decode(fieldNames, text, allowMissing, yield, init)
         yield()
       end
     end
+  end
+  return cols
+end
+
+-- One row of an encoded table: the row whose key (in fieldNames[1], sorted) is `key`, shaped as Decode's result cut
+-- down to that row (each column a list of one value; with allowMissing, the columns the text predates are nil), or
+-- nil when the key isn't in it. Only the key column is decoded in full; the others are read at the row's position,
+-- so a reader after one item's row doesn't parse (and allocate) the whole table.
+function Codec.DecodeRow(fieldNames, text, key, allowMissing)
+  local starts, n, field = header(fieldNames, text, allowMissing)
+  local count = #starts
+  local keys = decodeColumn(field(3), n, true)
+  local lo, hi, row = 1, n, nil
+  while lo <= hi do
+    local mid = floor((lo + hi) / 2)
+    local v = keys[mid]
+    if v == key then
+      row = mid
+      break
+    elseif v < key then
+      lo = mid + 1
+    else
+      hi = mid - 1
+    end
+  end
+  if not row then
+    return nil
+  end
+  local cols = { [fieldNames[1]] = { key } }
+  for f = 2, #fieldNames do
+    if f + 2 > count then
+      break
+    end
+    local pos = starts[f + 2]
+    local last = starts[f + 3] and starts[f + 3] - 2 or #text
+    for _ = 2, row do
+      local at = text:find(",", pos, true)
+      if not at or at > last then
+        error("Codec: column length mismatch", 2)
+      end
+      pos = at + 1
+    end
+    local stop = text:find(",", pos, true)
+    stop = stop and stop <= last and stop - 1 or last
+    if stop < pos then
+      error("Codec: empty number", 2)
+    end
+    cols[fieldNames[f]] = { Codec.FromBase36(sub(text, pos, stop)) }
   end
   return cols
 end

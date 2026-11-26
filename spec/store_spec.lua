@@ -554,6 +554,187 @@ describe("Store", function()
       assert.are.same({}, store:Series(12345))
     end)
 
+    -- Series as it was before it read single rows: every segment decoded in full, the item found in it
+    local function referenceSeries(data, itemID, fromDay, toDay)
+      fromDay, toDay = fromDay or -math.huge, toDay or math.huge
+      local b, out = itemID % Store.BUCKETS, {}
+      local function add(packed, res, period)
+        local seg = ns.Codec.Decode(Store.SEGMENT_FIELDS, ns.Codec.Unpack(packed, compressor), true)
+        for i, id in ipairs(seg.ids) do
+          if id == itemID then
+            local scans, high, obs = seg.scans[i], seg.high and seg.high[i], seg.obs and seg.obs[i] or 0
+            local p = { res = res, min = seg.min[i], scans = scans, high = high and high > 0 and high or nil }
+            p.drain, p.obs = obs > 0 and seg.drain[i] or nil, obs > 0 and obs or nil
+            for _, f in ipairs({ "market", "median", "qty", "auctions" }) do
+              p[f] = math.floor(seg[f][i] / scans + 0.5)
+            end
+            if res == "week" then
+              p.week, p.day = period, period * 7
+            else
+              local hours = seg.hours and seg.hours[i]
+              p.day, p.hours = period, hours and hours > 0 and hours or nil
+            end
+            out[#out + 1] = p
+          end
+        end
+      end
+      for week, buckets in pairs(data.weeks) do
+        if buckets[b] and week * 7 + 6 >= fromDay and week * 7 <= toDay then
+          add(buckets[b], "week", week)
+        end
+      end
+      for day, buckets in pairs(data.days) do
+        if buckets[b] and day >= fromDay and day <= toDay then
+          add(buckets[b], "day", day)
+        end
+      end
+      table.sort(out, function(x, y)
+        return x.day < y.day
+      end)
+      return out
+    end
+
+    -- ~3 months of history for items 10, 42 and 74 (one bucket) and 11: weekly and daily points, days some items
+    -- weren't listed, liquidity, and one day in the old 8-column format
+    local function history()
+      local data = {}
+      local store = newStore(data)
+      for d = 900, 1000 do
+        clock = d * DAY + 3600
+        local items = { [10] = { d, d + 5, d + 9, 1 + d % 7, 1 + d % 3 }, [11] = { 1, 2, 3, 4, 5 } }
+        if d % 3 ~= 0 then
+          items[42] = { 2 * d, 2 * d, 2 * d + 1, 3, 1 }
+        end
+        if d % 5 == 0 then
+          items[74] = { 7, 8, 9, 10, 11 }
+        end
+        store:AddScan(snap(items), clock, "a")
+        if d % 4 == 0 then
+          items[10] = { d - 1, d + 1, d + 2, d % 5, 1 }
+          store:AddScan(snap(items), clock + 2 * 3600, "b")
+        end
+      end
+      local old = { "ids", "min", "market", "median", "qty", "auctions", "scans", "hours" }
+      for b, packed in pairs(data.days[995]) do
+        local cols = ns.Codec.Decode(Store.SEGMENT_FIELDS, ns.Codec.Unpack(packed, compressor))
+        data.days[995][b] = ns.Codec.Pack(ns.Codec.Encode(old, cols), compressor)
+      end
+      return data, store
+    end
+
+    it("Series gives the same points, in the same order, as decoding every segment in full", function()
+      local data, store = history()
+      assert.is_not_nil(next(data.weeks))
+      local ranges = { {}, { 990, 1000 }, { 905, 950 }, { 995, 995 }, { 2000, 3000 } }
+      for _, id in ipairs({ 10, 42, 74, 11, 12345 }) do
+        for _, r in ipairs(ranges) do
+          local want = referenceSeries(data, id, r[1], r[2])
+          assert.are.same(want, store:Series(id, r[1], r[2]), id .. " " .. tostring(r[1]))
+          assert.are.same(want, store:Series(id, r[1], r[2]), "again") -- from the remembered rows
+          assert.are.same(want, newStore(data):Series(id, r[1], r[2]), "fresh store")
+        end
+      end
+      local p = store:Series(10, 995, 995)[1]
+      assert.is_nil(p.high) -- the old-format day: no high
+      assert.are.equal(995, p.min)
+    end)
+
+    it("Series reads a segment once: reopening the item, or after a scan only the changed segment", function()
+      local data, store = history()
+      local unpacks = 0
+      local unpack = ns.Codec.Unpack
+      ns.Codec.Unpack = function(...)
+        unpacks = unpacks + 1
+        return unpack(...)
+      end
+      local first = store:Series(10)
+      local segments = unpacks
+      assert.are.equal(#first, segments) -- one per point: 10 is in every segment of its bucket
+      unpacks = 0
+      assert.are.same(first, store:Series(10))
+      assert.are.equal(0, unpacks)
+      clock = 1000 * DAY + 20 * 3600
+      store:AddScan(snap({ [10] = { 1, 1, 1, 1, 1 } }), clock, "c") -- today's segment changes
+      unpacks = 0
+      local after = store:Series(10)
+      assert.are.equal(1, unpacks) -- today's segment, merged above; nothing else
+      assert.are.equal(1, after[#after].min)
+      assert.are.same(referenceSeries(data, 10), after)
+      ns.Codec.Unpack = unpack
+    end)
+
+    it("Series of a part of the range keeps the item's other rows, and remembers only a few items", function()
+      local data, store = history()
+      local want = referenceSeries(data, 10)
+      store:Series(10)
+      local unpack, unpacks = ns.Codec.Unpack, 0
+      ns.Codec.Unpack = function(...)
+        unpacks = unpacks + 1
+        return unpack(...)
+      end
+      store:Series(10, 990, 1000)
+      store:Series(10)
+      assert.are.equal(0, unpacks)
+      for id = 1, Store.SERIES_ITEMS do
+        store:Series(10 + id * Store.BUCKETS)
+      end
+      assert.is_nil(store.rows[10]) -- the oldest item went
+      assert.are.equal(Store.SERIES_ITEMS, #store.rowsOrder)
+      unpacks = 0
+      local again = store:Series(10)
+      ns.Codec.Unpack = unpack
+      assert.are.same(want, again)
+      assert.are.equal(#want, unpacks) -- read again in full
+    end)
+
+    it("Series doesn't fill the decoded-segment cache (the scans' merges keep theirs)", function()
+      local data = history()
+      local store = newStore(data)
+      local n = #store:Series(10)
+      assert.are.same({}, store.cache)
+      -- a segment already decoded is read from the cache, not decompressed again
+      local fresh = newStore(data)
+      fresh:decode(data.days[1000][10 % Store.BUCKETS], Store.SEGMENT_FIELDS)
+      local want10, want42 = referenceSeries(data, 10), referenceSeries(data, 42)
+      local unpack, unpacks = ns.Codec.Unpack, 0
+      ns.Codec.Unpack = function(...)
+        unpacks = unpacks + 1
+        return unpack(...)
+      end
+      local got10, got42 = fresh:Series(10), newStore(data):Series(42)
+      ns.Codec.Unpack = unpack
+      assert.are.same(want10, got10)
+      assert.are.same(want42, got42)
+      assert.are.equal(n - 1 + n, unpacks)
+    end)
+
+    it("Series pauses after every segment it reads inside a background job", function()
+      local data = history()
+      local yields = 0
+      local store = Store.New(data, {
+        compressor = compressor,
+        now = function()
+          return clock
+        end,
+        yield = function()
+          yields = yields + 1
+        end,
+      })
+      local n
+      coroutine.wrap(function()
+        n = #store:Series(10)
+      end)()
+      assert.is_true(yields >= n, "yields " .. yields)
+    end)
+
+    it("a corrupt segment errors out of Series (it reaches the error handler)", function()
+      local data, store = history()
+      data.days[1000][10 % Store.BUCKETS] = ns.Codec.Pack("1|2|a,1|!", compressor)
+      assert.has_error(function()
+        store:Series(10)
+      end)
+    end)
+
     it("a new Store over the same data sees the same history (no hidden state)", function()
       local data = {}
       newStore(data):AddScan(snap({ [10] = { 100, 110, 120, 5, 2 } }), clock, "a")
