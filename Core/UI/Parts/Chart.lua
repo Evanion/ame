@@ -16,7 +16,7 @@
 --   item:  { id?, points = { { x, market, min?, high?, qty?, avg? } }, intraday?, daily?, vendor?, from?, to?, now?,
 --            trades = { { x, y, kind = "buy" | "sale" } }?, message? }   (Core/ItemPage.lua ChartData builds it)
 --   index: { xs, ys, base? (a dashed level, 100), label?, message? }
---   spark: { xs, ys, avg? (aligned with xs) }
+--   spark: { xs, ys, avg? (aligned with xs), label?, format? ("money"), hourly? (the hover shows the hour) }
 --
 -- The item chart merges every series into one grid of time slots (Analytics.Slot), so candles, lines, the average
 -- and supply sit at the same x and hovering a slot shows them all; zooming far enough changes the slot size.
@@ -325,14 +325,18 @@ local function chartFor(f, kind)
     c:SetAxisFormatter("y", function()
       return ""
     end)
-    -- a spark with a label (Home's gold line) shows the day's figure on hover; one without none
+    -- a spark with a label (Home's gold line) shows the point's figure on hover (its day, or hour when hourly); one
+    -- without none
     c:SetHoverFormatter(function(_, x, rows)
       local data, row = f.data or {}, rows.y
       if not data.label or not row or row.x ~= x then
         return nil
       end
       local value = data.format == "money" and W.Money(row.y, true) or tostring(row.y)
-      return { Kit.Color("white", date("%a %b %d", x)), { W.Dim(data.label), value } }
+      return {
+        Kit.Color("white", date(data.hourly and "%a %b %d %H:%M" or "%a %b %d", x)),
+        { W.Dim(data.label), value },
+      }
     end)
   else
     c = L2:New(f.plot, { panes = { { axis = "y", weight = 1 } } })

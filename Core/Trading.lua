@@ -135,29 +135,40 @@ function Trading:ScanBags()
   Trading:ScanMoney()
 end
 
-Trading.GOLD_DAYS = 40 -- how many days of each character's gold are kept (Home draws 30)
+Trading.GOLD_DAYS = 40 -- how many days of each character's gold are kept (Home draws up to 30)
+Trading.GOLD_HOURS = 50 -- and how many hours (Home's 1D and 2D lines)
+Trading.HOUR = 3600
 
--- the character's gold (Home's net worth): copper, and when it was seen. goldDays keeps the day's last figure for
--- Home's gold line: { [day] = copper }, the last GOLD_DAYS days.
+-- the character's gold (Home's net worth): copper, and when it was seen. For Home's gold line, goldDays keeps the
+-- day's last figure ({ [day] = copper }, the last GOLD_DAYS days) and goldHours the hour's ({ [hour] = copper }, hour
+-- = server time / 3600, the last GOLD_HOURS hours).
 function Trading:ScanMoney()
   if GetMoney then
     local h = mine()
     local now = GetServerTime()
     h.money, h.moneyAt = GetMoney(), now
-    Trading.NoteGold(h, ns.Today(now), h.money)
+    Trading.NoteGold(h, ns.Today(now), h.money, math.floor(now / Trading.HOUR))
   end
 end
 
-function Trading.NoteGold(h, today, copper)
+local function keep(log, at, copper, span)
+  log[at] = copper
+  for k in pairs(log) do
+    if k <= at - span then
+      log[k] = nil
+    end
+  end
+end
+
+function Trading.NoteGold(h, today, copper, hour)
   if type(copper) ~= "number" then
     return
   end
   h.goldDays = h.goldDays or {}
-  h.goldDays[today] = copper
-  for day in pairs(h.goldDays) do
-    if day <= today - Trading.GOLD_DAYS then
-      h.goldDays[day] = nil
-    end
+  keep(h.goldDays, today, copper, Trading.GOLD_DAYS)
+  if hour then
+    h.goldHours = h.goldHours or {}
+    keep(h.goldHours, hour, copper, Trading.GOLD_HOURS)
   end
 end
 

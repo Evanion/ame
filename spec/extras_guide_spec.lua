@@ -56,7 +56,7 @@ describe("Guide screen", function()
     for _, a in ipairs(groups[2].articles) do
       keys[#keys + 1] = a.key
     end
-    assert.equals("tabMarket", keys[1])
+    assert.equals("tabHome", keys[1]) -- the board: Home, Market, ...
     local ah
     for i, k in ipairs(keys) do
       if k == "ah" then

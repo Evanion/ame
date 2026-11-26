@@ -215,6 +215,32 @@ describe("Home", function()
       assert.is_nil(Home.GoldLine({ ["R:A"] = { money = 1 } }, all, 103)) -- one day is no line yet
     end)
 
+    it("offers the ranges the history covers: hourly 1D and 2D, then daily 7D and 30D", function()
+      local H, D = 3600, 86400
+      local now = 200 * D + 12 * H -- noon on day 200; hour 4812
+      local hour = math.floor(now / H)
+      local function ranges(h)
+        local lines, keys = Home.GoldLines({ ["R:A"] = h }, all, now)
+        return keys, lines
+      end
+      assert.are.same({}, (ranges({ money = 5 }))) -- nothing in yet
+      local keys, lines = ranges({ goldHours = { [hour - 3] = 10 }, money = 40 })
+      assert.are.same({ "1D" }, keys) -- three hours in
+      assert.are.same({ (hour - 3) * H, (hour - 2) * H, (hour - 1) * H, hour * H }, lines["1D"].xs)
+      assert.are.same({ 10, 10, 10, 40 }, lines["1D"].ys)
+      assert.is_true(lines["1D"].hourly)
+      keys = ranges({ goldHours = { [hour - 30] = 10 }, goldDays = { [199] = 10 }, money = 40 })
+      assert.are.same({ "1D", "2D" }, keys) -- a day and more of hours; one day back is no 7D yet
+      keys, lines = ranges({ goldHours = { [hour - 30] = 10 }, goldDays = { [197] = 10, [198] = 20 }, money = 40 })
+      assert.are.same({ "1D", "2D", "7D" }, keys)
+      assert.are.same({ 10, 20, 20, 40 }, lines["7D"].ys) -- a point a day, from the first
+      assert.is_falsy(lines["7D"].hourly)
+      keys, lines = ranges({ goldDays = { [150] = 10 }, money = 40 })
+      assert.are.same({ "7D", "30D" }, keys) -- no hours recorded (older AME): the daily ranges only
+      assert.equals(7, #lines["7D"].xs)
+      assert.equals(30, #lines["30D"].xs)
+    end)
+
     it("lists the mail by when it first runs out, marking under 3 days, and totals the gold", function()
       local now = 1000000
       local rows, total = Home.Mail({
@@ -326,6 +352,50 @@ describe("Home", function()
       assert.is_nil(left.rows[2].primary)
       assert.is_true(right.rows[1].off)
       assert.equals("Worth doing today, after a fresh scan", right.title)
+    end)
+
+    it("your gold: the covered ranges, the longest first shown; a pick is kept while it is covered", function()
+      local f = {}
+      for k, v in pairs(facts) do
+        f[k] = v
+      end
+      local line = { xs = { 3600, 7200 }, ys = { 10, 20 }, hourly = true }
+      f.goldLines, f.goldRanges =
+        { ["1D"] = line, ["2D"] = line, ["7D"] = { xs = { 0, 86400 }, ys = { 1, 2 } } }, {
+          "1D",
+          "2D",
+          "7D",
+        }
+      Home.Gather = function()
+        return f
+      end
+      App:Show()
+      App:Go("home")
+      local function range()
+        local tree = App:Tree()
+        assert.same({}, ns.Layout.Validate(tree))
+        local function find(node, id)
+          if node.id == id then
+            return node
+          end
+          for _, c in ipairs(node.children or {}) do
+            local hit = find(c, id)
+            if hit then
+              return hit
+            end
+          end
+        end
+        return find(tree, "home.gold.range").props
+      end
+      local p = range()
+      assert.equals(3, #p.options)
+      assert.equals("7D", p.selected)
+      App.screens.home.actions.goldRange(App, { key = "1D" })
+      assert.equals("1D", range().selected)
+      assert.is_true(App.ctx.sources["home.gold"].hourly)
+      f.goldRanges = { "7D" } -- no longer covered: the longest again
+      assert.equals("7D", range().selected)
+      App.goldRange = nil
     end)
   end)
 end)

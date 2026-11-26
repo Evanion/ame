@@ -48,6 +48,7 @@ Guide.ORDER = {
     key = "tabs",
     title = L["Tabs"],
     keys = {
+      "tabHome",
       "tabMarket",
       "marketOverview",
       "tabArbitrage",
@@ -73,6 +74,7 @@ Guide.LABELS = { selling = L["Posting prices"], tabSync = L["Sharing"], ah = L["
 
 -- what each article's buttons open: { label, screen, params? }
 Guide.OPEN = {
+  tabHome = { { L["Open Home"], "home" } },
   tabMarket = { { L["Open Market"], "market" } },
   marketOverview = { { L["Open the Overview"], "market", { mode = "overview" } } },
   tabArbitrage = { { L["Open Arbitrage"], "market", { mode = "arbitrage" } } },

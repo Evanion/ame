@@ -7,18 +7,36 @@ local L = ns.L
 local App, Home = ns.App, ns.Home
 local W = ns.Widgets
 
--- the strip under the lists (board Home), lined up with them: your gold over 30 days, and what waits in your mail.
--- Neither needs a fresh scan. -> { the strip's row }
+-- the gold line's range: the one picked this session while the history still covers it, else the longest covered
+local function goldRange(app, f)
+  local keys = f.goldRanges or {}
+  for _, k in ipairs(keys) do
+    if k == app.goldRange then
+      return k
+    end
+  end
+  return keys[#keys]
+end
+
+-- the strip under the lists (board Home), lined up with them: your gold over the range picked, and what waits in
+-- your mail. Neither needs a fresh scan. -> { the strip's row }
 local function strip(app, f)
-  local line = f.goldLine
+  local range = goldRange(app, f)
+  local line = range and f.goldLines[range]
   local now = f.gold or 0
   local foot
   if line then
     local first = line.ys[1]
-    app:Source(
-      "home.gold",
-      { xs = line.xs, ys = line.ys, color = "gold", label = L["Your gold"], format = "money", id = "home.gold" }
-    )
+    local when = line.hourly and "%a %H:%M" or "%b %d"
+    app:Source("home.gold", {
+      xs = line.xs,
+      ys = line.ys,
+      color = "gold",
+      label = L["Your gold"],
+      format = "money",
+      hourly = line.hourly,
+      id = "home.gold",
+    })
     foot = {
       id = "home.gold.foot",
       type = "row",
@@ -28,7 +46,7 @@ local function strip(app, f)
         {
           id = "home.gold.from",
           type = "text",
-          props = { text = date("%b %d", line.xs[1]) .. " · " .. W.Money(first, true), size = 11, color = "dim" },
+          props = { text = date(when, line.xs[1]) .. " · " .. W.Money(first, true), size = 11, color = "dim" },
           meta = { grow = 1 },
         },
         {
@@ -42,10 +60,30 @@ local function strip(app, f)
   else
     app:Source(
       "home.gold",
-      { xs = {}, ys = {}, id = "home.gold", message = L["Your gold line fills in a point a day."] }
+      { xs = {}, ys = {}, id = "home.gold", message = L["Your gold line fills in as you play: a point an hour."] }
     )
   end
+  -- the card's title row as a titled card draws it (title, note, the money right), with the ranges before the money
+  local head = {
+    { id = "home.gold.title", type = "text", props = { text = L["Your gold"], font = "display", size = 14 } },
+    { id = "home.gold.note", type = "text", props = { text = L["· all your characters"], size = 11, color = "dim" } },
+    { id = "home.gold.gap", type = "spacer", meta = { grow = 1 } },
+  }
+  if #(f.goldRanges or {}) > 0 then
+    local options = {}
+    for i, k in ipairs(f.goldRanges) do
+      options[i] = { k, k }
+    end
+    head[#head + 1] = {
+      id = "home.gold.range",
+      type = "segmented",
+      props = { options = options, selected = range, action = "goldRange" },
+      meta = { h = 24 },
+    }
+  end
+  head[#head + 1] = { id = "home.gold.now", type = "money", props = { copper = now, size = 13 } }
   local goldKids = {
+    { id = "home.gold.head", type = "row", props = { gap = 8, align = "center" }, meta = { h = 16 }, children = head },
     {
       id = "home.gold.chart",
       type = "chart",
@@ -94,7 +132,7 @@ local function strip(app, f)
         {
           id = "home.goldcard",
           type = "card",
-          props = { title = L["Your gold"], note = L["· 30 days, all your characters"], copper = now, gap = 4 },
+          props = { pad = 8, gap = 4 }, -- untitled: its first row is the title row, ranges and all
           meta = { grow = 1 },
           children = goldKids,
         },
@@ -281,6 +319,11 @@ App.Screen("home", {
     end,
     goGuide = function(app)
       app:Go("guide")
+    end,
+    -- the gold line's range: kept for the session (until the history no longer covers it)
+    goldRange = function(app, p)
+      app.goldRange = p.key
+      app:Render()
     end,
   },
 })
