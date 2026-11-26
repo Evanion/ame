@@ -590,45 +590,56 @@ describe("Crafting", function()
       assert.is_true(used)
     end)
 
-    it("All professions: Create on a recipe you know opens its profession when the window is closed", function()
-      local opened, crafted
-      _G.C_TradeSkillUI = {
-        GetRecipeInfo = function()
-          return nil -- its window is closed
-        end,
-        OpenTradeSkill = function(line)
-          opened = line
-        end,
-        CraftRecipe = function(id, n)
-          crafted = { id, n }
-        end,
-      }
-      AME_DB.crafting = AME_DB.crafting or {}
-      local catalog = AME_DB.crafting.catalog
-      AME_DB.crafting.catalog = { [171] = { name = "Alchemy", recipes = { [101] = true } } }
-      local pb = ns.ProfessionBar
-      ns.ProfessionBar = {
-        KnowsHere = function(line, id)
-          return line == 171 and id == 101
-        end,
-      }
-      local trading = ns.Trading
-      ns.Trading = {
-        CharKey = function()
-          return facts.me
-        end,
-      }
-      valid("crafting", { filter = "all", selected = "r:101", count = 2 })
-      local bar = App.renderer:Frame("craft.d.make")
-      local create = bar.buttons[1]
-      assert.equals("Create", create.def.label)
-      assert.equals("primary", create.def.variant)
-      create:GetScript("OnClick")(create)
-      assert.equals(171, opened)
-      assert.is_nil(crafted)
-      _G.C_TradeSkillUI, ns.ProfessionBar, ns.Trading = nil, pb, trading
-      AME_DB.crafting.catalog = catalog
-    end)
+    it(
+      "All professions: Create and Create all on a recipe you know open its profession when the window is closed",
+      function()
+        local opened, crafted
+        _G.C_TradeSkillUI = {
+          GetRecipeInfo = function()
+            return nil -- its window is closed
+          end,
+          OpenTradeSkill = function(line)
+            opened = line
+          end,
+          CraftRecipe = function(id, n)
+            crafted = { id, n }
+          end,
+        }
+        AME_DB.crafting = AME_DB.crafting or {}
+        local catalog = AME_DB.crafting.catalog
+        AME_DB.crafting.catalog = { [171] = { name = "Alchemy", recipes = { [101] = true } } }
+        local pb = ns.ProfessionBar
+        ns.ProfessionBar = {
+          KnowsHere = function(line, id)
+            return line == 171 and id == 101
+          end,
+        }
+        local trading = ns.Trading
+        ns.Trading = {
+          CharKey = function()
+            return facts.me
+          end,
+        }
+        valid("crafting", { filter = "all", selected = "r:101", count = 2 })
+        local bar = App.renderer:Frame("craft.d.make")
+        local create = bar.buttons[1]
+        assert.equals("Create", create.def.label)
+        assert.equals("primary", create.def.variant)
+        create:GetScript("OnClick")(create)
+        assert.equals(171, opened)
+        assert.is_nil(crafted)
+        -- Create all does the same: the game can't count what you can make until the window is open
+        opened = nil
+        local all = bar.buttons[2]
+        assert.equals("Create all", all.def.label)
+        all.variant = nil
+        all:GetScript("OnClick")(all)
+        assert.equals(171, opened)
+        assert.is_nil(crafted)
+        _G.C_TradeSkillUI, ns.ProfessionBar, ns.Trading = nil, pb, trading
+        AME_DB.crafting.catalog = catalog
+      end
+    )
 
     it("Queue adds to the queue; the filters and search are remembered", function()
       valid("crafting", { filter = "ready" })
