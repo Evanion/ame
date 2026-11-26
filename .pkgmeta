@@ -17,7 +17,6 @@ move-folders:
 ignore:
   - docs
   - spec
-  - spikes
   - bench
   - scripts
   - .github

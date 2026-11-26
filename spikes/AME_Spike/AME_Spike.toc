@@ -1,9 +1,0 @@
-## Interface: 16001, 120105
-## Title: AME Spike (M0)
-## Notes: Throwaway M0 spike for Azeroth Mercantile Exchange: measures Auctionator scan piggyback, shard detection, SavedVariables cost and addon-message throughput. /amespike
-## Author: Azeroth Mercantile Exchange
-## Version: 0.0.1-spike
-## OptionalDeps: Auctionator
-## SavedVariables: AME_SpikeDB
-
-Spike.lua

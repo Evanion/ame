@@ -92,10 +92,6 @@ files["Core/Dev/**"] = {
   },
 }
 
-files["spikes/AME_Spike/**"] = {
-  globals = { "AME_SpikeDB", "SLASH_AMESPIKE1" },
-}
-
 files["spec/**"] = {
   std = "+busted",
 }
