@@ -262,7 +262,7 @@ function Sell:Build(parent)
   bar.confLabel:SetText(L["Confidence"])
   bar.conf = W.Text(bar.confHover, "GameFontHighlightSmall")
   bar.conf:SetPoint("LEFT", bar.confLabel, "RIGHT", 4, 0)
-  bar.confHover:SetSize(math.ceil(bar.confLabel:GetStringWidth() or 60) + 4 + 22, 16)
+  bar.confHover:SetSize(86, 16) -- fitted to its label in LayoutButtons
   bar.confHover:EnableMouse(true)
   ns.Help.Explain(bar.confHover, "confidence")
   -- the reason line: the whole width under the title and the buttons
@@ -429,6 +429,10 @@ end
 -- buttons sized to their labels, right to left: Market (or Post anyway), Patient, Normal, Quick; the confidence
 -- left of them
 function Sell.LayoutButtons(bar)
+  if not W.Measurable(bar) then
+    return -- the window is out of sight: laid out again when it's back
+  end
+  bar.confHover:SetSize(math.ceil(bar.confLabel:GetStringWidth() or 60) + 4 + 22, 16)
   local prev
   local used = 10 -- the right margin
   for _, b in ipairs({ bar.fill, bar.patient, bar.reset, bar.quick }) do

@@ -4198,9 +4198,19 @@ describe("addon in a stubbed client", function()
         env:fire("AUCTION_HOUSE_SHOW")
         env:advance(0.1)
         assert.are.equal(0.001, ah:GetScale()) -- tucked away
+        -- a scan running meanwhile: its button on the game's window keeps its width (text measured at a speck's
+        -- scale comes out thousands of pixels wide, and the game couldn't draw its border on the next visit)
+        local b = ns.ScanButton.button
+        assert.is_false(ns.Widgets.Measurable(b))
+        local w = b:GetWidth()
+        b.label:SetText("Scanning... and a much longer label than before")
+        ns.ScanButton:Refresh()
+        assert.are.equal(w, b:GetWidth())
         ah.scripts.OnHide(ah) -- closed by the game (or anything else) without AUCTION_HOUSE_CLOSED first
         assert.are.equal(1, ah:GetScale())
         assert.are.equal(1, ah:GetAlpha())
+        assert.is_true(ns.Widgets.Measurable(b)) -- back to normal: fitted to its label again
+        assert.are.equal(math.ceil(b.label:GetStringWidth()) + 20, b:GetWidth())
         env:fire("AUCTION_HOUSE_CLOSED")
         assert.are.equal(1, ah:GetScale())
         _G.AuctionHouseFrame = nil

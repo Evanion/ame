@@ -1001,7 +1001,7 @@ local function addTab(ah, key, label, panel)
   -- sized now, and again next frame and whenever the window opens (the font may not measure until it's drawn)
   T.ownTabs = T.ownTabs or {}
   T.ownTabs[#T.ownTabs + 1] = tab
-  if _G.PanelTemplates_TabResize and rawget(tab, "Text") then
+  if _G.PanelTemplates_TabResize and rawget(tab, "Text") and W.Measurable(ah) then
     pcall(
       _G.PanelTemplates_TabResize,
       tab,
@@ -1050,7 +1050,7 @@ function T:Attach()
   end
   local function resize()
     for _, t in ipairs(T.ownTabs or {}) do
-      if _G.PanelTemplates_TabResize and rawget(t, "Text") then
+      if _G.PanelTemplates_TabResize and rawget(t, "Text") and W.Measurable(ah) then
         pcall(
           _G.PanelTemplates_TabResize,
           t,
