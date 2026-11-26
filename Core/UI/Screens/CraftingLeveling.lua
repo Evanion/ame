@@ -198,7 +198,7 @@ function Lv.Build(app, params)
         id = "lv.d.mats",
         type = "crafttable",
         props = { source = "lv.mats", columns = MAT_COLS },
-        meta = { h = math.min(130, 26 + 20 * #mats) },
+        meta = { h = ns.DataTable.Height(math.min(8, #mats)) },
       },
       Screen.KvCard(
         "lv.d.net",

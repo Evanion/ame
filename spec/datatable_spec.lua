@@ -76,6 +76,16 @@ describe("DataTable", function()
     assert.are.equal(4, t.visible)
   end)
 
+  it("Height: what n rows need without a scroll bar, so a layout sized by it shows them all", function()
+    assert.are.equal(20 + 3 * 22, DT.Height(3))
+    assert.are.equal(3 * 22, DT.Height(3, true))
+    assert.are.equal(20 + 22, DT.Height(0)) -- room for one, for the empty message
+    local t = new({ rows = 3, fill = true, height = DT.Height(3) })
+    t:SetData({ { id = 1 }, { id = 2 }, { id = 3 } })
+    t:Render()
+    assert.are.equal(3, t.visible)
+  end)
+
   it("a bare table has no header row: its rows start at the top", function()
     local t = new({ rows = 3, fill = true, bare = true, height = 10 * 22 })
     t:SetData({})

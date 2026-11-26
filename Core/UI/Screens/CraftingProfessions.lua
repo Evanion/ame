@@ -95,7 +95,7 @@ function Prof.Build(app, params)
       id = "prof.d.earn",
       type = "crafttable",
       props = { source = "prof.earn", columns = EARN_COLS, empty = L["Nothing priced yet."] },
-      meta = { h = 26 + 20 * math.max(2, #earn) },
+      meta = { h = ns.DataTable.Height(math.max(2, #earn)) },
     }
   elseif picked then
     right[#right + 1] = {

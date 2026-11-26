@@ -112,7 +112,7 @@ local function detail(r, now)
     id = "req.mats",
     type = "table",
     props = { source = "guild.mats", columns = MAT_COLUMNS, bare = true },
-    meta = { h = math.min(120, 24 + 20 * #(r.reagents or {})) },
+    meta = { h = ns.DataTable.Height(math.min(8, #(r.reagents or {})), true) },
   }
   kids[#kids + 1] = {
     id = "req.worth",

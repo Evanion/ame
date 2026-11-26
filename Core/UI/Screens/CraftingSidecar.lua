@@ -454,7 +454,7 @@ function Side.Tree()
       id = "side.steps",
       type = "crafttable",
       props = { source = "side.steps", columns = STEP_COLS, bare = true, flex = "item" },
-      meta = { h = 6 + 20 * #q.steps },
+      meta = { h = ns.DataTable.Height(#q.steps, true) },
     }
     kids[#kids + 1] = {
       id = "side.matsTitle",
@@ -466,7 +466,7 @@ function Side.Tree()
       id = "side.mats",
       type = "crafttable",
       props = { source = "side.mats", columns = MAT_COLS, action = "matRow", flex = "source" },
-      meta = { h = math.min(200, 26 + 20 * #q.mats) },
+      meta = { h = ns.DataTable.Height(math.min(8, #q.mats)) },
     }
     kids[#kids + 1] = { id = "side.todo", type = "partslines", props = { title = L["To do"], lines = q.todo } }
     -- Craft next on its own row (its label names the step), the rest under it
