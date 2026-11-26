@@ -347,6 +347,8 @@ function Help.Articles()
             L["Scans see listings disappear, but not why: sold, expired or cancelled look the same. So AME also counts real outcomes - sales and expired items from your auction mail, and auctions you cancel - and shares them with your guild. That sell-through corrects the sales rate, the VENDOR and DE signals and your portfolio's value for every item someone has listed."],
             H(L["How long history is kept"]),
             L["Every scan is kept for 2 days (the 2D chart), a point per hour for 7 days (the 7D chart), a point per day for 60 days, then a point per week for a year. Your ledger keeps 90 days."],
+            H(L["Backing up your history"]),
+            L["AME keeps everything in two files in your game folder, under WTF, Account, your account's name, SavedVariables: AzerothMercantileExchange.lua (settings, ledger, lists, alerts) and AzerothMercantileExchange_History.lua (every auction house's price history). The game writes them when you log out or /reload, so copy both with the game closed to back them up, and put them back the same way to restore. They're shared by every character on the account."],
           },
         },
         {
