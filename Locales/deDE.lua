@@ -97,8 +97,6 @@ L["A big red candle after a climb: sellers piled in and undercut each other. Che
 L["A few shapes worth knowing:"] = "Ein paar Formen, die man kennen sollte:"
 L["A normal price"] = "Ein normaler Preis"
 L["A route, broken down"] = "Eine Route im Detail"
-L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
-  "Ein Verkauf erscheint im Journal, sobald das Spiel meldet, dass ein Käufer gefunden wurde (wartet auf Post), und wird mit dem genauen Betrag abgerechnet, wenn die Auktionspost eintrifft - öffne deinen Briefkasten, um sie zu erfassen. Seelengebundene Gegenstände zählen nicht: Sie können nicht verkauft werden."
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "Ein hoher oberer Docht: Der Preis ist einmal hochgesprungen - oft ein Scan ohne günstige Angebote - und hat sich nicht gehalten. Richte deinen Preis nicht nach der Spitze."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -574,8 +572,6 @@ L["Players heard from"] = "Gehörte Spieler"
 L["Portfolio"] = "Portfolio"
 L["Portfolio tab"] = "Portfolio-Reiter"
 L["Positions"] = "Positionen"
-L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."] =
-  "Positionen ist, was du besitzt. Journal listet deine Auktionsverkäufe und -käufe. Auktionen ist, was gerade auf jedem Charakter angeboten wird. Kunden und Lieferanten ordnen, mit wem du am meisten handelst - nur wenn deine Auktionspost den anderen Spieler nennt (bei manchen Clients hält das Auktionshaus sie anonym)."
 L["Post anyway at %s"] = "Trotzdem zu %s einstellen"
 L["Post at"] = "Einstellen zu"
 L["Post at %s"] = "Zu %s einstellen"

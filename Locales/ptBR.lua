@@ -96,8 +96,6 @@ L["A big red candle after a climb: sellers piled in and undercut each other. Che
 L["A few shapes worth knowing:"] = "Alguns formatos que vale conhecer:"
 L["A normal price"] = "Um preço normal"
 L["A route, broken down"] = "Uma rota em detalhes"
-L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
-  "Uma venda aparece no extrato assim que o jogo avisa que um comprador foi encontrado (aguardando correio), e é acertada com o valor exato quando o correio do leilão chega - abra sua caixa de correio para recebê-lo. Itens vinculados não contam: não podem ser vendidos."
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "Um pavio superior alto: o preço saltou uma vez - muitas vezes uma varredura sem nada barato à venda - e não se manteve. Não precifique pelo pico."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -572,8 +570,6 @@ L["Players heard from"] = "Jogadores em contato"
 L["Portfolio"] = "Carteira"
 L["Portfolio tab"] = "Aba Carteira"
 L["Positions"] = "Posições"
-L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."] =
-  "Posições é o que você tem. Extrato lista suas vendas e compras em leilão. Leilões é o que está anunciado agora em cada personagem. Clientes e Fornecedores mostram com quem você mais negocia - só quando o correio de leilões nomeia o outro jogador (em alguns clientes a casa de leilões os mantém anônimos)."
 L["Post anyway at %s"] = "Anunciar mesmo assim a %s"
 L["Post at"] = "Leiloar por"
 L["Post at %s"] = "Anunciar a %s"

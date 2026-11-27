@@ -96,8 +96,6 @@ L["A big red candle after a climb: sellers piled in and undercut each other. Che
 L["A few shapes worth knowing:"] = "Algunas formas que conviene conocer:"
 L["A normal price"] = "Un precio normal"
 L["A route, broken down"] = "Una ruta, desglosada"
-L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
-  "Una venta aparece en el registro en cuanto el juego indica que se encontró un comprador (esperando correo), y se liquida con el importe exacto cuando llega su correo de subasta - abre tu buzón para recogerlo. Los objetos ligados al alma no cuentan: no se pueden vender."
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "Una mecha superior alta: el precio saltó una vez - a menudo un escaneo sin nada barato a la venta - y no se mantuvo. No fijes tu precio por ese pico."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -575,8 +573,6 @@ L["Players heard from"] = "Jugadores en contacto"
 L["Portfolio"] = "Cartera"
 L["Portfolio tab"] = "Pestaña Cartera"
 L["Positions"] = "Posiciones"
-L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."] =
-  "Posiciones es lo que tienes. Registro lista tus ventas y compras en subasta. Subastas es lo que tienes anunciado ahora mismo en cada personaje. Clientes y Proveedores clasifican con quién comercias más - solo cuando tu correo de subastas nombra al otro jugador (en algunos clientes la casa de subastas los mantiene anónimos)."
 L["Post anyway at %s"] = "Subastar igualmente a %s"
 L["Post at"] = "Subastar a"
 L["Post at %s"] = "Subastar a %s"

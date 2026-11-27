@@ -483,11 +483,11 @@ function Help.Articles()
           body = {
             guideText(4),
             H(L["Five views"]),
-            L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."],
+            L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character, with the sold auctions at the top until their gold arrives. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."],
             H(L["Whose, and since when"]),
             L["Pick All characters (Account on a wide window: your characters on this market) or This character, and a period - Today, 7 days, 30 days or All time - for the ledger, the counterparties and the profit cards."],
             H(L["How sales get recorded"]),
-            L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."],
+            L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. The game mails a sale's gold about an hour after it sells; until then Auctions shows it as sold, with what you get after the cut and when the mail comes. A sale AME didn't hear about (in a dungeon, or while you were offline) is picked up from the auction house's list of your auctions the next time you're there. Soulbound items aren't counted: they can't be sold."],
             H(L["Export"]),
             L["Export copies the list you're looking at, as a spreadsheet (paste it into Excel or Google Sheets) or as CSV."],
           },
