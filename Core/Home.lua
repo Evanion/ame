@@ -6,7 +6,7 @@
 --   Home.State(facts, atAH) -> "first" | "ah" | "away"
 --   Home.Kpis(facts) -> { kpi props, ... }          net worth, on the AH, profit 7 days, the market
 --   Home.Todo(facts, atAH) -> rows                  alerts, cooldowns, requests, undercut auctions, bags to post
---   Home.Worth(facts, atAH) -> rows                 the best craft, buy, refine, carry and recipe to learn
+--   Home.Worth(facts, atAH) -> rows                 the best craft, buy, stock-up, refine, carry and recipe to learn
 --   Home.Steps(facts) -> rows                       the first run: scan, open your professions, visit your bank
 -- A row is an action list row (Core/UI/Parts/Composites.lua): { key, pill, tone, title, sub, value, button, action,
 -- off, primary, selected }. Its key says what the row is about ("alert:<itemID>", "craft:<recipeID>", ...).
@@ -261,6 +261,20 @@ function Home.Worth(f, atAH)
       action = "openItem",
     }
   end
+  -- the consumables you use up, while they're cheap: at the auction house Buy opens the item with the amount in its
+  -- buy card; away from it, the amount goes on the Stock up shopping list
+  for _, s in ipairs(kind(f, "stockups", "bestStockUp")) do
+    rows[#rows + 1] = {
+      key = "stock:" .. s.item .. ":" .. s.qty .. ":" .. math.floor(s.usual),
+      pill = L["STOCK UP"],
+      title = { item(s.item, "×" .. s.qty) },
+      sub = L["You use about %s · now %s, usually %s"]:format(Home.UseRate(s.rate), g(s.now), g(s.usual)),
+      value = L["saves %s"]:format(g(s.saving)),
+      valueTone = "good",
+      button = atAH and L["Buy"] or L["To a list"],
+      action = "stockUp",
+    }
+  end
   for _, r in ipairs(kind(f, "refines", "bestRefine")) do
     rows[#rows + 1] = {
       key = "refine:" .. r.item .. ":" .. r.recipe,
@@ -299,7 +313,6 @@ function Home.Worth(f, atAH)
       action = "goLearn",
     }
   end
-  local _ = atAH
   return rows
 end
 
@@ -788,6 +801,95 @@ local function gatherBuy(f, index)
   f.bestBuy = f.buys[1]
 end
 
+-- Stock up: about Home.STOCK_DAYS of what your characters use up (Core/Usage.lua), less what they have at hand, for
+-- each one now Home.STOCK_UNDER or more under its usual price. The most saved first; no more than this character's
+-- gold buys. rates: { [itemID] = a day }; held(itemID) -> n; items: the market index's summaries.
+-- -> { { item, qty, rate, now, usual, saving }, ... }
+Home.STOCK_DAYS = 7
+Home.STOCK_UNDER = 0.1
+
+function Home.StockUp(rates, held, items, gold)
+  local out = {}
+  for id, rate in pairs(rates or {}) do
+    local s = items[id]
+    local usual = s and (s.avg30 or s.avg7)
+    local price = s and s.market
+    if price and price > 0 and usual and usual > 0 and 1 - price / usual >= Home.STOCK_UNDER then
+      local qty = math.ceil(rate * Home.STOCK_DAYS - 1e-9) - (held(id) or 0)
+      if s.qty and s.qty > 0 then
+        qty = math.min(qty, s.qty) -- no more than is listed
+      end
+      if gold then
+        qty = math.min(qty, math.floor(gold / price))
+      end
+      if qty >= 1 then
+        out[#out + 1] = {
+          item = id,
+          qty = qty,
+          rate = rate,
+          now = price,
+          usual = usual,
+          saving = (usual - price) * qty,
+        }
+      end
+    end
+  end
+  table.sort(out, function(a, b)
+    if a.saving ~= b.saving then
+      return a.saving > b.saving
+    end
+    return tostring(a.item) < tostring(b.item)
+  end)
+  return out
+end
+
+-- "3 a day", "4 a week"
+function Home.UseRate(perDay)
+  if perDay >= 1 then
+    return L["%d a day"]:format(math.floor(perDay + 0.5))
+  end
+  return L["%d a week"]:format(math.max(1, math.floor(perDay * 7 + 0.5)))
+end
+
+-- a Stock up row's amount onto the Stock up shopping list (made when missing): the list counts down from what you
+-- have at hand, so it asks for that and the amount; its top price is the usual one. -> the list's index
+function Home.ToStockList(shop, id, qty, usual)
+  local name, i = L["Stock up"], nil
+  for n, l in ipairs(shop:Lists()) do
+    if l.name == name then
+      i = n
+    end
+  end
+  i = i or shop:AddList(name)
+  if not i then
+    return nil
+  end
+  local held = ns.Holdings.Of("usable", "market")[id]
+  shop:SetItem(i, id, (held and held.qty or 0) + qty, usual)
+  return i
+end
+
+local function gatherStockUp(f, index, keep)
+  if not (ns.Usage and AME_DB and AME_DB.usage) then
+    return
+  end
+  local mine = {}
+  for key, db in pairs(AME_DB.usage) do
+    if keep(key) then
+      mine[key] = db
+    end
+  end
+  local rates = ns.Usage.Rates(mine, f.now)
+  if next(rates) == nil then
+    f.stockups = {}
+    return
+  end
+  local held = ns.Holdings.Of("usable", "market")
+  f.stockups = top(Home.StockUp(rates, function(id)
+    return held[id] and held[id].qty or 0
+  end, index.items, f.myGold))
+end
+
 -- the routes to carry to this realm's other auction houses, best first per house: they hang on the two markets'
 -- indexes and the day (Home.Piece keys them on those); gold only filters them (applyCarry)
 local function gatherCarry(index, AME)
@@ -1035,6 +1137,7 @@ function Home.Gather(force)
     end
     try("gatherCooldowns", gatherCooldowns, f, now, m and m.craft)
     try("gatherBuy", gatherBuy, f, index)
+    try("gatherStockUp", gatherStockUp, f, index, keep)
     local houses = Home.Piece("gatherCarry", carryKey(index, AME), gatherCarry, index, AME)
     if houses then
       try("applyCarry", applyCarry, f, houses)

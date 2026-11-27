@@ -235,6 +235,29 @@ local function queue(app, p)
   app:Go("crafting", { filter = "queued" })
 end
 
+-- a Stock up row ("stock:<itemID>:<qty>:<usual>"): at the auction house the item opens with that amount in its buy
+-- card; away from it, the amount goes on the Stock up shopping list, its top price the usual one
+local function stockUp(app, p)
+  local _, rest = parts(p.key)
+  local id, qty, usual = (rest or ""):match("^(%d+):(%d+):(%d+)$")
+  id, qty, usual = tonumber(id), tonumber(qty), tonumber(usual)
+  if not (id and qty) then
+    return
+  end
+  if app:AtAH() then
+    app:Go("item", { item = id, qty = qty })
+    return
+  end
+  local shop = ns.AME and ns.AME.shopping
+  local i = shop and Home.ToStockList(shop, id, qty, usual)
+  if i then
+    if ns.UI and ns.UI.ShoppingChanged then
+      ns.UI:ShoppingChanged(i)
+    end
+    ns.AME.Say(L["%s ×%d is on the %s shopping list"], W.LinkText(id), qty, L["Stock up"])
+  end
+end
+
 App.Screen("home", {
   tab = "home",
   Build = body,
@@ -254,6 +277,7 @@ App.Screen("home", {
       app:Go("item", { item = tonumber(rest and rest:match("^(%d+)")) })
     end,
     queue = queue,
+    stockUp = stockUp,
     openRequest = function(app, p)
       local _, id = parts(p.key)
       app:Go("requests", { request = id })

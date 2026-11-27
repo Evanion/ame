@@ -49,6 +49,7 @@ Core\MarketFilter.lua
 Core\Watch.lua
 Core\Notices.lua
 Core\Session.lua
+Core\Usage.lua
 Core\Sound.lua
 Core\Shopping.lua
 Core\Arbitrage.lua
