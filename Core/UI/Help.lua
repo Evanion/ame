@@ -371,6 +371,17 @@ function Help.Articles()
       L["Tabs"],
       {
         {
+          key = "home",
+          title = L["Home"],
+          body = {
+            L["Home is where AME opens: four headline numbers (your net worth, what you have on the auction house, the week's profit and the market), To do now on the left, Worth doing today on the right, and under them your gold and what waits in your mail. At the auction house, To do now starts with what you came there to do."],
+            H(L["Stock up"]),
+            L["Stock up rows in Worth doing today are the consumables you use up yourself (potions, elixirs, flasks, food, scrolls, bandages, reagents and ammo) while they sell at least 10% under their usual price, the 30-day average. Each one suggests about a week of your use, less what your characters already have (bags, bank, mailbox and guild banks), and no more than is listed or your gold buys. On the right: what that saves against the usual price."],
+            L["At the auction house, Buy opens the item with that amount in its buy card. Away from it, To a list puts it on the Stock up shopping list with the usual price as its top price, so Search all buys it on your next visit."],
+            L["AME learns what you use from your own play since you installed it. An item that leaves your bags counts as used, except at a vendor, the bank, the mailbox, the auction house, a trade, a profession window or a quest giver, or when you delete it. An item shows once you've used at least 4 of it on 2 different days in the last 4 weeks; in its first week, what you used is spread over the whole week. Each character learns on its own, and Home adds up your characters on this realm."],
+          },
+        },
+        {
           key = "tabMarket",
           title = Help.GUIDE[2][1],
           label = L["Market"],

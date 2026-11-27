@@ -94,6 +94,82 @@ describe("Home", function()
     assert.equals(2, #rows)
   end)
 
+  describe("Stock up", function()
+    local items = {
+      [1] = { market = 110, avg30 = 160, qty = 500 }, -- 31% under usual
+      [2] = { market = 52, avg30 = 70, qty = 500 }, -- 26% under
+      [3] = { market = 95, avg30 = 100, qty = 500 }, -- 5% under: not cheap enough
+      [4] = { market = 10, avg7 = 20, qty = 3 }, -- no 30-day average yet; only 3 listed
+    }
+    local none = function()
+      return 0
+    end
+
+    it("about a week of your use, less what you have, at the most saved first", function()
+      local held = function(id)
+        return id == 2 and 10 or 0
+      end
+      local s = Home.StockUp({ [1] = 2.5, [2] = 5, [3] = 9, [4] = 2 }, held, items)
+      assert.same({ 1, 2, 4 }, { s[1].item, s[2].item, s[3].item })
+      assert.equals(18, s[1].qty) -- 17.5 rounds up
+      assert.equals(160, s[1].usual)
+      assert.equals(18 * 50, s[1].saving)
+      assert.equals(25, s[2].qty) -- 35 a week, 10 at hand
+      assert.equals(3, s[3].qty) -- what's listed
+      assert.equals(20, s[3].usual)
+    end)
+
+    it("nothing when you hold enough, and no more than your gold buys", function()
+      local s = Home.StockUp({ [1] = 1 }, function()
+        return 7
+      end, items)
+      assert.equals(0, #s)
+      s = Home.StockUp({ [1] = 2.5 }, none, items, 1000)
+      assert.equals(9, s[1].qty)
+      assert.equals(0, #Home.StockUp({ [1] = 2.5 }, none, items, 50))
+    end)
+
+    it("the rows: the amount, how much you use, now against usual and the saving", function()
+      local stock = { item = 1, qty = 18, rate = 2.5, now = 11000, usual = 16000, saving = 90000 }
+      local rows = Home.Worth({ stockups = { stock } }, false)
+      local r = rows[1]
+      assert.equals("stock:1:18:16000", r.key)
+      assert.equals("STOCK UP", r.pill)
+      assert.same({ { item = 1, count = "×18" } }, r.title)
+      assert.truthy(r.sub:find("^You use about 3 a day · now "), r.sub)
+      assert.truthy(r.value:find("^saves "), r.value)
+      assert.equals("To a list", r.button)
+      assert.equals("stockUp", r.action)
+      assert.equals("Buy", Home.Worth({ stockups = { stock } }, true)[1].button)
+      assert.equals("2 a week", Home.UseRate(0.3))
+    end)
+
+    it("To a list asks the Stock up list for what you have and the amount, at the usual price", function()
+      local set = {}
+      local shop = {
+        lists = { { name = "Raid" } },
+        Lists = function(self)
+          return self.lists
+        end,
+        AddList = function(self, name)
+          self.lists[#self.lists + 1] = { name = name }
+          return #self.lists
+        end,
+        SetItem = function(_, i, id, need, max)
+          set = { i = i, id = id, need = need, max = max }
+        end,
+      }
+      ns.Holdings.Of = function()
+        return { [1] = { qty = 4 } }
+      end
+      assert.equals(2, Home.ToStockList(shop, 1, 18, 16000))
+      assert.same({ i = 2, id = 1, need = 22, max = 16000 }, set)
+      assert.equals("Stock up", shop.lists[2].name)
+      assert.equals(2, Home.ToStockList(shop, 1, 5, 16000)) -- the same list again
+      assert.equals(2, #shop.lists)
+    end)
+  end)
+
   it("Kit text swaps the symbols the game's fonts lack for textures, and keeps the ones they have", function()
     local Kit = ns.Kit
     local menu = Kit.Glyphs("Horde AH ▾")
