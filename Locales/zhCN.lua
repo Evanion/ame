@@ -96,8 +96,6 @@ L["A big red candle after a climb: sellers piled in and undercut each other. Che
 L["A few shapes worth knowing:"] = "几种值得了解的形态："
 L["A normal price"] = "价格正常"
 L["A route, broken down"] = "路线明细"
-L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
-  "游戏一提示找到买家，销售就会出现在账本中（等待邮件），拍卖邮件到达后按准确金额结算——打开邮箱即可收取。灵魂绑定物品不计入：它们无法出售。"
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "上影线很高：价格曾跳升一次——通常是某次扫描时没有便宜货——但没能维持。不要按这个尖峰定价。"
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -570,8 +568,6 @@ L["Players heard from"] = "已联系的玩家"
 L["Portfolio"] = "投资组合"
 L["Portfolio tab"] = "投资组合标签页"
 L["Positions"] = "持仓"
-L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."] =
-  "持仓是你持有的物品。账本列出你的拍卖销售和购买。拍卖是每个角色当前上架的物品。买家和卖家按与你交易最多的玩家排名——仅当拍卖邮件中写明对方玩家时可用（某些客户端的拍卖行会隐藏他们的名字）。"
 L["Post anyway at %s"] = "仍以 %s 上架"
 L["Post at"] = "上架价"
 L["Post at %s"] = "以 %s 上架"

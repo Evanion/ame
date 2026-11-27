@@ -458,6 +458,11 @@ function P.AuctionList(cancelling)
   end
   local list = ns.Trading and ns.Trading.ActiveAuctions and ns.Trading:ActiveAuctions(holdings) or {}
   P.FillAuctionIDs(list, P.OwnedAuctions(), UnitName and UnitName("player"))
+  -- sold, the gold not mailed yet: first, the soonest mail first
+  local sold = ns.Trading and ns.Trading.SoldAuctions and ns.Trading:SoldAuctions(holdings, now()) or {}
+  for i = #sold, 1, -1 do
+    table.insert(list, 1, sold[i])
+  end
   if not cancelling then
     return list
   end
@@ -546,6 +551,15 @@ function P.TimeLeft(a, t)
   return a.timeLeftBand and P.BANDS[a.timeLeftBand] or "—"
 end
 
+-- a sold auction's Time left: when its gold comes by mail
+function P.MailIn(a, t)
+  local left = (a.mailAt or t) - t
+  if left <= 0 then
+    return { text = L["in the mail"], color = "dim" }
+  end
+  return L["mail in %d min"]:format(math.max(1, math.ceil(left / 60)))
+end
+
 -- the last full scan's lowest price of an item, at the auction house you're looking at (what Home counts from)
 function P.ScanMin()
   local AME = ns.AME
@@ -557,45 +571,66 @@ function P.ScanMin()
 end
 
 -- your auctions as rows. opts: { me (this character's name), atAH, undercutOnly, char (one character's), now,
--- scanMin (itemID -> the last full scan's lowest: the standing of an item not searched yet) }
--- -> rows, { count, asking, undercut, chars = { names }, checked (newest search) }
+-- scanMin (itemID -> the last full scan's lowest: the standing of an item not searched yet), cut (the AH's) }
+-- Sold auctions (a.sold) wait for their mail: not counted as auctions or asking, but in sold and coming (what
+-- they net). -> rows, { count, asking, undercut, sold, coming, chars = { names }, checked (newest search) }
 function P.AuctionRows(auctions, books, opts)
   opts = opts or {}
   local t = opts.now or now()
-  local rows, sum = {}, { count = 0, asking = 0, undercut = 0, chars = {}, checked = nil }
+  local rows, sum = {}, { count = 0, asking = 0, undercut = 0, sold = 0, coming = 0, chars = {}, checked = nil }
   local seenChar = {}
   for i, a in ipairs(auctions or {}) do
     if a.char and not seenChar[a.char] then
       seenChar[a.char] = true
       sum.chars[#sum.chars + 1] = a.char
     end
-    local book = books and books[a.itemID]
-    if book and book.at and (not sum.checked or book.at > sum.checked) then
-      sum.checked = book.at
-    end
-    local st = P.Standing(a, book, opts.scanMin and opts.scanMin(a.itemID))
-    local under = st.kind == "undercut" or st.kind == "scanUndercut"
-    sum.count, sum.asking = sum.count + 1, sum.asking + (a.total or 0)
-    if under then
-      sum.undercut = sum.undercut + 1
-    end
-    local mine = opts.me == nil or a.char == opts.me
-    if (not opts.undercutOnly or under) and (not opts.char or a.char == opts.char) then
-      rows[#rows + 1] = {
-        key = a.auctionID and ("a" .. a.auctionID) or ("a" .. i .. ":" .. tostring(a.itemID)),
-        item = a.itemID,
-        qty = a.qty,
-        unit = a.unit,
-        lowest = st.lowest,
-        standing = P.StandingText(st),
-        left = P.TimeLeft(a, t),
-        char = a.char or "",
-        cancel = (mine and opts.atAH and a.auctionID) and L["Cancel"] or false,
-        faded = not mine or nil,
-        auctionID = a.auctionID,
-        st = st,
-        a = a,
-      }
+    if a.sold then
+      local net = P.Net(a.unit, a.qty, opts.cut) or 0
+      sum.sold, sum.coming = sum.sold + 1, sum.coming + net
+      if not opts.undercutOnly and (not opts.char or a.char == opts.char) then
+        rows[#rows + 1] = {
+          key = a.auctionID and ("s" .. a.auctionID) or ("s" .. i .. ":" .. tostring(a.itemID)),
+          item = a.itemID,
+          qty = a.qty,
+          unit = a.unit,
+          standing = { text = L["sold"], color = "good" },
+          left = P.MailIn(a, t),
+          char = a.char or "",
+          cancel = false,
+          sold = true,
+          st = { kind = "sold" },
+          a = a,
+        }
+      end
+    else
+      local book = books and books[a.itemID]
+      if book and book.at and (not sum.checked or book.at > sum.checked) then
+        sum.checked = book.at
+      end
+      local st = P.Standing(a, book, opts.scanMin and opts.scanMin(a.itemID))
+      local under = st.kind == "undercut" or st.kind == "scanUndercut"
+      sum.count, sum.asking = sum.count + 1, sum.asking + (a.total or 0)
+      if under then
+        sum.undercut = sum.undercut + 1
+      end
+      local mine = opts.me == nil or a.char == opts.me
+      if (not opts.undercutOnly or under) and (not opts.char or a.char == opts.char) then
+        rows[#rows + 1] = {
+          key = a.auctionID and ("a" .. a.auctionID) or ("a" .. i .. ":" .. tostring(a.itemID)),
+          item = a.itemID,
+          qty = a.qty,
+          unit = a.unit,
+          lowest = st.lowest,
+          standing = P.StandingText(st),
+          left = P.TimeLeft(a, t),
+          char = a.char or "",
+          cancel = (mine and opts.atAH and a.auctionID) and L["Cancel"] or false,
+          faded = not mine or nil,
+          auctionID = a.auctionID,
+          st = st,
+          a = a,
+        }
+      end
     end
   end
   table.sort(sum.chars)
@@ -619,6 +654,21 @@ end
 function P.AuctionDetail(row, advice, hours, cut, t)
   local a, st = row.a or {}, row.st or {}
   local d = {}
+  if row.sold then
+    local gross = (a.unit or 0) * (a.qty or 1)
+    local net = P.Net(a.unit, a.qty, cut) or 0
+    local left = (a.mailAt or 0) - (t or now())
+    d.sold, d.title = true, L["Sold"]
+    d.posted = L["Sold at %s each"]:format(money(a.unit))
+    d.rows = {
+      { label = L["Sold for"], copper = gross },
+      { label = L["AH cut"], copper = gross - net },
+      { label = L["You get"], copper = net, big = true },
+    }
+    d.note = left > 0 and L["The gold comes by mail in about %d min."]:format(math.max(1, math.ceil(left / 60)))
+      or L["The gold should be in your mailbox."]
+    return d
+  end
   local post = P.LastPost(a.itemID, a.unit)
   local ago = post and ns.Widgets and ns.Widgets.Age(post.t, t or now())
   d.posted = ago and L["Posted %s ago at %s each"]:format(ago, money(a.unit))

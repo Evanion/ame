@@ -349,17 +349,73 @@ function Trading:ScanMailItems()
   h.mail, h.inbox = items, inbox
 end
 
--- your active auctions (C_AuctionHouse owned auctions; sold ones wait in the mail)
+-- the game holds a sold auction's gold about an hour, then mails it
+Trading.MAIL_DELAY = 3600
+
+-- A sold auction in your owned list: its sale is pending until the mail. The game's chat message usually recorded
+-- it already (that pending sale takes this auction); missed (in a dungeon, offline), it's recorded from here. Each
+-- auction once (the ledger's keys), however often the list is read. -> when AME first saw it sold
+function Trading:SoldListed(id, qty, unit, key, t)
+  local keys = self.ledger.db.keys
+  if keys[key] then
+    return keys[key]
+  end
+  local name, me = nameOf(id), UnitName("player")
+  if not name then
+    return t -- not cached yet: the next read records it
+  end
+  for _, e in ipairs(self.ledger.db.entries) do
+    if
+      e.kind == "pending"
+      and e.name == name
+      and e.char == me
+      and not e.listed
+      and math.abs(e.t - t) <= ns.Ledger.PENDING_WINDOW
+    then
+      e.listed, e.told, e.itemID, e.qty = key, true, e.itemID or id, e.qty or qty -- the message made it
+      keys[key] = t
+      return t
+    end
+  end
+  self.ledger:Add(
+    { t = t, kind = "pending", name = name, itemID = id, qty = qty, amount = unit, char = me, listed = key },
+    key
+  )
+  return t
+end
+
+-- The game's message that an auction sold, for a sale AME recorded from your auction list first: that pending sale
+-- takes the message (each once), and no second one is recorded. -> true when one took it
+function Trading:SoldTold(name)
+  local me, t = UnitName("player"), GetServerTime()
+  for _, e in ipairs(self.ledger.db.entries) do
+    if
+      e.kind == "pending"
+      and e.listed
+      and not e.told
+      and e.name == name
+      and e.char == me
+      and math.abs(e.t - t) <= ns.Ledger.PENDING_WINDOW
+    then
+      e.told = true
+      return true
+    end
+  end
+  return false
+end
+
+-- your auctions (C_AuctionHouse owned auctions): the active ones, and the sold ones until their gold is mailed
 function Trading:ScanAuctions()
   local ah = C_AuctionHouse
   if not (ah and ah.GetNumOwnedAuctions and ah.GetOwnedAuctionInfo) then
     return
   end
   local out, listed = {}, { count = 0, value = 0, house = ns.AME:CurrentHouse() }
-  local list = {}
+  local list, sold, t = {}, {}, GetServerTime()
   for i = 1, ah.GetNumOwnedAuctions() or 0 do
     local info = ah.GetOwnedAuctionInfo(i)
     local active = info and (info.status == nil or info.status == 0)
+    local isSold = info and info.status == 1
     local id = info and info.itemKey and ns.ItemKey(info.itemKey.itemID, info.itemKey.itemSuffix)
     if id and info.itemLink then
       id = ns.ItemCache.Pair(info.itemLink, info.itemKey.itemID, info.itemKey.itemSuffix)
@@ -381,11 +437,50 @@ function Trading:ScanAuctions()
         timeLeft = info.timeLeftSeconds,
         timeLeftBand = info.timeLeft,
       }
+    elseif isSold and id then
+      local qty, unit = info.quantity or 1, info.buyoutAmount or info.bidAmount
+      local key = "sold:"
+        .. charKey()
+        .. ":"
+        .. (info.auctionID and tostring(info.auctionID) or (tostring(id) .. ":" .. qty .. ":" .. tostring(unit)))
+      local first = self:SoldListed(id, qty, unit, key, t)
+      -- the game's time left on a sold auction is the mail's, when it gives one; else an hour from the sale
+      local left = info.timeLeftSeconds
+      local mailAt = (left and left > 0 and left <= Trading.MAIL_DELAY) and t + left or first + Trading.MAIL_DELAY
+      sold[#sold + 1] = {
+        itemID = id,
+        qty = qty,
+        unit = unit,
+        total = unit and unit * qty,
+        auctionID = info.auctionID,
+        mailAt = mailAt,
+      }
     end
   end
   local h = mine()
-  h.auctions, h.auctionsAt, h.listed = Trading.Same(h.auctions, out), GetServerTime(), listed
-  h.auctionList = list
+  h.auctions, h.auctionsAt, h.listed = Trading.Same(h.auctions, out), t, listed
+  h.auctionList, h.soldList = list, sold
+end
+
+-- every character's sold auctions whose mail hasn't come yet: { itemID, qty, unit, total, mailAt, char, sold }
+function Trading:SoldAuctions(holdings, t)
+  local out = {}
+  for char, h in pairs(holdings or AME_DB.holdings) do
+    for _, a in ipairs(h.soldList or {}) do
+      if (a.mailAt or 0) > t then
+        local e = { sold = true }
+        for k, v in pairs(a) do
+          e[k] = v
+        end
+        e.char, e.house, e.seen = char:gsub("^[^:]*:", ""), h.listed and h.listed.house, h.auctionsAt
+        out[#out + 1] = e
+      end
+    end
+  end
+  table.sort(out, function(a, b)
+    return a.mailAt < b.mailAt
+  end)
+  return out
 end
 
 -- every active auction on all characters: { itemID, qty, unit, total, timeLeft, char, house, seen }
@@ -461,16 +556,17 @@ function Trading:OnSystemMessage(msg)
     if ns.Sound then
       ns.Sound.Play("auction") -- off unless Settings · Sound has "an auction sells" on
     end
-    local unit = listedUnit(sold)
-    self.ledger:Add({
-      t = GetServerTime(),
-      kind = "pending",
-      name = sold,
-      itemID = nil,
-      qty = nil,
-      amount = unit,
-      char = UnitName("player"),
-    })
+    if not self:SoldTold(sold) then
+      self.ledger:Add({
+        t = GetServerTime(),
+        kind = "pending",
+        name = sold,
+        itemID = nil,
+        qty = nil,
+        amount = listedUnit(sold),
+        char = UnitName("player"),
+      })
+    end
   end
   -- the game already announces it in chat; AME only records the sale until its mail arrives
   if (sold or expired) and ns.UI and ns.UI.RefreshPortfolio then

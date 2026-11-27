@@ -121,6 +121,40 @@ describe("Portfolio page", function()
     assert.is_false(only[1].cancel) -- away from the auction house
   end)
 
+  it(
+    "AuctionRows: a sold auction waits for its mail - not an auction, not cancellable, what it nets on the way",
+    function()
+      local auctions = {
+        { sold = true, itemID = 3, qty = 2, unit = 1000, total = 2000, char = "Tyken", auctionID = 9, mailAt = 2500 },
+        { itemID = 1, qty = 5, unit = 100, total = 500, char = "Tyken", auctionID = 7 },
+      }
+      local books = { [1] = { at = 50, rows = { { price = 90, qty = 2 } } } }
+      local rows, sum = P.AuctionRows(auctions, books, { me = "Tyken", atAH = true, now = 100, cut = 0.05 })
+      assert.equals(1, sum.count) -- the sold one isn't an auction any more
+      assert.equals(500, sum.asking)
+      assert.equals(1, sum.sold)
+      assert.equals(1900, sum.coming) -- 2 x 10s, less the 5% cut
+      assert.is_true(rows[1].sold)
+      assert.is_false(rows[1].cancel)
+      assert.equals("sold", rows[1].standing.text)
+      assert.equals("mail in 40 min", rows[1].left)
+      assert.is_nil(rows[1].lowest)
+      local later = P.AuctionRows(auctions, books, { me = "Tyken", now = 2600 })
+      assert.equals("in the mail", later[1].left.text)
+      local only = P.AuctionRows(auctions, books, { me = "Tyken", undercutOnly = true })
+      assert.equals(1, #only) -- undercut only: the undercut one
+      assert.is_nil(only[1].sold)
+
+      local d = P.AuctionDetail(rows[1], nil, nil, 0.05, 100)
+      assert.is_true(d.sold)
+      assert.equals(2000, d.rows[1].copper)
+      assert.equals(100, d.rows[2].copper)
+      assert.equals(1900, d.rows[3].copper)
+      assert.is_true(d.rows[3].big)
+      assert.equals("The gold comes by mail in about 40 min.", d.note)
+    end
+  )
+
   it("FillAuctionIDs: this character's saved auctions take the game's IDs, each once", function()
     local auctions =
       { { itemID = 1, qty = 5, unit = 100, char = "Tyken" }, { itemID = 1, qty = 5, unit = 100, char = "Tyken" } }
@@ -447,6 +481,38 @@ describe("Portfolio page", function()
         assert.is_string(App.screens.auctions.Status(App, select(2, App:Current())))
       end)
     end
+
+    it("a sold auction is first, until its mail: what it nets, nothing to cancel or repost", function()
+      ns.AME.ahOpen = true
+      ns.Trading.SoldAuctions = function()
+        return {
+          {
+            sold = true,
+            itemID = 12,
+            qty = 2,
+            unit = 165000,
+            total = 330000,
+            char = "Tyken",
+            auctionID = 9,
+            mailAt = env.now + 2400,
+          },
+        }
+      end
+      App:Show()
+      App.compact = false
+      App:Go("auctions")
+      valid()
+      local rows, sum, picked = P.AuctionState(App, select(2, App:Current()))
+      assert.is_true(rows[1].sold)
+      assert.equals(rows[1], picked)
+      assert.equals(1, sum.sold)
+      assert.equals(2, sum.count) -- the two still listed
+      assert.is_nil(App.renderer:Frame("auc.cancel"))
+      assert.is_nil(App.renderer:Frame("auc.repost"))
+      assert.is_not_nil(App.renderer:Frame("auc.open"))
+      App.ctx:Dispatch("undercutOnly", { checked = true })
+      valid()
+    end)
 
     it("Cancel this auction calls the game's cancel from the click", function()
       ns.AME.ahOpen = true

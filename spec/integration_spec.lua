@@ -3711,7 +3711,7 @@ describe("addon in a stubbed client", function()
       local owned = {
         { itemKey = { itemID = 2589 }, quantity = 5, buyoutAmount = 200, status = 0 },
         { itemKey = { itemID = 2589 }, quantity = 1, buyoutAmount = 300, status = 0 },
-        { itemKey = { itemID = 2589 }, quantity = 4, buyoutAmount = 200, status = 1 }, -- sold: not listed
+        { itemKey = { itemID = 2589 }, quantity = 4, buyoutAmount = 200, status = 1 }, -- sold: waits for its mail
       }
       env.ah.GetNumOwnedAuctions = function()
         return #owned
@@ -3721,7 +3721,14 @@ describe("addon in a stubbed client", function()
       end
       env:fire("OWNED_AUCTIONS_UPDATED")
       local ledger = ns.AME.ledger
-      assert.are.equal(2, #ledger.db.entries)
+      -- the two invoices, and the sold auction as a pending sale (its mail not here yet), however often it's read
+      assert.are.equal(3, #ledger.db.entries)
+      assert.are.equal(1, #ledger:Pending())
+      env:fire("OWNED_AUCTIONS_UPDATED")
+      assert.are.equal(1, #ledger:Pending())
+      local h = AME_DB.holdings[ns.AME:MarketRealmName() .. ":" .. UnitName("player")]
+      assert.are.equal(1, #h.soldList)
+      assert.are.equal(env.now + ns.Trading.MAIL_DELAY, h.soldList[1].mailAt) -- an hour from when AME saw it
       local week = ledger:Summary(env.now - 7 * 86400)
       assert.are.equal(30000 - 1500, week.income)
       -- the sale used up the 5 bought units (1000 each) and 5 never bought on the AH
@@ -3749,9 +3756,14 @@ describe("addon in a stubbed client", function()
       v.auctionsButton.scripts.OnClick(v.auctionsButton)
       assert.are.equal(2, #ns.UI.pfAuctions)
       assert.are.equal(1000, ns.UI.pfAuctions[1].total) -- 5 x 2s, sorted by total
-      -- the game says one sold: a pending ledger row (the game's own message is the notification)
+      -- the game says one sold: that's the pending sale AME read from the list already, not a second one (the
+      -- game's own message is the notification)
       env:fire("CHAT_MSG_SYSTEM", "A buyer has been found for your auction of Item 2589.")
       assert.are.equal(1, #ledger:Pending())
+      -- another sells: a second pending sale
+      env:fire("CHAT_MSG_SYSTEM", "A buyer has been found for your auction of Item 2589.")
+      assert.are.equal(2, #ledger:Pending())
+      table.remove(ledger.db.entries, #ledger.db.entries) -- (the rest of the test has the one)
       assert.are.equal("Item 2589", ledger:Pending()[1].name)
       env:fire("CHAT_MSG_SYSTEM", "Your auction of Item 2589 has expired.")
       assert.are.equal(1, #ledger:Pending()) -- expiries aren't sales

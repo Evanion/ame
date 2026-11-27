@@ -1,7 +1,8 @@
 -- Auctions (board AHAuctions): your auctions against what's on sale now - lowest, undercut (by how much, and how
--- many are ahead of you) or not checked yet - with Undercut only, a character filter and Check prices (a search of
--- each item). The panel on the right: the picked auction, how it stands, what reposting would ask and net, and
--- Cancel this auction (one auction, one click, as the game asks). Away from the auction house it shows what each
+-- many are ahead of you) or not checked yet - and, at the top, the sold ones until their gold comes by mail. With
+-- Undercut only, a character filter and Check prices (a search of each item). The panel on the right: the picked
+-- auction, how it stands, what reposting would ask and net, and Cancel this auction (one auction, one click, as the
+-- game asks); for a sold one, what it nets and when the mail comes. Away from the auction house it shows what each
 -- character last saw; Check prices and Cancel wait for the auction house.
 local _, ns = ...
 local L = ns.L
@@ -49,6 +50,7 @@ function P.AuctionState(app, p)
     char = p.char ~= "all" and p.char or nil,
     now = GetServerTime and GetServerTime() or nil,
     scanMin = P.ScanMin(), -- not searched yet: the last scan's lowest, as Home counts
+    cut = P.Cut(),
   })
   local picked
   for _, r in ipairs(rows) do
@@ -72,14 +74,21 @@ local function advise(row)
   return ok and advice or nil, ok2 and toSell or nil
 end
 
+local function tone(color, text)
+  return ns.Kit and ns.Kit.Color(color, text) or text
+end
+
 local function summary(sum)
   local text = L["%d auctions · asking %s"]:format(sum.count, money(sum.asking))
   if sum.undercut > 0 then
+    text = text .. " · " .. tone("bad", L["%d undercut"]:format(sum.undercut))
+  end
+  if sum.sold > 0 then
     text = text
       .. " · "
-      .. (
-        ns.Kit and ns.Kit.Color("bad", L["%d undercut"]:format(sum.undercut)) or L["%d undercut"]:format(sum.undercut)
-      )
+      .. tone("good", L["%d sold"]:format(sum.sold))
+      .. ", "
+      .. L["%s on the way"]:format(money(sum.coming))
   end
   return text
 end
@@ -95,7 +104,10 @@ local function panel(app, row)
       },
     }
   end
-  local advice, hours = advise(row)
+  local advice, hours
+  if not row.sold then
+    advice, hours = advise(row)
+  end
   local d = P.AuctionDetail(row, advice, hours, P.Cut(), GetServerTime and GetServerTime())
   local kids = {
     {
@@ -144,6 +156,19 @@ local function panel(app, row)
       children = rep,
     }
   end
+  local links = {
+    id = "auc.links",
+    type = "row",
+    props = { gap = 6 },
+    meta = { h = 24 },
+    children = {
+      { id = "auc.open", type = "button", props = { label = L["Open item"], action = "openItem" }, meta = { w = 80 } },
+    },
+  }
+  if row.sold then -- nothing to cancel or repost: the gold is on its way
+    kids[#kids + 1] = links
+    return kids
+  end
   local can = row.cancel and app:AtAH()
   kids[#kids + 1] = {
     id = "auc.cancel",
@@ -167,15 +192,7 @@ local function panel(app, row)
   end
   kids[#kids + 1] =
     { id = "auc.why", type = "text", props = { text = why, color = "dim", size = 11, wrap = true }, meta = { h = 28 } }
-  kids[#kids + 1] = {
-    id = "auc.links",
-    type = "row",
-    props = { gap = 6 },
-    meta = { h = 24 },
-    children = {
-      { id = "auc.open", type = "button", props = { label = L["Open item"], action = "openItem" }, meta = { w = 80 } },
-    },
-  }
+  kids[#kids + 1] = links
   return kids
 end
 
@@ -289,7 +306,7 @@ App.Screen("auctions", {
   Stamp = function()
     local parts = {}
     for key, h in pairs((AME_DB and AME_DB.holdings) or {}) do
-      parts[#parts + 1] = key .. "=" .. tostring(h.auctionList)
+      parts[#parts + 1] = key .. "=" .. tostring(h.auctionList) .. "/" .. tostring(h.soldList)
     end
     table.sort(parts)
     local ah = C_AuctionHouse

@@ -102,8 +102,6 @@ L["A big red candle after a climb: sellers piled in and undercut each other. Che
 L["A few shapes worth knowing:"] = "Несколько фигур, которые стоит знать:"
 L["A normal price"] = "Обычная цена"
 L["A route, broken down"] = "Маршрут в деталях"
-L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
-  "Продажа появляется в журнале, как только игра сообщит, что покупатель найден (ждёт письма), и рассчитывается точной суммой, когда приходит письмо с аукциона - откройте почтовый ящик, чтобы его получить. Персональные предметы не учитываются: их нельзя продать."
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "Высокая верхняя тень: цена разово подскочила - часто это скан, когда ничего дешёвого не было выставлено, - и не удержалась. Не ориентируйтесь на этот всплеск при выборе цены."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -593,8 +591,6 @@ L["Players heard from"] = "Игроки на связи"
 L["Portfolio"] = "Портфель"
 L["Portfolio tab"] = "Вкладка «Портфель»"
 L["Positions"] = "Позиции"
-L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."] =
-  "«Позиции» - то, что у вас есть. «Журнал» перечисляет ваши продажи и покупки на аукционе. «Аукционы» - то, что выставлено прямо сейчас у каждого персонажа. «Покупатели» и «Поставщики» показывают, с кем вы торгуете больше всего, - только если в письме с аукциона указан другой игрок (в некоторых клиентах аукцион скрывает имена)."
 L["Post anyway at %s"] = "Всё равно выставить по %s"
 L["Post at"] = "Выставить по"
 L["Post at %s"] = "Выставить по %s"

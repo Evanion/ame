@@ -98,8 +98,6 @@ L["A big red candle after a climb: sellers piled in and undercut each other. Che
 L["A few shapes worth knowing:"] = "알아 두면 좋은 모양:"
 L["A normal price"] = "보통 가격"
 L["A route, broken down"] = "경로 자세히 보기"
-L["A sale shows up in the ledger as soon as the game says a buyer was found (awaiting mail), and is settled with the exact amount when its auction mail arrives - open your mailbox to catch it. Soulbound items aren't counted: they can't be sold."] =
-  "게임이 구매자를 찾았다고 알리는 즉시 판매가 거래 장부에 표시되며(우편 대기 중), 경매 우편이 도착하면 정확한 금액으로 정산됩니다 - 우편함을 열어 받으세요. 귀속 아이템은 팔 수 없으므로 집계하지 않습니다."
 L["A tall upper wick: the price jumped once - often a scan with nothing cheap up - and didn't hold. Don't price off the spike."] =
   "긴 위꼬리: 가격이 한 번 튀었다가 - 대개 싼 매물이 없던 스캔 - 유지되지 않았습니다. 그 급등을 기준으로 가격을 정하지 마세요."
 L["A vendor pays %s; listing nets %s after the cut and deposit"] =
@@ -577,8 +575,6 @@ L["Players heard from"] = "수신한 플레이어"
 L["Portfolio"] = "포트폴리오"
 L["Portfolio tab"] = "포트폴리오 탭"
 L["Positions"] = "보유 종목"
-L["Positions is what you hold. Ledger lists your auction sales and purchases. Auctions is what's listed right now on every character. Customers and Suppliers rank who you trade with most - only when your auction mail names the other player (on some clients the auction house keeps them anonymous)."] =
-  "보유 종목은 가진 것입니다. 거래 장부는 경매 판매와 구매를 보여줍니다. 경매는 지금 모든 캐릭터에 등록된 것입니다. 구매자와 판매자는 가장 많이 거래한 상대 순위입니다 - 경매 우편에 상대 플레이어 이름이 있을 때만 표시됩니다 (일부 클라이언트에서는 경매장이 익명으로 처리합니다)."
 L["Post anyway at %s"] = "그래도 %s에 등록"
 L["Post at"] = "등록가"
 L["Post at %s"] = "%s에 등록"
