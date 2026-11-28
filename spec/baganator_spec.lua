@@ -47,6 +47,21 @@ describe("Baganator plugins", function()
     assert.are.equal("Arb", Bag.TIP_TEXT.craft[1])
   end)
 
+  it(
+    "the worth sort covers your bags, or the character bank: all its tabs or the one shown, no reagent bank",
+    function()
+      local ns = addon.load({ "Core/Init.lua", "Core/Trading.lua", "Core/UI/Widgets.lua", "Core/UI/Baganator.lua" })
+      Bag = ns.Baganator
+      assert.are.same({ 0, 1, 2, 3, 4 }, Bag.SortBags("backpack"))
+      _G.Enum = { BagIndex = { CharacterBankTab_1 = 6, CharacterBankTab_2 = 7, CharacterBankTab_3 = 8 } }
+      assert.are.same({ 6, 7, 8 }, Bag.SortBags("character_bank"))
+      assert.are.same({ 7 }, Bag.SortBags("character_bank", 2))
+      _G.Enum = { BagIndex = { Bank = -1, Reagentbank = -3, ReagentBag = 5 } }
+      assert.are.same({ -1, 6, 7, 8, 9, 10, 11, 12 }, Bag.SortBags("character_bank", 2)) -- no tabs: the whole bank
+      _G.Enum = nil
+    end
+  )
+
   describe("the worth sort's plan", function()
     -- apply the swaps to the cells, as the game would
     local function apply(cells, swaps)

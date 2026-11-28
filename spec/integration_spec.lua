@@ -706,8 +706,39 @@ describe("addon in a stubbed client", function()
       assert.are.same({ 3, 1, 3, 2 }, picks) -- the 10g stack first, then the Linen next to it (the gap closed)
       assert.truthy(bag[1].hyperlink:find("item:4306", 1, true))
       assert.is_nil(ns.Baganator.sorting) -- done
-      sort.callback(false, "character_bank") -- the bank: not sorted (said in chat)
+      -- the bank: only while it's open (said in chat), then sorted the same way, the bank's own slots
+      local bankBag = {
+        [1] = { hyperlink = "|Hitem:2589::::::::|h", stackCount = 1 },
+        [2] = { hyperlink = "|Hitem:4306::::::::|h", stackCount = 5 },
+      }
+      ns.Trading.bankOpen = false
+      sort.callback(false, "character_bank")
+      env:update(3)
       assert.are.equal(4, #picks)
+      ns.Trading.bankOpen = true
+      _G.C_Container.GetContainerNumSlots = function(b)
+        return (b == 0 and 3) or (b == -1 and 2) or 0
+      end
+      _G.C_Container.GetContainerItemInfo = function(b, s)
+        return (b == 0 and bag[s]) or (b == -1 and bankBag[s]) or nil
+      end
+      local bankPicks = {}
+      _G.C_Container.PickupContainerItem = function(b, s)
+        assert.are.equal(-1, b) -- the bags aren't touched
+        bankPicks[#bankPicks + 1] = s
+        if #bankPicks % 2 == 0 then
+          local x, y = bankPicks[#bankPicks - 1], s
+          bankBag[x], bankBag[y] = bankBag[y], bankBag[x]
+        end
+      end
+      sort.callback(false, "character_bank")
+      env:update(3)
+      assert.are.same({ 2, 1 }, bankPicks)
+      assert.truthy(bankBag[1].hyperlink:find("item:4306", 1, true))
+      assert.is_nil(ns.Baganator.sorting)
+      ns.Trading.bankOpen = nil
+      sort.callback(false, "warband_bank") -- not a bank AME sorts (said in chat)
+      assert.are.equal(2, #bankPicks)
 
       -- the corners' entries are worked out ahead, in the background, for what's in the bags: drawing a slot then
       -- looks nothing up (the corners are registered as fast)
