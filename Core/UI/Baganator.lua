@@ -5,8 +5,9 @@
 --   "AME: tip" - what to do with it, the Selling tab's Tip (Sell, Arb, DE, Vend): it only marks the slot, nothing
 --   moves to another category.
 --   No junk rule: what's junk is Baganator's own (or another addon's) to say.
---   a sort - "AME: worth": the most valuable stacks first (Baganator's reverse: last), regular bags only, moved a
---   swap at a time as the game unlocks them; never in combat.
+--   a sort - "AME: worth": the most valuable stacks first (Baganator's reverse: last), in your bags or your bank (all
+--   of it, or the tab Baganator shows), regular bags only, moved a swap at a time as the game unlocks them; never in
+--   combat.
 -- Built on AME's public API (Core/API.lua), so it shows the same numbers as AME's tooltip and tabs.
 local _, ns = ...
 local L = ns.L
@@ -422,8 +423,8 @@ function Bag:Install()
   end, Bag.CORNERS.ame_value, true)
 
   if B.API.RegisterContainerSort then
-    B.API.RegisterContainerSort(L["AME: worth"], "ame_worth", function(isReverse, containerType)
-      Bag:Sort(isReverse, containerType)
+    B.API.RegisterContainerSort(L["AME: worth"], "ame_worth", function(isReverse, containerType, tabIndex)
+      Bag:Sort(isReverse, containerType, tabIndex)
     end)
   end
 
@@ -453,11 +454,33 @@ local function container()
   return _G.C_Container or {}
 end
 
--- your bags' regular slots in order (special bags - herbs, soul shards, ammo - left alone): { bag, slot } each
-function Bag.SortSlots()
+-- what a sort covers: your bags, or the character bank - its tabs (one: Baganator's tabIndex) or the bank and its
+-- bags, never the reagent bank (only reagents go there)
+function Bag.SortBags(containerType, tabIndex)
+  local out = {}
+  if containerType == "character_bank" then
+    local B = (_G.Enum and _G.Enum.BagIndex) or {}
+    for _, bag in ipairs(ns.Trading.BankBags(B)) do
+      if bag ~= B.Reagentbank then
+        out[#out + 1] = bag
+      end
+    end
+    if tabIndex and B.CharacterBankTab_1 then
+      return { out[tabIndex] }
+    end
+    return out
+  end
+  for bag = 0, (_G.NUM_BAG_SLOTS or 4) do
+    out[#out + 1] = bag
+  end
+  return out
+end
+
+-- the regular slots of those bags in order (special bags - herbs, soul shards, ammo - left alone): { bag, slot } each
+function Bag.SortSlots(bags)
   local C = container()
   local out = {}
-  for bag = 0, (_G.NUM_BAG_SLOTS or 4) do
+  for _, bag in ipairs(bags or Bag.SortBags()) do
     local family = 0
     if C.GetContainerNumFreeSlots then
       family = select(2, C.GetContainerNumFreeSlots(bag)) or 0
@@ -476,13 +499,17 @@ local function stackKey(link)
   return link:match("item:[%-%d:]+") or link
 end
 
-function Bag:Sort(isReverse, containerType)
+function Bag:Sort(isReverse, containerType, tabIndex)
   local say = ns.AME and ns.AME.Say or print
   if not Bag.On() then
     return
   end
-  if containerType and containerType ~= "backpack" then
-    return say(L["The worth sort sorts your bags, not the bank."])
+  local bank = containerType == "character_bank"
+  if containerType and containerType ~= "backpack" and not bank then
+    return say(L["The worth sort sorts your bags and your bank, not the warband bank."])
+  end
+  if bank and not (ns.Trading and ns.Trading.bankOpen) then
+    return say(L["Open the bank to sort it by worth."])
   end
   if InCombatLockdown and InCombatLockdown() then
     return say(L["Not in combat: sort your bags by worth after the fight."])
@@ -492,7 +519,7 @@ function Bag:Sort(isReverse, containerType)
     return
   end
   local C = container()
-  local slots = Bag.SortSlots()
+  local slots = Bag.SortSlots(Bag.SortBags(containerType, tabIndex))
   local cells = {}
   for i, s in ipairs(slots) do
     local info = C.GetContainerItemInfo and C.GetContainerItemInfo(s.bag, s.slot)
